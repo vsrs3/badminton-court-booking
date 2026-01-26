@@ -1,0 +1,209 @@
+/**
+ * Usage: import this file in every css file
+ * @import url('variables.css');
+ */
+
+:root {
+    /* ============================================
+       COLOR PALETTE
+       ============================================ */
+
+    /* Primary Colors - Navy Blue */
+    --primary-50: #f0f4ff;
+    --primary-100: #e0e9ff;
+    --primary-200: #c7d7fe;
+    --primary-300: #a5bbfc;
+    --primary-400: #8195f8;
+    --primary-500: #6366f1;  /* Main primary */
+    --primary-600: #4f46e5;  /* Primary hover */
+    --primary-700: #4338ca;
+    --primary-800: #3730a3;  /* Dark background nav/header */
+    --primary-900: #312e81;
+    --primary-950: #1e1b4b;  /* Darkest - main background */
+
+    /* Accent Colors - Neon/Lime */
+    --accent-50: #f7fee7;
+    --accent-100: #ecfccb;
+    --accent-200: #d9f99d;
+    --accent-300: #bef264;
+    --accent-400: #a3e635;  /* Neon green for CTA */
+    --accent-500: #84cc16;
+    --accent-600: #65a30d;
+    --accent-700: #4d7c0f;
+    --accent-800: #3f6212;
+    --accent-900: #365314;
+
+    /* Neutral Colors */
+    --neutral-white: #ffffff;
+    --neutral-50: #fafafa;
+    --neutral-100: #f5f5f5;
+    --neutral-200: #e5e5e5;
+    --neutral-300: #d4d4d4;
+    --neutral-400: #a3a3a3;
+    --neutral-500: #737373;
+    --neutral-600: #525252;
+    --neutral-700: #404040;
+    --neutral-800: #262626;
+    --neutral-900: #171717;
+
+    /* Semantic Colors */
+    --color-success: #84cc16;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* Background Colors */
+    --bg-primary: #1e1b4b;
+    --bg-secondary: #312e81;
+    --bg-card: #ffffff;
+    --bg-hover: #f0f4ff;
+    --bg-overlay: rgba(30, 27, 75, 0.85);
+
+    /* Text Colors */
+    --text-primary: #171717;      /* Main text */
+    --text-secondary: #525252;    /* Secondary text */
+    --text-tertiary: #a3a3a3;     /* Disabled/placeholder */
+    --text-inverse: #ffffff;      /* Text on dark bg */
+    --text-accent: #4f46e5;       /* Link color */
+
+    /* Border Colors */
+    --border-light: #e5e5e5;
+    --border-medium: #d4d4d4;
+    --border-dark: #a3a3a3;
+
+    /* ============================================
+       TYPOGRAPHY
+       ============================================ */
+
+    /* Font Families */
+    --font-primary: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+    --font-heading: 'Poppins', 'Inter', sans-serif;
+    --font-mono: 'Fira Code', 'Courier New', monospace;
+
+    /* Font Sizes */
+    --text-xs: 0.75rem;      /* 12px */
+    --text-sm: 0.875rem;     /* 14px */
+    --text-base: 1rem;       /* 16px - base */
+    --text-lg: 1.125rem;     /* 18px */
+    --text-xl: 1.25rem;      /* 20px */
+    --text-2xl: 1.5rem;      /* 24px */
+    --text-3xl: 1.875rem;    /* 30px */
+    --text-4xl: 2.25rem;     /* 36px */
+    --text-5xl: 3rem;        /* 48px */
+
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+
+    /* Line Heights */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.75;
+    --leading-loose: 2;
+
+    /* ============================================
+       SPACING SYSTEM (8px base)
+       ============================================ */
+
+    --space-0: 0;
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+
+    /* ============================================
+       BORDER RADIUS
+       ============================================ */
+
+    --radius-none: 0;
+    --radius-sm: 0.25rem;    /* 4px */
+    --radius-base: 0.5rem;   /* 8px - default */
+    --radius-md: 0.75rem;    /* 12px */
+    --radius-lg: 1rem;       /* 16px - cards */
+    --radius-xl: 1.5rem;     /* 24px */
+    --radius-2xl: 2rem;      /* 32px */
+    --radius-full: 9999px;   /* Fully rounded */
+
+    /* ============================================
+       SHADOWS
+       ============================================ */
+
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+    /* Card shadow giống BadmintonPRO */
+    --shadow-card: 0 4px 20px rgba(79, 70, 229, 0.08);
+    --shadow-card-hover: 0 8px 30px rgba(79, 70, 229, 0.15);
+
+    /* ============================================
+       Z-INDEX LAYERS
+       ============================================ */
+
+    --z-base: 1;
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+
+    /* ============================================
+       TRANSITIONS
+       ============================================ */
+
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slowest: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ============================================
+       BREAKPOINTS (for reference in JS)
+       ============================================ */
+
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+
+    --container-max-width: 1280px;
+    --container-padding: var(--space-4);
+    --header-height: 64px;
+    --sidebar-width: 280px;
+    --footer-height: 200px;
+}
+
+/* ============================================
+   DARK MODE SUPPORT (optional - future)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Override colors for dark mode if needed */
+    }
+}
