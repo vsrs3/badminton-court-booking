@@ -1,0 +1,137 @@
+package com.bcb.controller;
+
+import com.bcb.dto.CustomerChangePassDTO;
+import com.bcb.dto.CustomerLoginDTO;
+import com.bcb.dto.CustomerProfileDTO;
+import com.bcb.service.CustomerLoginService;
+import com.bcb.service.CustomerProfileService;
+import com.bcb.service.impl.CustomerLoginServiceImpl;
+import com.bcb.service.impl.CustomerProfileServiceImpl;
+import com.bcb.dto.response.CustomerResponse;
+import com.bcb.model.Customer;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
+import java.io.IOException;
+
+@WebServlet(name = "CustomerController", urlPatterns = {"/customerController"})
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024 * 2, // 2MB
+        maxFileSize = 1024 * 1024 * 10,      // 10MB
+        maxRequestSize = 1024 * 1024 * 50    // 50MB
+)
+public class CustomerController extends HttpServlet {
+
+    private final CustomerLoginService loginService = new CustomerLoginServiceImpl();
+    private final CustomerProfileService profileService = new CustomerProfileServiceImpl();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.sendRedirect(request.getContextPath() + "/home");
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String action = request.getParameter("action");
+
+        if (action != null) {
+            switch (action) {
+                case "login" -> {
+                    login(request, response);
+                }
+                case "updateProfile" -> {
+                    updateProfile(request, response);
+                }
+                case "updatePassword" -> {
+                    updatePassword(request, response);
+                }
+            }
+        }
+    }
+
+    private void login(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String email = request.getParameter("email");
+
+        try {
+            CustomerLoginDTO dto = new CustomerLoginDTO(email);
+            CustomerResponse result = loginService.login(dto);
+
+            HttpSession session = request.getSession();
+            if (result.isSuccess()) {
+                session.setAttribute("customer", result.getCustomer());
+                response.sendRedirect(request.getContextPath() + "/home");
+            } else {
+                session.setAttribute("logError", result.getMessage());
+                response.sendRedirect(request.getContextPath() + "/login");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void updateProfile(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String fullName = request.getParameter("full_name");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        Part avatarFile = request.getPart("avatar");
+
+        HttpSession session = request.getSession();
+        Customer customer = (Customer) session.getAttribute("customer");
+        try {
+            CustomerProfileDTO dto = new CustomerProfileDTO(fullName, email, phone, avatarFile);
+            if (customer.getAvatarPath() != null && !customer.getAvatarPath().isEmpty()) {
+                dto.setAvatarPath(customer.getAvatarPath());
+            }
+
+            int accountId = customer.getAccountId();
+            CustomerResponse result = profileService.updateInfo(request, dto, accountId);
+
+            if (result.isSuccess()) {
+                session.setAttribute("customer", result.getCustomer());
+                session.setAttribute("updateSuccess", result.getMessage());
+            } else {
+                session.setAttribute("updateError", result.getMessage());
+            }
+            response.sendRedirect(request.getContextPath() + "/profile?section=profile-info");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void updatePassword(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String oldPass = request.getParameter("oldPassword");
+        String newPass = request.getParameter("newPassword");
+        String confirmNewPass = request.getParameter("confirmPassword");
+
+        HttpSession session = request.getSession();
+        Customer customer = (Customer) session.getAttribute("customer");
+        try{
+            CustomerChangePassDTO dto = new CustomerChangePassDTO(oldPass,newPass, confirmNewPass);
+
+            CustomerResponse result = profileService.updatePassword(dto, customer.getAccountId());
+            if(result.isSuccess()){
+                session.setAttribute("customer", result.getCustomer());
+                session.setAttribute("updateSuccess", result.getMessage());
+            } else {
+                session.setAttribute("updateError", result.getMessage());
+            }
+            response.sendRedirect(request.getContextPath() + "/profile?section=password");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+}

@@ -1,0 +1,903 @@
+/* ========================================
+   PROFILE.CSS - SCOPED ONLY FOR PROFILE PAGE
+   ======================================== */
+
+/* ========================================
+   WRAPPER - TẤT CẢ CSS PHẢI NẰM TRONG NÀY
+   ======================================== */
+.profile-page {
+    width: 100%;
+    background: #f5f6f8;
+    padding: 20px 0;
+}
+
+/* Reset chỉ trong profile-page */
+.profile-page * {
+    box-sizing: border-box;
+}
+
+/* ========================================
+   CONTAINER & LAYOUT
+   ======================================== */
+.profile-page .profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.profile-page .profile-wrapper {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* ========================================
+   SIDEBAR - BÊN TRÁI
+   ======================================== */
+.profile-page .profile-sidebar {
+    width: 240px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    position: sticky;
+    top: 90px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+}
+
+/* Custom scrollbar cho sidebar */
+.profile-page .profile-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.profile-page .profile-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.profile-page .profile-sidebar::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.profile-page .profile-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* User Card */
+.profile-page .user-card {
+    display: flex;
+    align-items: center;
+    padding: 20px 15px;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 12px;
+    background: #fff;
+}
+
+.profile-page .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 24px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.profile-page .user-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-page .user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-page .user-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 4px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-page .user-email {
+    font-size: 13px;
+    color: #777;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-page .edit-icon {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 14px;
+}
+
+.profile-page .edit-icon:hover {
+    color: #333;
+}
+
+/* Member Badge */
+.profile-page .member-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: #fef3c7;
+    color: #92400e;
+    margin: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.profile-page .member-badge:hover {
+    background: #fde68a;
+}
+
+/* Quick Actions */
+.profile-page .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-page .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: #f9fafb;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #555;
+    text-align: center;
+    gap: 6px;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.profile-page .action-btn:hover {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.profile-page .action-btn i {
+    font-size: 18px;
+    color: #16a34a;
+}
+
+/* Sidebar Menu */
+.profile-page .sidebar-menu {
+    padding: 10px 0 15px 0;
+}
+
+.profile-page .menu-title {
+    padding: 12px 15px 8px 15px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #16a34a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0 4px 0;
+    background: #f0fdf4;
+}
+
+.profile-page .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #555;
+    gap: 10px;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.profile-page .menu-item:hover {
+    background: #f9fafb;
+    color: #333;
+}
+
+.profile-page .menu-item.active {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-right: 3px solid #16a34a;
+}
+
+.profile-page .menu-item i:first-child {
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
+    color: #16a34a;
+}
+
+.profile-page .menu-item span {
+    flex: 1;
+}
+
+.profile-page .menu-item i:last-child {
+    font-size: 11px;
+    color: #999;
+}
+
+/* ========================================
+   MAIN CONTENT - BÊN PHẢI
+   ======================================== */
+.profile-page .profile-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Content Header */
+.profile-page .content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.profile-page .content-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.profile-page .btn-view-all {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.profile-page .btn-view-all:hover {
+    background: #15803d;
+}
+
+/* ========================================
+   PROFILE SECTION
+   ======================================== */
+.profile-page .profile-section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.profile-page .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-page .section-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-page .section-header h2 i {
+    color: #16a34a;
+    font-size: 18px;
+}
+
+/* ========================================
+   FILTER TABS
+   ======================================== */
+.profile-page .filter-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-page .tab-btn {
+    padding: 6px 14px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    color: #555;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-page .tab-btn:hover {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.profile-page .tab-btn.active {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+}
+
+/* ========================================
+   ALERTS
+   ======================================== */
+.profile-page .alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.profile-page .alert i {
+    font-size: 18px;
+}
+
+.profile-page .alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.profile-page .alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* ========================================
+   FORM STYLES
+   ======================================== */
+.profile-page .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.profile-page .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.profile-page .form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.profile-page .form-group label i {
+    color: #16a34a;
+    font-size: 15px;
+}
+
+.profile-page .form-input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    transition: border-color 0.2s;
+    background: #fff;
+}
+
+.profile-page .form-input:focus {
+    outline: none;
+    border-color: #16a34a;
+}
+
+.profile-page .form-input:disabled,
+.profile-page .form-input:read-only {
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.profile-page .form-hint {
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Password Input */
+.profile-page .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profile-page .password-input-wrapper .form-input {
+    flex: 1;
+    padding-right: 40px;
+}
+
+.profile-page .toggle-password {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+}
+
+.profile-page .toggle-password:hover {
+    color: #333;
+}
+
+/* Avatar Upload */
+.profile-page .avatar-upload {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-page .avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 40px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid #d1d5db;
+}
+
+.profile-page .avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-page .form-input-file {
+    display: none;
+}
+
+.profile-page .btn-upload {
+    padding: 8px 16px;
+    background: #f3f4f6;
+    color: #333;
+    border: 2px dashed #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.profile-page .btn-upload:hover {
+    background: #e5e7eb;
+    border-color: #16a34a;
+}
+
+/* Form Actions */
+.profile-page .form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.profile-page .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.profile-page .btn-primary {
+    background: #16a34a;
+    color: #fff;
+}
+
+.profile-page .btn-primary:hover {
+    background: #15803d;
+}
+
+.profile-page .btn-secondary {
+    background: #f3f4f6;
+    color: #333;
+}
+
+.profile-page .btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+/* ========================================
+   BOOKINGS LIST
+   ======================================== */
+.profile-page .bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Booking Card */
+.profile-page .booking-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px;
+    transition: all 0.2s;
+}
+
+.profile-page .booking-card:hover {
+    border-color: #16a34a;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1);
+}
+
+/* Booking Header */
+.profile-page .booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.profile-page .booking-info-left {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.profile-page .booking-date,
+.profile-page .booking-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.profile-page .booking-date i,
+.profile-page .booking-time i {
+    color: #16a34a;
+    font-size: 15px;
+}
+
+/* Booking Status */
+.profile-page .booking-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.profile-page .status-PENDING {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.profile-page .status-CONFIRMED {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.profile-page .status-COMPLETED {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.profile-page .status-CANCELLED {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-page .status-EXPIRED {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Booking Body */
+.profile-page .booking-body {
+    margin-bottom: 12px;
+}
+
+.profile-page .court-info h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-page .court-info h4 i {
+    color: #16a34a;
+}
+
+.profile-page .facility-name {
+    font-size: 13px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 12px 0;
+}
+
+.profile-page .booking-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 6px;
+}
+
+.profile-page .detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.profile-page .detail-item .label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.profile-page .detail-item .value {
+    font-size: 13px;
+    color: #333;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profile-page .price-item {
+    grid-column: 1 / -1;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.profile-page .price {
+    color: #16a34a;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* Payment Status */
+.profile-page .payment-PAID {
+    color: #065f46;
+}
+
+.profile-page .payment-DEPOSIT {
+    color: #ca8a04;
+}
+
+.profile-page .payment-UNPAID {
+    color: #991b1b;
+}
+
+/* Recurring Info */
+.profile-page .recurring-info {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #1e40af;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Booking Actions */
+.profile-page .booking-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.profile-page .btn-action {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.profile-page .btn-detail {
+    background: #f3f4f6;
+    color: #333;
+}
+
+.profile-page .btn-detail:hover {
+    background: #e5e7eb;
+}
+
+.profile-page .btn-pay {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.profile-page .btn-pay:hover {
+    background: #fde68a;
+}
+
+.profile-page .btn-cancel {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-page .btn-cancel:hover {
+    background: #fecaca;
+}
+
+.profile-page .btn-review {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.profile-page .btn-review:hover {
+    background: #bfdbfe;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+.profile-page .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+}
+
+.profile-page .empty-state i {
+    font-size: 60px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.profile-page .empty-state h3 {
+    font-size: 18px;
+    color: #333;
+    margin: 0 0 8px 0;
+}
+
+.profile-page .empty-state p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+}
+
+/* ========================================
+   PAGINATION
+   ======================================== */
+.profile-page .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 25px;
+}
+
+.profile-page .page-link {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.profile-page .page-link:hover {
+    background: #f3f4f6;
+    border-color: #16a34a;
+}
+
+.profile-page .page-link.active {
+    background: #16a34a;
+    color: #fff;
+    border-color: #16a34a;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+    .profile-page .profile-wrapper {
+        flex-direction: column;
+    }
+
+    .profile-page .profile-sidebar {
+        width: 100%;
+        position: static;
+        max-height: 400px;
+    }
+
+    .profile-page .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .profile-page .booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .profile-page .booking-details {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-page .booking-actions {
+        flex-direction: column;
+    }
+
+    .profile-page .btn-action {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-page .avatar-upload {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
