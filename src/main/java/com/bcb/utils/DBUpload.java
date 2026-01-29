@@ -43,7 +43,7 @@ public class DBUpload {
         // Kết quả: "D:\Kỳ 5\SWP391\other\test\target\bcb-1.0-SNAPSHOT\"
 
         File targetFolder = new File(currentRunningPath);
-        File rootFolder = targetFolder.getParentFile().getParentFile().getParentFile(); //đến test
+        File rootFolder = targetFolder.getParentFile().getParentFile(); //đến test
         File uploadFolder = new File(rootFolder, "src/main/webapp/" + relativePath);
 
         //Tạo thư mục nếu chưa có

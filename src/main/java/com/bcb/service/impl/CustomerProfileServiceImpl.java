@@ -23,9 +23,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     @Override
     public CustomerResponse updateInfo (HttpServletRequest request, CustomerProfileDTO dto, int accountId) {
-        DBContext db = new DBContext();
-        DBUpload dbUp = new DBUpload();
-        try (Connection connect = db.getConnection()) {
+
+        try (Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
             if (dto.getFullName() == null || dto.getFullName().isEmpty()
@@ -35,7 +34,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 return new CustomerResponse(false, "Missing info", 1000);
             }
 
-            String avatarPath = dbUp.getAvatarPath(request, dto);
+            String avatarPath = DBUpload.getAvatarPath(request, dto);
 
             boolean isUpdateInfo = repo.updateAccountInfo(avatarPath,
                     dto.getFullName(), dto.getEmail(), dto.getPhone(), accountId);
@@ -60,8 +59,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     @Override
     public CustomerResponse updatePassword(CustomerChangePassDTO dto, int accountId) {
-        DBContext db = new DBContext();
-        try(Connection connect = db.getConnection()) {
+
+        try(Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
             if(dto.getNewPass() == null || dto.getNewPass().isEmpty()

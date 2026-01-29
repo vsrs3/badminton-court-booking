@@ -5,14 +5,12 @@ import com.bcb.utils.DBContext;
 
 import java.sql.*;
 
-public class CustomerLoginRepository implements com.bcb.repository.CustomerLoginRepository {
+public class CustomerLoginRepositoryImpl implements com.bcb.repository.CustomerLoginRepository {
    @Override
     public Customer getCustomerByEmailAndPass(String email) {
         String sql = "Select * From Account where email = ?";
 
-        DBContext db = new DBContext();
-        Connection connect = db.getConnection();
-        try (PreparedStatement ps = connect.prepareStatement(sql)) {
+        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(sql)) {
             ps.setString(1, email.trim());
 
             ResultSet rs = ps.executeQuery();

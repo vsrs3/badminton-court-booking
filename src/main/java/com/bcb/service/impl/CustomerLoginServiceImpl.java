@@ -1,6 +1,7 @@
 package com.bcb.service.impl;
 
 import com.bcb.dto.CustomerLoginDTO;
+import com.bcb.repository.impl.CustomerLoginRepositoryImpl;
 import com.bcb.service.CustomerLoginService;
 import com.bcb.dto.response.CustomerResponse;
 import com.bcb.model.Customer;
@@ -10,7 +11,7 @@ public class CustomerLoginServiceImpl implements CustomerLoginService {
     private final CustomerLoginRepository repo;
 
     public CustomerLoginServiceImpl() {
-        this.repo = new com.bcb.repository.impl.CustomerLoginRepository();
+        this.repo = new CustomerLoginRepositoryImpl();
     }
 
     @Override
