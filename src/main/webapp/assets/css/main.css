@@ -1,0 +1,500 @@
+/* ============================================
+   Brand Colors & Global Utilities
+   ============================================ */
+
+:root {
+    /* Brand Colors */
+    --color-green-brand: #064E3B;
+    --color-lime-brand: #A3E635;
+    --color-green-50: #F0FDF4;
+    --color-green-100: #DCFCE7;
+    --color-green-300: #BBF7D0;
+    --color-green-500: #22C55E;
+    --color-green-700: #15803D;
+    --color-green-800: #166534;
+    --color-green-900: #14532D;
+
+    /* Neutral Colors */
+    --color-gray-50: #F9FAFB;
+    --color-gray-100: #F3F4F6;
+    --color-gray-200: #E5E7EB;
+    --color-gray-300: #D1D5DB;
+    --color-gray-400: #9CA3AF;
+    --color-gray-500: #6B7280;
+    --color-gray-600: #4B5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1F2937;
+    --color-gray-900: #111827;
+
+    /* Accent Colors */
+    --color-yellow-500: #EAB308;
+    --color-yellow-600: #CA8A04;
+    --color-red-500: #EF4444;
+    --color-red-600: #DC2626;
+    --color-red-700: #B91C1C;
+    --color-blue-500: #3B82F6;
+    --color-orange-400: #FB923C;
+    --color-orange-600: #EA580C;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Z-Index Layers */
+    --z-base: 1;
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 9999;
+    --z-modal: 10000;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 9998;
+}
+
+/* ============================================
+   RESET & BASE STYLES
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-family), serif;
+    background-color: #F8FAF9;
+    color: var(--color-gray-900);
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-lime {
+    color: var(--color-lime-brand) !important;
+}
+
+.bg-green-brand {
+    background-color: var(--color-green-brand) !important;
+}
+
+.bg-lime-brand {
+    background-color: var(--color-lime-brand) !important;
+}
+
+/* Hide Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Elegant Scrollbar */
+.elegant-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   APP CONTAINER
+   ============================================ */
+
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    flex: 1;
+    width: 100%;
+    position: relative;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Coming Soon State */
+.coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+    color: var(--color-gray-300);
+    flex: 1;
+}
+
+.coming-soon i {
+    font-size: 4rem;
+    opacity: 0.2;
+    margin-bottom: 1.5rem;
+}
+
+.coming-soon h2 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.coming-soon p {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.6;
+}
+
+/* ============================================
+   COURTS GRID
+   ============================================ */
+
+.courts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    width: 100%;
+}
+
+/* Tablet */
+@media (max-width: 1200px) {
+    .courts-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .courts-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* ============================================
+   FAVORITES HEADER
+   ============================================ */
+
+.favorites-header {
+    animation: slideInDown 0.4s ease-out;
+}
+
+.favorites-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--color-red-600);
+    text-transform: uppercase;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.btn-show-all {
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--color-gray-400);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.btn-show-all:hover {
+    color: var(--color-green-700);
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   NO RESULTS STATE
+   ============================================ */
+
+.no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10rem 2rem;
+    text-align: center;
+}
+
+.no-results-icon {
+    width: 6rem;
+    height: 6rem;
+    background-color: var(--color-gray-100);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.no-results-icon i {
+    font-size: 2.5rem;
+    color: var(--color-gray-400);
+    opacity: 0.3;
+}
+
+.no-results-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    color: var(--color-gray-400);
+    margin-bottom: 0.5rem;
+}
+
+.no-results-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-gray-400);
+    opacity: 0.6;
+    margin-bottom: 2rem;
+}
+
+.btn-clear-filters {
+    font-size: 0.6875rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: var(--color-green-700);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.btn-clear-filters:hover {
+    color: var(--color-green-900);
+}
+
+/* ============================================
+   LOADING MORE INDICATOR
+   ============================================ */
+
+.loading-more {
+    padding: 3rem 0;
+}
+
+.loading-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--color-gray-300);
+    border-radius: var(--radius-full);
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+    }
+    40% {
+        transform: scale(1);
+    }
+}
+
+.loading-text {
+    font-size: 0.875rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5em;
+    color: var(--color-gray-500);
+}
+
+/* ============================================
+   BOTTOM FADE EFFECT
+   ============================================ */
+
+.bottom-fade {
+    position: fixed;
+    bottom: 96px;
+    left: 0;
+    right: 0;
+    height: 6rem;
+    background: linear-gradient(to top, #F8FAF9, transparent);
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0.9;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+.pb-40 {
+    padding-bottom: 10rem;
+}
+
+@media (max-width: 576px) {
+    .px-3 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
+
+@media (min-width: 576px) {
+    .px-sm-5 {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .px-lg-6 {
+        padding-left: 4rem !important;
+        padding-right: 4rem !important;
+    }
+}
