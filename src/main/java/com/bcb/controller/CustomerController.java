@@ -167,15 +167,17 @@ public class CustomerController extends HttpServlet {
         HttpSession session = request.getSession();
         Customer customer = (Customer) session.getAttribute("customer");
 
-        int customerId = customer.getAccountId();
-        CustomerResponse result = authService.deleteAccount(customerId);
+        if(customer != null) {
+            int customerId = customer.getAccountId();
+            CustomerResponse result = authService.deleteAccount(customerId);
 
-        if(result.isSuccess()){
-            session.setAttribute("delSuccess", result.getMessage());
-            response.sendRedirect(request.getContextPath() + "/home");
-        } else {
-            session.setAttribute("delFailed", result.getMessage());
-            response.sendRedirect(request.getContextPath() + "/profile?section=settings");
+            if (result.isSuccess()) {
+                session.setAttribute("successMessage", result.getMessage());
+                response.sendRedirect(request.getContextPath() + "/home");
+            } else {
+                session.setAttribute("errorMessage", result.getMessage());
+                response.sendRedirect(request.getContextPath() + "/profile?section=settings");
+            }
         }
     }
 

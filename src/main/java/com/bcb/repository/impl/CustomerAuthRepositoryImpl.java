@@ -14,7 +14,9 @@ public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
 
    @Override
     public Customer getCustomerByEmailAndPass(String email) {
-        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER)) {
+
+        try (Connection connect = DBContext.getConnection()) {
+            PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER);
             ps.setString(1, email.trim());
 
             ResultSet rs = ps.executeQuery();
@@ -42,9 +44,9 @@ public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
 
     @Override
     public boolean deleteCustomerById(int customerId) {
-        Connection connect = DBContext.getConnection();
-        try(PreparedStatement ps = connect.prepareStatement(DELETE_CUSTOMER)) {
 
+        try(Connection connect = DBContext.getConnection();) {
+            PreparedStatement ps = connect.prepareStatement(DELETE_CUSTOMER);
             ps.setInt(1,customerId);
             int result = ps.executeUpdate();
             return result > 0;

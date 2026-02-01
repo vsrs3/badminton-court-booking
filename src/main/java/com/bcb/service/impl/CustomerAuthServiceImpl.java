@@ -51,7 +51,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                 return new CustomerResponse(false, "Delete account failed!", 1000);
             }
             connect.commit();
-            return new CustomerResponse(true, "Delete account successfull!", 1002);
+            return new CustomerResponse(true, "Delete account successfully!", 1002);
 
         } catch (Exception e) {
             return new CustomerResponse(false, e.getMessage(), 1004);
