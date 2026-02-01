@@ -4,6 +4,7 @@ import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Facility;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service interface for Facility business operations.
@@ -113,4 +114,6 @@ public interface FacilityService {
      * @throws BusinessException if facility has active bookings or doesn't exist
      */
     void delete(int facilityId) throws BusinessException;
+
+    Map<Integer, String> buildDisplayAddressMap(List<Facility> facilities);
 }

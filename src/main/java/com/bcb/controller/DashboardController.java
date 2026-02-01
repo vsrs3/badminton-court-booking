@@ -13,7 +13,7 @@ import java.io.IOException;
  *
  */
 
-@WebServlet("/admin/dashboard")
+@WebServlet("/owner/dashboard")
 public class DashboardController extends HttpServlet {
 
     @Override
@@ -27,6 +27,6 @@ public class DashboardController extends HttpServlet {
         request.setAttribute("monthlyBookings", 47);      // From BookingService
 
         // Forward to JSP
-        request.getRequestDispatcher("/jsp/admin/dashboard.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/owner/dashboard.jsp").forward(request, response);
     }
 }

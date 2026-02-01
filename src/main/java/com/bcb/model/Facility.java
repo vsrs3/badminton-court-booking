@@ -13,6 +13,8 @@ public class Facility {
     private String district;
     private String ward;
     private String address;
+    private Double latitude;
+    private Double longitude;
     private String description;
     private LocalTime openTime;
     private LocalTime closeTime;
@@ -24,14 +26,16 @@ public class Facility {
 
     // Full constructor
     public Facility(int facilityId, String name, String province, String district, String ward,
-                    String address, String description, LocalTime openTime, LocalTime closeTime,
-                    boolean isActive) {
+                    String address, Double latitude, Double longitude, String description,
+                    LocalTime openTime, LocalTime closeTime, boolean isActive) {
         this.facilityId = facilityId;
         this.name = name;
         this.province = province;
         this.district = district;
         this.ward = ward;
         this.address = address;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.description = description;
         this.openTime = openTime;
         this.closeTime = closeTime;
@@ -85,6 +89,22 @@ public class Facility {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 
     public String getDescription() {

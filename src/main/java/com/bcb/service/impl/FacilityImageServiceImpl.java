@@ -101,6 +101,18 @@ public class FacilityImageServiceImpl implements FacilityImageService {
 
     @Override
     public void update(FacilityImage currentThumbnail) {
+        if (currentThumbnail == null) {
+            throw new IllegalArgumentException("FacilityImage cannot be null");
+        }
 
+        if (currentThumbnail.getImageId() <= 0) {
+            throw new IllegalArgumentException("Invalid imageId");
+        }
+
+        if (currentThumbnail.getImagePath() == null || currentThumbnail.getImagePath().isBlank()) {
+            throw new IllegalArgumentException("Image path is required");
+        }
+
+        imageRepository.update(currentThumbnail);
     }
 }

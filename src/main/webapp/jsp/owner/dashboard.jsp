@@ -29,9 +29,9 @@
         <div class="row g-4 mb-4">
             <div class="col-12 col-md-6 col-xl-3">
                 <div class="stat-card">
-                    <div class="stat-icon bg-primary"><i class="bi bi-building"></i></div>
+                    <div class="stat-icon bg-emerald"><i class="bi bi-building"></i></div>
                     <div>
-                        <h6 class="text-muted mb-1">Total Locations</h6>
+                        <h6 class="text-muted mb-1 small">Total Locations</h6>
                         <h3 class="mb-0 fw-bold">${requestScope.totalLocations != null ? requestScope.totalLocations : 0}</h3>
                     </div>
                 </div>
@@ -41,7 +41,7 @@
                 <div class="stat-card">
                     <div class="stat-icon bg-info"><i class="bi bi-grid-3x3"></i></div>
                     <div>
-                        <h6 class="text-muted mb-1">Total Courts</h6>
+                        <h6 class="text-muted mb-1 small">Total Courts</h6>
                         <h3 class="mb-0 fw-bold">${requestScope.totalCourts != null ? requestScope.totalCourts : 0}</h3>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                 <div class="stat-card">
                     <div class="stat-icon bg-success"><i class="bi bi-check-circle"></i></div>
                     <div>
-                        <h6 class="text-muted mb-1">Active Courts</h6>
+                        <h6 class="text-muted mb-1 small">Active Courts</h6>
                         <h3 class="mb-0 fw-bold">${requestScope.activeCourts != null ? requestScope.activeCourts : 0}</h3>
                     </div>
                 </div>
@@ -61,23 +61,23 @@
                 <div class="stat-card">
                     <div class="stat-icon bg-warning"><i class="bi bi-calendar-check"></i></div>
                     <div>
-                        <h6 class="text-muted mb-1">Monthly Bookings</h6>
+                        <h6 class="text-muted mb-1 small">Monthly Bookings</h6>
                         <h3 class="mb-0 fw-bold">${requestScope.monthlyBookings != null ? requestScope.monthlyBookings : 0}</h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom py-3">
+        <div class="card">
+            <div class="card-header">
                 <h5 class="mb-0">Quick Actions</h5>
             </div>
             <div class="card-body">
-                <a href="${pageContext.request.contextPath}/admin/facility/list" class="btn btn-primary me-2">
-                    <i class="bi bi-plus-circle"></i> Manage Locations
+                <a href="${pageContext.request.contextPath}/owner/facility/list" class="btn btn-accent me-2">
+                    <i class="bi bi-plus-circle me-1"></i> Manage Locations
                 </a>
                 <button class="btn btn-outline-secondary">
-                    <i class="bi bi-gear"></i> System Settings
+                    <i class="bi bi-gear me-1"></i> System Settings
                 </button>
             </div>
         </div>

@@ -18,7 +18,7 @@
         <img
                 src="${sessionScope.avatarPath != null
                 ? sessionScope.avatarPath
-                : 'https://via.placeholder.com/40'}"
+                : 'https://placehold.co/40x40'}"
                 class="rounded-circle"
                 width="40"
                 height="40"

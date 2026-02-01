@@ -1,5 +1,6 @@
 package com.bcb.service.impl;
 
+import com.bcb.dto.CourtViewDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Court;
@@ -77,5 +78,10 @@ public class CourtServiceImpl implements CourtService {
             throw new BusinessException("COURT_HAS_BOOKINGS", "Cannot deactivate court with active bookings");
         }
         courtRepository.deactivate(courtId);
+    }
+
+    @Override
+    public List<CourtViewDTO> getCourtsByFacilityDTO(int facilityId) {
+        return courtRepository.findByFacilityForView(facilityId);
     }
 }

@@ -38,6 +38,11 @@ public class CourtValidator {
             errors.add("Court name cannot exceed " + MAX_COURT_NAME_LENGTH + " characters");
         }
 
+        // Validate court type ID
+        if (court.getCourtTypeId() <= 0) {
+            errors.add("Court type ID is required and must be positive");
+        }
+
         return errors;
     }
 

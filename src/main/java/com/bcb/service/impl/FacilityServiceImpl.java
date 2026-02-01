@@ -8,7 +8,11 @@ import com.bcb.repository.impl.FacilityRepositoryImpl;
 import com.bcb.service.FacilityService;
 import com.bcb.validation.FacilityValidator;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation of FacilityService.
@@ -155,5 +159,25 @@ public class FacilityServiceImpl implements FacilityService {
             throw new BusinessException("FACILITY_DELETE_ERROR",
                 "Failed to delete facility: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Map<Integer, String> buildDisplayAddressMap(List<Facility> facilities) {
+        Map<Integer, String> map = new HashMap<>();
+
+        for (Facility f : facilities) {
+            String fullAddress = Stream.of(
+                            f.getAddress(),
+                            f.getWard(),
+                            f.getDistrict(),
+                            f.getProvince()
+                    )
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.joining(", "));
+
+            map.put(f.getFacilityId(), fullAddress);
+        }
+
+        return map;
     }
 }

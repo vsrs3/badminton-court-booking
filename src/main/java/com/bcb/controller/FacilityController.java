@@ -1,5 +1,6 @@
 package com.bcb.controller;
 
+import com.bcb.config.ConfigUpload;
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Facility;
@@ -19,12 +20,15 @@ import jakarta.servlet.http.Part;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /*
@@ -32,7 +36,7 @@ import java.util.UUID;
  *
  */
 
-@WebServlet("/admin/facility/*")
+@WebServlet("/owner/facility/*")
 @MultipartConfig(
         fileSizeThreshold = 1024 * 1024 * 2, // 2MB
         maxFileSize = 1024 * 1024 * 10,      // 10MB
@@ -60,7 +64,7 @@ public class FacilityController extends HttpServlet {
         String pathInfo = request.getPathInfo();
 
         if (pathInfo == null || "/".equals(pathInfo)) {
-            response.sendRedirect(request.getContextPath() + "/admin/facility/list");
+            response.sendRedirect(request.getContextPath() + "/owner/facility/list");
             return;
         }
 
@@ -84,7 +88,7 @@ public class FacilityController extends HttpServlet {
             }
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
-            request.getRequestDispatcher("/jsp/admin/facility/facility-list.jsp")
+            request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                     .forward(request, response);
         }
     }
@@ -107,11 +111,11 @@ public class FacilityController extends HttpServlet {
             }
         } catch (ValidationException e) {
             request.setAttribute("error", "Validation error occurred");
-            request.getRequestDispatcher("/jsp/admin/facility/facility-form.jsp")
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
-            request.getRequestDispatcher("/jsp/admin/facility/facility-list.jsp")
+            request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                     .forward(request, response);
         }
     }
@@ -159,13 +163,17 @@ public class FacilityController extends HttpServlet {
         }
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
 
+        Map<Integer, String> addressMap =
+                facilityService.buildDisplayAddressMap(facilities);
+
         request.setAttribute("facilities", facilities);
+        request.setAttribute("addressMap", addressMap);
         request.setAttribute("currentPage", page);
         request.setAttribute("pageSize", pageSize);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalRecords", totalCount);
 
-        request.getRequestDispatcher("/jsp/admin/facility/facility-list.jsp")
+        request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                 .forward(request, response);
     }
 
@@ -187,7 +195,7 @@ public class FacilityController extends HttpServlet {
         request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
         request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
 
-        request.getRequestDispatcher("/jsp/admin/facility/facility-detail.jsp")
+        request.getRequestDispatcher("/jsp/owner/facility/facility-detail.jsp")
                 .forward(request, response);
     }
 
@@ -210,7 +218,7 @@ public class FacilityController extends HttpServlet {
         request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
         request.setAttribute("isEdit", true);
 
-        request.getRequestDispatcher("/jsp/admin/facility/facility-form.jsp")
+        request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                 .forward(request, response);
     }
 
@@ -218,21 +226,60 @@ public class FacilityController extends HttpServlet {
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.getRequestDispatcher("/jsp/admin/facility/facility-form.jsp")
+        request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                 .forward(request, response);
     }
 
 
     private void createFacility(HttpServletRequest request, HttpServletResponse response)
-            throws BusinessException, IOException {
+            throws BusinessException, IOException, ServletException {
 
         Facility facility = buildFacilityFromRequest(request);
-        FacilityValidator.validate(facility);
+        List<String> errors = FacilityValidator.validate(facility);
+
+        if (!errors.isEmpty()) {
+            request.setAttribute("errors", errors);
+            request.setAttribute("facility", facility);
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp").forward(request, response);
+            return;
+        }
 
         int facilityId = facilityService.create(facility);
 
+        Part thumbnailPart = request.getPart("thumbnail");
+        if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
+
+            String thumbnailPath = saveFile(thumbnailPart, request);
+
+            if (thumbnailPath != null) {
+                FacilityImage thumbnail = new FacilityImage();
+                thumbnail.setFacilityId(facilityId);
+                thumbnail.setImagePath(thumbnailPath);
+                thumbnail.setThumbnail(true);
+
+                facilityImageService.addImage(thumbnail);
+            }
+        }
+
+        // ================= GALLERY =================
+        for (Part part : request.getParts()) {
+            if ("gallery".equals(part.getName()) && part.getSize() > 0) {
+
+                String imagePath = saveFile(part, request);
+
+                if (imagePath != null) {
+                    FacilityImage galleryImg = new FacilityImage();
+                    galleryImg.setFacilityId(facilityId);
+                    galleryImg.setImagePath(imagePath);
+                    galleryImg.setThumbnail(false);
+
+                    facilityImageService.addImage(galleryImg);
+                }
+            }
+        }
+
         response.sendRedirect(request.getContextPath()
-                + "/admin/facility/view/" + facilityId);
+                + "/owner/facility/view/" + facilityId);
     }
 
     /* ===================== UPDATE ===================== */
@@ -252,7 +299,29 @@ public class FacilityController extends HttpServlet {
         facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
         facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
 
-        FacilityValidator.validate(facility);
+        List<String> errors = FacilityValidator.validate(facility);
+
+        if (!errors.isEmpty()) {
+            request.setAttribute("errors", errors);
+            request.setAttribute("facility", facility);
+            request.setAttribute("isEdit", true);
+
+            // load lại ảnh cũ
+            request.setAttribute("thumbnailImage",
+                    facilityImageService.getThumbnail(facilityId));
+            request.setAttribute("galleryImages",
+                    facilityImageService.getGallery(facilityId));
+
+            request.setAttribute("openTimeFormatted",
+                    formatTimeForInput(facility.getOpenTime()));
+            request.setAttribute("closeTimeFormatted",
+                    formatTimeForInput(facility.getCloseTime()));
+
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
+                    .forward(request, response);
+            return;
+        }
+
         facilityService.update(facility);
 
         // THUMBNAIL IMAGE
@@ -265,11 +334,13 @@ public class FacilityController extends HttpServlet {
                 FacilityImage currentThumbnail = facilityImageService.getThumbnail(facilityId);
 
                 if (currentThumbnail != null) {
+
+                    deleteFile(currentThumbnail.getImagePath(), request);
+
                     currentThumbnail.setImagePath(newThumbnailPath);
-                    // (Tuỳ chọn: Xóa file ảnh cũ trên ổ đĩa tại đây)
                     facilityImageService.update(currentThumbnail);
                 } else {
-                    //  Tạo mới
+                    //  Add new
                     FacilityImage newThumb = new FacilityImage();
                     newThumb.setFacilityId(facilityId);
                     newThumb.setImagePath(newThumbnailPath);
@@ -280,15 +351,20 @@ public class FacilityController extends HttpServlet {
         }
 
 
-        //XÓA ẢNH GALLERY CŨ
+        // Delete gallery images
         String deletedIds = request.getParameter("deletedIds");
         if (deletedIds != null && !deletedIds.isEmpty()) {
             String[] ids = deletedIds.split(",");
             for (String idStr : ids) {
                 try {
+
                     int imgId = Integer.parseInt(idStr);
-                    // Hàm delete này sẽ: DELETE FROM FacilityImage WHERE image_id = ?
-                    facilityImageService.deleteImage(imgId);
+                    FacilityImage image = facilityImageService.getImageById(imgId);
+
+                    if (image != null) {
+                        deleteFile(image.getImagePath(), request);
+                        facilityImageService.deleteImage(imgId);
+                    }
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }
@@ -296,10 +372,8 @@ public class FacilityController extends HttpServlet {
         }
 
 
-        // THÊM ẢNH GALLERY MỚI
         Collection<Part> parts = request.getParts();
         for (Part part : parts) {
-            // Chỉ lấy input có name="gallery"
             if ("gallery".equals(part.getName()) && part.getSize() > 0) {
 
                 String imagePath = saveFile(part, request);
@@ -308,7 +382,7 @@ public class FacilityController extends HttpServlet {
                     FacilityImage galleryImg = new FacilityImage();
                     galleryImg.setFacilityId(facilityId);
                     galleryImg.setImagePath(imagePath);
-                    galleryImg.setThumbnail(false); // Set bit = 0 (Mặc định)
+                    galleryImg.setThumbnail(false);
 
                     facilityImageService.addImage(galleryImg);
                 }
@@ -316,7 +390,7 @@ public class FacilityController extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath()
-                + "/admin/facility/view/" + facilityId);
+                + "/owner/facility/view/" + facilityId);
     }
 
     /* ===================== DELETE ===================== */
@@ -328,7 +402,7 @@ public class FacilityController extends HttpServlet {
         int facilityId = Integer.parseInt(pathInfo.substring("/delete/".length()));
         facilityService.delete(facilityId);
 
-        response.sendRedirect(request.getContextPath() + "/admin/facility/list");
+        response.sendRedirect(request.getContextPath() + "/owner/facility/list");
     }
 
     /* ===================== HELPERS ===================== */
@@ -340,6 +414,17 @@ public class FacilityController extends HttpServlet {
         facility.setDistrict(request.getParameter("district"));
         facility.setWard(request.getParameter("ward"));
         facility.setAddress(request.getParameter("address"));
+
+        String latStr = request.getParameter("latitude");
+        if (latStr != null && !latStr.isBlank()) {
+            facility.setLatitude(Double.parseDouble(latStr));
+        }
+
+        String lngStr = request.getParameter("longitude");
+        if (lngStr != null && !lngStr.isBlank()) {
+            facility.setLongitude(Double.parseDouble(lngStr));
+        }
+
         facility.setDescription(request.getParameter("description"));
         facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
         facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
@@ -348,40 +433,53 @@ public class FacilityController extends HttpServlet {
     }
 
     // Hàm hỗ trợ lưu file từ Part vào thư mục server
-    private String saveFile(Part part, HttpServletRequest request) throws IOException {
+    private String saveFile(Part part, HttpServletRequest request) throws IOException, BusinessException {
 
         String submitted = Paths.get(part.getSubmittedFileName())
                 .getFileName().toString();
 
-        if (submitted.isBlank()) {
-            return null;
-        }
+        if (submitted.isBlank()) return null;
 
-        // validate mime
         if (!part.getContentType().startsWith("image/")) {
-            throw new IOException("Only image files are allowed");
+            throw new BusinessException("Only image files allowed");
         }
 
-        // lấy extension
         String ext = "";
         int dot = submitted.lastIndexOf('.');
-        if (dot > 0) {
-            ext = submitted.substring(dot);
+        if (dot > 0) ext = submitted.substring(dot);
+
+        String fileName = UUID.randomUUID() + ext;
+
+        String rootPath = ConfigUpload.getUploadLocation();
+
+        File uploadDir = new File(rootPath, "facility");
+        if (!uploadDir.exists()) uploadDir.mkdirs();
+
+        File file = new File(uploadDir, fileName);
+
+        try (InputStream in = part.getInputStream()) {
+            Files.copy(in, file.toPath());
         }
 
-        String uniqueFileName = UUID.randomUUID() + ext;
+        // DB chỉ lưu path logic (relative từ /uploads/)
+        return "facility/" + fileName;
+    }
 
-        String uploadPath = request.getServletContext()
-                .getRealPath("/assets/images/facility");
+    // delete files
+    private void deleteFile(String imagePath, HttpServletRequest request) {
 
-        File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+        if (imagePath == null || imagePath.isBlank()) return;
+
+        String rootPath = ConfigUpload.getUploadLocation();
+
+        File file = new File(rootPath, imagePath);
+
+        if (file.exists() && file.isFile()) {
+            boolean deleted = file.delete();
+            if (!deleted) {
+                System.err.println("Cannot delete file: " + file.getAbsolutePath());
+            }
         }
-
-        part.write(uploadPath + File.separator + uniqueFileName);
-
-        return "assets/images/facility/" + uniqueFileName;
     }
 
 

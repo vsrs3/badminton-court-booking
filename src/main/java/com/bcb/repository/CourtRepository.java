@@ -1,5 +1,6 @@
 package com.bcb.repository;
 
+import com.bcb.dto.CourtViewDTO;
 import com.bcb.model.Court;
 import java.util.List;
 import java.util.Optional;
@@ -62,4 +63,6 @@ public interface CourtRepository {
      * @return Total count
      */
     int countByFacility(int facilityId);
+
+    List<CourtViewDTO> findByFacilityForView(int facilityId);
 }

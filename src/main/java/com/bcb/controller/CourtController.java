@@ -3,10 +3,13 @@ package com.bcb.controller;
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Court;
+import com.bcb.model.CourtType;
 import com.bcb.model.Facility;
 import com.bcb.service.CourtService;
+import com.bcb.service.CourtTypeService;
 import com.bcb.service.FacilityService;
 import com.bcb.service.impl.CourtServiceImpl;
+import com.bcb.service.impl.CourtTypeServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
 import com.bcb.validation.CourtValidator;
 import jakarta.servlet.ServletException;
@@ -16,21 +19,24 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 
 /*
-*   @Author: AnhTN
-*
-*/
-@WebServlet("/admin/courts/*")
+ *   @Author: AnhTN
+ *
+ */
+@WebServlet("/owner/courts/*")
 public class CourtController extends HttpServlet {
 
     private CourtService courtService;
     private FacilityService facilityService;
+    private CourtTypeService courtTypeService;
 
     @Override
     public void init() {
         courtService = new CourtServiceImpl();
         facilityService = new FacilityServiceImpl();
+        courtTypeService = new CourtTypeServiceImpl();
     }
 
     // ==========================
@@ -50,17 +56,13 @@ public class CourtController extends HttpServlet {
 
             if (pathInfo.startsWith("/list/")) {
                 listCourts(request, response, pathInfo);
-            }
-            else if (pathInfo.startsWith("/view/")) {
+            } else if (pathInfo.startsWith("/view/")) {
                 viewCourt(request, response, pathInfo);
-            }
-            else if (pathInfo.startsWith("/detail/")) {
+            } else if (pathInfo.startsWith("/detail/")) {
                 getCourtDetailJson(request, response, pathInfo);
-            }
-            else if (pathInfo.startsWith("/delete/")) {
+            } else if (pathInfo.startsWith("/delete/")) {
                 deactivateCourt(request, response, pathInfo);
-            }
-            else {
+            } else {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 
@@ -101,9 +103,10 @@ public class CourtController extends HttpServlet {
         int facilityId = Integer.parseInt(pathInfo.substring("/list/".length()));
 
         request.setAttribute("facility", facilityService.findById(facilityId));
-        request.setAttribute("courts", courtService.getCourtsByFacility(facilityId));
+        request.setAttribute("courts", courtService.getCourtsByFacilityDTO(facilityId));
+        request.setAttribute("courtTypes", courtTypeService.getAllTypes());
 
-        request.getRequestDispatcher("/jsp/admin/court/court-list.jsp")
+        request.getRequestDispatcher("/jsp/owner/court/court-list.jsp")
                 .forward(request, response);
     }
 
@@ -116,10 +119,12 @@ public class CourtController extends HttpServlet {
         Court court = courtService.getCourtById(courtId);
         Facility facility = facilityService.findById(court.getFacilityId());
 
+
         request.setAttribute("court", court);
         request.setAttribute("facility", facility);
 
-        request.getRequestDispatcher("/jsp/admin/court/court-detail.jsp")
+
+        request.getRequestDispatcher("/jsp/owner/court/court-detail.jsp")
                 .forward(request, response);
     }
 
@@ -137,15 +142,15 @@ public class CourtController extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
 
         String json = String.format("""
-                {
-                    "courtId": %d,
-                    "courtName": "%s",
-                    "description": "%s"
-                }
-                """,
+                        {
+                            "courtId": %d,
+                            "courtName": "%s",
+                            "courtTypeId": %d
+                        }
+                        """,
                 court.getCourtId(),
                 escapeJson(court.getCourtName()),
-                escapeJson(court.getDescription())
+                court.getCourtTypeId()
         );
 
         response.getWriter().write(json);
@@ -160,31 +165,46 @@ public class CourtController extends HttpServlet {
         String courtIdStr = request.getParameter("courtId");
         int facilityId = Integer.parseInt(request.getParameter("facilityId"));
 
+        String courtName = request.getParameter("courtName");
+        String courtTypeIdStr = request.getParameter("courtTypeId");
+
+        if (courtTypeIdStr == null || courtTypeIdStr.isEmpty()) {
+            throw new ValidationException("Court type is required");
+        }
+
+        int courtTypeId = Integer.parseInt(courtTypeIdStr);
+
+        Court court;
+
         if (courtIdStr == null || courtIdStr.isEmpty()) {
-            // ===== CREATE =====
-            Court court = new Court();
+            // create
+            court = new Court();
             court.setFacilityId(facilityId);
-            court.setCourtName(request.getParameter("courtName"));
-            court.setDescription(request.getParameter("description"));
             court.setActive(true);
 
-            CourtValidator.validate(court);
-            courtService.createCourt(court);
-
         } else {
-            // ===== UPDATE =====
+            // update
             int courtId = Integer.parseInt(courtIdStr);
-            Court court = courtService.getCourtById(courtId);
+            court = courtService.getCourtById(courtId);
 
-            court.setCourtName(request.getParameter("courtName"));
-            court.setDescription(request.getParameter("description"));
+            if (court == null) {
+                throw new BusinessException("Court not found");
+            }
+        }
 
-            CourtValidator.validate(court);
+        court.setCourtName(courtName);
+        court.setCourtTypeId(courtTypeId);
+
+        CourtValidator.validate(court);
+
+        if (courtIdStr == null || courtIdStr.isEmpty()) {
+            courtService.createCourt(court);
+        } else {
             courtService.updateCourt(court);
         }
 
         response.sendRedirect(
-                request.getContextPath() + "/admin/courts/list/" + facilityId
+                request.getContextPath() + "/owner/courts/list/" + facilityId
         );
     }
 
@@ -198,7 +218,7 @@ public class CourtController extends HttpServlet {
         courtService.deactivateCourt(courtId);
 
         response.sendRedirect(
-                request.getContextPath() + "/admin/courts/list/" + court.getFacilityId()
+                request.getContextPath() + "/owner/courts/list/" + court.getFacilityId()
         );
     }
 

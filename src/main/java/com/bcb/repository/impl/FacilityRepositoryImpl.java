@@ -5,6 +5,7 @@ import com.bcb.model.Facility;
 import com.bcb.repository.FacilityRepository;
 import com.bcb.utils.DBContext;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -22,11 +23,9 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public List<Facility> findAll(int limit, int offset) {
-        String sql = "SELECT facility_id, name, province, district, ward, address, " +
-                     "description, open_time, close_time, is_active " +
-                     "FROM Facility " +
-                     "WHERE is_active = 1 " +
-                     "ORDER BY facility_id DESC " +
+        String sql = "SELECT f.* FROM Facility f " +
+                     "WHERE f.is_active = 1 " +
+                     "ORDER BY f.facility_id DESC " +
                      "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
         List<Facility> facilities = new ArrayList<>();
@@ -51,7 +50,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public int count() {
-        String sql = "SELECT COUNT(*) FROM Facility";
+        String sql = "SELECT COUNT(*) FROM Facility WHERE is_active = 1";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -69,11 +68,9 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public List<Facility> findByName(String name, int limit, int offset) {
-        String sql = "SELECT facility_id, name, province, district, ward, address, " +
-                     "description, open_time, close_time, is_active " +
-                     "FROM Facility " +
-                     "WHERE name LIKE ? " +
-                     "ORDER BY facility_id DESC " +
+        String sql = "SELECT f.* FROM Facility f " +
+                     "WHERE f.name LIKE ? AND f.is_active = 1 " +
+                     "ORDER BY f.facility_id DESC " +
                      "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
         List<Facility> facilities = new ArrayList<>();
@@ -122,43 +119,39 @@ public class FacilityRepositoryImpl implements FacilityRepository {
     public List<Facility> findByLocation(String address, String province, String district,
                                           String ward, int limit, int offset) {
         StringBuilder sql = new StringBuilder(
-            "SELECT facility_id, name, province, district, ward, address, " +
-            "description, open_time, close_time, is_active " +
-            "FROM Facility WHERE 1=1 "
+            "SELECT f.* FROM Facility f WHERE 1=1 "
         );
 
         List<Facility> facilities = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
         if (address != null && !address.trim().isEmpty()) {
-            sql.append("AND address LIKE ? ");
+            sql.append("AND f.address LIKE ? ");
             params.add("%" + address + "%");
         }
         if (province != null && !province.trim().isEmpty()) {
-            sql.append("AND province LIKE ? ");
+            sql.append("AND f.province LIKE ? ");
             params.add("%" + province + "%");
         }
         if (district != null && !district.trim().isEmpty()) {
-            sql.append("AND district LIKE ? ");
+            sql.append("AND f.district LIKE ? ");
             params.add("%" + district + "%");
         }
         if (ward != null && !ward.trim().isEmpty()) {
-            sql.append("AND ward LIKE ? ");
+            sql.append("AND f.ward LIKE ? ");
             params.add("%" + ward + "%");
         }
 
-        sql.append("ORDER BY facility_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        sql.append("ORDER BY f.facility_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         params.add(offset);
         params.add(limit);
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
 
-            for (int i = 0; i < params.size() - 2; i++) {
-                pstmt.setString(i + 1, (String) params.get(i));
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
             }
-            pstmt.setInt(params.size() - 1, (Integer) params.get(params.size() - 2));
-            pstmt.setInt(params.size(), (Integer) params.get(params.size() - 1));
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -215,13 +208,11 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public List<Facility> findByKeyword(String keyword, int limit, int offset) {
-        String sql = "SELECT facility_id, name, province, district, ward, address, " +
-                     "description, open_time, close_time, is_active " +
-                     "FROM Facility " +
-                     "WHERE is_active = 1 AND (" +
-                     "name LIKE ? OR address LIKE ? OR province LIKE ? OR " +
-                     "district LIKE ? OR ward LIKE ?)" +
-                     "ORDER BY facility_id DESC " +
+        String sql = "SELECT f.* FROM Facility f " +
+                     "WHERE f.is_active = 1 AND (" +
+                     "f.name LIKE ? OR f.address LIKE ? OR f.province LIKE ? OR " +
+                     "f.district LIKE ? OR f.ward LIKE ?)" +
+                     "ORDER BY f.facility_id DESC " +
                      "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
         List<Facility> facilities = new ArrayList<>();
@@ -281,10 +272,8 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public Optional<Facility> findById(int facilityId) {
-        String sql = "SELECT facility_id, name, province, district, ward, address, description, " +
-                     "open_time, close_time, is_active " +
-                     "FROM Facility " +
-                     "WHERE facility_id = ?";
+        String sql = "SELECT f.* FROM Facility f " +
+                     "WHERE f.facility_id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -305,9 +294,9 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public int insert(Facility facility) {
-        String sql = "INSERT INTO Facility (name, province, district, ward, address, description, " +
+        String sql = "INSERT INTO Facility (name, province, district, ward, address, latitude, longitude, description, " +
                      "open_time, close_time, is_active) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -317,10 +306,12 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             pstmt.setString(3, facility.getDistrict());
             pstmt.setString(4, facility.getWard());
             pstmt.setString(5, facility.getAddress());
-            pstmt.setString(6, facility.getDescription());
-            pstmt.setString(7, facility.getOpenTime().toString());
-            pstmt.setString(8, facility.getCloseTime().toString());
-            pstmt.setBoolean(9, facility.isActive());
+            pstmt.setObject(6, facility.getLatitude());
+            pstmt.setObject(7, facility.getLongitude());
+            pstmt.setString(8, facility.getDescription());
+            pstmt.setTime(9, Time.valueOf(facility.getOpenTime()));
+            pstmt.setTime(10, Time.valueOf(facility.getCloseTime()));
+            pstmt.setBoolean(11, facility.isActive());
 
             pstmt.executeUpdate();
 
@@ -340,7 +331,8 @@ public class FacilityRepositoryImpl implements FacilityRepository {
     public int update(Facility facility) {
         String sql = "UPDATE Facility " +
                      "SET name = ?, province = ?, district = ?, ward = ?, " +
-                     "address = ?, description = ?, open_time = ?, close_time = ?, is_active = ? " +
+                     "address = ?, latitude = ?, longitude = ?, description = ?, " +
+                     "open_time = ?, close_time = ?, is_active = ? " +
                      "WHERE facility_id = ?";
 
         try (Connection conn = DBContext.getConnection();
@@ -351,11 +343,13 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             pstmt.setString(3, facility.getDistrict());
             pstmt.setString(4, facility.getWard());
             pstmt.setString(5, facility.getAddress());
-            pstmt.setString(6, facility.getDescription());
-            pstmt.setString(7, facility.getOpenTime().toString());
-            pstmt.setString(8, facility.getCloseTime().toString());
-            pstmt.setBoolean(9, facility.isActive());
-            pstmt.setInt(10, facility.getFacilityId());
+            pstmt.setObject(6, facility.getLatitude());
+            pstmt.setObject(7, facility.getLongitude());
+            pstmt.setString(8, facility.getDescription());
+            pstmt.setTime(9, Time.valueOf(facility.getOpenTime()));
+            pstmt.setTime(10, Time.valueOf(facility.getCloseTime()));
+            pstmt.setBoolean(11, facility.isActive());
+            pstmt.setInt(12, facility.getFacilityId());
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -384,7 +378,12 @@ public class FacilityRepositoryImpl implements FacilityRepository {
                      "INNER JOIN Court c ON b.court_id = c.court_id " +
                      "WHERE c.facility_id = ? " +
                      "AND b.booking_status IN ('PENDING', 'CONFIRMED') " +
-                     "AND CAST(CONCAT(b.booking_date, ' ', b.start_time) AS DATETIME) >= GETDATE()";
+                     "AND EXISTS (" +
+                     "    SELECT 1 FROM BookingSlot bs " +
+                     "    INNER JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
+                     "    WHERE bs.booking_id = b.booking_id " +
+                     "    AND CAST(b.booking_date AS DATETIME) + CAST(ts.start_time AS DATETIME) >= GETDATE()" +
+                     ")";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -407,17 +406,22 @@ public class FacilityRepositoryImpl implements FacilityRepository {
      * Maps ResultSet row to Facility object.
      */
     private Facility mapResultSetToFacility(ResultSet rs) throws SQLException {
-        return new Facility(
-            rs.getInt("facility_id"),
-            rs.getString("name"),
-            rs.getString("province"),
-            rs.getString("district"),
-            rs.getString("ward"),
-            rs.getString("address"),
-            rs.getString("description"),
-            LocalTime.parse(rs.getTime("open_time").toString()),
-            LocalTime.parse(rs.getTime("close_time").toString()),
-            rs.getBoolean("is_active")
-        );
+        Facility f = new Facility();
+        f.setFacilityId(rs.getInt("facility_id"));
+        f.setName(rs.getString("name"));
+        f.setProvince(rs.getString("province"));
+        f.setDistrict(rs.getString("district"));
+        f.setWard(rs.getString("ward"));
+        f.setAddress(rs.getString("address"));
+        BigDecimal lat = rs.getBigDecimal("latitude");
+        BigDecimal lng = rs.getBigDecimal("longitude");
+
+        f.setLatitude(lat != null ? lat.doubleValue() : null);
+        f.setLongitude(lng != null ? lng.doubleValue() : null);
+        f.setDescription(rs.getString("description"));
+        f.setOpenTime(rs.getTime("open_time").toLocalTime());
+        f.setCloseTime(rs.getTime("close_time").toLocalTime());
+        f.setActive(rs.getBoolean("is_active"));
+        return f;
     }
 }

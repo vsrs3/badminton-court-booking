@@ -22,7 +22,7 @@
         </div>
 
         <%-- BACK BUTTON --%>
-            <a href="${pageContext.request.contextPath}/admin/courts/list/${facility.facilityId}"
+            <a href="${pageContext.request.contextPath}/owner/courts/list/${facility.facilityId}"
                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i> Back to Courts
             </a>
