@@ -45,8 +45,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
             }
             connect.commit();
 
-            Customer customer = repo.getCustomerById(accountId);
             CustomerResponse result = new CustomerResponse(true, "Update successull", 1002);
+            Customer customer = repo.getCustomerById(accountId);
             result.setCustomer(customer);
             return result;
 
@@ -84,8 +84,8 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
             connect.commit();
 
-            Customer customer = repo.getCustomerById(accountId);
             CustomerResponse result = new CustomerResponse(true, "Update successull", 1002);
+            Customer customer = repo.getCustomerById(accountId);
             result.setCustomer(customer);
             return result;
 

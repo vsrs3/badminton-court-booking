@@ -7,16 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin cá nhân - Badminton Booking</title>
 
-    <!-- Font Awesome -->
+    <!-- Font Awesome Icon-->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/Header.css">
     <link rel="stylesheet" href="assets/css/Footer.css">
     <link rel="stylesheet" href="assets/css/Profile.css">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-<header><jsp:include page="/view/common/header.jsp"/></header>
+<header><jsp:include page="/jsp/common/header.jsp"/></header>
 
 
 <!-- Main Profile Page Wrapper -->
@@ -78,11 +81,17 @@
                 <!-- Main Menu -->
                 <nav class="sidebar-menu">
                     <!-- NHÓM LỊCH SỬ -->
-                    <h4 class="menu-title">Lịch sử</h4>
+                    <h4 class="menu-title">Hoạt động</h4>
 
                     <a href="?section=history-courts" class="menu-item ${param.section == 'history-courts' ? 'active' : ''}">
                         <i class="fas fa-volleyball-ball"></i>
                         <span>Lịch sử đặt sân</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+
+                    <a href="?section=favorite" class="menu-item ${param.section == 'address' ? 'active' : ''}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Quản lý sân yêu thích</span>
                         <i class="fas fa-chevron-right"></i>
                     </a>
 
@@ -103,18 +112,6 @@
                         </a>
                     </c:if>
 
-                    <a href="?section=favorite" class="menu-item ${param.section == 'address' ? 'active' : ''}">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Quản lý sân yêu thích</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <a href="?section=notifications-settings" class="menu-item ${param.section == 'notifications-settings' ? 'active' : ''}">
-                        <i class="fas fa-bell"></i>
-                        <span>Cài đặt thông báo</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
                     <a href="?section=privacy" class="menu-item ${param.section == 'privacy' ? 'active' : ''}">
                         <i class="fas fa-shield-alt"></i>
                         <span>Bảo mật & Quyền riêng tư</span>
@@ -124,6 +121,12 @@
                     <a href="?section=support" class="menu-item ${param.section == 'support' ? 'active' : ''}">
                         <i class="fas fa-headset"></i>
                         <span>Hỗ trợ</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+
+                    <a href="?section=settings" class="menu-item ${param.section == 'settings' ? 'active' : ''}">
+                        <i class="fas fa-cog"></i>
+                        <span>Cài đặt</span>
                         <i class="fas fa-chevron-right"></i>
                     </a>
                 </nav>
@@ -152,100 +155,82 @@
                     <jsp:include page="customer_favorite.jsp"/>
                 </c:if>
 
+                <!-- ========== CÀI ĐẶT ========== -->
+                <c:if test="${param.section == 'settings'}">
+                    <jsp:include page="customer_setting.jsp"/>
+                </c:if>
+
             </main>
         </div>
     </div>
 </div>
 
 <!-- Footer -->
-<footer><jsp:include page="/view/common/footer.jsp"/></footer>
+<footer><jsp:include page="/jsp/common/footer.jsp"/></footer>
 
-<!-- JavaScript -->
-<script>
-    function previewAvatar(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const preview = document.getElementById('avatarPreview');
-                const icon = document.getElementById('avatarIcon');
+    <!-- JavaScript -->
+    <script src="<c:url value='/assets/js/AlertPopup.js' />"></script>
+    <script src="<c:url value='/assets/js/PreviewAvatar.js' />"></script>
 
-                if (preview) {
-                    preview.src = e.target.result;
-                } else if (icon) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.id = 'avatarPreview';
-                    icon.parentNode.replaceChild(img, icon);
-                }
-            };
-            reader.readAsDataURL(input.files[0]);
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = field.nextElementSibling;
+            const icon = button.querySelector('i');
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
         }
-    }
 
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const button = field.nextElementSibling;
-        const icon = button.querySelector('i');
-
-        if (field.type === 'password') {
-            field.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            field.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
+        function viewBookingDetail(bookingId) {
+            window.location.href = 'booking?action=detail&id=' + bookingId;
         }
-    }
 
-    function viewBookingDetail(bookingId) {
-        window.location.href = 'booking?action=detail&id=' + bookingId;
-    }
-
-    function cancelBooking(bookingId) {
-        if (confirm('Bạn có chắc chắn muốn hủy lịch đặt sân này?')) {
-            window.location.href = 'booking?action=cancel&id=' + bookingId;
+        function payBooking(bookingId) {
+            window.location.href = 'booking?action=payment&id=' + bookingId;
         }
-    }
 
-    function payBooking(bookingId) {
-        window.location.href = 'booking?action=payment&id=' + bookingId;
-    }
+        function reviewBooking(bookingId) {
+            window.location.href = 'review?action=create&booking_id=' + bookingId;
+        }
 
-    function reviewBooking(bookingId) {
-        window.location.href = 'review?action=create&booking_id=' + bookingId;
-    }
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const bookingCards = document.querySelectorAll('.booking-card');
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const bookingCards = document.querySelectorAll('.booking-card');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const status = this.getAttribute('data-status');
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
 
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                const status = this.getAttribute('data-status');
-                tabBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                bookingCards.forEach(card => {
-                    if (status === 'all' || card.getAttribute('data-status') === status) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    bookingCards.forEach(card => {
+                        if (status === 'all' || card.getAttribute('data-status') === status) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
                 });
             });
-        });
 
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function (alert) {
-            setTimeout(function () {
-                alert.style.opacity = '0';
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function (alert) {
                 setTimeout(function () {
-                    alert.style.display = 'none';
-                }, 300);
-            }, 5000);
+                    alert.style.opacity = '0';
+                    setTimeout(function () {
+                        alert.style.display = 'none';
+                    }, 300);
+                }, 5000);
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>

@@ -1,16 +1,20 @@
 package com.bcb.repository.impl;
 
 import com.bcb.model.Customer;
+import com.bcb.repository.CustomerAuthRepository;
 import com.bcb.utils.DBContext;
 
 import java.sql.*;
 
-public class CustomerLoginRepositoryImpl implements com.bcb.repository.CustomerLoginRepository {
+public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
+
+    private final String GET_CUSTOMER = "Select * From Account where email = ?";
+
+    private final String DELETE_CUSTOMER = "Delete From Account Where account_id = ?";
+
    @Override
     public Customer getCustomerByEmailAndPass(String email) {
-        String sql = "Select * From Account where email = ?";
-
-        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(sql)) {
+        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER)) {
             ps.setString(1, email.trim());
 
             ResultSet rs = ps.executeQuery();
@@ -34,5 +38,21 @@ public class CustomerLoginRepositoryImpl implements com.bcb.repository.CustomerL
             System.out.println(e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public boolean deleteCustomerById(int customerId) {
+        Connection connect = DBContext.getConnection();
+        try(PreparedStatement ps = connect.prepareStatement(DELETE_CUSTOMER)) {
+
+            ps.setInt(1,customerId);
+            int result = ps.executeUpdate();
+            return result > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+        return false;
     }
 }

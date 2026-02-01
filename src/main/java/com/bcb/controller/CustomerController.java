@@ -3,9 +3,9 @@ package com.bcb.controller;
 import com.bcb.dto.CustomerChangePassDTO;
 import com.bcb.dto.CustomerLoginDTO;
 import com.bcb.dto.CustomerProfileDTO;
-import com.bcb.service.CustomerLoginService;
+import com.bcb.service.CustomerAuthService;
 import com.bcb.service.CustomerProfileService;
-import com.bcb.service.impl.CustomerLoginServiceImpl;
+import com.bcb.service.impl.CustomerAuthServiceImpl;
 import com.bcb.service.impl.CustomerProfileServiceImpl;
 import com.bcb.dto.response.CustomerResponse;
 import com.bcb.model.Customer;
@@ -24,13 +24,25 @@ import java.io.IOException;
 )
 public class CustomerController extends HttpServlet {
 
-    private final CustomerLoginService loginService = new CustomerLoginServiceImpl();
+    private final CustomerAuthService authService = new CustomerAuthServiceImpl();
     private final CustomerProfileService profileService = new CustomerProfileServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect(request.getContextPath() + "/home");
+        String action = request.getParameter("action");
+        System.out.println("Action = " + action);
+
+        if(action != null) {
+            switch (action) {
+                case "logout" -> {
+                    logout(request, response);
+                }
+                case "deleteAccount" -> {
+                    deleteAccount(request, response);
+                }
+            }
+        }
     }
 
     @Override
@@ -59,7 +71,7 @@ public class CustomerController extends HttpServlet {
 
         try {
             CustomerLoginDTO dto = new CustomerLoginDTO(email);
-            CustomerResponse result = loginService.login(dto);
+            CustomerResponse result = authService.login(dto);
 
             HttpSession session = request.getSession();
             if (result.isSuccess()) {
@@ -134,4 +146,37 @@ public class CustomerController extends HttpServlet {
             System.out.println(e.getMessage());
         }
     }
+
+    private void logout (HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        try {
+            HttpSession session = request.getSession();
+            if (session != null) {
+                session.invalidate();
+            }
+            response.sendRedirect(request.getContextPath() + "/home");
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void deleteAccount (HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        Customer customer = (Customer) session.getAttribute("customer");
+
+        int customerId = customer.getAccountId();
+        CustomerResponse result = authService.deleteAccount(customerId);
+
+        if(result.isSuccess()){
+            session.setAttribute("delSuccess", result.getMessage());
+            response.sendRedirect(request.getContextPath() + "/home");
+        } else {
+            session.setAttribute("delFailed", result.getMessage());
+            response.sendRedirect(request.getContextPath() + "/profile?section=settings");
+        }
+    }
+
 }

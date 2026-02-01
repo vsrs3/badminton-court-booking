@@ -41,15 +41,14 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
-            return false;
         }
+        return false;
     }
 
     @Override
     public boolean updatePassword(String oldPass, String newPass, int accountId) {
 
-        DBContext db = new DBContext();
-        Connection connect = db.getConnection();
+        Connection connect = DBContext.getConnection();
         try (PreparedStatement ps = connect.prepareStatement(UPDATE_PASSWORD)){
             ps.setString(1, newPass);
             ps.setInt(2, accountId);
@@ -61,15 +60,14 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.getMessage());
-            return false;
         }
+        return false;
     }
 
     @Override
     public Customer getCustomerById(int cusId) {
 
-        DBContext db = new DBContext();
-        Connection connect = db.getConnection();
+        Connection connect = DBContext.getConnection();
         try (PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER_BY_ID)) {
             ps.setInt(1, cusId);
 
