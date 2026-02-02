@@ -119,6 +119,9 @@
     <!-- Court Detail Modal -->
     <jsp:include page="../common/court-detail.jsp" />
 
+    <!-- Auth Modal -->
+    <jsp:include page="../common/auth-modal.jsp" />
+
     <!-- Court Card Template -->
     <jsp:include page="../common/court-card.jsp" />
 

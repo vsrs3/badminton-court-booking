@@ -61,7 +61,9 @@
                     <i class="bi bi-calendar-check"></i>
                     <span class="action-text">Lịch sử đặt</span>
                 </button>
-                <button class="action-btn" id="favoriteBtn">
+                <button
+                        id="favoriteBtn"
+                        class="action-btn">
                     <i class="bi bi-heart"></i>
                     <span class="action-text">Yêu thích</span>
                 </button>

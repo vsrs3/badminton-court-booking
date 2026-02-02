@@ -43,6 +43,60 @@
     let hasMore = true;
 
     // ============================================
+    // AUTH MODAL FUNCTIONS
+    // ============================================
+
+    /**
+     * Show auth modal (login required)
+     */
+    function showAuthModal() {
+        const backdrop = document.getElementById('authModalBackdrop');
+        const modal = document.getElementById('authModal');
+
+        if (backdrop && modal) {
+            backdrop.classList.add('active');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Close auth modal
+     */
+    function closeAuthModal() {
+        const backdrop = document.getElementById('authModalBackdrop');
+        const modal = document.getElementById('authModal');
+
+        if (backdrop && modal) {
+            backdrop.classList.remove('active');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Check if user is logged in
+     * TODO: Implement actual session check
+     */
+    function isUserLoggedIn() {
+        // For now, always return false (guest mode)
+        // Later: Check session/cookie/localStorage
+        return false;
+    }
+
+    /**
+     * Require login for a feature
+     */
+    function requireLogin(featureName) {
+        if (!isUserLoggedIn()) {
+            console.log('🔒 Login required for:', featureName);
+            showAuthModal();
+            return false;
+        }
+        return true;
+    }
+
+    // ============================================
     // UTILITY FUNCTIONS
     // ============================================
 
@@ -367,11 +421,16 @@
         document.querySelectorAll('.btn-book').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
+
+                // Require login
+                if (!requireLogin('Đặt sân')) {
+                    return;
+                }
+
                 const courtId = this.dataset.courtId;
                 const court = AppState.courts.find(c => c.id === courtId);
                 if (court) {
-                    showToast(`Đang mở trang đặt lịch cho ${court.name}`);
-                    // TODO: Implement booking flow
+                    // TODO: Navigate to booking page
                 }
             });
         });
@@ -430,6 +489,17 @@
                 }
             }, 100);
         }
+
+        // Check login requirement for certain tabs
+        if (tabName === TABS.BOOKING || tabName === TABS.OFFER || tabName === TABS.PROFILE) {
+            if (!requireLogin('Tính năng này')) {
+                return; // Don't switch tab if not logged in
+            }
+        }
+
+        if (AppState.currentTab === tabName) return;
+
+        AppState.currentTab = tabName;
     }
 
     // ============================================
@@ -840,9 +910,15 @@
         const detailBookBtn = document.getElementById('detailBookBtn');
         if (detailBookBtn) {
             detailBookBtn.addEventListener('click', function() {
+                // Require login
+                if (!requireLogin('Đặt sân')) {
+                    closeCourtDetail(); // Close detail first
+                    return;
+                }
+
                 if (AppState.selectedCourt) {
-                    showToast(`Đang mở form đặt lịch cho ${AppState.selectedCourt.name}`);
-                    // TODO: Implement booking flow
+                    // TODO: Navigate to booking page
+                    console.log('Opening booking form for:', AppState.selectedCourt.name);
                 }
             });
         }
@@ -856,6 +932,45 @@
                 }
             });
         });
+        // Auth Modal listeners
+        const authModalBackdrop = document.getElementById('authModalBackdrop');
+        if (authModalBackdrop) {
+            authModalBackdrop.addEventListener('click', closeAuthModal);
+        }
+
+        const authModalCloseBtn = document.getElementById('authModalCloseBtn');
+        if (authModalCloseBtn) {
+            authModalCloseBtn.addEventListener('click', closeAuthModal);
+        }
+
+        const authLoginBtn = document.getElementById('authLoginBtn');
+        if (authLoginBtn) {
+            authLoginBtn.addEventListener('click', function() {
+                closeAuthModal();
+                // TODO: Navigate to login page
+                // window.location.href = '/auth/login';
+            });
+        }
+
+        const authRegisterBtn = document.getElementById('authRegisterBtn');
+        if (authRegisterBtn) {
+            authRegisterBtn.addEventListener('click', function() {
+                closeAuthModal();
+                // TODO: Navigate to register page
+                // window.location.href = '/auth/register';
+            });
+        }
+
+        // History button requires login
+        const historyBtn = document.getElementById('historyBtn');
+        if (historyBtn) {
+            historyBtn.addEventListener('click', function() {
+                if (requireLogin('Lịch sử đặt sân')) {
+                    // Navigate to history page
+
+                }
+            });
+        }
     }
 
     // ============================================
