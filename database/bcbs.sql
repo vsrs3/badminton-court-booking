@@ -26,7 +26,7 @@ CREATE TABLE Account (
     phone NVARCHAR(20) UNIQUE NULL,
     avatar_path NVARCHAR(500) NULL,
     role VARCHAR(10)
-        CHECK (role IN ('ADMIN','OWNER','STAFF','USER')) NOT NULL,
+        CHECK (role IN ('ADMIN','OWNER','STAFF','CUSTOMER')) NOT NULL,
     is_active BIT DEFAULT 1,
     created_at DATETIME DEFAULT GETDATE()
 );

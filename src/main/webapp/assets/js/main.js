@@ -72,6 +72,16 @@
             modal.classList.remove('active');
             document.body.style.overflow = '';
         }
+
+        // ✅ FIX: Revert bottom nav to current tab when modal closes
+        document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        const currentNavBtn = document.querySelector(`[data-tab="${AppState.currentTab}"]`);
+        if (currentNavBtn) {
+            currentNavBtn.classList.add('active');
+        }
     }
 
     /**
@@ -95,7 +105,45 @@
         }
         return true;
     }
+// ============================================
+// AUTHENTICATION STATE
+// ============================================
 
+    const AuthState = {
+        isLoggedIn: false,
+        userId: null,
+        userRole: null
+    };
+
+    /**
+     * Initialize authentication state from hidden inputs
+     */
+    function initAuthState() {
+        const isLoggedInInput = document.getElementById('isLoggedIn');
+        const userRoleInput = document.getElementById('currentUserRole');
+        const userIdInput = document.getElementById('currentUserId');
+
+        if (isLoggedInInput) {
+            AuthState.isLoggedIn = isLoggedInInput.value === 'true';
+        }
+
+        if (userRoleInput) {
+            AuthState.userRole = userRoleInput.value;
+        }
+
+        if (userIdInput) {
+            AuthState.userId = parseInt(userIdInput.value);
+        }
+
+        console.log('🔐 Auth State:', AuthState);
+    }
+
+    /**
+     * Check if user is logged in
+     */
+    function isUserLoggedIn() {
+        return AuthState.isLoggedIn;
+    }
     // ============================================
     // UTILITY FUNCTIONS
     // ============================================
@@ -441,6 +489,16 @@
     // ============================================
 
     function switchTab(tabName) {
+        console.log('🔄 Switching to tab:', tabName);
+
+        // ✅ FIX: Check login requirement for certain tabs
+        if (tabName === TABS.BOOKING || tabName === TABS.OFFER || tabName === TABS.PROFILE) {
+            if (!requireLogin('Tính năng này')) {
+                // ✅ Don't switch tab if not logged in - stay on current tab
+                return;
+            }
+        }
+
         if (AppState.currentTab === tabName) return;
 
         AppState.currentTab = tabName;
@@ -453,6 +511,8 @@
         const activeTab = document.getElementById(`${tabName}Tab`);
         if (activeTab) {
             activeTab.classList.add('active');
+        } else {
+            console.error('❌ Tab element not found:', `${tabName}Tab`);
         }
 
         // Update bottom nav
@@ -477,29 +537,31 @@
             updateFavoriteButton();
         }
 
+        // ✅ Initialize map if switching to map tab
         if (tabName === TABS.MAP) {
+            console.log('🗺️ Map tab activated');
+            console.log('Courts data available:', window.COURTS_DATA ? window.COURTS_DATA.length : 'none');
+
             setTimeout(() => {
                 if (window.initMap) {
+                    console.log('📍 Calling initMap()');
                     window.initMap();
 
-                    // Update markers with current courts data
-                    if (window.updateMapMarkers && AppState.courts.length > 0) {
-                        window.updateMapMarkers(AppState.courts);
+                    // ✅ Force update markers with current courts data
+                    if (window.COURTS_DATA && window.COURTS_DATA.length > 0) {
+                        console.log('🔄 Updating markers with', window.COURTS_DATA.length, 'courts');
+
+                        if (window.updateMapMarkers) {
+                            window.updateMapMarkers(window.COURTS_DATA);
+                        }
+                    } else {
+                        console.warn('⚠️ No courts data available for map');
                     }
+                } else {
+                    console.error('❌ window.initMap not found');
                 }
             }, 100);
         }
-
-        // Check login requirement for certain tabs
-        if (tabName === TABS.BOOKING || tabName === TABS.OFFER || tabName === TABS.PROFILE) {
-            if (!requireLogin('Tính năng này')) {
-                return; // Don't switch tab if not logged in
-            }
-        }
-
-        if (AppState.currentTab === tabName) return;
-
-        AppState.currentTab = tabName;
     }
 
     // ============================================
@@ -772,7 +834,23 @@
             btn.addEventListener('click', function() {
                 const tab = this.dataset.tab;
                 if (tab) {
+                    // ✅ Store current tab before attempting switch
+                    const previousTab = AppState.currentTab;
+
                     switchTab(tab);
+
+                    // ✅ If tab didn't change (login required), revert nav active state
+                    if (AppState.currentTab === previousTab && tab !== previousTab) {
+                        // Revert to previous active button
+                        document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(b => {
+                            b.classList.remove('active');
+                        });
+
+                        const previousNavBtn = document.querySelector(`[data-tab="${previousTab}"]`);
+                        if (previousNavBtn) {
+                            previousNavBtn.classList.add('active');
+                        }
+                    }
                 }
             });
         });
@@ -947,8 +1025,13 @@
         if (authLoginBtn) {
             authLoginBtn.addEventListener('click', function() {
                 closeAuthModal();
-                // TODO: Navigate to login page
-                // window.location.href = '/auth/login';
+
+                const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+
+                // Navigate to mock login (dev) or real login (prod)
+                window.location.href = `/${contextPath}/auth/mock-login`;
+
+                console.log('🔐 Navigating to login page');
             });
         }
 
@@ -971,6 +1054,34 @@
                 }
             });
         }
+
+        // ✅ NEW: Header login/register buttons
+        const headerLoginBtn = document.getElementById('headerLoginBtn');
+        if (headerLoginBtn) {
+            headerLoginBtn.addEventListener('click', function() {
+                // Redirect to mock login in dev, real login in prod
+                window.location.href = '/badminton_court_booking/auth/mock-login';
+            });
+        }
+
+        const headerRegisterBtn = document.getElementById('headerRegisterBtn');
+        if (headerRegisterBtn) {
+            headerRegisterBtn.addEventListener('click', function() {
+                // TODO: Redirect to register page
+                console.log('📝 Navigate to register page');
+                // window.location.href = '/badminton_court_booking/auth/register';
+            });
+        }
+
+        // ✅ NEW: Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                    window.location.href = '/badminton_court_booking/auth/logout';
+                }
+            });
+        }
     }
 
     // ============================================
@@ -979,6 +1090,9 @@
 
     function init() {
         console.log('Initializing BadmintonPro app...');
+
+        // Initialize auth state FIRST
+        initAuthState();
 
         // Get user location FIRST (will trigger API load in callback)
         getUserLocation();
@@ -994,6 +1108,7 @@
 
         // Initialize filter selects with Vietnam data
         initializeFilterSelects();
+
 
         console.log('App initialized');
     }

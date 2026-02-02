@@ -1,4 +1,10 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.bcb.model.User" %>
+<%@ page import="com.bcb.utils.SessionUtils" %>
+<%
+    User currentUser = SessionUtils.getCurrentUser(request);
+    boolean isLoggedIn = currentUser != null;
+%>
 <header id="mainHeader" class="main-header">
     <!-- Top Header Area -->
     <div class="header-top">
@@ -25,8 +31,29 @@
 
                 <!-- Auth Buttons -->
                 <div class="d-flex gap-3 flex-shrink-0">
-                    <button class="btn btn-auth btn-login">Đăng nhập</button>
-                    <button class="btn btn-auth btn-register">Đăng ký</button>
+                    <% if (isLoggedIn) { %>
+                    <!-- ✅ Logged In - Show User Info -->
+                    <div class="user-info-container">
+                        <div class="user-avatar">
+                            <% if (currentUser.getAvatarPath() != null && !currentUser.getAvatarPath().isEmpty()) { %>
+                            <img src="${pageContext.request.contextPath}/<%= currentUser.getAvatarPath() %>" alt="Avatar" />
+                            <% } else { %>
+                            <span class="avatar-initial"><%= currentUser.getFirstName().substring(0, 1).toUpperCase() %></span>
+                            <% } %>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name"><%= currentUser.getDisplayName() %></span>
+                            <span class="user-role"><%= currentUser.getRole().getDisplayName() %></span>
+                        </div>
+                        <button class="btn-logout" id="logoutBtn" title="Đăng xuất">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </div>
+                    <% } else { %>
+                    <!-- ✅ Guest - Show Login/Register Buttons -->
+                    <button class="btn-auth btn-login" id="headerLoginBtn">Đăng nhập</button>
+                    <button class="btn-auth btn-register" id="headerRegisterBtn">Đăng ký</button>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -61,9 +88,7 @@
                     <i class="bi bi-calendar-check"></i>
                     <span class="action-text">Lịch sử đặt</span>
                 </button>
-                <button
-                        id="favoriteBtn"
-                        class="action-btn">
+                <button class="action-btn" id="favoriteBtn">
                     <i class="bi bi-heart"></i>
                     <span class="action-text">Yêu thích</span>
                 </button>
@@ -72,3 +97,10 @@
         </div>
     </div>
 </header>
+
+<!-- ✅ Hidden input to pass login state to JavaScript -->
+<input type="hidden" id="isLoggedIn" value="<%= isLoggedIn %>" />
+<% if (isLoggedIn) { %>
+<input type="hidden" id="currentUserRole" value="<%= currentUser.getRole().getCode() %>" />
+<input type="hidden" id="currentUserId" value="<%= currentUser.getAccountId() %>" />
+<% } %>
