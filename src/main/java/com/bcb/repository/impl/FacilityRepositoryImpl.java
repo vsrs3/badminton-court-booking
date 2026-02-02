@@ -311,7 +311,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             pstmt.setString(8, facility.getDescription());
             pstmt.setTime(9, Time.valueOf(facility.getOpenTime()));
             pstmt.setTime(10, Time.valueOf(facility.getCloseTime()));
-            pstmt.setBoolean(11, facility.isActive());
+            pstmt.setBoolean(11, facility.getIsActive());
 
             pstmt.executeUpdate();
 
@@ -348,7 +348,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             pstmt.setString(8, facility.getDescription());
             pstmt.setTime(9, Time.valueOf(facility.getOpenTime()));
             pstmt.setTime(10, Time.valueOf(facility.getCloseTime()));
-            pstmt.setBoolean(11, facility.isActive());
+            pstmt.setBoolean(11, facility.getIsActive());
             pstmt.setInt(12, facility.getFacilityId());
 
             return pstmt.executeUpdate();
@@ -421,7 +421,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         f.setDescription(rs.getString("description"));
         f.setOpenTime(rs.getTime("open_time").toLocalTime());
         f.setCloseTime(rs.getTime("close_time").toLocalTime());
-        f.setActive(rs.getBoolean("is_active"));
+        f.setIsActive(rs.getBoolean("is_active"));
         return f;
     }
 }

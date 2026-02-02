@@ -178,7 +178,7 @@ public class OwnerCourtController extends HttpServlet {
             // create
             court = new Court();
             court.setFacilityId(facilityId);
-            court.setActive(true);
+            court.setIsActive(true);
 
         } else {
             // update

@@ -75,7 +75,7 @@ public class CourtRepositoryImpl implements CourtRepository {
             pstmt.setInt(1, court.getFacilityId());
             pstmt.setInt(2, court.getCourtTypeId());
             pstmt.setString(3, court.getCourtName());
-            pstmt.setBoolean(4, court.isActive());
+            pstmt.setBoolean(4, court.getIsActive());
 
             pstmt.executeUpdate();
 
@@ -210,13 +210,21 @@ public class CourtRepositoryImpl implements CourtRepository {
      * Maps ResultSet row to Court object.
      */
     private Court mapResultSetToCourt(ResultSet rs) throws SQLException {
-        return new Court(
-                rs.getInt("court_id"),
-                rs.getInt("facility_id"),
-                rs.getInt("court_type_id"),
-                rs.getString("court_name"),
-                rs.getBoolean("is_active")
-        );
+        Court court = new Court();
+
+        court.setCourtId(rs.getInt("court_id"));
+        court.setFacilityId(rs.getInt("facility_id"));
+        court.setCourtTypeId(rs.getInt("court_type_id"));
+        court.setCourtName(rs.getString("court_name"));
+
+        boolean isActiveValue = rs.getBoolean("is_active");
+        if (rs.wasNull()) {
+            court.setIsActive(null);
+        } else {
+            court.setIsActive(isActiveValue);
+        }
+
+        return court;
     }
 
 

@@ -256,7 +256,7 @@ public class OwnerFacilityController extends HttpServlet {
                 FacilityImage thumbnail = new FacilityImage();
                 thumbnail.setFacilityId(facilityId);
                 thumbnail.setImagePath(thumbnailPath);
-                thumbnail.setThumbnail(true);
+                thumbnail.setIsThumbnail(true);
 
                 facilityImageService.addImage(thumbnail);
             }
@@ -272,7 +272,7 @@ public class OwnerFacilityController extends HttpServlet {
                     FacilityImage galleryImg = new FacilityImage();
                     galleryImg.setFacilityId(facilityId);
                     galleryImg.setImagePath(imagePath);
-                    galleryImg.setThumbnail(false);
+                    galleryImg.setIsThumbnail(false);
 
                     facilityImageService.addImage(galleryImg);
                 }
@@ -358,7 +358,7 @@ public class OwnerFacilityController extends HttpServlet {
                     FacilityImage newThumb = new FacilityImage();
                     newThumb.setFacilityId(facilityId);
                     newThumb.setImagePath(newThumbnailPath);
-                    newThumb.setThumbnail(true);
+                    newThumb.setIsThumbnail(true);
                     facilityImageService.addImage(newThumb);
                 }
             }
@@ -396,7 +396,7 @@ public class OwnerFacilityController extends HttpServlet {
                     FacilityImage galleryImg = new FacilityImage();
                     galleryImg.setFacilityId(facilityId);
                     galleryImg.setImagePath(imagePath);
-                    galleryImg.setThumbnail(false);
+                    galleryImg.setIsThumbnail(false);
 
                     facilityImageService.addImage(galleryImg);
                 }
@@ -442,7 +442,7 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setDescription(request.getParameter("description"));
         facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
         facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
-        facility.setActive(true);
+        facility.setIsActive(true);
         return facility;
     }
 

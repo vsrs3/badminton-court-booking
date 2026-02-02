@@ -48,28 +48,13 @@ public class CourtTypeRepositoryImpl implements CourtTypeRepository {
         return Optional.empty();
     }
 
-    @Override
-    public Optional<CourtType> findByTypeCode(String typeCode) {
-        String sql = "SELECT * FROM CourtType WHERE type_code = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, typeCode);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapResultSetToCourtType(rs));
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to find court type by code", e);
-        }
-        return Optional.empty();
-    }
-
     private CourtType mapResultSetToCourtType(ResultSet rs) throws SQLException {
-        return new CourtType(
-            rs.getInt("court_type_id"),
-            rs.getString("type_code"),
-            rs.getString("description")
-        );
+        CourtType courtType = new CourtType();
+
+        courtType.setCourtTypeId(rs.getObject("court_type_id", Integer.class));
+        courtType.setTypeCode(rs.getString("type_code"));
+        courtType.setDescription(rs.getString("description"));
+
+        return courtType;
     }
 }

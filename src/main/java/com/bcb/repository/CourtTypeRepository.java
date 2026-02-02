@@ -7,5 +7,4 @@ import java.util.Optional;
 public interface CourtTypeRepository {
     List<CourtType> findAll();
     Optional<CourtType> findById(int courtTypeId);
-    Optional<CourtType> findByTypeCode(String typeCode);
 }

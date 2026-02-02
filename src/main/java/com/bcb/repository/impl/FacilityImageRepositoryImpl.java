@@ -119,7 +119,7 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
 
             pstmt.setInt(1, image.getFacilityId());
             pstmt.setString(2, image.getImagePath());
-            pstmt.setBoolean(3, image.isThumbnail());
+            pstmt.setBoolean(3, image.getIsThumbnail());
 
             pstmt.executeUpdate();
 
@@ -143,7 +143,7 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, image.getImagePath());
-            pstmt.setBoolean(2, image.isThumbnail());
+            pstmt.setBoolean(2, image.getIsThumbnail());
             pstmt.setInt(3, image.getImageId());
 
             return pstmt.executeUpdate();
@@ -214,12 +214,16 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
      * Maps ResultSet row to FacilityImage object.
      */
     private FacilityImage mapResultSetToFacilityImage(ResultSet rs) throws SQLException {
-        return new FacilityImage(
-            rs.getInt("image_id"),
-            rs.getInt("facility_id"),
-            rs.getString("image_path"),
-            rs.getBoolean("is_thumbnail"),
-            rs.getTimestamp("created_at").toLocalDateTime()
-        );
+        FacilityImage image = new FacilityImage();
+
+        image.setImageId(rs.getObject("image_id", Integer.class));
+        image.setFacilityId(rs.getObject("facility_id", Integer.class));
+        image.setImagePath(rs.getString("image_path"));
+        image.setIsThumbnail(rs.getObject("is_thumbnail", Boolean.class));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        image.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
+
+        return image;
     }
 }
