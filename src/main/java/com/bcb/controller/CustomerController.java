@@ -130,7 +130,7 @@ public class CustomerController extends HttpServlet {
         HttpSession session = request.getSession();
         Customer customer = (Customer) session.getAttribute("customer");
         try{
-            CustomerChangePassDTO dto = new CustomerChangePassDTO(oldPass,newPass, confirmNewPass);
+            CustomerChangePassDTO dto = new CustomerChangePassDTO(oldPass, newPass, confirmNewPass);
 
             CustomerResponse result = profileService.updatePassword(dto, customer.getAccountId());
             if(result.isSuccess()){
@@ -139,7 +139,7 @@ public class CustomerController extends HttpServlet {
             } else {
                 session.setAttribute("updateError", result.getMessage());
             }
-            response.sendRedirect(request.getContextPath() + "/profile?section=password");
+            response.sendRedirect(request.getContextPath() + "/profile?section=change-password");
 
         } catch (Exception e) {
             e.printStackTrace();

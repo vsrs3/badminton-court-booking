@@ -53,7 +53,7 @@
             </a>
         </c:if>
         <c:if test="${sessionScope.customer != null}">
-            <a class="nav-link" href="profile?section=history-courts">
+            <a class="nav-link" href="profile?section=history">
                 <i class="fa fa-user icon-item"></i>
             </a>
         </c:if>

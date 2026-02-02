@@ -12,6 +12,7 @@ import com.bcb.utils.DBUpload;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.sql.Connection;
+import java.util.List;
 
 public class CustomerProfileServiceImpl implements CustomerProfileService {
 
@@ -27,11 +28,12 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
         try (Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
-            if (dto.getFullName() == null || dto.getFullName().isEmpty()
-                    || dto.getEmail() == null || dto.getEmail().isEmpty()
-                    || dto.getPhone() == null || dto.getPhone().isEmpty()) {
-
-                return new CustomerResponse(false, "Missing info", 1000);
+            Customer customer = repo.getCustomerById(accountId);
+            List<String> listEmail = repo.emailList(customer.getEmail());
+            for(String email : listEmail){
+                if(dto.getEmail().equals(email)){
+                    return new CustomerResponse(false, "Email đã tồn tại!", 1000);
+                }
             }
 
             String avatarPath = DBUpload.getAvatarPath(request, dto);
@@ -41,20 +43,19 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
             if (!isUpdateInfo) {
                 connect.rollback();
-                return new CustomerResponse(false, "Update failed! Check repository.", 1000);
+                return new CustomerResponse(false, "Cập nhật thông tin thất bại!", 1000);
             }
             connect.commit();
+            Customer updatedCustomer = repo.getCustomerById(accountId);
 
-            CustomerResponse result = new CustomerResponse(true, "Update successull", 1002);
-            Customer customer = repo.getCustomerById(accountId);
-            result.setCustomer(customer);
+            CustomerResponse result = new CustomerResponse(true, "Cập nhật thông tin thành công!", 1002);
+            result.setCustomer(updatedCustomer);
             return result;
 
         } catch (Exception e) {
             e.printStackTrace();
             return new CustomerResponse(false, e.getMessage(), 1004);
         }
-
     }
 
     @Override
@@ -63,29 +64,19 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
         try(Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
-            if(dto.getNewPass() == null || dto.getNewPass().isEmpty()
-                    || dto.getOldPass() == null || dto.getOldPass().isEmpty()
-                    || dto.getConfirmNewPass() == null || dto.getConfirmNewPass().isEmpty()) {
+            Customer customer = repo.getCustomerById(accountId);
+            if(!dto.getOldPass().equals(customer.getPassword()))
+                return new CustomerResponse(false, "Mật khẩu hiện tại không khớp", 1000);
 
-                return new CustomerResponse(false, "Missing info", 1000);
-            }
-
-            if(dto.getNewPass().length() < 6 || dto.getConfirmNewPass().length() < 6)
-                return new CustomerResponse(false, "Password length must larger than 6", 1000);
-
-            if(!dto.getConfirmNewPass().equals(dto.getNewPass()))
-                return new CustomerResponse(false, "Password confirmation does not match", 1000);
-
-            boolean isUpdate = repo.updatePassword(dto.getOldPass(), dto.getNewPass(), accountId);
+            boolean isUpdate = repo.updatePassword(dto.getNewPass(), accountId);
             if(!isUpdate){
                 connect.rollback();
-                return new CustomerResponse(false, "Change password failed", 1000);
+                return new CustomerResponse(false, "Đổi mật khẩu thất bại!", 1000);
             }
 
             connect.commit();
 
-            CustomerResponse result = new CustomerResponse(true, "Update successull", 1002);
-            Customer customer = repo.getCustomerById(accountId);
+            CustomerResponse result = new CustomerResponse(true, "Đổi mật khẩu thành công!", 1002);
             result.setCustomer(customer);
             return result;
 

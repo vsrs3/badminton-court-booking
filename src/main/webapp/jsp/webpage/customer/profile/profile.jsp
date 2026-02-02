@@ -1,236 +1,77 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông tin cá nhân - Badminton Booking</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Badminton Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
-    <!-- Font Awesome Icon-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/Header.css">
-    <link rel="stylesheet" href="assets/css/Footer.css">
-    <link rel="stylesheet" href="assets/css/Profile.css">
-
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-<header><jsp:include page="/jsp/common/header.jsp"/></header>
-
-
-<!-- Main Profile Page Wrapper -->
-<div class="profile-page">
-    <div class="profile-container">
-        <div class="profile-wrapper">
-
-            <!-- ========== SIDEBAR BÊN TRÁI ========== -->
-            <aside class="profile-sidebar">
-                <!-- User Info Card -->
-                <div class="user-card">
-                    <div class="user-avatar">
-                        <c:choose>
-                            <c:when test="${not empty sessionScope.customer.avatarPath}">
-                                <img src="${pageContext.request.contextPath}/${sessionScope.customer.avatarPath}"
-                                     alt="Avatar" class="avatar-img">
-                            </c:when>
-                            <c:otherwise>
-                                <i class="fas fa-user-circle"></i>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                    <div class="user-info">
-                        <h3 class="user-name">${sessionScope.customer.fullName}</h3>
-                        <p class="user-email">${sessionScope.customer.email}</p>
-                    </div>
-                    <button class="edit-icon">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+<body onload="lucide.createIcons();">
+    <div class="flex flex-col h-screen w-full bg-white overflow-hidden shadow-2xl">
+        <header class="lg:hidden bg-[#004d3d] text-white p-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-[#9ef01a] rounded-full flex items-center justify-center">
+                    <span class="text-[#004d3d] font-bold text-xs">▲</span>
                 </div>
-
-                <!-- Member Badge -->
-                <div class="member-badge">
-                    <i class="fas fa-crown"></i>
-                    <span>Hạng thành viên</span>
-                    <i class="fas fa-chevron-right"></i>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="quick-actions">
-                    <a href="?section=history-courts" class="action-btn">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>Lịch đã đặt</span>
-                    </a>
-                    <a href="?section=notifications" class="action-btn">
-                        <i class="fas fa-bell"></i>
-                        <span>Thông báo</span>
-                    </a>
-                    <a href="?section=reviews" class="action-btn">
-                        <i class="fas fa-star"></i>
-                        <span>Đánh giá</span>
-                    </a>
-                    <a href="?section=promotions" class="action-btn">
-                        <i class="fas fa-gift"></i>
-                        <span>Ưu đãi</span>
-                    </a>
-                </div>
-
-                <!-- Main Menu -->
-                <nav class="sidebar-menu">
-                    <!-- NHÓM LỊCH SỬ -->
-                    <h4 class="menu-title">Hoạt động</h4>
-
-                    <a href="?section=history-courts" class="menu-item ${param.section == 'history-courts' ? 'active' : ''}">
-                        <i class="fas fa-volleyball-ball"></i>
-                        <span>Lịch sử đặt sân</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <a href="?section=favorite" class="menu-item ${param.section == 'address' ? 'active' : ''}">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Quản lý sân yêu thích</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <!-- NHÓM CÀI ĐẶT / HỆ THỐNG -->
-                    <h4 class="menu-title">Cài đặt</h4>
-
-                    <a href="?section=profile-info" class="menu-item ${empty param.section || param.section == 'profile' ? 'active' : ''}">
-                        <i class="fas fa-user"></i>
-                        <span>Thông tin cá nhân</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <c:if test="${empty sessionScope.customer.googleId}">
-                        <a href="?section=password" class="menu-item ${param.section == 'password' ? 'active' : ''}">
-                            <i class="fas fa-lock"></i>
-                            <span>Đổi mật khẩu</span>
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </c:if>
-
-                    <a href="?section=privacy" class="menu-item ${param.section == 'privacy' ? 'active' : ''}">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>Bảo mật & Quyền riêng tư</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <a href="?section=support" class="menu-item ${param.section == 'support' ? 'active' : ''}">
-                        <i class="fas fa-headset"></i>
-                        <span>Hỗ trợ</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-
-                    <a href="?section=settings" class="menu-item ${param.section == 'settings' ? 'active' : ''}">
-                        <i class="fas fa-cog"></i>
-                        <span>Cài đặt</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </nav>
-            </aside>
-
-            <!-- ========== MAIN CONTENT BÊN PHẢI ========== -->
-            <main class="profile-content">
-
-                <!-- ========== LỊCH SỬ ĐẶT SÂN ========== -->
-                <c:if test="${param.section == 'history-courts'}">
-                    <jsp:include page="customer_booking_history.jsp"/>
-                </c:if>
-
-                <!-- ========== THÔNG TIN CÁ NHÂN ========== -->
-                <c:if test="${empty param.section || param.section == 'profile-info'}">
-                    <jsp:include page="customer_info.jsp"/>
-                </c:if>
-
-                <!-- ========== ĐỔI MẬT KHẨU ========== -->
-                <c:if test="${param.section == 'password'}">
-                    <jsp:include page="customer_password.jsp"/>
-                </c:if>
-
-                <!-- ========== QUẢN LÝ SÂN YÊU THÍCH ========== -->
-                <c:if test="${param.section == 'favorite'}">
-                    <jsp:include page="customer_favorite.jsp"/>
-                </c:if>
-
-                <!-- ========== CÀI ĐẶT ========== -->
-                <c:if test="${param.section == 'settings'}">
-                    <jsp:include page="customer_setting.jsp"/>
-                </c:if>
-
-            </main>
+                <h1 class="font-bold text-sm tracking-tight uppercase">CHỌN SÂN CHƠI NGAY</h1>
+            </div>
+            <div class="flex space-x-2">
+                <button class="bg-[#9ef01a] text-[#004d3d] px-3 py-1 rounded-md text-xs font-bold">ĐĂNG NHẬP</button>
+            </div>
+        </header>
+        <div class="flex flex-1 overflow-hidden relative">
+            <div class="w-full lg:w-96 flex-shrink-0 border-r border-gray-100 overflow-y-auto">
+                <%@ include file="sidebar.jsp" %>
+            </div>
+            <div class="hidden lg:block flex-1 bg-gray-50 overflow-y-auto">
+                <%
+                    String section = request.getParameter("section");
+                    if (section == null) {
+                        section = "history";
+                    }
+                    switch (section) {
+                        case "history":
+                %> <%@ include file="customer_history.jsp" %> <%
+                    break;
+                case "settings":
+            %> <%@ include file="customer_settings.jsp" %> <%
+                    break;
+                case "profile-info":
+            %> <%@ include file="customer_view.jsp" %> <%
+                    break;
+                case "change-password":
+            %> <%@ include file="change_password.jsp" %> <%
+                    break;
+                case "notifications":
+            %> <%@ include file="notifications.jsp" %> <%
+                    break;
+                case "languages":
+            %> <%@ include file="languages.jsp" %> <%
+                    break;
+                default:
+            %> <div class="p-6">Phần không tồn tại</div> <%
+                }
+            %>
+            </div>
         </div>
+        <%@ include file="bottomnav.jsp" %>
     </div>
-</div>
-
-<!-- Footer -->
-<footer><jsp:include page="/jsp/common/footer.jsp"/></footer>
-
-    <!-- JavaScript -->
-    <script src="<c:url value='/assets/js/AlertPopup.js' />"></script>
-    <script src="<c:url value='/assets/js/PreviewAvatar.js' />"></script>
-
-    <script>
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const button = field.nextElementSibling;
-            const icon = button.querySelector('i');
-
-            if (field.type === 'password') {
-                field.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                field.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
-        function viewBookingDetail(bookingId) {
-            window.location.href = 'booking?action=detail&id=' + bookingId;
-        }
-
-        function payBooking(bookingId) {
-            window.location.href = 'booking?action=payment&id=' + bookingId;
-        }
-
-        function reviewBooking(bookingId) {
-            window.location.href = 'review?action=create&booking_id=' + bookingId;
-        }
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const bookingCards = document.querySelectorAll('.booking-card');
-
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const status = this.getAttribute('data-status');
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-
-                    bookingCards.forEach(card => {
-                        if (status === 'all' || card.getAttribute('data-status') === status) {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                });
-            });
-
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function (alert) {
-                setTimeout(function () {
-                    alert.style.opacity = '0';
-                    setTimeout(function () {
-                        alert.style.display = 'none';
-                    }, 300);
-                }, 5000);
-            });
-        });
-    </script>
 </body>
 </html>
