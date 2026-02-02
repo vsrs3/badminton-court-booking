@@ -14,7 +14,7 @@ public class ProfileServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("jsp/webpage/customer/profile/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("jsp/customer/profile/profile.jsp").forward(request, response);
     }
 
     @Override

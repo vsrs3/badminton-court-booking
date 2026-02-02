@@ -17,13 +17,13 @@
 </head>
 <body>
 <header>
-    <jsp:include page="../common/header.jsp"></jsp:include>
+    <jsp:include page="header.jsp"></jsp:include>
 </header>
 
 <h1>Home World!</h1>
 
 <footer>
-    <jsp:include page="../common/footer.jsp"></jsp:include>
+    <jsp:include page="footer.jsp"></jsp:include>
 </footer>
 
 </body>
