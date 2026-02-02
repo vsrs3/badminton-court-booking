@@ -1,36 +1,22 @@
 package com.bcb.model;
 
 public class Court {
-    private int courtId;
-    private int facilityId;
-    private int courtTypeId;
+    private Integer courtId;
+    private Integer facilityId;
+    private Integer courtTypeId;
     private String courtName;
-    private boolean isActive;
+    private Boolean isActive;
 
     public Court() {}
 
-    public Court(int courtId, int facilityId, int courtTypeId, String courtName, boolean isActive) {
-        this.courtId = courtId;
-        this.facilityId = facilityId;
-        this.courtTypeId = courtTypeId;
-        this.courtName = courtName;
-        this.isActive = isActive;
-    }
-
-    public int getCourtId() { return courtId; }
-    public void setCourtId(int courtId) { this.courtId = courtId; }
-    public int getFacilityId() { return facilityId; }
-    public void setFacilityId(int facilityId) { this.facilityId = facilityId; }
-    public int getCourtTypeId() { return courtTypeId; }
-    public void setCourtTypeId(int courtTypeId) { this.courtTypeId = courtTypeId; }
+    public Integer getCourtId() { return courtId; }
+    public void setCourtId(Integer courtId) { this.courtId = courtId; }
+    public Integer getFacilityId() { return facilityId; }
+    public void setFacilityId(Integer facilityId) { this.facilityId = facilityId; }
+    public Integer getCourtTypeId() { return courtTypeId; }
+    public void setCourtTypeId(Integer courtTypeId) { this.courtTypeId = courtTypeId; }
     public String getCourtName() { return courtName; }
     public void setCourtName(String courtName) { this.courtName = courtName; }
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
-
-    @Override
-    public String toString() {
-        return "Court{" + "courtId=" + courtId + ", facilityId=" + facilityId +
-               ", courtName='" + courtName + '\'' + ", isActive=" + isActive + '}';
-    }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

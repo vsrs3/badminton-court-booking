@@ -29,7 +29,7 @@ CREATE TABLE Account (
                          phone NVARCHAR(20) UNIQUE NULL,
                          avatar_path NVARCHAR(500) NULL,
                          role VARCHAR(10)
-                             CHECK (role IN ('ADMIN','OWNER','STAFF','USER')) NOT NULL,
+                             CHECK (role IN ('ADMIN','OWNER','STAFF','CUSTOMER')) NOT NULL,
                          is_active BIT DEFAULT 1,
                          created_at DATETIME DEFAULT GETDATE()
 );
@@ -487,37 +487,3 @@ CREATE TABLE CustomerFavoriteFacility (
                                           UNIQUE (account_id, facility_id)
 );
 GO
-
-INSERT INTO TimeSlot (start_time, end_time)
-VALUES
-('00:00', '01:00'),
-('01:00', '02:00'),
-('02:00', '03:00'),
-('03:00', '04:00'),
-('04:00', '05:00'),
-('05:00', '06:00'),
-('06:00', '07:00'),
-('07:00', '08:00'),
-('08:00', '09:00'),
-('09:00', '10:00'),
-('10:00', '11:00'),
-('11:00', '12:00'),
-('12:00', '13:00'),
-('13:00', '14:00'),
-('14:00', '15:00'),
-('15:00', '16:00'),
-('16:00', '17:00'),
-('17:00', '18:00'),
-('18:00', '19:00'),
-('19:00', '20:00'),
-('20:00', '21:00'),
-('21:00', '22:00'),
-('22:00', '23:00'),
-('23:00', '00:00');
-
--- court type
-INSERT INTO CourtType (type_code, description)
-VALUES
-    ('NORMAL', N'Sân tiêu chuẩn'),
-    ('VIP',    N'Sân VIP chất lượng cao');
-
