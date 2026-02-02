@@ -1,7 +1,7 @@
 package com.bcb.service.impl;
 
 import com.bcb.model.Facility;
-import com.bcb.model.FacilityDTO;
+import com.bcb.dto.FacilityDTO;
 import com.bcb.repository.FacilityRepository;
 import com.bcb.repository.impl.FacilityRepositoryImpl;
 import com.bcb.service.FacilityService;

@@ -1,4 +1,4 @@
-package com.bcb.model;
+package com.bcb.dto;
 
 /**
  * Used for API responses
