@@ -5,7 +5,6 @@ import com.bcb.model.FacilityImage;
 import java.util.List;
 
 public interface FacilityImageService {
-    List<FacilityImage> getImagesByFacility(int facilityId) throws BusinessException;
     FacilityImage getThumbnail(int facilityId) throws BusinessException;
     List<FacilityImage> getGallery(int facilityId) throws BusinessException;
     FacilityImage getImageById(int imageId) throws BusinessException;

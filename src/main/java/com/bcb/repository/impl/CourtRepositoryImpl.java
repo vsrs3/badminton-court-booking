@@ -207,7 +207,7 @@ public class CourtRepositoryImpl implements CourtRepository {
     }
 
     /**
-     * Maps ResultSet row to Court object.
+     * Maps ResultSet row to a Court object.
      */
     private Court mapResultSetToCourt(ResultSet rs) throws SQLException {
         Court court = new Court();

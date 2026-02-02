@@ -26,15 +26,6 @@ public class FacilityImageServiceImpl implements FacilityImageService {
 
 
     @Override
-    public List<FacilityImage> getImagesByFacility(int facilityId) throws BusinessException {
-        if (facilityRepository.findById(facilityId).isEmpty()) {
-            throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facilityId);
-        }
-        return imageRepository.findByFacility(facilityId);
-    }
-
-    @Override
     public FacilityImage getThumbnail(int facilityId) throws BusinessException {
         if (facilityRepository.findById(facilityId).isEmpty()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
