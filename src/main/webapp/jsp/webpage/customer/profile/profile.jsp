@@ -1,4 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -21,8 +23,8 @@
         }
 
     </style>
-    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body onload="lucide.createIcons();">
     <div class="flex flex-col h-screen w-full bg-white overflow-hidden shadow-2xl">
         <header class="lg:hidden bg-[#004d3d] text-white p-4 flex items-center justify-between">
@@ -73,5 +75,11 @@
         </div>
         <%@ include file="bottomnav.jsp" %>
     </div>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Add SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="<c:url value='/assets/js/alertPopup.js' />"></script>
+    <script src="<c:url value='/assets/js/previewAvatar.js' />"></script>
 </body>
 </html>

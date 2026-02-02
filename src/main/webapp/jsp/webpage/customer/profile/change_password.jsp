@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <div class="flex flex-col h-full bg-white">
     <div class="p-6 border-b border-gray-100 flex items-center space-x-3">

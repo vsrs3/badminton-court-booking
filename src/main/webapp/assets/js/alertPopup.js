@@ -66,14 +66,3 @@ function setupProfileConfirm(formId, getValidationResult) {
         }
     });
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-
-    setupConfirm('logout', 'Đăng xuất ?',
-        'Bạn có chắc muốn thoát không ?', 'question', 'Đăng xuất');
-
-    setupConfirm('deleteAccount', 'Cảnh báo !',
-        'Xóa tài khoản sẽ mất hết dữ liệu vĩnh viễn !', 'warning', 'Xóa ngay');
-
-
-});

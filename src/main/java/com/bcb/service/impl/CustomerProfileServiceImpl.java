@@ -10,6 +10,7 @@ import com.bcb.model.Customer;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.DBUpload;
 import jakarta.servlet.http.HttpServletRequest;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
 import java.util.List;
@@ -65,16 +66,20 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
             connect.setAutoCommit(false);
 
             Customer customer = repo.getCustomerById(accountId);
-            if(!dto.getOldPass().equals(customer.getPassword()))
+            if(!BCrypt.checkpw(dto.getOldPass(), customer.getPassword())) {
                 return new CustomerResponse(false, "Mật khẩu hiện tại không khớp", 1000);
+            }
 
-            boolean isUpdate = repo.updatePassword(dto.getNewPass(), accountId);
+            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt());
+
+            boolean isUpdate = repo.updatePassword(hashedNewPass, accountId);
             if(!isUpdate){
                 connect.rollback();
                 return new CustomerResponse(false, "Đổi mật khẩu thất bại!", 1000);
             }
 
             connect.commit();
+            customer.setPassword(hashedNewPass);
 
             CustomerResponse result = new CustomerResponse(true, "Đổi mật khẩu thành công!", 1002);
             result.setCustomer(customer);
