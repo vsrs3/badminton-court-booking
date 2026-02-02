@@ -1,9 +1,8 @@
-package com.bcb.controller;
+package com.bcb.controller.owner;
 
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Court;
-import com.bcb.model.CourtType;
 import com.bcb.model.Facility;
 import com.bcb.service.CourtService;
 import com.bcb.service.CourtTypeService;
@@ -19,14 +18,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.List;
 
 /*
  *   @Author: AnhTN
  *
  */
 @WebServlet("/owner/courts/*")
-public class CourtController extends HttpServlet {
+public class OwnerCourtController extends HttpServlet {
 
     private CourtService courtService;
     private FacilityService facilityService;

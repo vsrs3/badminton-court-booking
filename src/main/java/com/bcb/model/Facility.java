@@ -1,5 +1,6 @@
 package com.bcb.model;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 
 /**
@@ -13,8 +14,8 @@ public class Facility {
     private String district;
     private String ward;
     private String address;
-    private Double latitude;
-    private Double longitude;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
     private String description;
     private LocalTime openTime;
     private LocalTime closeTime;
@@ -26,7 +27,7 @@ public class Facility {
 
     // Full constructor
     public Facility(int facilityId, String name, String province, String district, String ward,
-                    String address, Double latitude, Double longitude, String description,
+                    String address, BigDecimal latitude, BigDecimal longitude, String description,
                     LocalTime openTime, LocalTime closeTime, boolean isActive) {
         this.facilityId = facilityId;
         this.name = name;
@@ -91,19 +92,19 @@ public class Facility {
         this.address = address;
     }
 
-    public Double getLatitude() {
+    public BigDecimal getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(Double latitude) {
+    public void setLatitude(BigDecimal latitude) {
         this.latitude = latitude;
     }
 
-    public Double getLongitude() {
+    public BigDecimal getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(Double longitude) {
+    public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
     }
 

@@ -1,4 +1,4 @@
-package com.bcb.controller;
+package com.bcb.controller.owner;
 
 import com.bcb.config.ConfigUpload;
 import com.bcb.exception.BusinessException;
@@ -21,6 +21,7 @@ import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalTime;
@@ -42,7 +43,7 @@ import java.util.UUID;
         maxFileSize = 1024 * 1024 * 10,      // 10MB
         maxRequestSize = 1024 * 1024 * 50    // 50MB
 )
-public class FacilityController extends HttpServlet {
+public class OwnerFacilityController extends HttpServlet {
 
     private FacilityService facilityService;
     private FacilityImageService facilityImageService;
@@ -249,7 +250,7 @@ public class FacilityController extends HttpServlet {
         Part thumbnailPart = request.getPart("thumbnail");
         if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
 
-            String thumbnailPath = saveFile(thumbnailPart, request);
+            String thumbnailPath = saveFile(thumbnailPart);
 
             if (thumbnailPath != null) {
                 FacilityImage thumbnail = new FacilityImage();
@@ -265,7 +266,7 @@ public class FacilityController extends HttpServlet {
         for (Part part : request.getParts()) {
             if ("gallery".equals(part.getName()) && part.getSize() > 0) {
 
-                String imagePath = saveFile(part, request);
+                String imagePath = saveFile(part);
 
                 if (imagePath != null) {
                     FacilityImage galleryImg = new FacilityImage();
@@ -298,6 +299,19 @@ public class FacilityController extends HttpServlet {
         facility.setDescription(request.getParameter("description"));
         facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
         facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
+        String latStr = request.getParameter("latitude");
+        if (latStr != null && !latStr.isBlank()) {
+            facility.setLatitude(new BigDecimal(latStr));
+        } else {
+            facility.setLatitude(null);
+        }
+
+        String lngStr = request.getParameter("longitude");
+        if (lngStr != null && !lngStr.isBlank()) {
+            facility.setLongitude(new BigDecimal(lngStr));
+        } else {
+            facility.setLongitude(null);
+        }
 
         List<String> errors = FacilityValidator.validate(facility);
 
@@ -328,14 +342,14 @@ public class FacilityController extends HttpServlet {
         Part thumbnailPart = request.getPart("thumbnail");
         if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
 
-            String newThumbnailPath = saveFile(thumbnailPart, request);
+            String newThumbnailPath = saveFile(thumbnailPart);
 
             if (newThumbnailPath != null) {
                 FacilityImage currentThumbnail = facilityImageService.getThumbnail(facilityId);
 
                 if (currentThumbnail != null) {
 
-                    deleteFile(currentThumbnail.getImagePath(), request);
+                    deleteFile(currentThumbnail.getImagePath());
 
                     currentThumbnail.setImagePath(newThumbnailPath);
                     facilityImageService.update(currentThumbnail);
@@ -362,7 +376,7 @@ public class FacilityController extends HttpServlet {
                     FacilityImage image = facilityImageService.getImageById(imgId);
 
                     if (image != null) {
-                        deleteFile(image.getImagePath(), request);
+                        deleteFile(image.getImagePath());
                         facilityImageService.deleteImage(imgId);
                     }
                 } catch (NumberFormatException e) {
@@ -376,7 +390,7 @@ public class FacilityController extends HttpServlet {
         for (Part part : parts) {
             if ("gallery".equals(part.getName()) && part.getSize() > 0) {
 
-                String imagePath = saveFile(part, request);
+                String imagePath = saveFile(part);
 
                 if (imagePath != null) {
                     FacilityImage galleryImg = new FacilityImage();
@@ -417,12 +431,12 @@ public class FacilityController extends HttpServlet {
 
         String latStr = request.getParameter("latitude");
         if (latStr != null && !latStr.isBlank()) {
-            facility.setLatitude(Double.parseDouble(latStr));
+            facility.setLatitude(new BigDecimal(latStr));
         }
 
         String lngStr = request.getParameter("longitude");
         if (lngStr != null && !lngStr.isBlank()) {
-            facility.setLongitude(Double.parseDouble(lngStr));
+            facility.setLongitude(new BigDecimal(lngStr));
         }
 
         facility.setDescription(request.getParameter("description"));
@@ -433,7 +447,7 @@ public class FacilityController extends HttpServlet {
     }
 
     // Hàm hỗ trợ lưu file từ Part vào thư mục server
-    private String saveFile(Part part, HttpServletRequest request) throws IOException, BusinessException {
+    private String saveFile(Part part) throws IOException, BusinessException {
 
         String submitted = Paths.get(part.getSubmittedFileName())
                 .getFileName().toString();
@@ -466,7 +480,7 @@ public class FacilityController extends HttpServlet {
     }
 
     // delete files
-    private void deleteFile(String imagePath, HttpServletRequest request) {
+    private void deleteFile(String imagePath) {
 
         if (imagePath == null || imagePath.isBlank()) return;
 

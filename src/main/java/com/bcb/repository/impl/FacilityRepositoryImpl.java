@@ -416,8 +416,8 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         BigDecimal lat = rs.getBigDecimal("latitude");
         BigDecimal lng = rs.getBigDecimal("longitude");
 
-        f.setLatitude(lat != null ? lat.doubleValue() : null);
-        f.setLongitude(lng != null ? lng.doubleValue() : null);
+        f.setLatitude(lat);
+        f.setLongitude(lng);
         f.setDescription(rs.getString("description"));
         f.setOpenTime(rs.getTime("open_time").toLocalTime());
         f.setCloseTime(rs.getTime("close_time").toLocalTime());

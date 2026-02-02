@@ -1,4 +1,4 @@
-package com.bcb.controller;
+package com.bcb.controller.owner;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;

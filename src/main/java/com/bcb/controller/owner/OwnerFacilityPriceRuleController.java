@@ -1,4 +1,4 @@
-package com.bcb.controller;
+package com.bcb.controller.owner;
 
 import com.bcb.dto.BulkPriceUpdateRequestDTO;
 import com.bcb.dto.FacilityPriceViewDTO;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/owner/prices/*")
-public class FacilityPriceRuleController extends HttpServlet {
+public class OwnerFacilityPriceRuleController extends HttpServlet {
 
     private FacilityPriceRuleService facilityPriceRuleService;
 
