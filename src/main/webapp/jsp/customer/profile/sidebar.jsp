@@ -4,7 +4,7 @@
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-3">
                 <div class="relative">
-                    <img src="${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
+                    <img src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
                     <div class="absolute bottom-0 right-0 w-4 h-4 bg-[#9ef01a] rounded-full border-2 border-[#004d3d]"></div>
                 </div>
                 <div>

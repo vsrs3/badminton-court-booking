@@ -85,7 +85,7 @@
                 <div class="avatar-preview w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 flex items-center justify-center">
                     <c:choose>
                         <c:when test="${not empty sessionScope.account.avatarPath}">
-                            <img src="${pageContext.request.contextPath}/${sessionScope.account.avatarPath}"
+                            <img src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}"
                                  alt="Avatar" id="avatarPreview" class="w-full h-full object-cover">
                         </c:when>
                         <c:otherwise>
