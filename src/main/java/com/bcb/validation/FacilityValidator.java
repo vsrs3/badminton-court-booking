@@ -10,8 +10,8 @@ import java.util.List;
  * Validation logic for Facility entity.
  * Handles validation rules for facility operations.
  */
-public class FacilityValidator {
 
+public class FacilityValidator {
     private static final int MIN_NAME_LENGTH = 1;
     private static final int MAX_NAME_LENGTH = 255;
     private static final int MAX_ADDRESS_LENGTH = 255;

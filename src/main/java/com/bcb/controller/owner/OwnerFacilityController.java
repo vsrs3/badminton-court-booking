@@ -7,8 +7,10 @@ import com.bcb.model.Facility;
 import com.bcb.model.FacilityImage;
 import com.bcb.service.FacilityImageService;
 import com.bcb.service.FacilityService;
+import com.bcb.service.UploadService;
 import com.bcb.service.impl.FacilityImageServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
+import com.bcb.service.impl.UploadServiceImpl;
 import com.bcb.validation.FacilityValidator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -47,6 +49,7 @@ public class OwnerFacilityController extends HttpServlet {
 
     private FacilityService facilityService;
     private FacilityImageService facilityImageService;
+    private UploadService uploadService;
 
     // Formatter for HTML <input type="time">
     private static final DateTimeFormatter TIME_INPUT_FORMATTER =
@@ -56,6 +59,7 @@ public class OwnerFacilityController extends HttpServlet {
     public void init() throws ServletException {
         facilityService = new FacilityServiceImpl();
         facilityImageService = new FacilityImageServiceImpl();
+        uploadService = new UploadServiceImpl();
     }
 
     @Override
@@ -250,7 +254,8 @@ public class OwnerFacilityController extends HttpServlet {
         Part thumbnailPart = request.getPart("thumbnail");
         if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
 
-            String thumbnailPath = saveFile(thumbnailPart);
+
+            String thumbnailPath = uploadService.saveImage(thumbnailPart, ConfigUpload.FACILITY_IMAGE_FOLDER);
 
             if (thumbnailPath != null) {
                 FacilityImage thumbnail = new FacilityImage();
@@ -266,7 +271,7 @@ public class OwnerFacilityController extends HttpServlet {
         for (Part part : request.getParts()) {
             if ("gallery".equals(part.getName()) && part.getSize() > 0) {
 
-                String imagePath = saveFile(part);
+                String imagePath = uploadService.saveImage(part, ConfigUpload.FACILITY_IMAGE_FOLDER);
 
                 if (imagePath != null) {
                     FacilityImage galleryImg = new FacilityImage();
@@ -342,14 +347,14 @@ public class OwnerFacilityController extends HttpServlet {
         Part thumbnailPart = request.getPart("thumbnail");
         if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
 
-            String newThumbnailPath = saveFile(thumbnailPart);
+            String newThumbnailPath = uploadService.saveImage(thumbnailPart, ConfigUpload.FACILITY_IMAGE_FOLDER);
 
             if (newThumbnailPath != null) {
                 FacilityImage currentThumbnail = facilityImageService.getThumbnail(facilityId);
 
                 if (currentThumbnail != null) {
 
-                    deleteFile(currentThumbnail.getImagePath());
+                    uploadService.deleteFile(currentThumbnail.getImagePath());
 
                     currentThumbnail.setImagePath(newThumbnailPath);
                     facilityImageService.update(currentThumbnail);
@@ -376,7 +381,7 @@ public class OwnerFacilityController extends HttpServlet {
                     FacilityImage image = facilityImageService.getImageById(imgId);
 
                     if (image != null) {
-                        deleteFile(image.getImagePath());
+                        uploadService.deleteFile(image.getImagePath());
                         facilityImageService.deleteImage(imgId);
                     }
                 } catch (NumberFormatException e) {
@@ -390,7 +395,7 @@ public class OwnerFacilityController extends HttpServlet {
         for (Part part : parts) {
             if ("gallery".equals(part.getName()) && part.getSize() > 0) {
 
-                String imagePath = saveFile(part);
+                String imagePath = uploadService.saveImage(part, ConfigUpload.FACILITY_IMAGE_FOLDER);
 
                 if (imagePath != null) {
                     FacilityImage galleryImg = new FacilityImage();
@@ -445,57 +450,6 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setIsActive(true);
         return facility;
     }
-
-    // Hàm hỗ trợ lưu file từ Part vào thư mục server
-    private String saveFile(Part part) throws IOException, BusinessException {
-
-        String submitted = Paths.get(part.getSubmittedFileName())
-                .getFileName().toString();
-
-        if (submitted.isBlank()) return null;
-
-        if (!part.getContentType().startsWith("image/")) {
-            throw new BusinessException("Only image files allowed");
-        }
-
-        String ext = "";
-        int dot = submitted.lastIndexOf('.');
-        if (dot > 0) ext = submitted.substring(dot);
-
-        String fileName = UUID.randomUUID() + ext;
-
-        String rootPath = ConfigUpload.getUploadLocation();
-
-        File uploadDir = new File(rootPath, "facility");
-        if (!uploadDir.exists()) uploadDir.mkdirs();
-
-        File file = new File(uploadDir, fileName);
-
-        try (InputStream in = part.getInputStream()) {
-            Files.copy(in, file.toPath());
-        }
-
-        // DB chỉ lưu path logic (relative từ /uploads/)
-        return "facility/" + fileName;
-    }
-
-    // delete files
-    private void deleteFile(String imagePath) {
-
-        if (imagePath == null || imagePath.isBlank()) return;
-
-        String rootPath = ConfigUpload.getUploadLocation();
-
-        File file = new File(rootPath, imagePath);
-
-        if (file.exists() && file.isFile()) {
-            boolean deleted = file.delete();
-            if (!deleted) {
-                System.err.println("Cannot delete file: " + file.getAbsolutePath());
-            }
-        }
-    }
-
 
     private LocalTime parseTimeInput(String timeStr) {
         if (timeStr == null || timeStr.isBlank()) return null;

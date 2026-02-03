@@ -9,6 +9,8 @@ public class ConfigUpload {
 
     private static final Properties props = new Properties();
     private static boolean loaded = false;
+    public static final String FACILITY_IMAGE_FOLDER = "facility";
+    public static final String AVATAR_IMAGE_FOLDER   = "avatar";
 
     private static synchronized void load() {
         if (loaded) return;
