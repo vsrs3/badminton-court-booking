@@ -1,34 +1,82 @@
+# =========================
+# Java
+# =========================
+*.class
+*.log
+
+# =========================
+# Maven
+# =========================
 target/
-!**/src/main/**/target/
-!**/src/test/**/target/
-mvnw.cmd
-mvnw
-.mvn
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+dependency-reduced-pom.xml
 
-### IntelliJ IDEA ###
-/.idea
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# =========================
+# Gradle
+# =========================
+.gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
+# =========================
+# NetBeans
+# =========================
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iml
+out/
+
+# =========================
+# Eclipse
+# =========================
+.settings/
+.project
+.classpath
+
+# =========================
+# VS Code
+# =========================
 .vscode/
 
-### Mac OS ###
+# =========================
+# Tomcat / Web
+# =========================
+/build/
+/dist/
+/out/
+/temp/
+/work/
+
+# =========================
+# OS
+# =========================
 .DS_Store
+Thumbs.db
+
+# =========================
+# Environment / Secret
+# =========================
+.env
+*.env
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Upload / cache (nếu có)
+# =========================
+uploads/
+cache/
