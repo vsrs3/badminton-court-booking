@@ -59,7 +59,7 @@ public class DBContext {
             }
 
             return DriverManager.getConnection(url, username, password);
-        } catch (SQLException e) {
+        } catch (SQLException e){
             throw new RuntimeException("Failed to establish database connection: " + e.getMessage(), e);
         }
     }

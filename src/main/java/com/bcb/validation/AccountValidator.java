@@ -81,29 +81,37 @@ public class AccountValidator {
             account.getPasswordHash().length() > PASSWORD_HASH_MAX_LENGTH) {
             errors.add("Password hash must not exceed " + PASSWORD_HASH_MAX_LENGTH + " characters");
         }
-
+        
+        
+        
         // Validate googleId (optional)
         if (account.getGoogleId() != null &&
             account.getGoogleId().length() > GOOGLE_ID_MAX_LENGTH) {
             errors.add("Google ID must not exceed " + GOOGLE_ID_MAX_LENGTH + " characters");
         }
-
+        
+        
+        
         // Validate avatarPath (optional)
         if (account.getAvatarPath() != null &&
             account.getAvatarPath().length() > AVATAR_PATH_MAX_LENGTH) {
             errors.add("Avatar path must not exceed " + AVATAR_PATH_MAX_LENGTH + " characters");
         }
-
         return errors;
     }
 
+    
+    
     /**
      * Check if email is valid
      */
+    
+    
     public static boolean isValidEmail(String email) {
         return email != null && EMAIL_PATTERN.matcher(email).matches();
     }
 
+    
     /**
      * Check if phone is valid
      */

@@ -1,6 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
-         version="6.0">
+<web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
+    <servlet>
+        <servlet-name>RegisterController</servlet-name>
+        <servlet-class>com.bcb.controller.RegisterController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>VerifyEmailController</servlet-name>
+        <servlet-class>com.bcb.controller.VerifyEmailController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>CleanupEmailVerificationController</servlet-name>
+        <servlet-class>com.bcb.controller.CleanupEmailVerificationController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>GoogleLoginServlet</servlet-name>
+        <servlet-class>com.bcb.controller.GoogleLoginServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>LoginServlet</servlet-name>
+        <servlet-class>com.bcb.controller.LoginServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>GoogleAutoLinkController</servlet-name>
+        <servlet-class>com.bcb.controller.GoogleAutoLinkController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>GoogleCallbackController</servlet-name>
+        <servlet-class>com.bcb.controller.GoogleCallbackController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RegisterController</servlet-name>
+        <url-pattern>/register</url-pattern>
+    </servlet-mapping>
+    <!-- Register Google -->
+    <!-- Trang mặc định -->
+    <servlet-mapping>
+        <servlet-name>VerifyEmailController</servlet-name>
+        <url-pattern>/verify-email</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>CleanupEmailVerificationController</servlet-name>
+        <url-pattern>/cleanup-email</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>GoogleLoginServlet</servlet-name>
+        <url-pattern>/google-login</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>LoginServlet</servlet-name>
+        <url-pattern>/login</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>GoogleAutoLinkController</servlet-name>
+        <url-pattern>/google-link</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>GoogleCallbackController</servlet-name>
+        <url-pattern>/google-callback</url-pattern>
+    </servlet-mapping>
+    <welcome-file-list>
+        <welcome-file>login.jsp</welcome-file>
+    </welcome-file-list>
 </web-app>

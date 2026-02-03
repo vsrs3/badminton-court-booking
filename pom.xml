@@ -10,6 +10,7 @@
     <name>badminton-court-booking</name>
     <packaging>war</packaging>
 
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>17</maven.compiler.target>
@@ -25,7 +26,11 @@
             <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
-
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.10.1</version>
+</dependency>
         <!-- SQL Server JDBC Driver -->
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
@@ -39,6 +44,12 @@
             <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
             <version>3.0.0</version>
         </dependency>
+<!-- Jakarta Mail -->
+<dependency>
+    <groupId>com.sun.mail</groupId>
+    <artifactId>jakarta.mail</artifactId>
+    <version>2.0.1</version>
+</dependency>
 
         <!-- JSTL Implementation -->
         <dependency>
@@ -60,6 +71,26 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20240303</version>
+        </dependency>
+
+        
+        
+        <dependency>
+        <groupId>org.mindrot</groupId>
+        <artifactId>jbcrypt</artifactId>
+        <version>0.4</version>
+    </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.9.8</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 
