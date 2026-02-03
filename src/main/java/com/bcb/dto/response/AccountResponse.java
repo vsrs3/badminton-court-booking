@@ -1,22 +1,22 @@
 package com.bcb.dto.response;
 
-import com.bcb.model.Customer;
+import com.bcb.model.Account;
 
-public class CustomerResponse {
+public class AccountResponse {
     private final boolean success;
     private final String message;
     private final int generatedId;
 
-    private Customer customer;
+    private Account account;
 
     //constructor
-    public CustomerResponse(boolean success, String message) {
+    public AccountResponse(boolean success, String message) {
         this.success = success;
         this.message = message;
         this.generatedId = -1;
     }
 
-    public CustomerResponse(boolean success, String message, int generatedId) {
+    public AccountResponse(boolean success, String message, int generatedId) {
         this.success = success;
         this.message = message;
         this.generatedId = generatedId;
@@ -35,11 +35,11 @@ public class CustomerResponse {
         return generatedId;
     }
 
-    public Customer getCustomer() {
-        return customer;
+    public Account getAccount() {
+        return account;
     }
 
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
+    public void setAccount(Account account) {
+        this.account = account;
     }
 }

@@ -84,8 +84,8 @@
             <div class="avatar-upload flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
                 <div class="avatar-preview w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-50 flex items-center justify-center">
                     <c:choose>
-                        <c:when test="${not empty sessionScope.customer.avatarPath}">
-                            <img src="${pageContext.request.contextPath}/${sessionScope.customer.avatarPath}"
+                        <c:when test="${not empty sessionScope.account.avatarPath}">
+                            <img src="${pageContext.request.contextPath}/${sessionScope.account.avatarPath}"
                                  alt="Avatar" id="avatarPreview" class="w-full h-full object-cover">
                         </c:when>
                         <c:otherwise>
@@ -114,7 +114,7 @@
                 <span>Họ và tên</span>
             </label>
             <input type="text" id="full_name" name="full_name"
-                   value="${sessionScope.customer.fullName}"
+                   value="${sessionScope.account.fullName}"
                    required maxlength="50"
                    class="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none transition-colors"
                    placeholder="Ví dụ: Nguyễn Văn A">
@@ -128,13 +128,13 @@
                 <span>Email</span>
             </label>
             <input type="email" id="email" name="email"
-                   value="${sessionScope.customer.email}" required
+                   value="${sessionScope.account.email}" required
                    class="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none transition-colors"
                    placeholder="Ví dụ: example123@gmail.com"
-                   <c:if test="${not empty sessionScope.customer.googleId}">readonly</c:if>>
+                   <c:if test="${not empty sessionScope.account.googleId}">readonly</c:if>>
             <div id="emailWarning" class="warning-message"></div>
 
-            <c:if test="${not empty sessionScope.customer.googleId}">
+            <c:if test="${not empty sessionScope.account.googleId}">
                 <p class="text-xs text-gray-500 flex items-center space-x-1 mt-1">
                     <i data-lucide="google" class="w-3 h-3"></i>
                     <span>Đăng nhập bằng Google</span>
@@ -153,7 +153,7 @@
                 <input type="tel"
                        id="phone"
                        name="phone"
-                       value="${sessionScope.customer.phone}"
+                       value="${sessionScope.account.phone}"
                        required
                        class="w-full p-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none transition-colors pl-4 pr-12"
                        placeholder="Ví dụ: 0901234567, 0912345678">

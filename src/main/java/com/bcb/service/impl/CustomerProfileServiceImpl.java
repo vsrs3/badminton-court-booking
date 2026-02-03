@@ -2,11 +2,11 @@ package com.bcb.service.impl;
 
 import com.bcb.dto.CustomerChangePassDTO;
 import com.bcb.dto.CustomerProfileDTO;
+import com.bcb.model.Account;
 import com.bcb.repository.CustomerProfileRepository;
 import com.bcb.repository.impl.CustomerProfileRepositoryImpl;
 import com.bcb.service.CustomerProfileService;
-import com.bcb.dto.response.CustomerResponse;
-import com.bcb.model.Customer;
+import com.bcb.dto.response.AccountResponse;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.DBUpload;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,16 +24,16 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     }
 
     @Override
-    public CustomerResponse updateInfo (HttpServletRequest request, CustomerProfileDTO dto, int accountId) {
+    public AccountResponse updateInfo (HttpServletRequest request, CustomerProfileDTO dto, Integer accountId) {
 
         try (Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
-            Customer customer = repo.getCustomerById(accountId);
-            List<String> listEmail = repo.emailList(customer.getEmail());
+            Account account = repo.getCustomerById(accountId);
+            List<String> listEmail = repo.emailList(account.getEmail());
             for(String email : listEmail){
                 if(dto.getEmail().equals(email)){
-                    return new CustomerResponse(false, "Email đã tồn tại!", 1000);
+                    return new AccountResponse(false, "Email đã tồn tại!", 1000);
                 }
             }
 
@@ -44,30 +44,30 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
             if (!isUpdateInfo) {
                 connect.rollback();
-                return new CustomerResponse(false, "Cập nhật thông tin thất bại!", 1000);
+                return new AccountResponse(false, "Cập nhật thông tin thất bại!", 1000);
             }
             connect.commit();
-            Customer updatedCustomer = repo.getCustomerById(accountId);
+            Account updatedCustomer = repo.getCustomerById(accountId);
 
-            CustomerResponse result = new CustomerResponse(true, "Cập nhật thông tin thành công!", 1002);
-            result.setCustomer(updatedCustomer);
+            AccountResponse result = new AccountResponse(true, "Cập nhật thông tin thành công!", 1002);
+            result.setAccount(updatedCustomer);
             return result;
 
         } catch (Exception e) {
             e.printStackTrace();
-            return new CustomerResponse(false, e.getMessage(), 1004);
+            return new AccountResponse(false, e.getMessage(), 1004);
         }
     }
 
     @Override
-    public CustomerResponse updatePassword(CustomerChangePassDTO dto, int accountId) {
+    public AccountResponse updatePassword(CustomerChangePassDTO dto, Integer accountId) {
 
         try(Connection connect = DBContext.getConnection()) {
             connect.setAutoCommit(false);
 
-            Customer customer = repo.getCustomerById(accountId);
-            if(!BCrypt.checkpw(dto.getOldPass(), customer.getPassword())) {
-                return new CustomerResponse(false, "Mật khẩu hiện tại không khớp", 1000);
+            Account account = repo.getCustomerById(accountId);
+            if(!BCrypt.checkpw(dto.getOldPass(), account.getPasswordHash())) {
+                return new AccountResponse(false, "Mật khẩu hiện tại không khớp", 1000);
             }
 
             String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt());
@@ -75,19 +75,19 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
             boolean isUpdate = repo.updatePassword(hashedNewPass, accountId);
             if(!isUpdate){
                 connect.rollback();
-                return new CustomerResponse(false, "Đổi mật khẩu thất bại!", 1000);
+                return new AccountResponse(false, "Đổi mật khẩu thất bại!", 1000);
             }
 
             connect.commit();
-            customer.setPassword(hashedNewPass);
+            account.setPasswordHash(hashedNewPass);
 
-            CustomerResponse result = new CustomerResponse(true, "Đổi mật khẩu thành công!", 1002);
-            result.setCustomer(customer);
+            AccountResponse result = new AccountResponse(true, "Đổi mật khẩu thành công!", 1002);
+            result.setAccount(account);
             return result;
 
         } catch (Exception e) {
             e.printStackTrace();
-            return new CustomerResponse(false, e.getMessage(), 1004);
+            return new AccountResponse(false, e.getMessage(), 1004);
         }
     }
 }

@@ -1,19 +1,19 @@
 package com.bcb.repository.impl;
 
-import com.bcb.model.Customer;
-import com.bcb.repository.CustomerAuthRepository;
+import com.bcb.model.Account;
+import com.bcb.repository.AccountAuthRepository;
 import com.bcb.utils.DBContext;
 
 import java.sql.*;
 
-public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
+public class AccountAuthRepositoryImpl implements AccountAuthRepository {
 
     private final String GET_CUSTOMER = "Select * From Account where email = ?";
 
     private final String DELETE_CUSTOMER = "Delete From Account Where account_id = ?";
 
    @Override
-    public Customer getCustomerByEmailAndPass(String email) {
+    public Account getAccountByEmailAndPass(String email) {
 
         try (Connection connect = DBContext.getConnection()) {
             PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER);
@@ -21,7 +21,7 @@ public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return new Customer(
+                return new Account(
                         rs.getInt("account_id"),
                         rs.getString("email"),
                         rs.getString("password_hash"),
@@ -43,11 +43,11 @@ public class CustomerAuthRepositoryImpl implements CustomerAuthRepository {
     }
 
     @Override
-    public boolean deleteCustomerById(int customerId) {
+    public boolean deleteAccountById(Integer accountId) {
 
         try(Connection connect = DBContext.getConnection();) {
             PreparedStatement ps = connect.prepareStatement(DELETE_CUSTOMER);
-            ps.setInt(1,customerId);
+            ps.setInt(1,accountId);
             int result = ps.executeUpdate();
             return result > 0;
 

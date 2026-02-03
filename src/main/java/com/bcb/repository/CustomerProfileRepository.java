@@ -1,15 +1,15 @@
 package com.bcb.repository;
 
-import com.bcb.model.Customer;
+import com.bcb.model.Account;
 
 import java.util.List;
 
 public interface CustomerProfileRepository {
-     boolean updateAccountInfo (String avatarPath, String fullName, String email, String phone, int accountId);
+     boolean updateAccountInfo (String avatarPath, String fullName, String email, String phone, Integer accountId);
 
-     boolean updatePassword (String newPass, int accountId);
+     boolean updatePassword (String newPass, Integer accountId);
 
-     Customer getCustomerById (int cusId);
+     Account getCustomerById (Integer accountId);
 
      List<String> emailList (String email);
 }

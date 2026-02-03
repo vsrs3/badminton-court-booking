@@ -4,12 +4,12 @@
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-3">
                 <div class="relative">
-                    <img src="${sessionScope.customer.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
+                    <img src="${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
                     <div class="absolute bottom-0 right-0 w-4 h-4 bg-[#9ef01a] rounded-full border-2 border-[#004d3d]"></div>
                 </div>
                 <div>
-                    <h2 class="font-bold text-base">${sessionScope.customer.getFullName()}</h2>
-                    <p class="text-xs text-white/70">${sessionScope.customer.getEmail()}</p>
+                    <h2 class="font-bold text-base">${sessionScope.account.getFullName()}</h2>
+                    <p class="text-xs text-white/70">${sessionScope.account.getEmail()}</p>
                 </div>
             </div>
             <a href="profile?section=profile-info">

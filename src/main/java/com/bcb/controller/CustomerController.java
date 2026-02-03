@@ -3,12 +3,12 @@ package com.bcb.controller;
 import com.bcb.dto.CustomerChangePassDTO;
 import com.bcb.dto.CustomerLoginDTO;
 import com.bcb.dto.CustomerProfileDTO;
+import com.bcb.model.Account;
 import com.bcb.service.CustomerAuthService;
 import com.bcb.service.CustomerProfileService;
 import com.bcb.service.impl.CustomerAuthServiceImpl;
 import com.bcb.service.impl.CustomerProfileServiceImpl;
-import com.bcb.dto.response.CustomerResponse;
-import com.bcb.model.Customer;
+import com.bcb.dto.response.AccountResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -31,7 +31,6 @@ public class CustomerController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
-        System.out.println("Action = " + action);
 
         if(action != null) {
             switch (action) {
@@ -71,11 +70,11 @@ public class CustomerController extends HttpServlet {
 
         try {
             CustomerLoginDTO dto = new CustomerLoginDTO(email);
-            CustomerResponse result = authService.login(dto);
+            AccountResponse result = authService.login(dto);
 
             HttpSession session = request.getSession();
             if (result.isSuccess()) {
-                session.setAttribute("customer", result.getCustomer());
+                session.setAttribute("account", result.getAccount());
                 response.sendRedirect(request.getContextPath() + "/home");
             } else {
                 session.setAttribute("logError", result.getMessage());
@@ -97,18 +96,18 @@ public class CustomerController extends HttpServlet {
         Part avatarFile = request.getPart("avatar");
 
         HttpSession session = request.getSession();
-        Customer customer = (Customer) session.getAttribute("customer");
+        Account account = (Account) session.getAttribute("account");
         try {
             CustomerProfileDTO dto = new CustomerProfileDTO(fullName, email, phone, avatarFile);
-            if (customer.getAvatarPath() != null && !customer.getAvatarPath().isEmpty()) {
-                dto.setAvatarPath(customer.getAvatarPath());
+            if (account.getAvatarPath() != null && !account.getAvatarPath().isEmpty()) {
+                dto.setAvatarPath(account.getAvatarPath());
             }
 
-            int accountId = customer.getAccountId();
-            CustomerResponse result = profileService.updateInfo(request, dto, accountId);
+            Integer accountId = account.getAccountId();
+            AccountResponse result = profileService.updateInfo(request, dto, accountId);
 
             if (result.isSuccess()) {
-                session.setAttribute("customer", result.getCustomer());
+                session.setAttribute("account", result.getAccount());
                 session.setAttribute("updateSuccess", result.getMessage());
             } else {
                 session.setAttribute("updateError", result.getMessage());
@@ -128,13 +127,13 @@ public class CustomerController extends HttpServlet {
         String confirmNewPass = request.getParameter("confirmPassword");
 
         HttpSession session = request.getSession();
-        Customer customer = (Customer) session.getAttribute("customer");
+        Account account = (Account) session.getAttribute("customer");
         try{
             CustomerChangePassDTO dto = new CustomerChangePassDTO(oldPass, newPass, confirmNewPass);
 
-            CustomerResponse result = profileService.updatePassword(dto, customer.getAccountId());
+            AccountResponse result = profileService.updatePassword(dto, account.getAccountId());
             if(result.isSuccess()){
-                session.setAttribute("customer", result.getCustomer());
+                session.setAttribute("account", result.getAccount());
                 session.setAttribute("updateSuccess", result.getMessage());
             } else {
                 session.setAttribute("updateError", result.getMessage());
@@ -165,11 +164,11 @@ public class CustomerController extends HttpServlet {
     private void deleteAccount (HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        Customer customer = (Customer) session.getAttribute("customer");
+        Account account = (Account) session.getAttribute("account");
 
-        if(customer != null) {
-            int customerId = customer.getAccountId();
-            CustomerResponse result = authService.deleteAccount(customerId);
+        if(account != null) {
+            Integer customerId = account.getAccountId();
+            AccountResponse result = authService.deleteAccount(customerId);
 
             if (result.isSuccess()) {
                 session.setAttribute("successMessage", result.getMessage());

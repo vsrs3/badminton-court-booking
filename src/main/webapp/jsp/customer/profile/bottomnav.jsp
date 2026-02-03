@@ -18,7 +18,7 @@
         <i data-lucide="zap" class="w-5 h-5 text-gray-400"></i>
         <span class="text-[10px] font-bold text-gray-400">ƯU ĐÃI</span>
     </a>
-    <a href="profile" class="flex flex-col items-center space-y-1 w-1/5 transition-colors">
+    <a href="profile?section=history" class="flex flex-col items-center space-y-1 w-1/5 transition-colors">
         <i data-lucide="user" class="w-5 h-5 text-emerald-700"></i>
         <span class="text-[10px] font-bold text-emerald-700">CÁ NHÂN</span>
         <div class="w-1 h-1 bg-emerald-700 rounded-full"></div>

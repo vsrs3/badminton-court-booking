@@ -1,6 +1,6 @@
 package com.bcb.repository.impl;
 
-import com.bcb.model.Customer;
+import com.bcb.model.Account;
 import com.bcb.repository.CustomerProfileRepository;
 import com.bcb.utils.*;
 import java.sql.Connection;
@@ -30,7 +30,7 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
                                         + "AND email <> ''AND email <> ? AND [role] = 'USER'";
 
     @Override
-    public boolean updateAccountInfo(String avatarPath, String fullName, String email, String phone, int accountId) {
+    public boolean updateAccountInfo(String avatarPath, String fullName, String email, String phone, Integer accountId) {
 
         DBContext db = new DBContext();
         Connection connect = db.getConnection();
@@ -52,12 +52,12 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     }
 
     @Override
-    public boolean updatePassword(String newPass, int customerId) {
+    public boolean updatePassword(String newPass, Integer accountId) {
 
         Connection connect = DBContext.getConnection();
         try (PreparedStatement ps = connect.prepareStatement(UPDATE_PASSWORD)){
             ps.setString(1, newPass);
-            ps.setInt(2, customerId);
+            ps.setInt(2, accountId);
 
             int result = ps.executeUpdate();
             return result > 0;
@@ -70,15 +70,15 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     }
 
     @Override
-    public Customer getCustomerById(int cusId) {
+    public Account getCustomerById(Integer accountId) {
 
         Connection connect = DBContext.getConnection();
         try (PreparedStatement ps = connect.prepareStatement(GET_CUSTOMER_BY_ID)) {
-            ps.setInt(1, cusId);
+            ps.setInt(1, accountId);
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return new Customer(
+                return new Account(
                         rs.getInt("account_id"),
                         rs.getString("email"),
                         rs.getString("password_hash"),

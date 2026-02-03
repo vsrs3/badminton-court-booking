@@ -47,12 +47,12 @@
         <a class="nav-link">
             <i class="fa fa-cart-arrow-down icon-item"></i>
         </a>
-        <c:if test="${sessionScope.customer == null}">
+        <c:if test="${sessionScope.account == null}">
             <a class="nav-link" href="login">
                 <i class="fa fa-user icon-item"></i>
             </a>
         </c:if>
-        <c:if test="${sessionScope.customer != null}">
+        <c:if test="${sessionScope.account != null}">
             <a class="nav-link" href="profile?section=history">
                 <i class="fa fa-user icon-item"></i>
             </a>

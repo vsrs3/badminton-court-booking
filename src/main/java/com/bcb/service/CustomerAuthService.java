@@ -1,10 +1,10 @@
 package com.bcb.service;
 
 import com.bcb.dto.CustomerLoginDTO;
-import com.bcb.dto.response.CustomerResponse;
+import com.bcb.dto.response.AccountResponse;
 
 public interface CustomerAuthService {
-    CustomerResponse login(CustomerLoginDTO dto);
+    AccountResponse login(CustomerLoginDTO dto);
 
-    CustomerResponse deleteAccount (int customerId);
+    AccountResponse deleteAccount (Integer customerId);
 }
