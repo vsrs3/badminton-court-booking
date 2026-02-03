@@ -299,3 +299,5 @@ window.getDistrictsByProvince = function(province) {
     const location = window.VIETNAM_LOCATIONS[province];
     return location ? location.districts.sort() : [];
 };
+
+console.log('✅ Vietnam locations data loaded:', Object.keys(window.VIETNAM_LOCATIONS).length, 'provinces');

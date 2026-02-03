@@ -7,16 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BadmintonPro - Đặt sân cầu lông chuyên nghiệp</title>
 
+    <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/main.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/components.css">
 </head>
 <body>
@@ -49,6 +54,7 @@
 
                 <!-- Court Cards Grid -->
                 <div id="courtsGrid" class="courts-grid">
+                    <!-- Court cards will be inserted here via JavaScript -->
                 </div>
 
                 <!-- No Results Message -->
@@ -117,13 +123,13 @@
     <jsp:include page="../common/filter-panel.jsp" />
 
     <!-- Court Detail Modal -->
+    <jsp:include page="../common/court-card.jsp" />
+
+    <!-- Court Detail Modal -->
     <jsp:include page="../common/court-detail.jsp" />
 
     <!-- Auth Modal -->
     <jsp:include page="../common/auth-modal.jsp" />
-
-    <!-- Court Card Template -->
-    <jsp:include page="../common/court-card.jsp" />
 
     <!-- Toast Notification -->
     <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
@@ -138,21 +144,25 @@
             </div>
         </div>
     </div>
-
 </div>
 
+<!-- Data will be loaded from API -->
+<script>
+    window.COURTS_DATA = []; // Empty initially, will be populated by API
+</script>
+
+<!-- Bootstrap 5.3 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-<script>
-    window.COURTS_DATA = [];
-</script>
-
+<!-- Vietnam Locations Data -->
 <script src="${pageContext.request.contextPath}/assets/js/vietnam-locations.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/main.js"></script>
+<!-- Custom JavaScript -->
+<script src="${pageContext.request.contextPath}/assets/js/badminton-pro.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/map-handler.js"></script>
 
 </body>

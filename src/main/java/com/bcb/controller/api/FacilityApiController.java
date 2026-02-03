@@ -1,10 +1,8 @@
 package com.bcb.controller.api;
 
-import com.bcb.model.FacilityDTO;
-import com.bcb.model.User;
+import com.bcb.dto.FacilityDTO;
 import com.bcb.service.FacilityService;
 import com.bcb.service.impl.FacilityServiceImpl;
-import com.bcb.utils.SessionUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import jakarta.servlet.ServletException;
@@ -12,6 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -60,7 +59,6 @@ public class FacilityApiController extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
             sendErrorResponse(response, 500, "Internal server error: " + e.getMessage());
         }
     }
@@ -84,44 +82,35 @@ public class FacilityApiController extends HttpServlet {
         Double userLat = getDoubleParameter(request, "userLat");
         Double userLng = getDoubleParameter(request, "userLng");
 
-        // ✅ NEW: Get current user account ID from session (if logged in)
-        User currentUser = SessionUtils.getCurrentUser(request);
-        Integer accountId = currentUser != null ? currentUser.getAccountId() : null;
-
-        if (currentUser != null) {
-            System.out.println("📍 API request from logged-in user: " + currentUser.getEmail() + " (ID: " + accountId + ")");
-        } else {
-            System.out.println("📍 API request from guest user");
+        // Get user account ID from session (if logged in)
+        HttpSession session = request.getSession(false);
+        Integer accountId = null;
+        if (session != null && session.getAttribute("accountId") != null) {
+            accountId = (Integer) session.getAttribute("accountId");
         }
 
-        // Get facilities (with favorites if logged in)
+        // Get facilities
         List<FacilityDTO> facilities = facilityService.getFacilities(page, pageSize, userLat, userLng, accountId);
         int totalCount = facilityService.getTotalCount();
+
+        // ✅ Calculate hasMore
+        int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+        boolean hasMore = (page + 1) < totalPages;
+
+        System.out.println("📄 Pagination: page=" + page + ", pageSize=" + pageSize +
+                ", totalCount=" + totalCount + ", totalPages=" + totalPages +
+                ", hasMore=" + hasMore);
 
         // Build response
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("success", true);
         responseData.put("data", facilities);
-
-        // ✅ NEW: Add user info to response
-        if (currentUser != null) {
-            Map<String, Object> userInfo = new HashMap<>();
-            userInfo.put("accountId", currentUser.getAccountId());
-            userInfo.put("email", currentUser.getEmail());
-            userInfo.put("fullName", currentUser.getFullName());
-            userInfo.put("role", currentUser.getRole().getCode());
-            userInfo.put("isLoggedIn", true);
-            responseData.put("user", userInfo);
-        } else {
-            responseData.put("user", Map.of("isLoggedIn", false));
-        }
-
         responseData.put("pagination", Map.of(
                 "page", page,
                 "pageSize", pageSize,
                 "totalItems", totalCount,
-                "totalPages", (int) Math.ceil((double) totalCount / pageSize),
-                "hasMore", (page + 1) * pageSize < totalCount
+                "totalPages", totalPages,
+                "hasMore", hasMore
         ));
 
         // Send response
@@ -137,9 +126,12 @@ public class FacilityApiController extends HttpServlet {
         try {
             Integer facilityId = Integer.parseInt(id);
 
-            // ✅ NEW: Get user account ID from session (if logged in)
-            User currentUser = SessionUtils.getCurrentUser(request);
-            Integer accountId = currentUser != null ? currentUser.getAccountId() : null;
+            // Get user account ID from session (if logged in)
+            HttpSession session = request.getSession(false);
+            Integer accountId = null;
+            if (session != null && session.getAttribute("accountId") != null) {
+                accountId = (Integer) session.getAttribute("accountId");
+            }
 
             // Get facility
             FacilityDTO facility = facilityService.getFacilityById(facilityId, accountId);

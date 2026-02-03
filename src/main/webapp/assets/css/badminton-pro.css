@@ -1,4 +1,5 @@
 /* ============================================
+   BADMINTON PRO - MAIN STYLES
    Brand Colors & Global Utilities
    ============================================ */
 
@@ -8,8 +9,11 @@
     --color-lime-brand: #A3E635;
     --color-green-50: #F0FDF4;
     --color-green-100: #DCFCE7;
-    --color-green-300: #BBF7D0;
+    --color-green-200: #BBF7D0;
+    --color-green-300: #86EFAC;
+    --color-green-400: #4ADE80;
     --color-green-500: #22C55E;
+    --color-green-600: #16A34A;
     --color-green-700: #15803D;
     --color-green-800: #166534;
     --color-green-900: #14532D;
@@ -31,7 +35,6 @@
     --color-yellow-600: #CA8A04;
     --color-red-500: #EF4444;
     --color-red-600: #DC2626;
-    --color-red-700: #B91C1C;
     --color-blue-500: #3B82F6;
     --color-orange-400: #FB923C;
     --color-orange-600: #EA580C;
@@ -96,7 +99,7 @@ html {
 }
 
 body {
-    font-family: var(--font-family), serif;
+    font-family: var(--font-family);
     background-color: #F8FAF9;
     color: var(--color-gray-900);
     line-height: 1.5;
@@ -239,8 +242,8 @@ body {
 
 .courts-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr); /* Cố định 3 cột */
+    gap: 2.5rem;
     width: 100%;
 }
 

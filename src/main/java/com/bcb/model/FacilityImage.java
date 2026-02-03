@@ -2,6 +2,9 @@ package com.bcb.model;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing facility images
+ */
 public class FacilityImage {
 
     private Integer imageId;
@@ -10,6 +13,7 @@ public class FacilityImage {
     private Boolean isThumbnail;
     private LocalDateTime createdAt;
 
+    // Constructors
     public FacilityImage() {
     }
 
@@ -22,6 +26,7 @@ public class FacilityImage {
         this.createdAt = createdAt;
     }
 
+    // Getters and Setters
     public Integer getImageId() {
         return imageId;
     }
@@ -60,15 +65,5 @@ public class FacilityImage {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "FacilityImage{" +
-                "imageId=" + imageId +
-                ", facilityId=" + facilityId +
-                ", imagePath='" + imagePath + '\'' +
-                ", isThumbnail=" + isThumbnail +
-                '}';
     }
 }

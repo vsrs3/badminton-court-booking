@@ -3,22 +3,39 @@ package com.bcb.model;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
+/**
+ * Entity representing Facility table (Pure DB mapping)
+ * NO computed fields, NO business logic
+ */
 public class Facility {
+
+    // ============================================
+    // DATABASE FIELDS ONLY
+    // ============================================
+
     private Integer facilityId;
     private String name;
+
+    // Location
     private String province;
     private String district;
     private String ward;
     private String address;
+
+    // Coordinates
     private BigDecimal latitude;
     private BigDecimal longitude;
+
+    // Details
     private String description;
     private LocalTime openTime;
     private LocalTime closeTime;
+
     private Boolean isActive;
-    private String thumbnailPath;
-    private Double distance; // Distance from user in km
-    private Double rating;   // Average rating from reviewers
+
+    // ============================================
+    // CONSTRUCTORS
+    // ============================================
 
     public Facility() {
     }
@@ -39,6 +56,10 @@ public class Facility {
         this.closeTime = closeTime;
         this.isActive = isActive;
     }
+
+    // ============================================
+    // GETTERS AND SETTERS
+    // ============================================
 
     public Integer getFacilityId() {
         return facilityId;
@@ -136,30 +157,13 @@ public class Facility {
         this.isActive = isActive;
     }
 
-    public String getThumbnailPath() {
-        return thumbnailPath;
-    }
+    // ============================================
+    // UTILITY METHODS
+    // ============================================
 
-    public void setThumbnailPath(String thumbnailPath) {
-        this.thumbnailPath = thumbnailPath;
-    }
-
-    public Double getDistance() {
-        return distance;
-    }
-
-    public void setDistance(Double distance) {
-        this.distance = distance;
-    }
-
-    public Double getRating() {
-        return rating;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
+    /**
+     * Get full location address (helper method, not a field)
+     */
     public String getFullAddress() {
         StringBuilder sb = new StringBuilder();
         if (address != null && !address.isEmpty()) sb.append(address);

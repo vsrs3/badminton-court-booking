@@ -3,42 +3,45 @@ package com.bcb.repository.impl;
 import com.bcb.model.Facility;
 import com.bcb.repository.FacilityRepository;
 import com.bcb.utils.DBContext;
+
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Implementation of FacilityRepository
+ * Returns PURE entities (no computed fields)
+ */
 public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public List<Facility> findAllWithPagination(int offset, int limit) {
         List<Facility> facilities = new ArrayList<>();
 
+        // ✅ CLEANED: No thumbnail, no rating in main query
         String sql = """
             SELECT 
-                f.facility_id,
-                f.name,
-                f.province,
-                f.district,
-                f.ward,
-                f.address,
-                f.latitude,
-                f.longitude,
-                f.description,
-                f.open_time,
-                f.close_time,
-                f.is_active,
-                (SELECT TOP 1 image_path 
-                 FROM FacilityImage 
-                 WHERE facility_id = f.facility_id 
-                 AND is_thumbnail = 1) as thumbnail_path
-            FROM Facility f
-            WHERE f.is_active = 1
-            ORDER BY f.facility_id
-            OFFSET ? ROWS
-            FETCH NEXT ? ROWS ONLY
-        """;
+            facility_id,
+            name,
+            province,
+            district,
+            ward,
+            address,
+            latitude,
+            longitude,
+            description,
+            open_time,
+            close_time,
+            is_active
+        FROM Facility
+        WHERE is_active = 1
+        ORDER BY facility_id ASC
+        OFFSET ? ROWS
+        FETCH NEXT ? ROWS ONLY
+    """;
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -49,11 +52,6 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Facility facility = mapResultSetToFacility(rs);
-
-                    // Load average rating
-                    Double rating = getAverageRating(facility.getFacilityId());
-                    facility.setRating(rating);
-
                     facilities.add(facility);
                 }
             }
@@ -67,26 +65,23 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public Optional<Facility> findById(Integer facilityId) {
+        // ✅ CLEANED: Pure entity query
         String sql = """
             SELECT 
-                f.facility_id,
-                f.name,
-                f.province,
-                f.district,
-                f.ward,
-                f.address,
-                f.latitude,
-                f.longitude,
-                f.description,
-                f.open_time,
-                f.close_time,
-                f.is_active,
-                (SELECT TOP 1 image_path 
-                 FROM FacilityImage 
-                 WHERE facility_id = f.facility_id 
-                 AND is_thumbnail = 1) as thumbnail_path
-            FROM Facility f
-            WHERE f.facility_id = ? AND f.is_active = 1
+                facility_id,
+                name,
+                province,
+                district,
+                ward,
+                address,
+                latitude,
+                longitude,
+                description,
+                open_time,
+                close_time,
+                is_active
+            FROM Facility
+            WHERE facility_id = ? AND is_active = 1
         """;
 
         try (Connection conn = DBContext.getConnection();
@@ -97,10 +92,6 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Facility facility = mapResultSetToFacility(rs);
-
-                    Double rating = getAverageRating(facility.getFacilityId());
-                    facility.setRating(rating);
-
                     return Optional.of(facility);
                 }
             }
@@ -151,7 +142,8 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error fetching thumbnail: " + e.getMessage(), e);
+            // Log but don't throw - image is optional
+            System.err.println("Error fetching thumbnail: " + e.getMessage());
         }
 
         return null;
@@ -180,13 +172,16 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             }
 
         } catch (SQLException e) {
-            // rating is optional
+            // Log but don't throw - rating is optional
             System.err.println("Error fetching rating: " + e.getMessage());
         }
 
         return 0.0;
     }
 
+    /**
+     * Map ResultSet to PURE Facility entity
+     */
     private Facility mapResultSetToFacility(ResultSet rs) throws SQLException {
         Facility facility = new Facility();
 
@@ -212,9 +207,6 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         facility.setCloseTime(closeTime != null ? closeTime.toLocalTime() : null);
 
         facility.setIsActive(rs.getBoolean("is_active"));
-
-        String thumbnail = rs.getString("thumbnail_path");
-        facility.setThumbnailPath(thumbnail);
 
         return facility;
     }

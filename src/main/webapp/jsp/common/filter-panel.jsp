@@ -29,6 +29,7 @@
         <label class="filter-label">Tỉnh / Thành phố</label>
         <select id="filterProvince" class="filter-select">
           <option value="">Tất cả tỉnh thành</option>
+          <!-- Will be populated by JavaScript -->
         </select>
       </div>
 
@@ -36,8 +37,10 @@
         <label class="filter-label">Quận / Huyện</label>
         <select id="filterDistrict" class="filter-select" disabled>
           <option value="">Tất cả quận huyện</option>
+          <!-- Will be populated dynamically based on province -->
         </select>
       </div>
+    </section>
 
     <!-- Distance Section -->
     <section class="filter-section">
@@ -74,4 +77,3 @@
   </div>
 
 </div>
-

@@ -1,4 +1,5 @@
 /**
+ * BADMINTON PRO - Main Application JavaScript
  * Handles: Tabs, Search, Filters, Favorites, Court Details, API Integration
  */
 
@@ -72,16 +73,6 @@
             modal.classList.remove('active');
             document.body.style.overflow = '';
         }
-
-        // ✅ FIX: Revert bottom nav to current tab when modal closes
-        document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-
-        const currentNavBtn = document.querySelector(`[data-tab="${AppState.currentTab}"]`);
-        if (currentNavBtn) {
-            currentNavBtn.classList.add('active');
-        }
     }
 
     /**
@@ -105,51 +96,13 @@
         }
         return true;
     }
-// ============================================
-// AUTHENTICATION STATE
-// ============================================
 
-    const AuthState = {
-        isLoggedIn: false,
-        userId: null,
-        userRole: null
-    };
-
-    /**
-     * Initialize authentication state from hidden inputs
-     */
-    function initAuthState() {
-        const isLoggedInInput = document.getElementById('isLoggedIn');
-        const userRoleInput = document.getElementById('currentUserRole');
-        const userIdInput = document.getElementById('currentUserId');
-
-        if (isLoggedInInput) {
-            AuthState.isLoggedIn = isLoggedInInput.value === 'true';
-        }
-
-        if (userRoleInput) {
-            AuthState.userRole = userRoleInput.value;
-        }
-
-        if (userIdInput) {
-            AuthState.userId = parseInt(userIdInput.value);
-        }
-
-        console.log('🔐 Auth State:', AuthState);
-    }
-
-    /**
-     * Check if user is logged in
-     */
-    function isUserLoggedIn() {
-        return AuthState.isLoggedIn;
-    }
     // ============================================
     // UTILITY FUNCTIONS
     // ============================================
 
     /**
-     * Calculate distance between two coordinates
+     * Calculate distance between two coordinates (Haversine formula)
      */
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Earth's radius in km
@@ -212,13 +165,16 @@
      * Load facilities from API
      */
     async function loadFacilitiesFromAPI(page = 0) {
+        console.log('Loading facilities from API, page:', page);
 
         if (isLoading) {
+            console.log('Already loading, skipping...');
             return;
         }
 
         // Allow loading first page even if hasMore is false (for refresh)
         if (page > 0 && !hasMore) {
+            console.log('No more data, skipping...');
             return;
         }
 
@@ -231,10 +187,11 @@
                 pageSize: PAGE_SIZE
             });
 
-            // Add user location if available
+            // ✅ IMPORTANT: Add user location if available
             if (AppState.userLocation) {
                 params.append('userLat', AppState.userLocation.lat);
                 params.append('userLng', AppState.userLocation.lng);
+                console.log('Sending user location:', AppState.userLocation);
             } else {
                 console.log('No user location available');
             }
@@ -243,16 +200,22 @@
             const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
             const apiUrl = `/${contextPath}/api/facilities?${params}`;
 
+            console.log('Fetching from:', apiUrl);
+
             const response = await fetch(apiUrl);
+
+            console.log('Response status:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const result = await response.json();
+            console.log('API result:', result);
 
             if (result.success) {
                 const newFacilities = result.data;
+                console.log('Loaded', newFacilities.length, 'facilities');
 
                 // Append to existing courts (for infinite scroll)
                 if (page === 0) {
@@ -261,11 +224,13 @@
                     AppState.courts = [...AppState.courts, ...newFacilities];
                 }
 
+                console.log('Total courts in state:', AppState.courts.length);
+
                 // Update pagination state
                 hasMore = result.pagination.hasMore;
                 currentPage = page;
 
-                // Sync to global for map
+                // ✅ Sync to global for map
                 window.COURTS_DATA = AppState.courts;
                 // Apply filters and render
                 applyFiltersAndSearch();
@@ -295,7 +260,9 @@
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    // Reload facilities with location to get distance calculation
+                    console.log('✅ User location obtained:', AppState.userLocation);
+
+                    // ✅ Reload facilities with location to get distance calculation
                     loadFacilitiesFromAPI(0);
                 },
                 (error) => {
@@ -307,6 +274,7 @@
                 }
             );
         } else {
+            console.log("Geolocation not supported");
             // Load without location
             loadFacilitiesFromAPI(0);
         }
@@ -317,6 +285,7 @@
     // ============================================
 
     function applyFiltersAndSearch() {
+        console.log('Applying filters and search...');
         let courts = [...AppState.courts];
 
         // 1. Search filter
@@ -377,6 +346,7 @@
         const favoritesHeader = document.getElementById('favoritesHeader');
 
         if (!grid || !noResults) {
+            console.error('Grid or noResults element not found');
             return;
         }
 
@@ -397,6 +367,7 @@
         // Get template
         const template = document.getElementById('courtCardTemplate');
         if (!template) {
+            console.error('Court card template not found');
             return;
         }
 
@@ -450,16 +421,21 @@
                 const court = AppState.courts.find(c => c.id === courtId);
 
                 if (court) {
-                    // Option 1: Open with exact coordinates (if contains)
+                    // ✅ Option 1: Open with exact coordinates if available
                     if (court.lat && court.lng) {
+                        // Format: https://www.google.com/maps/search/?api=1&query=21.0321,105.7834
                         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${court.lat},${court.lng}`;
                         window.open(mapsUrl, '_blank');
+
+                        console.log('📍 Opening Google Maps:', mapsUrl);
                     }
-                    // Option 2: Open with fallback text search
+                    // ✅ Option 2: Fallback with text if coordinates not available
                     else {
                         const encodedLocation = encodeURIComponent(`${court.name} ${court.location}`);
                         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
                         window.open(mapsUrl, '_blank');
+
+                        console.log('📍 Opening Google Maps (text search):', mapsUrl);
                     }
                 }
             });
@@ -470,7 +446,7 @@
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
 
-                // Require login
+                // ✅ Require login
                 if (!requireLogin('Đặt sân')) {
                     return;
                 }
@@ -479,6 +455,7 @@
                 const court = AppState.courts.find(c => c.id === courtId);
                 if (court) {
                     // TODO: Navigate to booking page
+                    console.log('📅 Opening booking form for:', court.name);
                 }
             });
         });
@@ -491,11 +468,10 @@
     function switchTab(tabName) {
         console.log('🔄 Switching to tab:', tabName);
 
-        // ✅ FIX: Check login requirement for certain tabs
+        // ✅ Check login requirement for certain tabs
         if (tabName === TABS.BOOKING || tabName === TABS.OFFER || tabName === TABS.PROFILE) {
             if (!requireLogin('Tính năng này')) {
-                // ✅ Don't switch tab if not logged in - stay on current tab
-                return;
+                return; // Don't switch tab if not logged in
             }
         }
 
@@ -511,8 +487,6 @@
         const activeTab = document.getElementById(`${tabName}Tab`);
         if (activeTab) {
             activeTab.classList.add('active');
-        } else {
-            console.error('❌ Tab element not found:', `${tabName}Tab`);
         }
 
         // Update bottom nav
@@ -537,28 +511,16 @@
             updateFavoriteButton();
         }
 
-        // ✅ Initialize map if switching to map tab
+        // ✅ NEW: Initialize map if switching to map tab
         if (tabName === TABS.MAP) {
-            console.log('🗺️ Map tab activated');
-            console.log('Courts data available:', window.COURTS_DATA ? window.COURTS_DATA.length : 'none');
-
             setTimeout(() => {
                 if (window.initMap) {
-                    console.log('📍 Calling initMap()');
                     window.initMap();
 
-                    // ✅ Force update markers with current courts data
-                    if (window.COURTS_DATA && window.COURTS_DATA.length > 0) {
-                        console.log('🔄 Updating markers with', window.COURTS_DATA.length, 'courts');
-
-                        if (window.updateMapMarkers) {
-                            window.updateMapMarkers(window.COURTS_DATA);
-                        }
-                    } else {
-                        console.warn('⚠️ No courts data available for map');
+                    // Update markers with current courts data
+                    if (window.updateMapMarkers && AppState.courts.length > 0) {
+                        window.updateMapMarkers(AppState.courts);
                     }
-                } else {
-                    console.error('❌ window.initMap not found');
                 }
             }, 100);
         }
@@ -675,35 +637,6 @@
     // FILTER PANEL
     // ============================================
 
-    /**
-     * Initialize filter select options with Vietnam locations data
-     */
-    function initializeFilterSelects() {
-        const provinceSelect = document.getElementById('filterProvince');
-
-        if (!provinceSelect) {
-            return;
-        }
-
-        // Check if Vietnam data is loaded
-        if (!window.getAllProvinces) {
-            return;
-        }
-
-        // Get all provinces
-        const provinces = window.getAllProvinces();
-
-        // Clear existing options (except first)
-        provinceSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
-
-        // Add province options
-        provinces.forEach(province => {
-            const option = document.createElement('option');
-            option.value = province;
-            option.textContent = province;
-            provinceSelect.appendChild(option);
-        });
-    }
     function openFilterPanel() {
         const backdrop = document.getElementById('filterBackdrop');
         const panel = document.getElementById('filterPanel');
@@ -764,12 +697,49 @@
 
         districtSelect.disabled = false;
 
-        // Use Vietnam data
+        // ✅ Use Vietnam data
         const districts = window.getDistrictsByProvince ?
             window.getDistrictsByProvince(province) : [];
 
+        console.log('📍 Loading', districts.length, 'districts for', province);
+
         districtSelect.innerHTML = '<option value="">Tất cả quận huyện</option>' +
             districts.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
+    /**
+     * Initialize filter select options with Vietnam locations data
+     */
+    function initializeFilterSelects() {
+        const provinceSelect = document.getElementById('filterProvince');
+
+        if (!provinceSelect) {
+            console.warn('⚠️ Filter province select not found');
+            return;
+        }
+
+        // Check if Vietnam data is loaded
+        if (!window.getAllProvinces) {
+            console.error('❌ Vietnam locations data not loaded!');
+            return;
+        }
+
+        // Get all provinces
+        const provinces = window.getAllProvinces();
+        console.log('🇻🇳 Loading', provinces.length, 'provinces');
+
+        // Clear existing options (except first "Tất cả")
+        provinceSelect.innerHTML = '<option value="">Tất cả tỉnh thành</option>';
+
+        // Add province options
+        provinces.forEach(province => {
+            const option = document.createElement('option');
+            option.value = province;
+            option.textContent = province;
+            provinceSelect.appendChild(option);
+        });
+
+        console.log('✅ Filter selects initialized with Vietnam data');
     }
 
     // ============================================
@@ -803,22 +773,23 @@
     // ============================================
 
     function initInfiniteScroll() {
-        const homeTab = document.getElementById('homeTab');
-        if (!homeTab) return;
+        console.log('✅ Infinite scroll initialized on window');
 
-        homeTab.addEventListener('scroll', debounce(function() {
-            // Check if tab is HOME
-            if (AppState.currentTab !== TABS.HOME) return;
+        window.addEventListener('scroll', debounce(function() {
+            if (AppState.currentTab !== TABS.HOME || isLoading || !hasMore) {
+                return;
+            }
 
-            // Check if near bottom
-            const scrollTop = homeTab.scrollTop;
-            const scrollHeight = homeTab.scrollHeight;
-            const clientHeight = homeTab.clientHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight;
+            const clientHeight = document.documentElement.clientHeight;
 
             const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
 
-            // Load more when 80% scrolled
-            if (scrollPercentage > 0.8 && !isLoading && hasMore) {
+            console.log('📜 Window scroll:', (scrollPercentage * 100).toFixed(2) + '%');
+
+            if (scrollPercentage > 0.8) {
+                console.log('🚀 Loading more...');
                 loadFacilitiesFromAPI(currentPage + 1);
             }
         }, 300));
@@ -834,23 +805,7 @@
             btn.addEventListener('click', function() {
                 const tab = this.dataset.tab;
                 if (tab) {
-                    // ✅ Store current tab before attempting switch
-                    const previousTab = AppState.currentTab;
-
                     switchTab(tab);
-
-                    // ✅ If tab didn't change (login required), revert nav active state
-                    if (AppState.currentTab === previousTab && tab !== previousTab) {
-                        // Revert to previous active button
-                        document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(b => {
-                            b.classList.remove('active');
-                        });
-
-                        const previousNavBtn = document.querySelector(`[data-tab="${previousTab}"]`);
-                        if (previousNavBtn) {
-                            previousNavBtn.classList.add('active');
-                        }
-                    }
                 }
             });
         });
@@ -860,9 +815,11 @@
         if (searchInput) {
             searchInput.addEventListener('input', debounce(function(e) {
                 AppState.searchQuery = e.target.value;
+                console.log('🔍 Search query:', AppState.searchQuery); // ✅ DEBUG
                 applyFiltersAndSearch();
             }, 300));
 
+            // ✅ Clear search button
             searchInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     this.value = '';
@@ -988,7 +945,7 @@
         const detailBookBtn = document.getElementById('detailBookBtn');
         if (detailBookBtn) {
             detailBookBtn.addEventListener('click', function() {
-                // Require login
+                // ✅ Require login
                 if (!requireLogin('Đặt sân')) {
                     closeCourtDetail(); // Close detail first
                     return;
@@ -996,7 +953,7 @@
 
                 if (AppState.selectedCourt) {
                     // TODO: Navigate to booking page
-                    console.log('Opening booking form for:', AppState.selectedCourt.name);
+                    console.log('📅 Opening booking form for:', AppState.selectedCourt.name);
                 }
             });
         }
@@ -1010,7 +967,8 @@
                 }
             });
         });
-        // Auth Modal listeners
+
+        // ✅ NEW: Auth Modal listeners
         const authModalBackdrop = document.getElementById('authModalBackdrop');
         if (authModalBackdrop) {
             authModalBackdrop.addEventListener('click', closeAuthModal);
@@ -1025,13 +983,9 @@
         if (authLoginBtn) {
             authLoginBtn.addEventListener('click', function() {
                 closeAuthModal();
-
+                // ✅ Redirect to login page
                 const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
-
-                // Navigate to mock login (dev) or real login (prod)
-                window.location.href = `/${contextPath}/auth/mock-login`;
-
-                console.log('🔐 Navigating to login page');
+                window.location.href = `/${contextPath}/auth/login`;
             });
         }
 
@@ -1040,45 +994,18 @@
             authRegisterBtn.addEventListener('click', function() {
                 closeAuthModal();
                 // TODO: Navigate to register page
+                console.log('📝 Navigate to register page');
                 // window.location.href = '/auth/register';
             });
         }
 
-        // History button requires login
+        // ✅ NEW: History button requires login
         const historyBtn = document.getElementById('historyBtn');
         if (historyBtn) {
             historyBtn.addEventListener('click', function() {
                 if (requireLogin('Lịch sử đặt sân')) {
                     // Navigate to history page
-
-                }
-            });
-        }
-
-        // ✅ NEW: Header login/register buttons
-        const headerLoginBtn = document.getElementById('headerLoginBtn');
-        if (headerLoginBtn) {
-            headerLoginBtn.addEventListener('click', function() {
-                // Redirect to mock login in dev, real login in prod
-                window.location.href = '/badminton_court_booking/auth/mock-login';
-            });
-        }
-
-        const headerRegisterBtn = document.getElementById('headerRegisterBtn');
-        if (headerRegisterBtn) {
-            headerRegisterBtn.addEventListener('click', function() {
-                // TODO: Redirect to register page
-                console.log('📝 Navigate to register page');
-                // window.location.href = '/badminton_court_booking/auth/register';
-            });
-        }
-
-        // ✅ NEW: Logout button
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function() {
-                if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                    window.location.href = '/badminton_court_booking/auth/logout';
+                    console.log('📅 Navigate to booking history');
                 }
             });
         }
@@ -1090,9 +1017,6 @@
 
     function init() {
         console.log('Initializing BadmintonPro app...');
-
-        // Initialize auth state FIRST
-        initAuthState();
 
         // Get user location FIRST (will trigger API load in callback)
         getUserLocation();
@@ -1106,9 +1030,8 @@
         // Set initial tab
         switchTab(TABS.HOME);
 
-        // Initialize filter selects with Vietnam data
+        // ✅ NEW: Initialize filter selects with Vietnam data
         initializeFilterSelects();
-
 
         console.log('App initialized');
     }

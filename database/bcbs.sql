@@ -505,11 +505,8 @@ VALUES
 
 (N'SÂN CẦU LÔNG TIÊU CHUẨN THI ĐẤU XUÂN LA', N'Hà Nội', N'Tây Hồ', N'Xuân La', N'Phường Xuân La', 21.0665, 105.8051,
  N'Sân thi đấu đạt chuẩn quốc gia', '05:30', '21:30', 1);
-GO
 
-INSERT INTO Facility (name, province, district, ward, address, latitude, longitude, description, open_time, close_time, is_active)
-VALUES 
-(N'CLB CẦU LÔNG DQV1 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 20.9715285, 105.9067182, 
+ (N'CLB CẦU LÔNG DQV1 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 20.9715285, 105.9067182, 
  N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1),
 
 (N'CLB CẦU LÔNG DQV2 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 21.036825, 105.830958, 

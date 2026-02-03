@@ -1,7 +1,8 @@
-package com.bcb.model;
+package com.bcb.dto;
 
 /**
- * Used for API responses
+ * Data Transfer Object for Facility
+ * Used for API responses (matches frontend JSON structure)
  */
 public class FacilityDTO {
 
@@ -18,6 +19,8 @@ public class FacilityDTO {
     private String website;
     private String bookingLink;
     private Boolean isFavorite;
+
+    // For map functionality
     private Double lat;
     private Double lng;
 
@@ -25,9 +28,11 @@ public class FacilityDTO {
     private String province;
     private String district;
 
+    // Constructors
     public FacilityDTO() {
     }
 
+    // Getters and Setters
     public String getId() {
         return id;
     }

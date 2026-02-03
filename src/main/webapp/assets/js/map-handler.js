@@ -1,4 +1,5 @@
 /**
+ * BADMINTON PRO - Map Handler JavaScript
  * Handles: Leaflet Map Initialization, Markers, Popups
  */
 
@@ -19,20 +20,24 @@
     // ============================================
 
     function initMap() {
+        console.log('Initializing map...');
 
         // Check if map already initialized
         if (mapInstance) {
+            console.log('Map already exists, invalidating size...');
             mapInstance.invalidateSize();
             return;
         }
 
         const mapContainer = document.getElementById('leafletMap');
         if (!mapContainer) {
+            console.error('Map container not found');
             return;
         }
 
         // Get courts data from global state
         const courts = window.COURTS_DATA || [];
+        console.log('Courts data:', courts.length);
 
         // Default center (Vietnam)
         let center = [21.0285, 105.8542]; // Hanoi
@@ -79,6 +84,7 @@
         // Attach map filter listeners
         attachMapFilterListeners();
 
+        console.log('Map initialized successfully');
     }
 
     // ============================================
@@ -86,6 +92,7 @@
     // ============================================
 
     function addCourtMarkers(courts) {
+        console.log('Adding court markers:', courts.length);
 
         // Clear existing markers
         markers.forEach(marker => marker.remove());
@@ -193,6 +200,8 @@
 
             markers.push(marker);
         });
+
+        console.log('Added', markers.length, 'markers');
     }
 
     function addUserLocationMarker() {
@@ -203,6 +212,7 @@
                     const userLng = position.coords.longitude;
 
                     userLocation = { lat: userLat, lng: userLng };
+                    console.log('User location for map:', userLocation);
 
                     // Create user location icon (blue dot)
                     const userIcon = L.divIcon({
@@ -268,6 +278,7 @@
     function attachMapSearchListener() {
         const searchInput = document.getElementById('mapSearchInput');
         if (!searchInput) {
+            console.warn('⚠️ Map search input not found');
             return;
         }
 
@@ -276,6 +287,7 @@
 
             const courts = window.COURTS_DATA || [];
 
+            console.log('🗺️ Map search query:', query); // ✅ DEBUG
 
             if (!query) {
                 // Show all markers
@@ -300,6 +312,8 @@
                 (court.district && court.district.toLowerCase().includes(query))
             );
 
+            console.log('🔍 Found', filtered.length, 'courts matching:', query); // ✅ DEBUG
+
             // Update markers
             addCourtMarkers(filtered);
 
@@ -311,13 +325,13 @@
                     mapInstance.fitBounds(bounds, { padding: [50, 50] });
                 }
             } else {
-                // No results - show notification
-                console.warn('No results for:', query);
+                // ✅ No results - show notification
+                console.warn('⚠️ No results for:', query);
                 // Optional: Show toast or message on map
             }
         }, 300));
 
-        // Clear on Escape key
+        // ✅ Clear on Escape key
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 this.value = '';
@@ -379,13 +393,13 @@
                 break;
 
             case 'cheap':
-                // This is mock
+                // This is mock - in real app, parse priceRange and filter
                 // For now, just show all
                 filtered = courts;
                 break;
 
             case 'new':
-                // This is mock
+                // This is mock - in real app, check creation date
                 // For now, reverse order
                 filtered = [...courts].reverse();
                 break;
@@ -441,7 +455,7 @@
     // Auto-initialize if map container exists on page load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            // Let tab switching handle auto-init
+            // Don't auto-init, let tab switching handle it
         });
     }
 
