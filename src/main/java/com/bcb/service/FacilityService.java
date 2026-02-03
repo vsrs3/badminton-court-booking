@@ -1,6 +1,6 @@
 package com.bcb.service;
 
-import com.bcb.dto.FacilityDTO;
+import com.bcb.model.FacilityDTO;
 import java.util.List;
 
 public interface FacilityService {

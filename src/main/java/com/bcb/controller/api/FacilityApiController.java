@@ -1,6 +1,6 @@
 package com.bcb.controller.api;
 
-import com.bcb.dto.FacilityDTO;
+import com.bcb.model.FacilityDTO;
 import com.bcb.model.User;
 import com.bcb.service.FacilityService;
 import com.bcb.service.impl.FacilityServiceImpl;
