@@ -3,6 +3,9 @@ package com.bcb.service;
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Facility;
+import jakarta.servlet.http.Part;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -28,44 +31,6 @@ public interface FacilityService {
      */
     int count();
 
-    /**
-     * Search facilities by name.
-     * @param name Facility name
-     * @param limit Records per page
-     * @param offset Starting position
-     * @return List of matching facilities
-     */
-    List<Facility> findByName(String name, int limit, int offset);
-
-    /**
-     * Count facilities by name search.
-     * @param name Facility name
-     * @return Total count
-     */
-    int countByName(String name);
-
-    /**
-     * Search facilities by location.
-     * @param address Address to search
-     * @param province Province to search (optional)
-     * @param district District to search (optional)
-     * @param ward Ward to search (optional)
-     * @param limit Records per page
-     * @param offset Starting position
-     * @return List of matching facilities
-     */
-    List<Facility> findByLocation(String address, String province, String district, String ward,
-                                   int limit, int offset);
-
-    /**
-     * Count facilities by location search.
-     * @param address Address to search
-     * @param province Province to search (optional)
-     * @param district District to search (optional)
-     * @param ward Ward to search (optional)
-     * @return Total count
-     */
-    int countByLocation(String address, String province, String district, String ward);
 
     /**
      * Search facilities by keyword across name and location fields.
@@ -115,5 +80,14 @@ public interface FacilityService {
      */
     void delete(int facilityId) throws BusinessException;
 
+    void updateFacilityWithImages(
+            Facility facility,
+            Part thumbnailPart,
+            Collection<Part> newGalleryParts,
+            String deletedImageIds
+    ) throws BusinessException;
+
     Map<Integer, String> buildDisplayAddressMap(List<Facility> facilities);
+
+    int createFacilityWithImages(Facility facility, Part thumbnailPart, Collection<Part> galleryParts) throws BusinessException;
 }

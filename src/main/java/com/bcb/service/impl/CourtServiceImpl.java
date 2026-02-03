@@ -27,14 +27,6 @@ public class CourtServiceImpl implements CourtService {
         this.facilityRepository = facilityRepository;
     }
 
-    @Override
-    public List<Court> getCourtsByFacility(int facilityId) throws BusinessException {
-        if (!facilityRepository.findById(facilityId).isPresent()) {
-            throw new BusinessException("FACILITY_NOT_FOUND", "Facility not found: " + facilityId);
-        }
-        return courtRepository.findByFacility(facilityId);
-    }
-
 
     @Override
     public Court getCourtById(int courtId) throws BusinessException {

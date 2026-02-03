@@ -206,6 +206,76 @@ function geocodeAddress(address) {
         .catch(() => alert('Lỗi khi định vị địa chỉ'));
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.getElementById("facilityForm");
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault(); // CHẶN submit
+
+        geocodeAndSubmit();
+    });
+
+    function geocodeAndSubmit() {
+        const address = buildFullAddress();
+
+        if (!address) {
+            alert("Vui lòng nhập địa chỉ");
+            return;
+        }
+
+        // Dùng Nominatim geocoder
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    alert("Không tìm được vị trí. Vui lòng chọn lại trên bản đồ.");
+                    return;
+                }
+
+                const lat = data[0].lat;
+                const lng = data[0].lon;
+
+                document.getElementById("latitude").value = lat;
+                document.getElementById("longitude").value = lng;
+
+                // SUBMIT THẬT
+                form.submit();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Lỗi khi xác định vị trí.");
+            });
+    }
+
+    function buildFullAddress() {
+        const parts = [
+            document.getElementById("address").value,
+            document.getElementById("ward").value,
+            document.getElementById("district").value,
+            document.getElementById("province").value
+        ];
+
+        return parts
+            .map(p => p?.trim())
+            .filter(p => p)
+            .join(", ");
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    ["province", "district", "ward", "address"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("change", () => {
+                document.getElementById("latitude").value = "";
+                document.getElementById("longitude").value = "";
+            });
+        }
+    });
+});
+
 /* ---------- UTIL ---------- */
 function setValue(id, value) {
     const el = document.getElementById(id);

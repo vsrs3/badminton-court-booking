@@ -9,6 +9,7 @@ import com.bcb.repository.impl.FacilityRepositoryImpl;
 import com.bcb.service.FacilityImageService;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of FacilityImageService.
@@ -28,10 +29,13 @@ public class FacilityImageServiceImpl implements FacilityImageService {
     @Override
     public FacilityImage getThumbnail(int facilityId) throws BusinessException {
         if (facilityRepository.findById(facilityId).isEmpty()) {
-            throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facilityId);
+            throw new BusinessException(
+                    "FACILITY_NOT_FOUND",
+                    "Facility not found with ID: " + facilityId
+            );
         }
-        return imageRepository.findThumbnail(facilityId).orElse(null);
+
+        return imageRepository.findThumbnail(facilityId);
     }
 
     @Override
@@ -45,49 +49,55 @@ public class FacilityImageServiceImpl implements FacilityImageService {
 
     @Override
     public FacilityImage getImageById(int imageId) throws BusinessException {
-        return imageRepository.findById(imageId)
-                .orElseThrow(() -> new BusinessException("IMAGE_NOT_FOUND",
-                        "Image not found with ID: " + imageId));
+        FacilityImage image = imageRepository.findById(imageId);
+
+        if (image == null) {
+            throw new BusinessException(
+                    "IMAGE_NOT_FOUND",
+                    "Image not found with ID: " + imageId
+            );
+        }
+
+        return image;
     }
 
-    @Override
-    public int addImage(FacilityImage newImage) throws BusinessException {
-        // Check facility exists
-        if (facilityRepository.findById(newImage.getFacilityId()).isEmpty()) {
-            throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + newImage.getFacilityId());
-        }
-
-        // Validate image path
-        if (newImage.getImagePath() == null || newImage.getImagePath().trim().isEmpty()) {
-            throw new BusinessException("INVALID_IMAGE_PATH", "Image path cannot be empty");
-        }
-
-        try {
-
-            return imageRepository.insert(newImage);
-        } catch (Exception e) {
-            throw new BusinessException("IMAGE_ADD_ERROR",
-                    "Failed to add image: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public void deleteImage(int imageId) throws BusinessException {
-        // Check image exists
-        if (imageRepository.findById(imageId).isEmpty()) {
-            throw new BusinessException("IMAGE_NOT_FOUND",
-                    "Image not found with ID: " + imageId);
-        }
-
-        try {
-            imageRepository.delete(imageId);
-        } catch (Exception e) {
-            throw new BusinessException("IMAGE_DELETE_ERROR",
-                    "Failed to delete image: " + e.getMessage(), e);
-        }
-    }
-
+//    @Override
+//    public int addImage(FacilityImage newImage) throws BusinessException {
+//        // Check facility exists
+//        if (facilityRepository.findById(newImage.getFacilityId()).isEmpty()) {
+//            throw new BusinessException("FACILITY_NOT_FOUND",
+//                    "Facility not found with ID: " + newImage.getFacilityId());
+//        }
+//
+//        // Validate image path
+//        if (newImage.getImagePath() == null || newImage.getImagePath().trim().isEmpty()) {
+//            throw new BusinessException("INVALID_IMAGE_PATH", "Image path cannot be empty");
+//        }
+//
+//        try {
+//
+//            return imageRepository.insert(newImage);
+//        } catch (Exception e) {
+//            throw new BusinessException("IMAGE_ADD_ERROR",
+//                    "Failed to add image: " + e.getMessage(), e);
+//        }
+//    }
+//
+//    @Override
+//    public void deleteImage(int imageId) throws BusinessException {
+//        // Check image exists
+//        FacilityImage image = getImageById(imageId);
+//
+//        try {
+//            imageRepository.delete(imageId);
+//        } catch (Exception e) {
+//            throw new BusinessException(
+//                    "IMAGE_DELETE_ERROR",
+//                    "Failed to delete image with ID: " + imageId,
+//                    e
+//            );
+//        }
+//    }
 
 
     @Override

@@ -11,13 +11,6 @@ import java.util.Optional;
  */
 public interface CourtRepository {
 
-    /**
-     * Find all active courts for a facility.
-     * @param facilityId Facility ID
-     * @return List of courts
-     */
-    List<Court> findByFacility(int facilityId);
-
 
     /**
      * Find court by ID.
@@ -44,10 +37,10 @@ public interface CourtRepository {
 
     /**
      * Soft deactivate court (set is_active = 0).
+     *
      * @param courtId Court ID
-     * @return Number of rows affected
      */
-    int deactivate(int courtId);
+    void deactivate(int courtId);
 
 
     /**
@@ -57,12 +50,6 @@ public interface CourtRepository {
      */
     boolean hasActiveBookings(int courtId);
 
-    /**
-     * Count courts in a facility.
-     * @param facilityId Facility ID
-     * @return Total count
-     */
-    int countByFacility(int facilityId);
 
     List<CourtViewDTO> findByFacilityForView(int facilityId);
 }

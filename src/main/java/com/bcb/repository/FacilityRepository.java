@@ -27,44 +27,6 @@ public interface FacilityRepository {
      */
     int count();
 
-    /**
-     * Search facilities by name (case-insensitive).
-     * @param name Facility name
-     * @param limit Number of records to return
-     * @param offset Starting position
-     * @return List of matching facilities
-     */
-    List<Facility> findByName(String name, int limit, int offset);
-
-    /**
-     * Count facilities by name search.
-     * @param name Facility name
-     * @return Total count
-     */
-    int countByName(String name);
-
-    /**
-     * Search facilities by location.
-     * @param address Address to search
-     * @param province Province to search (optional)
-     * @param district District to search (optional)
-     * @param ward Ward to search (optional)
-     * @param limit Number of records to return
-     * @param offset Starting position
-     * @return List of matching facilities
-     */
-    List<Facility> findByLocation(String address, String province, String district,
-                                   String ward, int limit, int offset);
-
-    /**
-     * Count facilities by location search.
-     * @param address Address to search
-     * @param province Province to search (optional)
-     * @param district District to search (optional)
-     * @param ward Ward to search (optional)
-     * @return Total count
-     */
-    int countByLocation(String address, String province, String district, String ward);
 
     /**
      * Search facilities by keyword across name and location fields.

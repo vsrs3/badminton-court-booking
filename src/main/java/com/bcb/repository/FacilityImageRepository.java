@@ -11,18 +11,11 @@ import java.util.Optional;
 public interface FacilityImageRepository {
 
     /**
-     * Find all images for a facility.
-     * @param facilityId Facility ID
-     * @return List of images
-     */
-    List<FacilityImage> findByFacility(int facilityId);
-
-    /**
      * Find a thumbnail image for a facility.
      * @param facilityId Facility ID
      * @return Optional containing thumbnail image or empty
      */
-    Optional<FacilityImage> findThumbnail(int facilityId);
+    FacilityImage findThumbnail(int facilityId);
 
     /**
      * Find all gallery images (non-thumbnail) for a facility.
@@ -36,7 +29,7 @@ public interface FacilityImageRepository {
      * @param imageId Image ID
      * @return Optional containing image or empty
      */
-    Optional<FacilityImage> findById(int imageId);
+    FacilityImage findById(int imageId);
 
     /**
      * Insert a new image.
@@ -66,18 +59,4 @@ public interface FacilityImageRepository {
      */
     int deleteByFacility(int facilityId);
 
-    /**
-     * Set thumbnail flag for an image.
-     * @param imageId Image ID
-     * @param isThumbnail true to set as thumbnail
-     * @return Number of rows affected
-     */
-    int setThumbnail(int imageId, boolean isThumbnail);
-
-    /**
-     * Remove thumbnail flag from all images of a facility.
-     * @param facilityId Facility ID
-     * @return Number of rows affected
-     */
-    int clearThumbnails(int facilityId);
 }

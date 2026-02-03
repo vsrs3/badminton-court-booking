@@ -1,16 +1,21 @@
 package com.bcb.service.impl;
 
+import com.bcb.config.ConfigUpload;
 import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Facility;
+import com.bcb.model.FacilityImage;
+import com.bcb.repository.FacilityImageRepository;
 import com.bcb.repository.FacilityRepository;
+import com.bcb.repository.impl.FacilityImageRepositoryImpl;
 import com.bcb.repository.impl.FacilityRepositoryImpl;
+import com.bcb.service.FacilityImageService;
 import com.bcb.service.FacilityService;
+import com.bcb.service.UploadService;
 import com.bcb.validation.FacilityValidator;
+import jakarta.servlet.http.Part;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,15 +28,15 @@ import java.util.stream.Stream;
 public class FacilityServiceImpl implements FacilityService {
 
     private final FacilityRepository facilityRepository;
+    private final FacilityImageRepository facilityImageRepository;
+    private final UploadService uploadService;
 
     public FacilityServiceImpl() {
         this.facilityRepository = new FacilityRepositoryImpl();
+        this.facilityImageRepository = new FacilityImageRepositoryImpl();
+        this.uploadService = new UploadServiceImpl();
     }
 
-    // Constructor for dependency injection (testing)
-    public FacilityServiceImpl(FacilityRepository facilityRepository) {
-        this.facilityRepository = facilityRepository;
-    }
 
     @Override
     public List<Facility> findAll(int limit, int offset) {
@@ -41,33 +46,6 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     public int count() {
         return facilityRepository.count();
-    }
-
-    @Override
-    public List<Facility> findByName(String name, int limit, int offset) {
-        if (name == null || name.trim().isEmpty()) {
-            return findAll(limit, offset);
-        }
-        return facilityRepository.findByName(name, limit, offset);
-    }
-
-    @Override
-    public int countByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return count();
-        }
-        return facilityRepository.countByName(name);
-    }
-
-    @Override
-    public List<Facility> findByLocation(String address, String province, String district,
-                                          String ward, int limit, int offset) {
-        return facilityRepository.findByLocation(address, province, district, ward, limit, offset);
-    }
-
-    @Override
-    public int countByLocation(String address, String province, String district, String ward) {
-        return facilityRepository.countByLocation(address, province, district, ward);
     }
 
     @Override
@@ -136,6 +114,108 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
+    public void updateFacilityWithImages(
+            Facility facility,
+            Part thumbnailPart,
+            Collection<Part> newGalleryParts,
+            String deletedImageIds
+    ) throws BusinessException {
+
+        List<String> newUploadedFiles = new ArrayList<>(); // để rollback
+        List<String> oldFilesToDelete = new ArrayList<>(); // chỉ xóa khi OK
+
+        try {
+            /* ================= 1. UPDATE FACILITY ================= */
+            facilityRepository.update(facility);
+
+            int facilityId = facility.getFacilityId();
+
+            /* ================= 2. THUMBNAIL ================= */
+            if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
+
+                // upload file mới (CHƯA xóa file cũ)
+                String newThumbPath = uploadService.saveImage(
+                        thumbnailPart,
+                        ConfigUpload.FACILITY_IMAGE_FOLDER
+                );
+                newUploadedFiles.add(newThumbPath);
+
+                FacilityImage currentThumb =
+                        facilityImageRepository.findThumbnail(facilityId);
+
+                if (currentThumb != null) {
+                    // lưu path cũ để xóa sau
+                    oldFilesToDelete.add(currentThumb.getImagePath());
+
+                    // update DB
+                    currentThumb.setImagePath(newThumbPath);
+                    facilityImageRepository.update(currentThumb);
+                } else {
+                    // insert mới
+                    FacilityImage thumb = new FacilityImage();
+                    thumb.setFacilityId(facilityId);
+                    thumb.setImagePath(newThumbPath);
+                    thumb.setIsThumbnail(true);
+                    facilityImageRepository.insert(thumb);
+                }
+            }
+
+            /* ================= 3. DELETE GALLERY ================= */
+            if (deletedImageIds != null && !deletedImageIds.isBlank()) {
+                String[] ids = deletedImageIds.split(",");
+
+                for (String idStr : ids) {
+                    int imageId = Integer.parseInt(idStr.trim());
+
+                    FacilityImage img = facilityImageRepository.findById(imageId);
+
+                    if (img != null) {
+                        oldFilesToDelete.add(img.getImagePath());
+                        facilityImageRepository.deleteByFacility(imageId);
+                    }
+                }
+            }
+
+            /* ================= 4. ADD NEW GALLERY ================= */
+            for (Part part : newGalleryParts) {
+                if (!"gallery".equals(part.getName()) || part.getSize() == 0) continue;
+
+                String path = uploadService.saveImage(
+                        part,
+                        ConfigUpload.FACILITY_IMAGE_FOLDER
+                );
+                newUploadedFiles.add(path);
+
+                FacilityImage gallery = new FacilityImage();
+                gallery.setFacilityId(facilityId);
+                gallery.setImagePath(path);
+                gallery.setIsThumbnail(false);
+
+                facilityImageRepository.insert(gallery);
+            }
+
+            /* ================= 5. COMMIT FILE DELETE ================= */
+            for (String oldPath : oldFilesToDelete) {
+                uploadService.deleteFile(oldPath);
+            }
+
+        } catch (Exception e) {
+
+            /* ================= ROLLBACK FILE ================= */
+            for (String path : newUploadedFiles) {
+                try {
+                    uploadService.deleteFile(path);
+                } catch (Exception ignored) {
+                }
+            }
+
+            throw new BusinessException(
+                    "Update facility failed. All changes rolled back.", e
+            );
+        }
+    }
+
+    @Override
     public void delete(int facilityId) throws BusinessException {
         // Check facility exists
         if (!facilityRepository.findById(facilityId).isPresent()) {
@@ -161,6 +241,8 @@ public class FacilityServiceImpl implements FacilityService {
         }
     }
 
+
+
     @Override
     public Map<Integer, String> buildDisplayAddressMap(List<Facility> facilities) {
         Map<Integer, String> map = new HashMap<>();
@@ -179,5 +261,74 @@ public class FacilityServiceImpl implements FacilityService {
         }
 
         return map;
+    }
+
+    @Override
+    public int createFacilityWithImages(
+            Facility facility,
+            Part thumbnailPart,
+            Collection<Part> galleryParts
+    ) throws BusinessException {
+
+        List<String> newUploadedFiles = new ArrayList<>(); // rollback nếu lỗi
+
+        try {
+            /* ================= 1. CREATE FACILITY ================= */
+            int facilityId = facilityRepository.insert(facility);
+            facility.setFacilityId(facilityId);
+
+            /* ================= 2. THUMBNAIL ================= */
+            if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
+
+                String thumbPath = uploadService.saveImage(
+                        thumbnailPart,
+                        ConfigUpload.FACILITY_IMAGE_FOLDER
+                );
+                newUploadedFiles.add(thumbPath);
+
+                FacilityImage thumb = new FacilityImage();
+                thumb.setFacilityId(facilityId);
+                thumb.setImagePath(thumbPath);
+                thumb.setIsThumbnail(true);
+
+                facilityImageRepository.insert(thumb);
+            }
+
+            /* ================= 3. GALLERY ================= */
+            for (Part part : galleryParts) {
+                if (!"gallery".equals(part.getName()) || part.getSize() == 0) {
+                    continue;
+                }
+
+                String path = uploadService.saveImage(
+                        part,
+                        ConfigUpload.FACILITY_IMAGE_FOLDER
+                );
+                newUploadedFiles.add(path);
+
+                FacilityImage gallery = new FacilityImage();
+                gallery.setFacilityId(facilityId);
+                gallery.setImagePath(path);
+                gallery.setIsThumbnail(false);
+
+                facilityImageRepository.insert(gallery);
+            }
+
+            return facilityId;
+
+        } catch (Exception e) {
+
+            /* ================= ROLLBACK FILE ================= */
+            for (String path : newUploadedFiles) {
+                try {
+                    uploadService.deleteFile(path);
+                } catch (Exception ignored) {
+                }
+            }
+
+            throw new BusinessException(
+                    "Create facility failed. All changes rolled back.", e
+            );
+        }
     }
 }

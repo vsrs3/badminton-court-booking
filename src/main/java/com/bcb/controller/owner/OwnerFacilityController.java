@@ -49,7 +49,6 @@ public class OwnerFacilityController extends HttpServlet {
 
     private FacilityService facilityService;
     private FacilityImageService facilityImageService;
-    private UploadService uploadService;
 
     // Formatter for HTML <input type="time">
     private static final DateTimeFormatter TIME_INPUT_FORMATTER =
@@ -59,7 +58,6 @@ public class OwnerFacilityController extends HttpServlet {
     public void init() throws ServletException {
         facilityService = new FacilityServiceImpl();
         facilityImageService = new FacilityImageServiceImpl();
-        uploadService = new UploadServiceImpl();
     }
 
     @Override
@@ -245,47 +243,35 @@ public class OwnerFacilityController extends HttpServlet {
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
             request.setAttribute("facility", facility);
-            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp").forward(request, response);
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
+                    .forward(request, response);
             return;
         }
 
-        int facilityId = facilityService.create(facility);
-
+        // Multipart parts
         Part thumbnailPart = request.getPart("thumbnail");
-        if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
 
+        Collection<Part> galleryParts = request.getParts().stream()
+                .filter(p -> "gallery".equals(p.getName()) && p.getSize() > 0)
+                .toList();
 
-            String thumbnailPath = uploadService.saveImage(thumbnailPart, ConfigUpload.FACILITY_IMAGE_FOLDER);
+        try {
+            int facilityId = facilityService.createFacilityWithImages(
+                    facility,
+                    thumbnailPart,
+                    galleryParts
+            );
 
-            if (thumbnailPath != null) {
-                FacilityImage thumbnail = new FacilityImage();
-                thumbnail.setFacilityId(facilityId);
-                thumbnail.setImagePath(thumbnailPath);
-                thumbnail.setIsThumbnail(true);
+            response.sendRedirect(request.getContextPath()
+                    + "/owner/facility/view/" + facilityId);
 
-                facilityImageService.addImage(thumbnail);
-            }
+        } catch (BusinessException e) {
+            request.setAttribute("error", e.getMessage());
+            request.setAttribute("facility", facility);
+
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
+                    .forward(request, response);
         }
-
-        // ================= GALLERY =================
-        for (Part part : request.getParts()) {
-            if ("gallery".equals(part.getName()) && part.getSize() > 0) {
-
-                String imagePath = uploadService.saveImage(part, ConfigUpload.FACILITY_IMAGE_FOLDER);
-
-                if (imagePath != null) {
-                    FacilityImage galleryImg = new FacilityImage();
-                    galleryImg.setFacilityId(facilityId);
-                    galleryImg.setImagePath(imagePath);
-                    galleryImg.setIsThumbnail(false);
-
-                    facilityImageService.addImage(galleryImg);
-                }
-            }
-        }
-
-        response.sendRedirect(request.getContextPath()
-                + "/owner/facility/view/" + facilityId);
     }
 
     /* ===================== UPDATE ===================== */
@@ -296,6 +282,7 @@ public class OwnerFacilityController extends HttpServlet {
         int facilityId = Integer.parseInt(request.getParameter("facilityId"));
         Facility facility = facilityService.findById(facilityId);
 
+        // Cập nhật các trường
         facility.setName(request.getParameter("name"));
         facility.setProvince(request.getParameter("province"));
         facility.setDistrict(request.getParameter("district"));
@@ -304,112 +291,59 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setDescription(request.getParameter("description"));
         facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
         facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
+
         String latStr = request.getParameter("latitude");
-        if (latStr != null && !latStr.isBlank()) {
-            facility.setLatitude(new BigDecimal(latStr));
-        } else {
-            facility.setLatitude(null);
-        }
+        facility.setLatitude(latStr != null && !latStr.isBlank() ? new BigDecimal(latStr) : null);
 
         String lngStr = request.getParameter("longitude");
-        if (lngStr != null && !lngStr.isBlank()) {
-            facility.setLongitude(new BigDecimal(lngStr));
-        } else {
-            facility.setLongitude(null);
-        }
+        facility.setLongitude(lngStr != null && !lngStr.isBlank() ? new BigDecimal(lngStr) : null);
 
         List<String> errors = FacilityValidator.validate(facility);
-
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
             request.setAttribute("facility", facility);
             request.setAttribute("isEdit", true);
-
-            // load lại ảnh cũ
-            request.setAttribute("thumbnailImage",
-                    facilityImageService.getThumbnail(facilityId));
-            request.setAttribute("galleryImages",
-                    facilityImageService.getGallery(facilityId));
-
-            request.setAttribute("openTimeFormatted",
-                    formatTimeForInput(facility.getOpenTime()));
-            request.setAttribute("closeTimeFormatted",
-                    formatTimeForInput(facility.getCloseTime()));
+            request.setAttribute("thumbnailImage", facilityImageService.getThumbnail(facilityId));
+            request.setAttribute("galleryImages", facilityImageService.getGallery(facilityId));
+            request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
+            request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
 
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
             return;
         }
 
-        facilityService.update(facility);
-
-        // THUMBNAIL IMAGE
+        // Lấy các phần multipart cần xử lý
         Part thumbnailPart = request.getPart("thumbnail");
-        if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
+        Collection<Part> galleryParts = request.getParts().stream()
+                .filter(p -> "gallery".equals(p.getName()) && p.getSize() > 0)
+                .toList();
 
-            String newThumbnailPath = uploadService.saveImage(thumbnailPart, ConfigUpload.FACILITY_IMAGE_FOLDER);
-
-            if (newThumbnailPath != null) {
-                FacilityImage currentThumbnail = facilityImageService.getThumbnail(facilityId);
-
-                if (currentThumbnail != null) {
-
-                    uploadService.deleteFile(currentThumbnail.getImagePath());
-
-                    currentThumbnail.setImagePath(newThumbnailPath);
-                    facilityImageService.update(currentThumbnail);
-                } else {
-                    //  Add new
-                    FacilityImage newThumb = new FacilityImage();
-                    newThumb.setFacilityId(facilityId);
-                    newThumb.setImagePath(newThumbnailPath);
-                    newThumb.setIsThumbnail(true);
-                    facilityImageService.addImage(newThumb);
-                }
-            }
-        }
-
-
-        // Delete gallery images
         String deletedIds = request.getParameter("deletedIds");
-        if (deletedIds != null && !deletedIds.isEmpty()) {
-            String[] ids = deletedIds.split(",");
-            for (String idStr : ids) {
-                try {
 
-                    int imgId = Integer.parseInt(idStr);
-                    FacilityImage image = facilityImageService.getImageById(imgId);
+        try {
+            // Gọi service xử lý toàn bộ update + file
+            facilityService.updateFacilityWithImages(
+                    facility,
+                    thumbnailPart,
+                    galleryParts,
+                    deletedIds
+            );
 
-                    if (image != null) {
-                        uploadService.deleteFile(image.getImagePath());
-                        facilityImageService.deleteImage(imgId);
-                    }
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-            }
+            response.sendRedirect(request.getContextPath() + "/owner/facility/view/" + facilityId);
+
+        } catch (BusinessException e) {
+            request.setAttribute("error", e.getMessage());
+            request.setAttribute("facility", facility);
+            request.setAttribute("isEdit", true);
+            request.setAttribute("thumbnailImage", facilityImageService.getThumbnail(facilityId));
+            request.setAttribute("galleryImages", facilityImageService.getGallery(facilityId));
+            request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
+            request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
+
+            request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
+                    .forward(request, response);
         }
-
-
-        Collection<Part> parts = request.getParts();
-        for (Part part : parts) {
-            if ("gallery".equals(part.getName()) && part.getSize() > 0) {
-
-                String imagePath = uploadService.saveImage(part, ConfigUpload.FACILITY_IMAGE_FOLDER);
-
-                if (imagePath != null) {
-                    FacilityImage galleryImg = new FacilityImage();
-                    galleryImg.setFacilityId(facilityId);
-                    galleryImg.setImagePath(imagePath);
-                    galleryImg.setIsThumbnail(false);
-
-                    facilityImageService.addImage(galleryImg);
-                }
-            }
-        }
-
-        response.sendRedirect(request.getContextPath()
-                + "/owner/facility/view/" + facilityId);
     }
 
     /* ===================== DELETE ===================== */
@@ -453,15 +387,30 @@ public class OwnerFacilityController extends HttpServlet {
 
     private LocalTime parseTimeInput(String timeStr) {
         if (timeStr == null || timeStr.isBlank()) return null;
+
         try {
-            return LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
+            LocalTime time = LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
+
+            // Validate full hour
+            if (time.getMinute() != 0) {
+                throw new DateTimeParseException(
+                        "Time must be a full hour (e.g. 08:00, 18:00)",
+                        timeStr, 0
+                );
+            }
+
+            return time;
         } catch (DateTimeParseException e) {
-            throw new DateTimeParseException(
-                    "Invalid time format (expected HH:mm)", timeStr, 0);
+            throw e;
         }
     }
 
     private String formatTimeForInput(LocalTime time) {
-        return time == null ? "" : time.format(TIME_INPUT_FORMATTER);
+        if (time == null) return "";
+
+        return time
+                .withMinute(0)
+                .withSecond(0)
+                .format(TIME_INPUT_FORMATTER);
     }
 }

@@ -10,8 +10,5 @@ public class ValidationException extends BusinessException {
         super("VALIDATION_ERROR", message);
     }
 
-    public ValidationException(String message, Throwable cause) {
-        super("VALIDATION_ERROR", message, cause);
-    }
 }
 

@@ -17,29 +17,6 @@ import java.util.Optional;
  */
 public class CourtRepositoryImpl implements CourtRepository {
 
-    @Override
-    public List<Court> findByFacility(int facilityId) {
-        String sql = "SELECT court_id, facility_id, court_type_id, court_name, is_active " +
-                "FROM Court WHERE facility_id = ? AND is_active = 1 ORDER BY court_id";
-
-        List<Court> courts = new ArrayList<>();
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, facilityId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    courts.add(mapResultSetToCourt(rs));
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to find courts by facility", e);
-        }
-
-        return courts;
-    }
 
     @Override
     public Optional<Court> findById(int courtId) {
@@ -110,14 +87,14 @@ public class CourtRepositoryImpl implements CourtRepository {
     }
 
     @Override
-    public int deactivate(int courtId) {
+    public void deactivate(int courtId) {
         String sql = "UPDATE Court SET is_active = 0 WHERE court_id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, courtId);
-            return pstmt.executeUpdate();
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to deactivate court", e);
         }
@@ -151,26 +128,6 @@ public class CourtRepositoryImpl implements CourtRepository {
     }
 
 
-    @Override
-    public int countByFacility(int facilityId) {
-        String sql = "SELECT COUNT(*) FROM Court WHERE facility_id = ?";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, facilityId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to count courts by facility", e);
-        }
-
-        return 0;
-    }
 
     @Override
     public List<CourtViewDTO> findByFacilityForView(int facilityId) {

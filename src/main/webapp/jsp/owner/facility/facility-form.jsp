@@ -42,7 +42,7 @@
         </c:if>
 
         <%-- FORM CONTENT --%>
-        <form method="POST" enctype="multipart/form-data">
+        <form id="facilityForm" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="${requestScope.isEdit ? 'update' : 'create'}">
             <c:if test="${requestScope.isEdit}">
                 <input type="hidden" name="facilityId" value="${requestScope.facility.facilityId}">
@@ -111,7 +111,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="openTime" class="form-label">Opening Time <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="openTime" name="openTime" required
+                                        <input type="time" class="form-control" id="openTime" name="openTime" required step="3600"
                                                value="${requestScope.openTimeFormatted}">
                                     </div>
                                 </div>
@@ -119,7 +119,7 @@
                                     <div class="mb-3">
                                         <label for="closeTime" class="form-label">Closing Time <span
                                                 class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="closeTime" name="closeTime" required
+                                        <input type="time" class="form-control" id="closeTime" name="closeTime" required step="3600"
                                                value="${requestScope.closeTimeFormatted}">
                                     </div>
                                 </div>

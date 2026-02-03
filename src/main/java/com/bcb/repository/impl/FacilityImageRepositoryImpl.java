@@ -17,34 +17,11 @@ import java.util.Optional;
  */
 public class FacilityImageRepositoryImpl implements FacilityImageRepository {
 
-    @Override
-    public List<FacilityImage> findByFacility(int facilityId) {
-        String sql = "SELECT image_id, facility_id, image_path, is_thumbnail, created_at " +
-                     "FROM FacilityImage WHERE facility_id = ? ORDER BY is_thumbnail DESC, created_at DESC";
-
-        List<FacilityImage> images = new ArrayList<>();
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, facilityId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    images.add(mapResultSetToFacilityImage(rs));
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to find images by facility", e);
-        }
-
-        return images;
-    }
 
     @Override
-    public Optional<FacilityImage> findThumbnail(int facilityId) {
+    public FacilityImage findThumbnail(int facilityId) {
         String sql = "SELECT image_id, facility_id, image_path, is_thumbnail, created_at " +
-                     "FROM FacilityImage WHERE facility_id = ? AND is_thumbnail = 1";
+                "FROM FacilityImage WHERE facility_id = ? AND is_thumbnail = 1";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -53,21 +30,22 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapResultSetToFacilityImage(rs));
+                    return mapResultSetToFacilityImage(rs);
                 }
             }
+
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to find thumbnail", e);
+            throw new DataAccessException("Failed to find thumbnail for facility " + facilityId, e);
         }
 
-        return Optional.empty();
+        return null;
     }
 
     @Override
     public List<FacilityImage> findGallery(int facilityId) {
         String sql = "SELECT image_id, facility_id, image_path, is_thumbnail, created_at " +
-                     "FROM FacilityImage WHERE facility_id = ? AND is_thumbnail = 0 " +
-                     "ORDER BY created_at DESC";
+                "FROM FacilityImage WHERE facility_id = ? AND is_thumbnail = 0 " +
+                "ORDER BY created_at DESC";
 
         List<FacilityImage> images = new ArrayList<>();
 
@@ -89,9 +67,8 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
     }
 
     @Override
-    public Optional<FacilityImage> findById(int imageId) {
-        String sql = "SELECT image_id, facility_id, image_path, is_thumbnail, created_at " +
-                     "FROM FacilityImage WHERE image_id = ?";
+    public FacilityImage findById(int imageId) {
+        String sql = "SELECT image_id, facility_id, image_path, is_thumbnail, created_at FROM FacilityImage WHERE image_id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -100,14 +77,17 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapResultSetToFacilityImage(rs));
+                    return mapResultSetToFacilityImage(rs);
                 }
             }
+
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to find image by ID", e);
+            throw new DataAccessException(
+                    "Failed to find FacilityImage with id=" + imageId, e
+            );
         }
 
-        return Optional.empty();
+        return null;
     }
 
     @Override
@@ -180,35 +160,6 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
         }
     }
 
-    @Override
-    public int setThumbnail(int imageId, boolean isThumbnail) {
-        String sql = "UPDATE FacilityImage SET is_thumbnail = ? WHERE image_id = ?";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setBoolean(1, isThumbnail);
-            pstmt.setInt(2, imageId);
-
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to set thumbnail", e);
-        }
-    }
-
-    @Override
-    public int clearThumbnails(int facilityId) {
-        String sql = "UPDATE FacilityImage SET is_thumbnail = 0 WHERE facility_id = ?";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, facilityId);
-            return pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to clear thumbnails", e);
-        }
-    }
 
     /**
      * Maps ResultSet row to FacilityImage object.
