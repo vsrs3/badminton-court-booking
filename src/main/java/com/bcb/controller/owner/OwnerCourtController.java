@@ -54,8 +54,6 @@ public class OwnerCourtController extends HttpServlet {
 
             if (pathInfo.startsWith("/list/")) {
                 listCourts(request, response, pathInfo);
-            } else if (pathInfo.startsWith("/view/")) {
-                viewCourt(request, response, pathInfo);
             } else if (pathInfo.startsWith("/detail/")) {
                 getCourtDetailJson(request, response, pathInfo);
             } else if (pathInfo.startsWith("/delete/")) {
@@ -105,24 +103,6 @@ public class OwnerCourtController extends HttpServlet {
         request.setAttribute("courtTypes", courtTypeService.getAllTypes());
 
         request.getRequestDispatcher("/jsp/owner/court/court-list.jsp")
-                .forward(request, response);
-    }
-
-    private void viewCourt(HttpServletRequest request, HttpServletResponse response,
-                           String pathInfo)
-            throws ServletException, IOException, BusinessException {
-
-        int courtId = Integer.parseInt(pathInfo.substring("/view/".length()));
-
-        Court court = courtService.getCourtById(courtId);
-        Facility facility = facilityService.findById(court.getFacilityId());
-
-
-        request.setAttribute("court", court);
-        request.setAttribute("facility", facility);
-
-
-        request.getRequestDispatcher("/jsp/owner/court/court-detail.jsp")
                 .forward(request, response);
     }
 

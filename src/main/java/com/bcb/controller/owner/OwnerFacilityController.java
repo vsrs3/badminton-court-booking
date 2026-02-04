@@ -240,6 +240,10 @@ public class OwnerFacilityController extends HttpServlet {
         Facility facility = buildFacilityFromRequest(request);
         List<String> errors = FacilityValidator.validate(facility);
 
+        if (facility.getLatitude() == null || facility.getLongitude() == null) {
+            errors.add("Vui lòng chọn vị trí trên bản đồ");
+        }
+
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
             request.setAttribute("facility", facility);
@@ -299,6 +303,9 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setLongitude(lngStr != null && !lngStr.isBlank() ? new BigDecimal(lngStr) : null);
 
         List<String> errors = FacilityValidator.validate(facility);
+        if (facility.getLatitude() == null || facility.getLongitude() == null) {
+            errors.add("Vui lòng chọn vị trí trên bản đồ");
+        }
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
             request.setAttribute("facility", facility);

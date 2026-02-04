@@ -43,4 +43,22 @@ public class Facility {
     public void setCloseTime(LocalTime closeTime) { this.closeTime = closeTime; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public String getFullAddress() {
+        StringBuilder sb = new StringBuilder();
+        if (address != null && !address.isEmpty()) sb.append(address);
+        if (ward != null && !ward.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(ward);
+        }
+        if (district != null && !district.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(district);
+        }
+        if (province != null && !province.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(province);
+        }
+        return sb.toString();
+    }
 }

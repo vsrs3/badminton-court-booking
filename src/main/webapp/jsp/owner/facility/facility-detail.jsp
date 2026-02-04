@@ -57,22 +57,32 @@
                         </div>
 
                         <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label text-muted small uppercase fw-bold">Tỉnh / Thành phố</label>
-                                <p class="mb-0">${not empty requestScope.facility.province ? requestScope.facility.province : 'N/A'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label text-muted small uppercase fw-bold">Quận / Huyện</label>
-                                <p class="mb-0">${not empty requestScope.facility.district ? requestScope.facility.district : 'N/A'}</p>
+                            <div class="col-12">
+                                <label class="form-label text-muted small uppercase fw-bold">Địa Chỉ Đầy Đủ</label>
+                                <p class="mb-0">
+                                    <i class="bi bi-geo-alt me-1 text-danger"></i>
+                                    ${requestScope.facility.fullAddress}
+                                </p>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <label class="form-label text-muted small uppercase fw-bold">Địa Chỉ</label>
-                                <p class="mb-0"><i class="bi bi-geo-alt me-1 text-danger"></i> ${requestScope.facility.address}</p>
-                            </div>
-                        </div>
+<%--                        <div class="row mb-4">--%>
+<%--                            <div class="col-md-6">--%>
+<%--                                <label class="form-label text-muted small uppercase fw-bold">Tỉnh / Thành phố</label>--%>
+<%--                                <p class="mb-0">${not empty requestScope.facility.province ? requestScope.facility.province : 'N/A'}</p>--%>
+<%--                            </div>--%>
+<%--                            <div class="col-md-6">--%>
+<%--                                <label class="form-label text-muted small uppercase fw-bold">Quận / Huyện</label>--%>
+<%--                                <p class="mb-0">${not empty requestScope.facility.district ? requestScope.facility.district : 'N/A'}</p>--%>
+<%--                            </div>--%>
+<%--                        </div>--%>
+
+<%--                        <div class="row mb-4">--%>
+<%--                            <div class="col-12">--%>
+<%--                                <label class="form-label text-muted small uppercase fw-bold">Địa Chỉ</label>--%>
+<%--                                <p class="mb-0"><i class="bi bi-geo-alt me-1 text-danger"></i> ${requestScope.facility.address}</p>--%>
+<%--                            </div>--%>
+<%--                        </div>--%>
 
                         <div class="row">
                             <div class="col-md-6">

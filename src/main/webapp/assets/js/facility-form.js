@@ -143,7 +143,7 @@ function reverseGeocode(lat, lng) {
             console.log(data.address);
             console.groupEnd();
 
-            const a = mapAddress(data.address || {});
+            const a = mapAddress(data.address || {}, data);
 
             setValue('province', a.province);
             setValue('district', a.district);
@@ -160,109 +160,76 @@ function reverseGeocode(lat, lng) {
 }
 
 function mapAddress(addr) {
+    let province = '';
+    let district = '';
+    let ward = '';
+    let detailedAddress = [];
+
+    // Province (Tỉnh/Thành phố trực thuộc TW)
+    province = addr.state || addr.city || addr.province || addr.region || '';
+
+    // Đặc biệt Hà Nội/TP.HCM: city thường là tỉnh, county/city_district là quận/phường
+    if (province.toLowerCase().includes('hà nội') || province.toLowerCase().includes('hồ chí minh') || province.toLowerCase().includes('ho chi minh')) {
+        // Ở HN/TP.HCM, city_district thường là phường/quận lẫn lộn
+        if (addr.city_district) {
+            if (addr.city_district.includes('Quận') || addr.city_district.includes('District')) {
+                district = addr.city_district;
+            } else {
+                ward = addr.city_district;
+            }
+        }
+        district = district || addr.county || addr.suburb || '';
+    } else {
+        // Tỉnh khác: city thường là huyện/thị xã, suburb là xã/phường
+        district = addr.city || addr.county || addr.municipality || '';
+        ward = addr.suburb || addr.neighbourhood || addr.village || addr.hamlet || addr.city_district || '';
+    }
+
+    // Ward fallback thêm
+    if (!ward) {
+        ward = addr.neighbourhood || addr.suburb || addr.village || '';
+    }
+
+    // Detailed address: thu thập nhiều thành phần nhất có thể
+    if (addr.house_number) detailedAddress.push(addr.house_number);
+    if (addr.road) detailedAddress.push(addr.road);
+    if (addr.pedestrian) detailedAddress.push(addr.pedestrian); // nếu là đường đi bộ
+    if (addr.path) detailedAddress.push(addr.path);
+    if (addr.building) detailedAddress.push(addr.building);
+    if (addr.amenity || addr.shop || addr.tourism || addr.name) {
+        // Nếu click vào POI (quán ăn, cửa hàng), thêm tên
+        detailedAddress.push(addr.name || addr.amenity || addr.shop || addr.tourism || '');
+    }
+
+    // Nếu vẫn thiếu, thêm suburb/neighbourhood nếu không trùng ward
+    if (addr.neighbourhood && ward !== addr.neighbourhood && !detailedAddress.includes(addr.neighbourhood)) {
+        detailedAddress.push(addr.neighbourhood);
+    }
+
+    detailedAddress = detailedAddress.filter(Boolean).join(', ').trim();
+
+    // Fallback cuối: nếu detailedAddress rỗng, parse từ display_name (bỏ phần cuối: ward, district, province, Vietnam)
+    if (!detailedAddress && data.display_name) {  // 'data' là response đầy đủ
+        const parts = data.display_name.split(', ');
+        // Bỏ Vietnam, postcode nếu có, province, district, ward (thường 3-4 phần cuối)
+        let skipCount = 1; // Vietnam
+        if (/^\d{5}$/.test(parts[parts.length - 2])) skipCount = 2; // có postcode
+        const detailParts = parts.slice(0, parts.length - (skipCount + 3)); // giả sử 3 phần hành chính cuối
+        detailedAddress = detailParts.join(', ').trim();
+    }
+
+    // Clean ward/district nếu có "Ward"/"Phường" thừa (tùy nhu cầu)
+    ward = ward.replace(/( Ward| Phường)$/i, '').trim();
+    district = district.replace(/( District| Quận)$/i, '').trim();
+
     return {
-        province: addr.state || addr.city || '',
-        district: addr.county || addr.suburb || '',
-        ward: addr.city_district || addr.village || addr.neighbourhood || '',
-        address: addr.road || ''
+        province: province.trim() || null,
+        district: district.trim() || null,
+        ward: ward.trim() || null,
+        address: detailedAddress || null
     };
 }
 
-/* ---------- ADDRESS CHANGE ---------- */
-document.addEventListener('DOMContentLoaded', function () {
-    const addressInput = document.getElementById('address');
-    const form = document.querySelector('form');
-
-    if (!addressInput || !form) return;
-
-    addressInput.addEventListener('focus', () => {
-        originalAddress = addressInput.value;
-    });
-
-    form.addEventListener('submit', function (e) {
-        if (addressInput.value && addressInput.value !== originalAddress) {
-            e.preventDefault();
-            geocodeAddress(addressInput.value);
-        }
-    });
-});
-
-/* ---------- GEOCODE ---------- */
-function geocodeAddress(address) {
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-        .then(res => res.json())
-        .then(results => {
-            if (!results || results.length === 0) {
-                alert('Không tìm thấy địa điểm');
-                return;
-            }
-
-            const r = results[0];
-            setValue('latitude', r.lat);
-            setValue('longitude', r.lon);
-
-            document.querySelector('form').submit();
-        })
-        .catch(() => alert('Lỗi khi định vị địa chỉ'));
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const form = document.getElementById("facilityForm");
-
-    form.addEventListener("submit", function (e) {
-        e.preventDefault(); // CHẶN submit
-
-        geocodeAndSubmit();
-    });
-
-    function geocodeAndSubmit() {
-        const address = buildFullAddress();
-
-        if (!address) {
-            alert("Vui lòng nhập địa chỉ");
-            return;
-        }
-
-        // Dùng Nominatim geocoder
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data || data.length === 0) {
-                    alert("Không tìm được vị trí. Vui lòng chọn lại trên bản đồ.");
-                    return;
-                }
-
-                const lat = data[0].lat;
-                const lng = data[0].lon;
-
-                document.getElementById("latitude").value = lat;
-                document.getElementById("longitude").value = lng;
-
-                // SUBMIT THẬT
-                form.submit();
-            })
-            .catch(err => {
-                console.error(err);
-                alert("Lỗi khi xác định vị trí.");
-            });
-    }
-
-    function buildFullAddress() {
-        const parts = [
-            document.getElementById("address").value,
-            document.getElementById("ward").value,
-            document.getElementById("district").value,
-            document.getElementById("province").value
-        ];
-
-        return parts
-            .map(p => p?.trim())
-            .filter(p => p)
-            .join(", ");
-    }
-
-});
 
 document.addEventListener("DOMContentLoaded", function () {
     ["province", "district", "ward", "address"].forEach(id => {
