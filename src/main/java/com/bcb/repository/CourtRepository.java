@@ -43,13 +43,6 @@ public interface CourtRepository {
     void deactivate(int courtId);
 
 
-    /**
-     * Check if court has active bookings.
-     * @param courtId Court ID
-     * @return true if has active/future bookings
-     */
-    boolean hasActiveBookings(int courtId);
-
 
     List<CourtViewDTO> findByFacilityForView(int facilityId);
 }

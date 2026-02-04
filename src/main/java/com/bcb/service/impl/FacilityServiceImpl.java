@@ -223,12 +223,6 @@ public class FacilityServiceImpl implements FacilityService {
                 "Facility not found with ID: " + facilityId);
         }
 
-        // Check if has active bookings
-        if (facilityRepository.hasActiveBookings(facilityId)) {
-            throw new BusinessException("FACILITY_HAS_ACTIVE_BOOKINGS",
-                "Cannot delete facility with active or future bookings");
-        }
-
         try {
             int rowsAffected = facilityRepository.softDelete(facilityId);
             if (rowsAffected == 0) {

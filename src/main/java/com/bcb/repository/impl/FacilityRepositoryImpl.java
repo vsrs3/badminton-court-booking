@@ -232,36 +232,6 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         }
     }
 
-    @Override
-    public boolean hasActiveBookings(int facilityId) {
-        String sql = "SELECT COUNT(*) " +
-                "FROM Booking b " +
-                "INNER JOIN Court c ON b.court_id = c.court_id " +
-                "WHERE c.facility_id = ? " +
-                "AND b.booking_status IN ('PENDING', 'CONFIRMED') " +
-                "AND EXISTS (" +
-                "    SELECT 1 FROM BookingSlot bs " +
-                "    INNER JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
-                "    WHERE bs.booking_id = b.booking_id " +
-                "    AND CAST(b.booking_date AS DATETIME) + CAST(ts.start_time AS DATETIME) >= GETDATE()" +
-                ")";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, facilityId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to check active bookings", e);
-        }
-
-        return false;
-    }
 
     /**
      * Maps ResultSet row to Facility object.

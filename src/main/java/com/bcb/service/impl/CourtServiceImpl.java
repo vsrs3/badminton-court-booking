@@ -66,9 +66,6 @@ public class CourtServiceImpl implements CourtService {
         if (!courtRepository.findById(courtId).isPresent()) {
             throw new BusinessException("COURT_NOT_FOUND", "Court not found");
         }
-        if (courtRepository.hasActiveBookings(courtId)) {
-            throw new BusinessException("COURT_HAS_BOOKINGS", "Cannot deactivate court with active bookings");
-        }
         courtRepository.deactivate(courtId);
     }
 

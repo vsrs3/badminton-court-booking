@@ -100,34 +100,6 @@ public class CourtRepositoryImpl implements CourtRepository {
         }
     }
 
-    @Override
-    public boolean hasActiveBookings(int courtId) {
-        String sql = "SELECT COUNT(*) " +
-                "FROM Booking b " +
-                "INNER JOIN BookingSlot bs ON b.booking_id = bs.booking_id " +
-                "INNER JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
-                "WHERE b.court_id = ? " +
-                "AND b.booking_status IN ('PENDING', 'CONFIRMED') " +
-                "AND CAST(b.booking_date AS DATETIME) + CAST(ts.start_time AS DATETIME) >= GETDATE()";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, courtId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to check active bookings", e);
-        }
-
-        return false;
-    }
-
-
 
     @Override
     public List<CourtViewDTO> findByFacilityForView(int facilityId) {

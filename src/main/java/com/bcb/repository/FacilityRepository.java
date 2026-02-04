@@ -72,10 +72,4 @@ public interface FacilityRepository {
      */
     int softDelete(int facilityId);
 
-    /**
-     * Check if facility has active bookings.
-     * @param facilityId Facility ID
-     * @return true if has active/future bookings
-     */
-    boolean hasActiveBookings(int facilityId);
 }

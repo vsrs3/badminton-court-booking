@@ -159,7 +159,7 @@ function reverseGeocode(lat, lng) {
         });
 }
 
-function mapAddress(addr) {
+function mapAddress(addr, data) {
     let province = '';
     let district = '';
     let ward = '';
@@ -209,13 +209,11 @@ function mapAddress(addr) {
     detailedAddress = detailedAddress.filter(Boolean).join(', ').trim();
 
     // Fallback cuối: nếu detailedAddress rỗng, parse từ display_name (bỏ phần cuối: ward, district, province, Vietnam)
-    if (!detailedAddress && data.display_name) {  // 'data' là response đầy đủ
+    if (!detailedAddress && data && data.display_name) {
         const parts = data.display_name.split(', ');
-        // Bỏ Vietnam, postcode nếu có, province, district, ward (thường 3-4 phần cuối)
         let skipCount = 1; // Vietnam
-        if (/^\d{5}$/.test(parts[parts.length - 2])) skipCount = 2; // có postcode
-        const detailParts = parts.slice(0, parts.length - (skipCount + 3)); // giả sử 3 phần hành chính cuối
-        detailedAddress = detailParts.join(', ').trim();
+        if (/^\d{5}$/.test(parts[parts.length - 2])) skipCount = 2;
+        detailedAddress = parts.slice(0, parts.length - (skipCount + 3)).join(', ').trim();
     }
 
     // Clean ward/district nếu có "Ward"/"Phường" thừa (tùy nhu cầu)
