@@ -220,6 +220,7 @@ CREATE TABLE Booking (
 
                          recurring_id INT NULL,
                         -- court_id INT NOT NULL, gan vao BookingSlot
+                         facility_id INT NOT NULL, -- them de nhat quan, giam quer
                          booking_date DATE NOT NULL,
 
                          account_id INT NULL,     -- user online
@@ -239,6 +240,7 @@ CREATE TABLE Booking (
                          FOREIGN KEY (account_id) REFERENCES Account(account_id),
                          FOREIGN KEY (guest_id) REFERENCES Guest(guest_id),
                          FOREIGN KEY (staff_id) REFERENCES Staff(staff_id),
+                         FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
 
                          CHECK (
                              -- khách tự đặt
