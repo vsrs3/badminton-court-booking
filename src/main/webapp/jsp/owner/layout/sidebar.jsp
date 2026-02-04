@@ -26,7 +26,7 @@
         </a>
         
         <div class="mt-auto pt-4">
-            <a href="${pageContext.request.contextPath}/logout" class="nav-link text-danger border-top border-secondary mt-3 pt-3">
+            <a href="${pageContext.request.contextPath}/auth/logout" class="nav-link text-danger border-top border-secondary mt-3 pt-3">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Logout</span>
             </a>
