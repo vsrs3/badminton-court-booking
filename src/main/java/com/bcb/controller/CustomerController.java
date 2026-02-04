@@ -21,7 +21,6 @@ import java.io.IOException;
 )
 public class CustomerController extends HttpServlet {
 
-    private final CustomerAuthService authService = new CustomerAuthServiceImpl();
     private final CustomerProfileService profileService = new CustomerProfileServiceImpl();
 
     @Override
@@ -34,9 +33,9 @@ public class CustomerController extends HttpServlet {
                 case "logout" -> {
                     logout(request, response);
                 }
-                case "deleteAccount" -> {
-                    deleteAccount(request, response);
-                }
+//                case "deleteAccount" -> {
+//                    deleteAccount(request, response);
+//                }
             }
         }
     }
@@ -132,23 +131,23 @@ public class CustomerController extends HttpServlet {
         }
     }
 
-    private void deleteAccount (HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        HttpSession session = request.getSession();
-        Account account = (Account) session.getAttribute("account");
-
-        if(account != null) {
-            Integer customerId = account.getAccountId();
-            AccountResponse result = authService.deleteAccount(customerId);
-
-            if (result.isSuccess()) {
-                session.setAttribute("successMessage", result.getMessage());
-                response.sendRedirect(request.getContextPath() + "/home");
-            } else {
-                session.setAttribute("errorMessage", result.getMessage());
-                response.sendRedirect(request.getContextPath() + "/profile?section=settings");
-            }
-        }
-    }
+//    private void deleteAccount (HttpServletRequest request, HttpServletResponse response)
+//            throws ServletException, IOException {
+//        HttpSession session = request.getSession();
+//        Account account = (Account) session.getAttribute("account");
+//
+//        if(account != null) {
+//            Integer customerId = account.getAccountId();
+//            AccountResponse result = authService.deleteAccount(customerId);
+//
+//            if (result.isSuccess()) {
+//                session.setAttribute("successMessage", result.getMessage());
+//                response.sendRedirect(request.getContextPath() + "/home");
+//            } else {
+//                session.setAttribute("errorMessage", result.getMessage());
+//                response.sendRedirect(request.getContextPath() + "/profile?section=settings");
+//            }
+//        }
+//    }
 
 }
