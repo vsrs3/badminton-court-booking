@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public class Booking {
     private Integer bookingId;
     private Integer recurringId;
+    private Integer facilityId;
     private LocalDate bookingDate;
     private Integer accountId;
     private Integer guestId;
@@ -40,4 +41,12 @@ public class Booking {
     public void setCheckoutTime(LocalDateTime checkoutTime) { this.checkoutTime = checkoutTime; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Integer getFacilityId() {
+        return facilityId;
+    }
+
+    public void setFacilityId(Integer facilityId) {
+        this.facilityId = facilityId;
+    }
 }
