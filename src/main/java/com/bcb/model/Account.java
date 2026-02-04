@@ -41,6 +41,21 @@ public class Account {
         this.isActive = isActive;
     }
 
+    public Account(Integer accountId, String email, String passwordHash,
+                   String googleId, String fullName, String phone, String avatarPath,
+                   String role, Boolean isActive, LocalDateTime createdAt) {
+        this.accountId = accountId;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.googleId = googleId;
+        this.fullName = fullName;
+        this.phone = phone;
+        this.avatarPath = avatarPath;
+        this.role = role;
+        this.isActive = isActive;
+        this.createdAt = createdAt;
+    }
+
     // ============================================
     // GETTERS AND SETTERS
     // ============================================
