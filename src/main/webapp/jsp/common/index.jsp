@@ -11,12 +11,12 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <title>JSP Page</title>
 
-  <link rel="stylesheet" href="assets/css/Header.css">
+  <link rel="stylesheet" href="../../assets/css/Header.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <header>
-  <jsp:include page="jsp/common/header.jsp"></jsp:include>
+  <jsp:include page="header.jsp"></jsp:include>
 </header>
 
 <h1>Home World!</h1>

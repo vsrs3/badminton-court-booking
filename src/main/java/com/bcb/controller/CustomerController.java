@@ -1,13 +1,9 @@
 package com.bcb.controller;
 
 import com.bcb.dto.CustomerChangePassDTO;
-import com.bcb.dto.CustomerLoginDTO;
 import com.bcb.dto.CustomerProfileDTO;
-import com.bcb.dto.CustomerRegisterDTO;
 import com.bcb.model.Account;
-import com.bcb.service.CustomerAuthService;
 import com.bcb.service.CustomerProfileService;
-import com.bcb.service.impl.CustomerAuthServiceImpl;
 import com.bcb.service.impl.CustomerProfileServiceImpl;
 import com.bcb.dto.response.AccountResponse;
 import jakarta.servlet.ServletException;
@@ -52,12 +48,6 @@ public class CustomerController extends HttpServlet {
 
         if (action != null) {
             switch (action) {
-                case "register" -> {
-                    register(request, response);
-                }
-                case "login" -> {
-                    login(request, response);
-                }
                 case "updateProfile" -> {
                     updateProfile(request, response);
                 }
@@ -65,57 +55,6 @@ public class CustomerController extends HttpServlet {
                     updatePassword(request, response);
                 }
             }
-        }
-    }
-
-    private void register(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        HttpSession session = request.getSession();
-        try {
-            String username = request.getParameter("username");
-            String email = request.getParameter("email");
-            String password = request.getParameter("password");
-            String phone = request.getParameter("phone");
-
-            CustomerRegisterDTO dto = new CustomerRegisterDTO(username, email, password, phone);
-
-            AccountResponse result = authService.registerCustomer(dto);
-
-            if (result.isSuccess()) {
-                response.sendRedirect(request.getContextPath() + "/login");
-            } else {
-                session.setAttribute("resError", result.getMessage());
-                response.sendRedirect(request.getContextPath() + "/register");
-            }
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-
-    }
-
-    private void login(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        String email = request.getParameter("email");
-
-        try {
-            CustomerLoginDTO dto = new CustomerLoginDTO(email);
-            AccountResponse result = authService.login(dto);
-
-            HttpSession session = request.getSession();
-            if (result.isSuccess()) {
-                session.setAttribute("account", result.getAccount());
-                response.sendRedirect(request.getContextPath() + "/home");
-            } else {
-                session.setAttribute("logError", result.getMessage());
-                response.sendRedirect(request.getContextPath() + "/login");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
         }
     }
 
