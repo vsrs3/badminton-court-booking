@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 public class Booking {
     private Integer bookingId;
     private Integer recurringId;
-    private Integer courtId;
     private LocalDate bookingDate;
     private Integer accountId;
     private Integer guestId;
@@ -23,8 +22,6 @@ public class Booking {
     public void setBookingId(Integer bookingId) { this.bookingId = bookingId; }
     public Integer getRecurringId() { return recurringId; }
     public void setRecurringId(Integer recurringId) { this.recurringId = recurringId; }
-    public Integer getCourtId() { return courtId; }
-    public void setCourtId(Integer courtId) { this.courtId = courtId; }
     public LocalDate getBookingDate() { return bookingDate; }
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
     public Integer getAccountId() { return accountId; }

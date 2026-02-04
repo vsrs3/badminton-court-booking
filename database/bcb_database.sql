@@ -3,7 +3,7 @@ GO
 
 IF EXISTS (SELECT name FROM sys.databases WHERE name = 'badminton_court_booking')
 BEGIN
-    ALTER DATABASE badminton_court_booking 
+    ALTER DATABASE badminton_court_booking
     SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 
     DROP DATABASE badminton_court_booking;
@@ -177,7 +177,6 @@ CREATE TABLE RecurringBooking (
                                   recurring_id INT IDENTITY PRIMARY KEY,
 
                                   facility_id INT NOT NULL,
-                                  court_type_id INT NOT NULL,
                                   account_id INT NOT NULL,
 
                                   start_date DATE NOT NULL,
@@ -188,7 +187,6 @@ CREATE TABLE RecurringBooking (
                                   created_at DATETIME DEFAULT GETDATE(),
 
                                   FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
-                                  FOREIGN KEY (court_type_id) REFERENCES CourtType(court_type_id),
                                   FOREIGN KEY (account_id) REFERENCES Account(account_id)
 );
 GO
@@ -221,7 +219,7 @@ CREATE TABLE Booking (
                          booking_id INT IDENTITY PRIMARY KEY,
 
                          recurring_id INT NULL,
-                         court_id INT NOT NULL,
+                        -- court_id INT NOT NULL, gan vao BookingSlot
                          booking_date DATE NOT NULL,
 
                          account_id INT NULL,     -- user online
@@ -238,7 +236,6 @@ CREATE TABLE Booking (
                          created_at DATETIME DEFAULT GETDATE(),
 
                          FOREIGN KEY (recurring_id) REFERENCES RecurringBooking(recurring_id),
-                         FOREIGN KEY (court_id) REFERENCES Court(court_id),
                          FOREIGN KEY (account_id) REFERENCES Account(account_id),
                          FOREIGN KEY (guest_id) REFERENCES Guest(guest_id),
                          FOREIGN KEY (staff_id) REFERENCES Staff(staff_id),
@@ -258,13 +255,15 @@ GO
 CREATE TABLE BookingSlot (
                              booking_slot_id INT IDENTITY PRIMARY KEY,
                              booking_id INT NOT NULL,
+                             court_id INT NOT NULL,        -- FIX: gắn sân tại slot
                              slot_id INT NOT NULL,
                              price DECIMAL(10,2) NOT NULL,
 
                              FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
+                             FOREIGN KEY (court_id) REFERENCES Court(court_id),
                              FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-                             UNIQUE (booking_id, slot_id)
+                             UNIQUE (booking_id, court_id, slot_id)
 );
 GO
 
@@ -274,13 +273,13 @@ CREATE TABLE CourtSlotBooking (
                                   court_id INT NOT NULL,
                                   booking_date DATE NOT NULL,
                                   slot_id INT NOT NULL,
-                                  booking_id INT NOT NULL,
+                                  booking_slot_id INT NOT NULL,
 
                                   PRIMARY KEY (court_id, booking_date, slot_id),
 
                                   FOREIGN KEY (court_id) REFERENCES Court(court_id),
                                   FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
-                                  FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE
+                                  FOREIGN KEY (booking_slot_id) REFERENCES BookingSlot(booking_slot_id)
 );
 GO
 
@@ -348,7 +347,8 @@ GO
 -- Booking racket
 CREATE TABLE RacketRental (
                               racket_rental_id INT IDENTITY PRIMARY KEY,
-                              booking_id INT NOT NULL,
+                              --booking_id INT NOT NULL,
+                              booking_slot_id INT NOT NULL,  --  GẮN THEO SLOT
                               inventory_id INT NOT NULL,
 
                               quantity INT NOT NULL CHECK (quantity > 0),
@@ -358,10 +358,10 @@ CREATE TABLE RacketRental (
 
                               created_at DATETIME DEFAULT GETDATE(),
 
-                              FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
+                              FOREIGN KEY (booking_slot_id) REFERENCES BookingSlot(booking_slot_id) ON DELETE CASCADE,
                               FOREIGN KEY (inventory_id) REFERENCES Inventory(inventory_id),
 
-                              UNIQUE (booking_id, inventory_id)
+                              UNIQUE (booking_slot_id, inventory_id)
 );
 GO
 
@@ -369,7 +369,7 @@ GO
 CREATE TABLE RacketRentalLog (
                                  rental_id INT IDENTITY PRIMARY KEY,
 
-                                 booking_id INT NOT NULL,
+                                 booking_slot_id INT NOT NULL,
                                  facility_inventory_id INT NOT NULL,
                                  quantity INT NOT NULL,
 
@@ -377,7 +377,7 @@ CREATE TABLE RacketRentalLog (
                                  rented_at DATETIME DEFAULT GETDATE(),
                                  returned_at DATETIME NULL,
 
-                                 FOREIGN KEY (booking_id) REFERENCES Booking(booking_id),
+                                 FOREIGN KEY (booking_slot_id) REFERENCES BookingSlot(booking_slot_id),
                                  FOREIGN KEY (facility_inventory_id) REFERENCES FacilityInventory(facility_inventory_id),
                                  FOREIGN KEY (staff_id) REFERENCES Staff(staff_id)
 );
