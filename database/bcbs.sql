@@ -1,3 +1,6 @@
+﻿USE master;
+GO
+
 IF EXISTS (SELECT name FROM sys.databases WHERE name = 'badminton_court_booking')
 BEGIN
     ALTER DATABASE badminton_court_booking
@@ -487,13 +490,9 @@ CREATE TABLE CustomerFavoriteFacility (
 );
 GO
 
-
-USE badminton_court_booking;
-GO
-
 -- Insert sample facilities
 INSERT INTO Facility (name, province, district, ward, address, latitude, longitude, description, open_time, close_time, is_active)
-VALUES 
+VALUES
 (N'CLB Cầu Lông Hà Đông Star', N'Hà Nội', N'Hà Đông', N'Phú Lãm', N'Đường Phú Lãm', 21.0281, 105.5079,
  N'Sân cầu lông đạt chuẩn thi đấu', '05:30', '22:00', 1),
 
@@ -572,66 +571,59 @@ GO
 -- Test CUSTOMER
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer@test.com',
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        N'Nguyễn Văn Customer',
-        '0901234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer@test.com',
+           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           N'Nguyễn Văn Customer',
+           '0901234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 
 -- Test STAFF
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'staff@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'staff@test.com',
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        N'Trần Thị Staff',
-        '0902234567',
-        'STAFF',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'staff@test.com',
+           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           N'Trần Thị Staff',
+           '0902234567',
+           'STAFF',
+           1,
+           GETDATE()
+       );
 END
 
 -- Test OWNER
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'owner@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'owner@test.com',
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        N'Lê Văn Owner',
-        '0903234567',
-        'OWNER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'owner@test.com',
+           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           N'Lê Văn Owner',
+           '0903234567',
+           'OWNER',
+           1,
+           GETDATE()
+       );
 END
 
 -- Test ADMIN (already exists, but create if not)
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'admin@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'admin@test.com',
-        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        N'Phạm Thị Admin',
-        '0904234567',
-        'ADMIN',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'admin@test.com',
+           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           N'Phạm Thị Admin',
+           '0904234567',
+           'ADMIN',
+           1,
+           GETDATE()
+       );
 END
-
-GO
-
-SELECT email, full_name, role FROM Account ORDER BY role;
-
-
-
