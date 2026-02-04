@@ -1,5 +1,6 @@
 package com.bcb.filter;
 
+import com.bcb.model.Account;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
