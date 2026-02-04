@@ -126,7 +126,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 return new AccountResponse(false, "Mật khẩu hiện tại không khớp", 1000);
             }
 
-            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt(12));
+            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt(10));
 
             boolean isUpdate = repo.updatePassword(hashedNewPass, accountId);
             if (!isUpdate) {

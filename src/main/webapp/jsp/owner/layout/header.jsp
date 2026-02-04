@@ -15,13 +15,6 @@
         </div>
 
         <!-- Avatar -->
-        <img
-                src="${sessionScope.avatarPath != null
-                ? sessionScope.avatarPath
-                : 'https://placehold.co/40x40'}"
-                class="rounded-circle"
-                width="40"
-                height="40"
-        />
+        <img href="" src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
     </div>
 </nav>
