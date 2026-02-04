@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class RacketRentalLog {
     private Integer rentalId;
-    private Integer bookingId;
+    private Integer bookingSlotID;
     private Integer facilityInventoryId;
     private Integer quantity;
     private Integer staffId;
@@ -15,8 +15,8 @@ public class RacketRentalLog {
 
     public Integer getRentalId() { return rentalId; }
     public void setRentalId(Integer rentalId) { this.rentalId = rentalId; }
-    public Integer getBookingId() { return bookingId; }
-    public void setBookingId(Integer bookingId) { this.bookingId = bookingId; }
+    public Integer getBookingSlotID() { return bookingSlotID; }
+    public void setBookingSlotID(Integer bookingSlotID) { this.bookingSlotID = bookingSlotID; }
     public Integer getFacilityInventoryId() { return facilityInventoryId; }
     public void setFacilityInventoryId(Integer facilityInventoryId) { this.facilityInventoryId = facilityInventoryId; }
     public Integer getQuantity() { return quantity; }
