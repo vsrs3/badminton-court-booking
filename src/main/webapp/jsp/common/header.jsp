@@ -38,7 +38,7 @@
                 String avatarPath = currentUser.getAvatarPath();
                 if (avatarPath != null && !avatarPath.isEmpty()) {
               %>
-              <img src="${pageContext.request.contextPath}/<%= avatarPath %>" alt="Avatar">
+              <img src="${pageContext.request.contextPath}/uploads/<%= avatarPath %>" alt="Avatar">
               <% } else {
                 // Generate default avatar with first letter
                 String fullName = currentUser.getFullName();

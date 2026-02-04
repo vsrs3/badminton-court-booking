@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" language="java" %>
 <nav class="bottom-nav">
     <div class="bottom-nav-container">
 
@@ -30,10 +30,10 @@
         </button>
 
         <!-- Profile Tab -->
-        <button class="nav-item" data-tab="profile">
+        <a href="${pageContext.request.contextPath}/profile" class="nav-item" data-tab="profile" style="text-decoration: none">
             <i class="bi bi-person-fill"></i>
             <span class="nav-text">Cá nhân</span>
-        </button>
+        </a>
 
     </div>
 </nav>

@@ -43,6 +43,6 @@ public class ProfileController extends HttpServlet {
         }
 
         // Show profile page
-        request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/customer/profile/profile.jsp").forward(request, response);
     }
 }
