@@ -12,7 +12,6 @@
     <title>JSP Page</title>
 
     <link rel="stylesheet" href="assets/css/Header.css">
-    <link rel="stylesheet" href="assets/css/Footer.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -21,10 +20,6 @@
 </header>
 
 <h1>Home World!</h1>
-
-<footer>
-    <jsp:include page="footer.jsp"></jsp:include>
-</footer>
 
 </body>
 </html>

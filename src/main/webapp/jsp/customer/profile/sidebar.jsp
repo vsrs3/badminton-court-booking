@@ -1,11 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
 <div class="flex flex-col h-full bg-white">
     <div class="p-5 bg-gradient-to-br from-[#004d3d] to-[#006b54] text-white">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-3">
                 <div class="relative">
-                    <img src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
-                    <div class="absolute bottom-0 right-0 w-4 h-4 bg-[#9ef01a] rounded-full border-2 border-[#004d3d]"></div>
+                    <c:if test="${not empty sessionScope.account.avatarPath}">
+                        <img src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
+                        <div class="absolute bottom-0 right-0 w-4 h-4 bg-[#9ef01a] rounded-full border-2 border-[#004d3d]"></div>
+                    </c:if>
+                    <c:if test="${empty sessionScope.account.avatarPath}">
+                        <i data-lucide="user-circle" id="avatarIcon" class="w-16 h-16 text-gray-400"></i>
+                    </c:if>
                 </div>
                 <div>
                     <h2 class="font-bold text-base">${sessionScope.account.getFullName()}</h2>

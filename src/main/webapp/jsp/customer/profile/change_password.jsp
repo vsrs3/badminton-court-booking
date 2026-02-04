@@ -12,6 +12,7 @@
     </div>
 
     <form id="changePasswordForm" action="customerController" method="post" class="p-6 space-y-6">
+        <input type="hidden" name="action" value="updatePassword">
         <div class="space-y-2">
             <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <i data-lucide="key" class="w-4 h-4 text-gray-500"></i>
@@ -84,8 +85,6 @@
         <div class="flex gap-4 pt-4">
             <button
                     type="submit"
-                    name="action"
-                    value="updatePassword"
                     class="flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all"
             >
                 <i data-lucide="check" class="inline w-5 h-5 mr-2"></i>
@@ -120,9 +119,9 @@
             <c:remove var="updateError" scope="session"/>
         </c:if>
     </div>
-
 </div>
 
+<script src="/assets/js/alert.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Toggle password visibility (giữ nguyên)
@@ -274,17 +273,32 @@
             });
         });
 
-        // Submit validation
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+
             let hasError = false;
 
-            if (!validateLength(oldPass)) hasError = true;
-            if (!validateLength(newPass)) hasError = true;
-            if (!checkConfirmMatch()) hasError = true;
+            if (!validateLength(oldPass) || !validateLength(newPass) || !checkConfirmMatch()) {
+                hasError = true;
+            }
 
             if (hasError) {
-                e.preventDefault();
-                alert('Vui lòng sửa các lỗi được đánh dấu trước khi gửi.');
+                await showPopupWarning('Lỗi', 'Vui lòng sửa các lỗi trước khi gửi');
+                return;
+            }
+
+            const confirmed = await showConfirm('Lưu mật khẩu',
+                'Bạn có chắc muốn lưu mật khẩu mới không?', 'question', 'Xác nhận');
+
+            if (confirmed) {
+                // Disable button để tránh submit lại
+                submitBtn.disabled = true;
+
+                // Submit form bằng cách tạo FormData và fetch
+                const formData = new FormData(form);
+                form.submit();
             }
         });
     });

@@ -74,7 +74,8 @@
         </div>
     </div>
 
-    <form action="customerController" method="post" enctype="multipart/form-data" class="p-6 space-y-6" id="profileForm">
+    <form action="customerController" method="POST" enctype="multipart/form-data" class="p-6 space-y-6" id="profileForm">
+        <input type="hidden" name="action" value="updateProfile" />
         <!-- Avatar -->
         <div class="space-y-4">
             <label class="text-sm font-medium text-gray-700 flex items-center space-x-2">
@@ -168,7 +169,7 @@
 
         <!-- Buttons -->
         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-            <button type="submit" name="action" value="updateProfile"
+            <button type="submit"
                     class="w-full sm:w-auto flex-1 py-4 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
                 <i data-lucide="save" class="w-5 h-5"></i>
                 <span>Lưu thay đổi</span>
@@ -313,15 +314,12 @@
                     return true;
                 }
             }
-
-            if(!/^(?:\+84|84|0)(?:3[2-9]|5[2689]|7[0|6-9]|8[1-9]|9[0-9])[0-9]{7}$/.test(val) ||
-            !/^(?:\+1|1)?[2-9][0-9]{2}[2-9][0-9]{6}$/.test(val) ||
-            !/^(?:\+44|44|0)([1-9][0-9]{9,10})$/.test(val) ||
-            !/^(?:\+81|81|0)([1-9][0-9]{8,9})$/.test(val)) {
-                showWarningPhone(phoneInput, phoneWarning, 'Số điện thoại sai định dạng các nước (Việt Nam, Nhật Bản, Anh, Mỹ');
-                return false;
-            }
-            return true;
+            showWarningPhone(
+                phoneInput,
+                phoneWarning,
+                'Số điện thoại không hợp lệ (VN, US, UK, JP)'
+            );
+            return false;
         }
 
         // ================= EVENTS =================
@@ -339,17 +337,20 @@
         phoneInput.addEventListener('input', validatePhone);
         phoneInput.addEventListener('blur', validatePhone);
 
-        form.addEventListener('submit', e => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
             let valid = true;
-            if (!validateFullName()) valid = false;
-            if (!validateEmail())    valid = false;
-            if (!validatePhone())    valid = false;
+            if (!validateFullName() || !validateEmail() || !validatePhone()) valid = false;
 
             if (!valid) {
-                e.preventDefault();
-                if (!validateFullName()) fullNameInput.focus();
-                else if (!validateEmail()) emailInput.focus();
-                else if (!validatePhone()) phoneInput.focus();
+                showPopupWarning('Lỗi',
+                    'Vui lòng sửa các lỗi trước khi gửi');
+                return;
+            }
+            const confirmed = await showConfirm('Lưu thông tin',
+                'Bạn có chắc muốn lưu thông tin không?', 'question', 'Xác nhận');
+            if (confirmed) {
+                form.submit();
             }
         });
 

@@ -1,12 +1,14 @@
 package com.bcb.service.impl;
 
 import com.bcb.dto.CustomerLoginDTO;
+import com.bcb.dto.CustomerRegisterDTO;
 import com.bcb.model.Account;
 import com.bcb.repository.impl.AccountAuthRepositoryImpl;
 import com.bcb.service.CustomerAuthService;
 import com.bcb.dto.response.AccountResponse;
 import com.bcb.repository.*;
 import com.bcb.utils.DBContext;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
 
@@ -17,6 +19,28 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         this.repo = new AccountAuthRepositoryImpl();
     }
 
+    @Override
+    public AccountResponse registerCustomer(CustomerRegisterDTO dto) {
+        try (Connection conn = DBContext.getConnection()){
+            conn.setAutoCommit(false);
+
+            String hashedPassword = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt(12));
+
+            boolean isRegister = repo.registerUser(dto.getUsername(), dto.getEmail(), hashedPassword, dto.getPhone());
+            if (!isRegister) {
+                conn.rollback();
+                return new AccountResponse(false, "Failed to create account");
+            }
+
+            conn.commit();
+            return new AccountResponse(true, "Registration successful", 1000);
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new AccountResponse(false, "DB error during registration");
+        }
+    }
+    
     @Override
     public AccountResponse login(CustomerLoginDTO dto) {
         try {

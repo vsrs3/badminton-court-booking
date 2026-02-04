@@ -54,8 +54,7 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     @Override
     public boolean updatePassword(String newPass, Integer accountId) {
 
-        Connection connect = DBContext.getConnection();
-        try (PreparedStatement ps = connect.prepareStatement(UPDATE_PASSWORD)){
+        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(UPDATE_PASSWORD)){
             ps.setString(1, newPass);
             ps.setInt(2, accountId);
 

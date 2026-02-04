@@ -39,7 +39,6 @@
             <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
         </a>
         <form action="customerController" method="GET" id="logoutForm"
-              onsubmit="setupConfirm(this);"
               class="flex items-center justify-
               between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
             <input type="hidden" name="action" value="logout">
@@ -64,13 +63,23 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('logoutForm')
+        .addEventListener('submit', async e => {
+            e.preventDefault();
 
-        setupConfirm('logoutForm', 'Đăng xuất ?',
-            'Bạn có chắc muốn thoát không ?', 'question', 'Đăng xuất');
+            const confirmed = await Swal.fire({
+                title: 'Đăng xuất',
+                text: 'Bạn có chắc muốn đăng xuất không?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Đăng xuất',
+                cancelButtonText: 'Hủy',
+                reverseButtons: true
+            });
 
-        setupConfirm('deleteAccount', 'Cảnh báo !',
-            'Xóa tài khoản sẽ mất hết dữ liệu vĩnh viễn !', 'warning', 'Xóa ngay');
+            if (confirmed.isConfirmed) {
+                e.target.submit();
+            }
+        });
 
-    });
 </script>

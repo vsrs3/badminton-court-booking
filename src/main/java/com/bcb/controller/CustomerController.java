@@ -3,6 +3,7 @@ package com.bcb.controller;
 import com.bcb.dto.CustomerChangePassDTO;
 import com.bcb.dto.CustomerLoginDTO;
 import com.bcb.dto.CustomerProfileDTO;
+import com.bcb.dto.CustomerRegisterDTO;
 import com.bcb.model.Account;
 import com.bcb.service.CustomerAuthService;
 import com.bcb.service.CustomerProfileService;
@@ -51,6 +52,9 @@ public class CustomerController extends HttpServlet {
 
         if (action != null) {
             switch (action) {
+                case "register" -> {
+                    register(request, response);
+                }
                 case "login" -> {
                     login(request, response);
                 }
@@ -62,6 +66,34 @@ public class CustomerController extends HttpServlet {
                 }
             }
         }
+    }
+
+    private void register(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession();
+        try {
+            String username = request.getParameter("username");
+            String email = request.getParameter("email");
+            String password = request.getParameter("password");
+            String phone = request.getParameter("phone");
+
+            CustomerRegisterDTO dto = new CustomerRegisterDTO(username, email, password, phone);
+
+            AccountResponse result = authService.registerCustomer(dto);
+
+            if (result.isSuccess()) {
+                response.sendRedirect(request.getContextPath() + "/login");
+            } else {
+                session.setAttribute("resError", result.getMessage());
+                response.sendRedirect(request.getContextPath() + "/register");
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+
     }
 
     private void login(HttpServletRequest request, HttpServletResponse response)
@@ -127,7 +159,7 @@ public class CustomerController extends HttpServlet {
         String confirmNewPass = request.getParameter("confirmPassword");
 
         HttpSession session = request.getSession();
-        Account account = (Account) session.getAttribute("customer");
+        Account account = (Account) session.getAttribute("account");
         try{
             CustomerChangePassDTO dto = new CustomerChangePassDTO(oldPass, newPass, confirmNewPass);
 

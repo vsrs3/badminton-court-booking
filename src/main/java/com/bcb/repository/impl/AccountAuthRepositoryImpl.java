@@ -12,6 +12,10 @@ public class AccountAuthRepositoryImpl implements AccountAuthRepository {
 
     private final String DELETE_CUSTOMER = "Delete From Account Where account_id = ?";
 
+    private final String CREATE_USER = "Insert Into Account "
+                                        + "(email, password_hash, full_name, phone, role, created_at) "
+                                        + "Values(?, ?, ?, ?,  'USER', GETDATE())";
+
    @Override
     public Account getAccountByEmailAndPass(String email) {
 
@@ -40,6 +44,26 @@ public class AccountAuthRepositoryImpl implements AccountAuthRepository {
             System.out.println(e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public boolean registerUser(String username, String email, String password, String phone) {
+
+        try (Connection connect = DBContext.getConnection()) {
+            PreparedStatement st = connect.prepareStatement(CREATE_USER);
+            st.setString(1, email);
+            st.setString(2, password);
+            st.setString(3, username);
+            st.setString(4, phone);
+
+            int result = st.executeUpdate();
+            return result > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+        return false;
     }
 
     @Override

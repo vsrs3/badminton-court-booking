@@ -3,66 +3,60 @@
     VD: Đăng xuất, Xóa tài khoản, Hủy booking, ....
  */
 
-function setupConfirm(formId, title, text, icon, confirmBtnText) {
-    const form = document.getElementById(formId);
-    if (!form) return;
+/**
+ * Hiển thị popup xác nhận
+ */
+async function showConfirm(title, text, icon = 'question', confirmBtnText = 'Xác nhận') {
+    const result = await Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: confirmBtnText,
+        cancelButtonText: 'Hủy',
+        reverseButtons: true
+    });
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault(); // Chặn form submit ngay lập tức
+    return result.isConfirmed;
+}
 
-        Swal.fire({
-            title: title,
-            text: text,
-            icon: icon,
-            showCancelButton: true,
-            confirmButtonColor: '#4e73df',
-            cancelButtonColor: '#d33',
-            confirmButtonText: confirmBtnText,
-            cancelButtonText: 'Hủy',
-            reverseButtons: true // Đưa nút Hủy sang trái, Xác nhận sang phải
-
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
+/**
+ * Hiển thị popup cảnh báo (chỉ có nút Đóng
+ */
+async function showPopupWarning(title, text, icon = 'warning') {
+    await Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Đóng'
     });
 }
 
-// Hàm mới: dành riêng cho form cập nhật profile (có validation)
-function setupProfileConfirm(formId, getValidationResult) {
-    const form = document.getElementById(formId);
-    if (!form) return;
+/**
+ * Hiển thị popup thành công
+ */
+async function showSuccess(title, text) {
+    await Swal.fire({
+        title: title,
+        text: text,
+        icon: 'success',
+        confirmButtonColor: '#10b981',
+        confirmButtonText: 'OK'
+    });
+}
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Gọi hàm validation từ trang profile
-        const isValid = getValidationResult();
-
-        if (isValid) {
-            Swal.fire({
-                title: 'Xác nhận',
-                text: 'Bạn có muốn lưu thay đổi không?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Lưu',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        } else {
-            Swal.fire({
-                title: 'Có lỗi!',
-                text: 'Vui lòng kiểm tra lại thông tin (tên, email, số điện thoại).',
-                icon: 'warning',
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Đã hiểu'
-            });
-        }
+/**
+ * Hiển thị popup lỗi
+ */
+async function showError(title, text) {
+    await Swal.fire({
+        title: title,
+        text: text,
+        icon: 'error',
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Đóng'
     });
 }

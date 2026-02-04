@@ -118,11 +118,15 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
             connect.setAutoCommit(false);
 
             Account account = repo.getCustomerById(accountId);
+            if (account == null) {
+                return new AccountResponse(false, "Tài khoản không tồn tại", 1000);
+            }
+
             if (!BCrypt.checkpw(dto.getOldPass(), account.getPasswordHash())) {
                 return new AccountResponse(false, "Mật khẩu hiện tại không khớp", 1000);
             }
 
-            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt());
+            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt(12));
 
             boolean isUpdate = repo.updatePassword(hashedNewPass, accountId);
             if (!isUpdate) {

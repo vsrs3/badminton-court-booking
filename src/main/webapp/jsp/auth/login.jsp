@@ -9,7 +9,6 @@
     <title>JSP Page</title>
 
     <link rel="stylesheet" href="assets/css/Header.css">
-    <link rel="stylesheet" href="assets/css/Footer.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -17,9 +16,6 @@
     <jsp:include page="../common/header.jsp"></jsp:include>
 </header>
 
-<c:if test="${sessionScope.logError != null}">
-    <p style="color: red">${sessionScope.logError}</p>
-</c:if>
 <main>
     <h2>LOGIN</h2>
     <form method="POST" action="customerController"> <!-- autocomplete="off" -->
@@ -38,10 +34,11 @@
             No Account ?<a href="register">Register Now</a>
         </div>
     </form>
+    <c:if test="${sessionScope.logError != null}">
+        <p style="color: red">${sessionScope.logError}</p>
+        <c:remove var="logError" scope="session"></c:remove>
+    </c:if>
 </main>
 
-<footer>
-    <jsp:include page="../common/footer.jsp"></jsp:include>
-</footer>
 </body>
 </html>
