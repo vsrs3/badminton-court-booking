@@ -77,23 +77,38 @@
 
     /**
      * Check if user is logged in
-     * TODO: Implement actual session check
+     * ✅ CRITICAL FIX: Check window.IS_LOGGED_IN (set by JSP)
      */
     function isUserLoggedIn() {
-        // For now, always return false (guest mode)
-        // Later: Check session/cookie/localStorage
-        return false;
+        // Check global variable set by JSP
+        const loggedIn = window.IS_LOGGED_IN === true;
+        console.log('🔐 isUserLoggedIn check:', {
+            windowIsLoggedIn: window.IS_LOGGED_IN,
+            result: loggedIn,
+            currentUser: window.CURRENT_USER
+        });
+        return loggedIn;
     }
 
     /**
      * Require login for a feature
      */
     function requireLogin(featureName) {
-        if (!isUserLoggedIn()) {
-            console.log('🔒 Login required for:', featureName);
+        const isLoggedIn = isUserLoggedIn();
+
+        console.log('🔒 Login check for "' + featureName + '":', {
+            isLoggedIn: isLoggedIn,
+            windowIsLoggedIn: window.IS_LOGGED_IN,
+            currentUser: window.CURRENT_USER
+        });
+
+        if (!isLoggedIn) {
+            console.log('❌ Login required, showing auth modal');
             showAuthModal();
             return false;
         }
+
+        console.log('✅ User is logged in, feature accessible');
         return true;
     }
 
@@ -456,6 +471,8 @@
                 if (court) {
                     // TODO: Navigate to booking page
                     console.log('📅 Opening booking form for:', court.name);
+                    // For now, show toast
+                    showToast('Chức năng đặt sân đang được phát triển');
                 }
             });
         });
@@ -469,8 +486,10 @@
         console.log('🔄 Switching to tab:', tabName);
 
         // ✅ Check login requirement for certain tabs
-        if (tabName === TABS.BOOKING || tabName === TABS.OFFER || tabName === TABS.PROFILE) {
-            if (!requireLogin('Tính năng này')) {
+        const loginRequiredTabs = [TABS.BOOKING, TABS.OFFER, TABS.PROFILE];
+
+        if (loginRequiredTabs.includes(tabName)) {
+            if (!requireLogin('Tab: ' + tabName)) {
                 return; // Don't switch tab if not logged in
             }
         }
@@ -511,15 +530,17 @@
             updateFavoriteButton();
         }
 
-        // ✅ NEW: Initialize map if switching to map tab
+        // Initialize map if switching to map tab
         if (tabName === TABS.MAP) {
             setTimeout(() => {
                 if (window.initMap) {
                     window.initMap();
 
                     // Update markers with current courts data
-                    if (window.updateMapMarkers && AppState.courts.length > 0) {
-                        window.updateMapMarkers(AppState.courts);
+                    if (window.COURTS_DATA && window.COURTS_DATA.length > 0) {
+                        if (window.updateMapMarkers) {
+                            window.updateMapMarkers(window.COURTS_DATA);
+                        }
                     }
                 }
             }, 100);
@@ -952,8 +973,8 @@
                 }
 
                 if (AppState.selectedCourt) {
-                    // TODO: Navigate to booking page
                     console.log('📅 Opening booking form for:', AppState.selectedCourt.name);
+                    showToast('Chức năng đặt sân đang được phát triển');
                 }
             });
         }

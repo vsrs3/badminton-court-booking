@@ -1,3 +1,4 @@
+<%@ page import="com.bcb.model.Account" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <header id="mainHeader" class="main-header">
   <!-- Top Header Area -->
@@ -25,30 +26,39 @@
 
         <!-- Auth Buttons -->
         <div class="d-flex gap-3 flex-shrink-0">
-          <!-- Auth Buttons (Right Side) -->
-          <div class="header-auth">
-            <%
-              // Check if user is logged in
-              com.bcb.model.Account account = (com.bcb.model.Account) session.getAttribute("account");
-              if (account != null) {
-            %>
-            <!-- Logged in state -->
-            <span style="margin-right: 1rem; color: #064E3B; font-weight: 700;">
-            Xin chào, <%= account.getFullName() %>
-        </span>
-            <a href="${pageContext.request.contextPath}/auth/logout" class="btn-auth btn-logout">
-              ĐĂNG XUẤT
-            </a>
-            <% } else { %>
-            <!-- Guest state -->
-            <a href="${pageContext.request.contextPath}/auth/login" class="btn-auth btn-login">
-              ĐĂNG NHẬP
-            </a>
-            <a href="${pageContext.request.contextPath}/auth/login" class="btn-auth btn-register">
-              ĐĂNG KÝ
-            </a>
-            <% } %>
-          </div>
+          <%
+            // Check if user is logged in
+            Account currentUser = (Account) session.getAttribute("account");
+            if (currentUser != null && "CUSTOMER".equals(currentUser.getRole())) {
+          %>
+          <!-- ✅ Customer logged in state -->
+          <a href="${pageContext.request.contextPath}/profile" class="customer-profile-link">
+            <div class="customer-avatar">
+              <%
+                String avatarPath = currentUser.getAvatarPath();
+                if (avatarPath != null && !avatarPath.isEmpty()) {
+              %>
+              <img src="${pageContext.request.contextPath}/<%= avatarPath %>" alt="Avatar">
+              <% } else {
+                // Generate default avatar with first letter
+                String fullName = currentUser.getFullName();
+                String firstLetter = fullName != null && !fullName.isEmpty() ?
+                        fullName.substring(0, 1).toUpperCase() : "U";
+              %>
+              <div class="avatar-placeholder"><%= firstLetter %></div>
+              <% } %>
+            </div>
+            <span class="customer-name"><%= currentUser.getFullName() %></span>
+          </a>
+          <% } else { %>
+          <!-- ✅ Guest state -->
+          <a href="${pageContext.request.contextPath}/auth/login" style="text-decoration: none" class="btn-auth btn-login">
+            ĐĂNG NHẬP
+          </a>
+          <a href="${pageContext.request.contextPath}/auth/login" style="text-decoration: none" class="btn-auth btn-register">
+            ĐĂNG KÝ
+          </a>
+          <% } %>
         </div>
       </div>
     </div>

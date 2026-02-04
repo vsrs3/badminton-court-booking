@@ -488,35 +488,67 @@ GO
 -- Insert sample facilities
 INSERT INTO Facility (name, province, district, ward, address, latitude, longitude, description, open_time, close_time, is_active)
 VALUES 
-(N'CLB CẦU LÔNG TPT SPORT - LÀNG ĐẠI HỌC', N'Bình Dương', N'Dĩ An', N'Đông Hòa', N'Đường Tôn Thất Tùng', 10.8742, 106.8015, 
- N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Hà Đông Star', N'Hà Nội', N'Hà Đông', N'Phú Lãm', N'Đường Phú Lãm', 21.0281, 105.5079,
+ N'Sân cầu lông đạt chuẩn thi đấu', '05:30', '22:00', 1),
 
-(N'CÂU LẠC BỘ CẦU LÔNG NGÔI SAO - QUẬN CẦU GIẤY', N'Hà Nội', N'Cầu Giấy', N'Dịch Vọng Hậu', N'Số 15 Duy Tân', 21.0321, 105.7834,
- N'Sân cầu lông tiêu chuẩn quốc tế', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Thanh Xuân Pro', N'Hà Nội', N'Thanh Xuân', N'Hạ Đình', N'Nguyễn Xiển', 21.0008, 105.5342,
+ N'Sân rộng, trần cao, thoáng mát', '06:00', '23:00', 1),
 
-(N'SÂN CẦU LÔNG CHUYÊN NGHIỆP ĐỐNG ĐA', N'Hà Nội', N'Đống Đa', N'Cát Linh', N'Khu tập thể Giảng Võ', 21.0256, 105.8182,
- N'Sân tập luyện chất lượng cao', '06:00', '23:00', 1),
+(N'CLB Cầu Lông Văn Quán', N'Hà Nội', N'Hà Đông', N'Văn Quán', N'Chiến Thắng', 21.0196, 105.5218,
+ N'Sân cầu lông cộng đồng', '06:00', '22:00', 1),
 
-(N'HỌC VIỆN CẦU LÔNG QUẦN NGỰA BA ĐÌNH', N'Hà Nội', N'Ba Đình', N'Ngọc Hà', N'Cung Thể thao Quần Ngựa', 21.0401, 105.8189,
- N'Học viện đào tạo cầu lông chuyên nghiệp', '05:00', '22:30', 1),
+(N'CLB Cầu Lông Yên Nghĩa', N'Hà Nội', N'Hà Đông', N'Yên Nghĩa', N'Quốc lộ 6', 21.0325, 105.4987,
+ N'Sân mới, ánh sáng tốt', '05:00', '22:00', 1),
 
-(N'HÀ NỘI BADMINTON CLUB - CHI NHÁNH TÂY HỒ', N'Hà Nội', N'Tây Hồ', N'Quảng An', N'Số 221 Đường Trích Sài', 21.0583, 105.8112,
- N'CLB cầu lông hiện đại nhất Hà Nội', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Kiến Hưng', N'Hà Nội', N'Hà Đông', N'Kiến Hưng', N'Phúc La', 21.0113, 105.5426,
+ N'Sân tập luyện và thi đấu phong trào', '06:00', '22:30', 1),
 
-(N'SÂN CẦU LÔNG TIÊU CHUẨN THI ĐẤU XUÂN LA', N'Hà Nội', N'Tây Hồ', N'Xuân La', N'Phường Xuân La', 21.0665, 105.8051,
- N'Sân thi đấu đạt chuẩn quốc gia', '05:30', '21:30', 1);
+ (N'CLB Cầu Lông Mỹ Đình Sport', N'Hà Nội', N'Nam Từ Liêm', N'Mỹ Đình 1', N'Lê Đức Thọ', 21.0289, 105.7732,
+ N'Sân tiêu chuẩn thi đấu quốc gia', '05:30', '22:30', 1),
 
- (N'CLB CẦU LÔNG DQV1 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 20.9715285, 105.9067182, 
- N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Đại Mỗ', N'Hà Nội', N'Nam Từ Liêm', N'Đại Mỗ', N'Sa Đôi', 21.0036, 105.7421,
+ N'Sân tập luyện giá rẻ', '06:00', '22:00', 1),
 
-(N'CLB CẦU LÔNG DQV2 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 21.036825, 105.830958, 
- N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Trung Văn', N'Hà Nội', N'Nam Từ Liêm', N'Trung Văn', N'Tố Hữu', 21.0019, 105.7584,
+ N'Sân mới, mặt thảm êm', '05:30', '23:00', 1),
 
-(N'CLB CẦU LÔNG DQV3 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N'Kim Mã', 21.0388916, 105.8209511, 
- N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1),
+(N'CLB Cầu Lông Dương Nội', N'Hà Nội', N'Hà Đông', N'Dương Nội', N'Lê Trọng Tấn', 21.0364, 105.7093,
+ N'Sân rộng, bãi đỗ xe lớn', '06:00', '22:30', 1),
 
-(N'CLB CẦU LÔNG DQV4 - LÀNG ĐẠI HỌC', N'Hà Nội', N'Ba Đình', N'Kim Mã', N' Kim Mã', 21.0199024, 105.8448429, 
- N'Sân cầu lông chuyên nghiệp với đầy đủ tiện nghi', '06:00', '22:00', 1)
+(N'CLB Cầu Lông Vạn Phúc', N'Hà Nội', N'Hà Đông', N'Vạn Phúc', N'Tố Hữu', 21.0187, 105.7398,
+ N'Sân cầu lông phong trào', '06:00', '22:00', 1),
+
+ (N'CLB Cầu Lông Cầu Giấy Elite', N'Hà Nội', N'Cầu Giấy', N'Dịch Vọng', N'Trần Thái Tông', 21.0369, 105.7896,
+ N'Sân thi đấu chất lượng cao', '05:00', '23:00', 1),
+
+(N'CLB Cầu Lông Tây Hồ', N'Hà Nội', N'Tây Hồ', N'Xuân La', N'Võ Chí Công', 21.0783, 105.8035,
+ N'Sân thoáng mát gần hồ', '06:00', '22:00', 1),
+
+(N'CLB Cầu Lông Long Biên Center', N'Hà Nội', N'Long Biên', N'Gia Thụy', N'Nguyễn Văn Cừ', 21.0442, 105.8789,
+ N'Sân thi đấu và huấn luyện', '05:30', '22:30', 1),
+
+(N'CLB Cầu Lông Hoàng Mai', N'Hà Nội', N'Hoàng Mai', N'Định Công', N'Giải Phóng', 20.9738, 105.8361,
+ N'Sân cầu lông phong trào', '06:00', '22:00', 1),
+
+(N'CLB Cầu Lông Thanh Trì', N'Hà Nội', N'Thanh Trì', N'Tứ Hiệp', N'Ngọc Hồi', 20.9549, 105.8457,
+ N'Sân tập luyện cơ bản', '05:30', '22:00', 1),
+
+ (N'CLB Cầu Lông Bắc Ninh Arena', N'Bắc Ninh', N'Bắc Ninh', N'Suối Hoa', N'Nguyễn Gia Thiều', 21.1876, 106.0604,
+ N'Sân cầu lông chuyên nghiệp', '05:00', '23:00', 1),
+
+(N'CLB Cầu Lông Hưng Yên Sport', N'Hưng Yên', N'Hưng Yên', N'Hiến Nam', N'Lý Thường Kiệt', 20.6559, 106.0567,
+ N'Sân tập luyện và thi đấu', '06:00', '22:00', 1),
+
+(N'CLB Cầu Lông Vĩnh Phúc Center', N'Vĩnh Phúc', N'Vĩnh Yên', N'Tích Sơn', N'Mê Linh', 21.3105, 105.5964,
+ N'Sân mới, đạt chuẩn', '05:30', '22:30', 1),
+
+(N'CLB Cầu Lông Hà Nam Pro', N'Hà Nam', N'Phủ Lý', N'Minh Khai', N'Biên Hòa', 20.5458, 105.9136,
+ N'Sân cầu lông hiện đại', '06:00', '22:00', 1),
+
+(N'CLB Cầu Lông Hòa Bình Arena', N'Hòa Bình', N'Hòa Bình', N'Tân Thịnh', N'Chi Lăng', 20.8126, 105.3384,
+ N'Sân thi đấu khu vực', '05:30', '22:00', 1)
+
+
 GO
 
 -- Insert sample images (placeholders)
@@ -524,6 +556,76 @@ INSERT INTO FacilityImage (facility_id, image_path, is_thumbnail, created_at)
 SELECT facility_id, 'assets/images/facilities/default-facility.jpg', 1, GETDATE()
 FROM Facility;
 GO
+
+USE badminton_court_booking;
+GO
+
+-- Create test accounts for all roles
+-- (Password for all: 123456)
+
+-- Test CUSTOMER
+IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer@test.com')
+BEGIN
+    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+    VALUES (
+        'customer@test.com',
+        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        N'Nguyễn Văn Customer',
+        '0901234567',
+        'CUSTOMER',
+        1,
+        GETDATE()
+    );
+END
+
+-- Test STAFF
+IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'staff@test.com')
+BEGIN
+    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+    VALUES (
+        'staff@test.com',
+        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        N'Trần Thị Staff',
+        '0902234567',
+        'STAFF',
+        1,
+        GETDATE()
+    );
+END
+
+-- Test OWNER
+IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'owner@test.com')
+BEGIN
+    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+    VALUES (
+        'owner@test.com',
+        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        N'Lê Văn Owner',
+        '0903234567',
+        'OWNER',
+        1,
+        GETDATE()
+    );
+END
+
+-- Test ADMIN (already exists, but create if not)
+IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'admin@test.com')
+BEGIN
+    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+    VALUES (
+        'admin@test.com',
+        '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        N'Phạm Thị Admin',
+        '0904234567',
+        'ADMIN',
+        1,
+        GETDATE()
+    );
+END
+
+GO
+
+SELECT email, full_name, role FROM Account ORDER BY role;
 
 
 

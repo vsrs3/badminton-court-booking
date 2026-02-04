@@ -161,6 +161,30 @@
 <!-- Vietnam Locations Data -->
 <script src="${pageContext.request.contextPath}/assets/js/vietnam-locations.js"></script>
 
+<!-- ✅ Set login status for JavaScript -->
+<script>
+    <%
+        com.bcb.model.Account currentUser = (com.bcb.model.Account) session.getAttribute("account");
+        boolean isCustomerLoggedIn = currentUser != null && "CUSTOMER".equals(currentUser.getRole());
+    %>
+    // Global login state
+    window.IS_LOGGED_IN = <%= isCustomerLoggedIn %>;
+
+    <% if (isCustomerLoggedIn) { %>
+    // User info (optional, for future use)
+    window.CURRENT_USER = {
+        id: <%= currentUser.getAccountId() %>,
+        name: "<%= currentUser.getFullName() %>",
+        email: "<%= currentUser.getEmail() %>",
+        role: "<%= currentUser.getRole() %>"
+    };
+    console.log('✅ Customer logged in:', window.CURRENT_USER);
+    <% } else { %>
+    window.CURRENT_USER = null;
+    console.log('👤 Guest user');
+    <% } %>
+</script>
+
 <!-- Custom JavaScript -->
 <script src="${pageContext.request.contextPath}/assets/js/badminton-pro.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/map-handler.js"></script>
