@@ -1,0 +1,214 @@
+/* ========================================
+   HEADER.CSS - SCOPED ONLY FOR HEADER
+   NỀN XANH LÁ - CHỮ ĐEN
+   ======================================== */
+
+/* ========== HEADER CONTAINER ========== */
+header {
+    background-color: #16a34a;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== RESET CHỈ TRONG HEADER ========== */
+header * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header ul {
+    list-style: none;
+}
+
+header a {
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+header i {
+    color: #1a1a1a;
+}
+
+/* ========== NAVIGATION BAR ========== */
+header .nav-bar {
+    min-height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ========== BRANDING / LOGO ========== */
+header .nav-branding {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffffff;
+    transition: color 0.3s ease;
+}
+
+header .nav-branding:hover {
+    color: #f0f0f0;
+}
+
+/* ========== NAVIGATION MENU ========== */
+header .nav-menu {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+    list-style: none;
+}
+
+header .nav-item {
+    position: relative;
+}
+
+header .nav-link {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 5px 0;
+}
+
+header .nav-link:hover {
+    color: #1a1a1a;
+}
+
+/* ========== NAVIGATION ICONS ========== */
+header .nav-icon {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+header .icon-item {
+    font-size: 1.2rem;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+header .icon-item:hover {
+    color: #1a1a1a;
+    transform: scale(1.1);
+}
+
+/* ========== SEARCH FORM ========== */
+header .search-form {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+header .search-input {
+    padding: 8px 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #1a1a1a;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+header .search-input:focus {
+    border-color: #ffffff;
+    background-color: #ffffff;
+}
+
+header .search-input::placeholder {
+    color: #666;
+}
+
+header .search-btn {
+    padding: 8px 12px;
+    background-color: #15803d;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+header .search-btn:hover {
+    background-color: #166534;
+}
+
+header .search-btn i {
+    color: #ffffff;
+    font-size: 16px;
+}
+
+/* ========== HAMBURGER MENU (Mobile) ========== */
+header .hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    gap: 5px;
+}
+
+header .hamburger .bar {
+    width: 25px;
+    height: 3px;
+    background-color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+    header .nav-bar {
+        flex-wrap: wrap;
+        padding: 12px 15px;
+    }
+
+    header .nav-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        gap: 20px;
+        padding: 20px 0;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    header .nav-menu.active {
+        display: flex;
+    }
+
+    header .hamburger {
+        display: flex;
+    }
+
+    header .nav-icon {
+        gap: 15px;
+    }
+
+    header .search-input {
+        width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    header .nav-branding {
+        font-size: 1.5rem;
+    }
+
+    header .nav-icon {
+        gap: 10px;
+    }
+
+    header .search-form {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    header .search-input {
+        width: 100%;
+    }
+}

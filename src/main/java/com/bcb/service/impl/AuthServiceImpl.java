@@ -4,6 +4,7 @@ import com.bcb.model.Account;
 import com.bcb.repository.AccountRepository;
 import com.bcb.repository.impl.AccountRepositoryImpl;
 import com.bcb.service.AuthService;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -47,8 +48,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Verify password
-        String hashedPassword = hashPassword(password);
-        if (!hashedPassword.equals(account.getPasswordHash())) {
+//        String hashedPassword = hashPassword(password);
+//        System.out.println("CHẸKCE" + hashedPassword);
+//        System.out.println("Pass" + password);
+
+        if (!BCrypt.checkpw(password, account.getPasswordHash())) {
             System.out.println("❌ Invalid password for: " + email);
             throw new RuntimeException("Invalid credentials");
         }
@@ -65,24 +69,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String hashPassword(String plainPassword) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(plainPassword.getBytes(StandardCharsets.UTF_8));
-
-            // Convert byte array to hex string
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-
-            return hexString.toString();
-
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password: " + e.getMessage(), e);
+        if (plainPassword == null || plainPassword.isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be null or empty");
         }
+
+        return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
     }
+
 }
+

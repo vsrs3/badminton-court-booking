@@ -1,0 +1,174 @@
+/* ========================================
+   FOOTER.CSS - SCOPED ONLY FOR FOOTER
+   NỀN XANH LÁ - CHỮ ĐEN
+   ======================================== */
+
+/* ========== FOOTER CONTAINER ========== */
+footer {
+    background-color: #16a34a;
+    width: 100%;
+    margin-top: auto;
+}
+
+/* ========== RESET CHỈ TRONG FOOTER ========== */
+footer * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+footer ul {
+    list-style: none;
+}
+
+footer a {
+    text-decoration: none;
+    color: #1a1a1a;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #ffffff;
+}
+
+footer i {
+    color: #1a1a1a;
+}
+
+footer h2 {
+    color: #ffffff;
+    font-size: 1.7rem;
+    padding: 10px 0;
+    margin: 0;
+    font-weight: 600;
+}
+
+footer p {
+    color: #1a1a1a;
+    margin: 0;
+}
+
+/* ========== INFO SECTION ========== */
+footer .info {
+    min-height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 30px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ========== INFO ITEMS ========== */
+footer .info-item {
+    flex: 1;
+    padding: 0 20px;
+}
+
+footer .info-item h2 {
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* ========== INFO MENU ========== */
+footer .info-menu {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+footer .info-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+footer .info-menu-item i {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    color: #1a1a1a;
+}
+
+footer .info-menu-item a {
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+footer .info-menu-item a:hover {
+    color: #ffffff;
+}
+
+/* ========== INFO LINK ========== */
+footer .info-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1a1a1a;
+    transition: color 0.3s ease;
+}
+
+footer .info-link:hover {
+    color: #ffffff;
+}
+
+footer .info-link i {
+    color: #1a1a1a;
+}
+
+footer .info-link:hover i {
+    color: #ffffff;
+}
+
+/* ========== COPYRIGHT TEXT ========== */
+footer .text {
+    text-align: center;
+    padding: 20px 0;
+    color: #1a1a1a;
+    font-size: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+    footer .info {
+        flex-direction: column;
+        gap: 30px;
+        padding: 30px 20px;
+    }
+
+    footer .info-item {
+        padding: 0;
+        width: 100%;
+    }
+
+    footer .info-item h2 {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    footer .info {
+        padding: 20px 15px;
+        gap: 25px;
+    }
+
+    footer .info-item h2 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    footer .info-menu {
+        gap: 10px;
+    }
+
+    footer .text {
+        font-size: 12px;
+        padding: 15px 0;
+    }
+}
