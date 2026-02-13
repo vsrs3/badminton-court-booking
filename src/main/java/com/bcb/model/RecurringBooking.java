@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 public class RecurringBooking {
     private Integer recurringId;
     private Integer facilityId;
-    private Integer courtTypeId;
     private Integer accountId;
     private LocalDate startDate;
     private LocalDate endDate;
@@ -19,8 +18,6 @@ public class RecurringBooking {
     public void setRecurringId(Integer recurringId) { this.recurringId = recurringId; }
     public Integer getFacilityId() { return facilityId; }
     public void setFacilityId(Integer facilityId) { this.facilityId = facilityId; }
-    public Integer getCourtTypeId() { return courtTypeId; }
-    public void setCourtTypeId(Integer courtTypeId) { this.courtTypeId = courtTypeId; }
     public Integer getAccountId() { return accountId; }
     public void setAccountId(Integer accountId) { this.accountId = accountId; }
     public LocalDate getStartDate() { return startDate; }

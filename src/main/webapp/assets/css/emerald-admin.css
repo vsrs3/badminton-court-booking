@@ -1,0 +1,352 @@
+/* 
+ * Emerald Admin Dashboard Theme
+ * Primary: #064e3b (emerald đậm)
+ * Accent: #bef264 (lime sáng)
+ */
+
+:root {
+    --primary-color: #064e3b;
+    --primary-dark: #05372f;
+    --accent-color: #1b6703;
+    --accent-text: white;
+    --hover-color: #065f46;
+    --hover-light: #0f766e;
+    --table-row-hover: rgba(190, 242, 100, 0.08);
+    --sidebar-gradient: linear-gradient(180deg, #064e3b 0%, #05372f 100%);
+    --alert-success-bg: rgba(190, 242, 100, 0.12);
+    --alert-success-border: #a3d96c;
+    --alert-success-text: #064e3b;
+    
+    --sidebar-width: 260px;
+    --header-height: 70px;
+    --bg-light: #f8fafc;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ================= RESET & BASE ================= */
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    overflow-x: hidden;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: var(--sidebar-gradient);
+    color: white;
+    z-index: 1050;
+    transition: all 0.3s ease;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar-header {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar-brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-nav {
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    height: calc(100vh - var(--header-height));
+}
+
+.sidebar-nav .nav-link {
+    color: rgba(255,255,255,0.8);
+    padding: 0.8rem 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: var(--hover-color);
+    color: white;
+}
+
+.sidebar-nav .nav-link.active {
+    background-color: var(--accent-color);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+
+.sidebar-nav .nav-link i {
+    font-size: 1.2rem;
+}
+
+/* ================= MAIN CONTENT ================= */
+.main-content {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.content-area {
+    padding: 2rem;
+    flex: 1;
+}
+
+/* ================= HEADER ================= */
+.header-top {
+    height: var(--header-height);
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* ================= CARDS ================= */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+    border-top-left-radius: 1rem !important;
+    border-top-right-radius: 1rem !important;
+}
+
+.stat-card {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--card-shadow);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+/* ================= TABLES ================= */
+.table thead th {
+    background-color: #f8fafc;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--table-row-hover);
+}
+
+/* ================= BUTTONS ================= */
+.btn-accent {
+    background-color: var(--accent-color);
+    color: var(--accent-text);
+    border: none;
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-accent:hover {
+    background-color: var(--accent-color);
+    color: var(--accent-text);
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(190, 242, 100, 0.3);
+}
+
+.btn-accent:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color);
+    border-color: var(--hover-color);
+}
+
+/* ================= ALERTS ================= */
+.alert-success {
+    background-color: var(--alert-success-bg);
+    border-color: var(--alert-success-border);
+    color: var(--alert-success-text);
+}
+
+
+/* ================= MODALS ================= */
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-header.bg-primary {
+    background-color: var(--primary-color) !important;
+    color: white;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+}
+
+.modal-header.bg-accent {
+    background-color: var(--accent-color) !important;
+    color: var(--accent-text);
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+}
+
+/* ================= FORMS ================= */
+.form-control, .form-select {
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(6, 78, 59, 0.1);
+}
+
+/* ================= UTILITIES ================= */
+.text-emerald { color: var(--primary-color); }
+.bg-emerald { background-color: var(--primary-color); }
+.bg-lime-light { background-color: var(--alert-success-bg); }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+/* ================= PAGINATION ================= */
+.pagination {
+    --bs-pagination-color: var(--primary-color);                /* màu chữ mặc định */
+    --bs-pagination-bg: white;                                  /* nền mặc định */
+    --bs-pagination-border-color: #dee2e6;
+    --bs-pagination-hover-color: white;
+    --bs-pagination-hover-bg: var(--hover-color);               /* emerald trung khi hover */
+    --bs-pagination-hover-border-color: var(--hover-color);
+    --bs-pagination-focus-color: white;
+    --bs-pagination-focus-bg: var(--hover-light);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(6, 78, 59, 0.25); /* emerald nhạt shadow */
+    --bs-pagination-active-color: var(--accent-text);           /* chữ trên nút active */
+    --bs-pagination-active-bg: var(--accent-color);             /* lime cho active */
+    --bs-pagination-active-border-color: var(--accent-color);
+    --bs-pagination-disabled-color: #adb5bd;
+    --bs-pagination-disabled-bg: white;
+    --bs-pagination-disabled-border-color: #dee2e6;
+}
+
+.pagination .page-link {
+    border-radius: 0.5rem;
+    margin: 0 4px;
+    font-weight: 500;
+    min-width: 38px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.pagination .page-link:hover {
+    background: var(--hover-color) !important;
+    color: white !important;
+    border-color: var(--hover-color) !important;
+    transform: translateY(-1px);
+}
+
+/* Nút active (trang hiện tại) */
+.pagination .page-item.active .page-link {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+    color: var(--accent-text) !important;   /* emerald text trên lime */
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(190, 242, 100, 0.3);
+}
+
+/* Disabled */
+.pagination .page-item.disabled .page-link {
+    color: #adb5bd !important;
+    background-color: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+    cursor: not-allowed;
+}
+
+/* Icon << >> cũng đồng bộ màu */
+.pagination .page-link {
+    color: var(--primary-color) !important;
+}
+
+.pagination .page-link:hover,
+.pagination .page-item:not(.disabled) .page-link:focus {
+    color: white !important;
+}
+/* Footer*/
+.footer {
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    padding: 1rem 2rem;
+
+    margin-left: var(--sidebar-width);   /* né sidebar */
+    text-align: center;
+    color: var(--text-muted);
+}

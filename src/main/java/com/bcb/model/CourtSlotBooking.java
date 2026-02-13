@@ -6,7 +6,7 @@ public class CourtSlotBooking {
     private Integer courtId;
     private LocalDate bookingDate;
     private Integer slotId;
-    private Integer bookingId;
+    private Integer bookingSlotID;
 
     public CourtSlotBooking() {}
 
@@ -16,6 +16,6 @@ public class CourtSlotBooking {
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
     public Integer getSlotId() { return slotId; }
     public void setSlotId(Integer slotId) { this.slotId = slotId; }
-    public Integer getBookingId() { return bookingId; }
-    public void setBookingId(Integer bookingId) { this.bookingId = bookingId; }
+    public Integer getBookingSlotID() { return bookingSlotID; }
+    public void setBookingSlotID(Integer bookingSlotID) { this.bookingSlotID = bookingSlotID; }
 }

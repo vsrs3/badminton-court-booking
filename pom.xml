@@ -2,23 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com</groupId>
-  <artifactId>bcb</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <name>badminton-court-booking</name>
-  <packaging>war</packaging>
+    <groupId>com</groupId>
+    <artifactId>bcb</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>badminton-court-booking</name>
+    <packaging>war</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.compiler.source>17</maven.compiler.source>
-    <junit.version>5.11.0</junit.version>
-  </properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <junit.version>5.11.0</junit.version>
+    </properties>
 
     <dependencies>
-        <!-- Servlet API - KEEP ONLY ONE VERSION -->
+        <!-- Jakarta Servlet API -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -44,27 +44,29 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>12.6.1.jre11</version>
+            <version>11.2.3.jre17</version>
         </dependency>
 
-        <!-- JSP API -->
-        <dependency>
-            <groupId>jakarta.servlet.jsp</groupId>
-            <artifactId>jakarta.servlet.jsp-api</artifactId>
-            <version>3.1.1</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- JSTL -->
+        <!-- Jakarta JSTL API (for newer Tomcat 10+) -->
         <dependency>
             <groupId>jakarta.servlet.jsp.jstl</groupId>
             <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
             <version>3.0.0</version>
         </dependency>
+
+        <!-- Jakarta JSTL Implementation -->
         <dependency>
             <groupId>org.glassfish.web</groupId>
             <artifactId>jakarta.servlet.jsp.jstl</artifactId>
             <version>3.0.1</version>
+        </dependency>
+
+
+        <!-- Gson for JSON serialization -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
         </dependency>
 
         <!-- jbcrypt -->
@@ -73,16 +75,10 @@
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
+
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-            </resource>
-        </resources>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -91,5 +87,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

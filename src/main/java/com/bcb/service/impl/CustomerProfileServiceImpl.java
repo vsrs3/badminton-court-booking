@@ -51,15 +51,12 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
             try {
                 // Nếu có upload mới
-                if (dto.getAvatarFile() != null && dto.getAvatarFile().getSize() > 0) {
-
-                    // upload file mới
-                    newAvatarPath = uploadService.saveImage(
-                            dto.getAvatarFile(),
-                            ConfigUpload.AVATAR_IMAGE_FOLDER
-                    );
-
-                    avatarPath = newAvatarPath;
+                if(dto.getAvatarFile() != null && dto.getAvatarFile().getSize() > 0) {
+                	newAvatarPath = uploadService.saveImage(
+							dto.getAvatarFile(),
+							ConfigUpload.AVATAR_IMAGE_FOLDER
+					);
+					avatarPath = newAvatarPath;
                 }
 
                 boolean isUpdateInfo = repo.updateAccountInfo(
@@ -126,7 +123,7 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
                 return new AccountResponse(false, "Mật khẩu hiện tại không khớp", 1000);
             }
 
-            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt(12));
+            String hashedNewPass = BCrypt.hashpw(dto.getNewPass(), BCrypt.gensalt(10));
 
             boolean isUpdate = repo.updatePassword(hashedNewPass, accountId);
             if (!isUpdate) {
