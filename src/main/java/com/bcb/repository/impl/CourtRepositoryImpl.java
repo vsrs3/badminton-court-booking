@@ -1,0 +1,160 @@
+package com.bcb.repository.impl;
+
+import com.bcb.dto.CourtViewDTO;
+import com.bcb.exception.DataAccessException;
+import com.bcb.model.Court;
+import com.bcb.repository.CourtRepository;
+import com.bcb.utils.DBContext;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * JDBC implementation of CourtRepository.
+ * Handles all database operations for Court entity.
+ */
+public class CourtRepositoryImpl implements CourtRepository {
+
+
+    @Override
+    public Optional<Court> findById(int courtId) {
+        String sql = "SELECT court_id, facility_id, court_type_id, court_name, is_active " +
+                "FROM Court WHERE court_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, courtId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToCourt(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find court by ID", e);
+        }
+
+        return Optional.empty();
+    }
+
+
+    @Override
+    public int insert(Court court) {
+        String sql = "INSERT INTO Court (facility_id, court_type_id, court_name, is_active) " +
+                "VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setInt(1, court.getFacilityId());
+            pstmt.setInt(2, court.getCourtTypeId());
+            pstmt.setString(3, court.getCourtName());
+            pstmt.setBoolean(4, court.getIsActive());
+
+            pstmt.executeUpdate();
+
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to insert court", e);
+        }
+
+        throw new DataAccessException("Failed to insert court: No ID generated");
+    }
+
+    @Override
+    public int update(Court court) {
+        String sql = "UPDATE Court SET court_type_id = ?, court_name = ? " +
+                "WHERE court_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, court.getCourtTypeId());
+            pstmt.setString(2, court.getCourtName());
+            pstmt.setInt(3, court.getCourtId());
+
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to update court", e);
+        }
+    }
+
+    @Override
+    public void deactivate(int courtId) {
+        String sql = "UPDATE Court SET is_active = 0 WHERE court_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, courtId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to deactivate court", e);
+        }
+    }
+
+
+    @Override
+    public List<CourtViewDTO> findByFacilityForView(int facilityId) {
+        String sql = "SELECT c.court_id, c.facility_id, c.court_type_id, ct.type_code, c.court_name " +
+                "FROM Court c " +
+                "JOIN CourtType ct ON c.court_type_id = ct.court_type_id " +
+                "WHERE c.facility_id = ? AND c.is_active = 1 " +
+                "ORDER BY c.court_id";
+
+        List<CourtViewDTO> courts = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, facilityId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    courts.add(new CourtViewDTO(
+                            rs.getInt("court_id"),
+                            rs.getInt("facility_id"),
+                            rs.getString("court_name"),
+                            rs.getInt("court_type_id"),
+                            rs.getString("type_code")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find courts by facility", e);
+        }
+
+        return courts;
+
+    }
+
+    /**
+     * Maps ResultSet row to a Court object.
+     */
+    private Court mapResultSetToCourt(ResultSet rs) throws SQLException {
+        Court court = new Court();
+
+        court.setCourtId(rs.getInt("court_id"));
+        court.setFacilityId(rs.getInt("facility_id"));
+        court.setCourtTypeId(rs.getInt("court_type_id"));
+        court.setCourtName(rs.getString("court_name"));
+
+        boolean isActiveValue = rs.getBoolean("is_active");
+        if (rs.wasNull()) {
+            court.setIsActive(null);
+        } else {
+            court.setIsActive(isActiveValue);
+        }
+
+        return court;
+    }
+
+
+}
