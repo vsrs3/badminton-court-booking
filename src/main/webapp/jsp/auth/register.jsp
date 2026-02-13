@@ -7,28 +7,24 @@
 --%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
+/* 👇 3 dòncdscdscs */
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Đăng ký tài khoản</title>
     <style>
-
         form {
             width: 100%;
         }
-
-
         .form-group {
             margin-bottom: 14px;
             position: relative;
         }
-
         .form-group input {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
         }
-
         /* lỗi inline */
         .error {
             color: red;
@@ -36,7 +32,6 @@
             display: none;
             margin-top: 4px;
         }
-
         /* password eye */
         .eye {
             position: absolute;
@@ -55,7 +50,6 @@
             border-radius: 4px;
             font-size: 14px;
         }
-
         .alert {
             transition: opacity 0.5s;
         }
@@ -63,7 +57,6 @@
             padding: 8px 16px;
             cursor: pointer;
         }
-
         body {
             font-family: Arial, sans-serif;
             min-height: 100vh;
@@ -83,9 +76,7 @@
             border-radius: 10px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.25);
         }
-
     </style>
-
 </head>
 
 <body>
@@ -96,7 +87,6 @@
         <%= request.getAttribute("error") %>
     </div>
     <% } %>
-
 
     <h3>Đăng ký tài khoản</h3>
     <form action="${pageContext.request.contextPath}/register" method="post" onsubmit="return validateForm()">
