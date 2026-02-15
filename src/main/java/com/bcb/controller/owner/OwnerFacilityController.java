@@ -396,17 +396,26 @@ public class OwnerFacilityController extends HttpServlet {
         if (timeStr == null || timeStr.isBlank()) return null;
 
         try {
+            // Special case: Handle 24:00 as end of day (23:59:59.999999999)
+            if ("24:00".equals(timeStr)) {
+                return LocalTime.of(23, 59, 59, 999999999);
+            }
+
             LocalTime time = LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
 
-            // Validate full hour
-            if (time.getMinute() != 0) {
+            int minute = time.getMinute();
+
+            // Validate: only 00 or 30 allowed
+            if (minute != 0 && minute != 30) {
                 throw new DateTimeParseException(
-                        "Time must be a full hour (e.g. 08:00, 18:00)",
-                        timeStr, 0
+                        "Time must be either on the hour or half hour (e.g. 08:00, 08:30)",
+                        timeStr,
+                        0
                 );
             }
 
             return time;
+
         } catch (DateTimeParseException e) {
             throw e;
         }
@@ -415,9 +424,14 @@ public class OwnerFacilityController extends HttpServlet {
     private String formatTimeForInput(LocalTime time) {
         if (time == null) return "";
 
+        // Special case: Display end of day (23:59:59.999999999) as 24:00
+        if (time.getHour() == 23 && time.getMinute() == 59 && time.getSecond() == 59) {
+            return "24:00";
+        }
+
         return time
-                .withMinute(0)
                 .withSecond(0)
+                .withNano(0)
                 .format(TIME_INPUT_FORMATTER);
     }
 }

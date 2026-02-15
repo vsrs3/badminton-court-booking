@@ -111,16 +111,29 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="openTime" class="form-label">Opening Time <span class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="openTime" name="openTime" required step="3600"
-                                               value="${requestScope.openTimeFormatted}">
+                                        <div class="time-picker-wrapper">
+                                            <!-- Display element (user clicks this) -->
+                                            <div id="openTimeDisplay" class="time-picker-display" tabindex="0">
+                                                <span class="text-muted">Chọn thời gian</span>
+                                                <i class="bi bi-clock time-picker-icon"></i>
+                                            </div>
+                                            <!-- Hidden input (submitted to backend) -->
+                                            <input type="hidden" id="openTime" name="openTime" required value="${requestScope.openTimeFormatted}">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="closeTime" class="form-label">Closing Time <span
-                                                class="text-danger">*</span></label>
-                                        <input type="time" class="form-control" id="closeTime" name="closeTime" required step="3600"
-                                               value="${requestScope.closeTimeFormatted}">
+                                        <label for="closeTime" class="form-label">Closing Time <span class="text-danger">*</span></label>
+                                        <div class="time-picker-wrapper">
+                                            <!-- Display element (user clicks this) -->
+                                            <div id="closeTimeDisplay" class="time-picker-display" tabindex="0">
+                                                <span class="text-muted">Chọn thời gian</span>
+                                                <i class="bi bi-clock time-picker-icon"></i>
+                                            </div>
+                                            <!-- Hidden input (submitted to backend) -->
+                                            <input type="hidden" id="closeTime" name="closeTime" required value="${requestScope.closeTimeFormatted}">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -233,5 +246,35 @@
     <script src="${pageContext.request.contextPath}/assets/js/facility-form.js"></script>
 </div>
 
+<%-- TIME PICKER COMPONENT --%>
+<%@ include file="../../common/time-picker.jsp" %>
+
 <%-- MAP MODAL --%>
 <%@ include file="../../common/map-modal.jsp" %>
+
+<!-- Initialize Time Pickers for Facility Form -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize time pickers for opening and closing times
+    let openTimePicker = initializeTimePicker('openTimeDisplay', 'openTime', true);
+    let closeTimePicker = initializeTimePicker('closeTimeDisplay', 'closeTime', true);
+
+    console.log('Facility form time pickers initialized:', {
+        openTimePicker: !!openTimePicker,
+        closeTimePicker: !!closeTimePicker
+    });
+
+    // Set initial values if editing
+    const openTimeValue = document.getElementById('openTime').value;
+    const closeTimeValue = document.getElementById('closeTime').value;
+
+    if (openTimeValue && openTimePicker) {
+        openTimePicker.setValue(openTimeValue);
+    }
+
+    if (closeTimeValue && closeTimePicker) {
+        closeTimePicker.setValue(closeTimeValue);
+    }
+});
+</script>
+

@@ -25,19 +25,26 @@
             </div>
         </div>
 
-        <%-- ALERTS --%>
+        <%-- ALERTS - Flash Messages from Session --%>
         <div id="alertContainer">
-            <c:if test="${not empty param.error}">
+            <%-- Error Flash Message --%>
+            <c:if test="${not empty sessionScope.flashError}">
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-circle me-2"></i> ${param.error}
+                    <i class="bi bi-exclamation-circle me-2"></i> ${sessionScope.flashError}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
+                <%-- Remove from session after displaying --%>
+                <c:remove var="flashError" scope="session"/>
             </c:if>
-            <c:if test="${not empty param.message}">
+
+            <%-- Success Flash Message --%>
+            <c:if test="${not empty sessionScope.flashSuccess}">
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle me-2"></i> ${param.message}
+                    <i class="bi bi-check-circle me-2"></i> ${sessionScope.flashSuccess}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
+                <%-- Remove from session after displaying --%>
+                <c:remove var="flashSuccess" scope="session"/>
             </c:if>
         </div>
 
@@ -50,11 +57,10 @@
                         <ul class="nav nav-pills custom-pills" id="courtTypeTabs">
                             <c:forEach items="${viewData.courtTypes}" var="type">
                                 <li class="nav-item">
-                                    <button class="nav-link ${viewData.currentCourtTypeId == type.courtTypeId ? 'active' : ''}" 
-                                            data-type-id="${type.courtTypeId}"
-                                            onclick="switchCourtType(${type.courtTypeId})">
+                                    <a class="nav-link ${viewData.currentCourtTypeId == type.courtTypeId ? 'active' : ''}"
+                                       href="?facilityId=${viewData.facilityId}&courtTypeId=${type.courtTypeId}&dayType=${viewData.currentDayType}">
                                         ${type.typeCode} COURTS
-                                    </button>
+                                    </a>
                                 </li>
                             </c:forEach>
                         </ul>
@@ -63,23 +69,21 @@
                     <%-- DAY TYPE TOGGLE --%>
                     <div class="col-md-4">
                         <div class="btn-group w-100 p-1 bg-light rounded" role="group">
-                            <input type="radio" class="btn-check" name="dayType" id="dayWeekday" value="WEEKDAY" 
-                                   ${viewData.currentDayType == 'WEEKDAY' ? 'checked' : ''} onchange="switchDayType('WEEKDAY')">
-                            <label class="btn btn-day-toggle" for="dayWeekday">WEEKDAY</label>
-
-                            <input type="radio" class="btn-check" name="dayType" id="dayWeekend" value="WEEKEND" 
-                                   ${viewData.currentDayType == 'WEEKEND' ? 'checked' : ''} onchange="switchDayType('WEEKEND')">
-                            <label class="btn btn-day-toggle" for="dayWeekend">WEEKEND</label>
+                            <a href="?facilityId=${viewData.facilityId}&courtTypeId=${viewData.currentCourtTypeId}&dayType=WEEKDAY"
+                               class="btn ${viewData.currentDayType == 'WEEKDAY' ? 'btn-primary' : 'btn-outline-secondary'}">
+                                WEEKDAY
+                            </a>
+                            <a href="?facilityId=${viewData.facilityId}&courtTypeId=${viewData.currentCourtTypeId}&dayType=WEEKEND"
+                               class="btn ${viewData.currentDayType == 'WEEKEND' ? 'btn-primary' : 'btn-outline-secondary'}">
+                                WEEKEND
+                            </a>
                         </div>
                     </div>
 
                     <%-- ACTIONS --%>
                     <div class="col-md-3 text-end">
-                        <button class="btn btn-light border me-2" title="Copy Configuration" data-bs-toggle="modal" data-bs-target="#placeholderModal">
-                            <i class="bi bi-copy"></i>
-                        </button>
-                        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#bulkUpdateModal">
-                            <i class="bi bi-plus-circle me-1"></i> Bulk Update
+                        <button class="btn btn-accent" onclick="openCreateModal()">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm khoảng giá
                         </button>
                     </div>
                 </div>
@@ -87,20 +91,18 @@
         </div>
 
         <%-- PRICING TABLE CONTAINER --%>
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm position-relative">
             <div class="card-body p-0">
                 <div id="pricingTableContainer">
                     <%@ include file="pricing-table.jsp" %>
                 </div>
-                
-                <%-- LOADING OVERLAY --%>
-                <div id="loadingOverlay" class="d-none">
-                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 10;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+
+        <%-- LOADING OVERLAY (Outside of card to prevent removal) --%>
+        <div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 9999;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
     </div>
@@ -109,22 +111,7 @@
 </div>
 
 <%-- MODALS --%>
-<%@ include file="bulk-update-modal.jsp" %>
-
-<%-- Placeholder Modal for Copy --%>
-<div class="modal fade" id="placeholderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Copy Configuration</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>This feature is coming soon.</p>
-            </div>
-        </div>
-    </div>
-</div>
+<%@ include file="price-rule-modals.jsp" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/pricing.css">
 <script>

@@ -1,7 +1,7 @@
 package com.bcb.controller.owner;
 
-import com.bcb.dto.BulkPriceUpdateRequestDTO;
 import com.bcb.dto.FacilityPriceViewDTO;
+import com.bcb.dto.PriceRuleRequestDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.service.FacilityPriceRuleService;
 import com.bcb.service.impl.FacilityPriceRuleServiceImpl;
@@ -14,8 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalTime;
 
 @WebServlet("/owner/prices/*")
 public class OwnerFacilityPriceRuleController extends HttpServlet {
@@ -40,7 +39,8 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
             int facilityId = Integer.parseInt(facilityIdStr);
             String courtTypeIdStr = request.getParameter("courtTypeId");
-            Integer courtTypeId = (courtTypeIdStr != null && !courtTypeIdStr.isEmpty()) ? Integer.parseInt(courtTypeIdStr) : null;
+            Integer courtTypeId = (courtTypeIdStr != null && !courtTypeIdStr.isEmpty())
+                    ? Integer.parseInt(courtTypeIdStr) : null;
             String dayType = request.getParameter("dayType");
 
             FacilityPriceViewDTO viewData = facilityPriceRuleService.getPriceView(facilityId, courtTypeId, dayType);
@@ -60,64 +60,138 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
         String path = request.getPathInfo();
 
         try {
-            if ("/update-single".equals(path)) {
-                updateSingle(request, response);
-            } else if ("/bulk-update".equals(path)) {
-                bulkUpdate(request, response);
+            if ("/create".equals(path)) {
+                createPriceRule(request, response);
+            } else if ("/update".equals(path)) {
+                updatePriceRule(request, response);
+            } else if ("/delete".equals(path)) {
+                deletePriceRule(request, response);
             } else {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
         } catch (BusinessException | NumberFormatException e) {
-            request.setAttribute("error", e.getMessage());
-            // Redirect back with error
+            // Store error message in session (flash message)
+            request.getSession().setAttribute("flashError", e.getMessage());
+
             String facilityId = request.getParameter("facilityId");
-            response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + facilityId + "&error=" + e.getMessage());
+            String courtTypeId = request.getParameter("courtTypeId");
+            String dayType = request.getParameter("dayType");
+
+            // Redirect without error in URL
+            response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + facilityId
+                    + "&courtTypeId=" + courtTypeId
+                    + "&dayType=" + dayType);
         }
     }
 
-    private void updateSingle(HttpServletRequest request, HttpServletResponse response)
+    private void createPriceRule(HttpServletRequest request, HttpServletResponse response)
             throws IOException, BusinessException {
 
-        int facilityId = Integer.parseInt(request.getParameter("facilityId"));
-        int courtTypeId = Integer.parseInt(request.getParameter("courtTypeId"));
-        String dayType = request.getParameter("dayType");
-        int slotId = Integer.parseInt(request.getParameter("slotId"));
-        BigDecimal price = new BigDecimal(request.getParameter("price"));
+        PriceRuleRequestDTO dto = buildRequestDTO(request, null);
+        facilityPriceRuleService.createPriceRule(dto);
 
-        facilityPriceRuleService.updateSinglePrice(facilityId, courtTypeId, dayType, slotId, price);
+        // Store success message in session (flash message)
+        request.getSession().setAttribute("flashSuccess", "Tạo cấu hình giá thành công");
 
-        response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + facilityId 
-                + "&courtTypeId=" + courtTypeId + "&dayType=" + dayType);
+        // Redirect without message in URL
+        response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + dto.getFacilityId()
+                + "&courtTypeId=" + dto.getCourtTypeId()
+                + "&dayType=" + dto.getDayType());
     }
 
-    private void bulkUpdate(HttpServletRequest request, HttpServletResponse response)
+    private void updatePriceRule(HttpServletRequest request, HttpServletResponse response)
             throws IOException, BusinessException {
 
+        String priceIdStr = request.getParameter("priceId");
+        if (priceIdStr == null || priceIdStr.isEmpty()) {
+            throw new BusinessException("Price ID is required");
+        }
+
+        Integer priceId = Integer.parseInt(priceIdStr);
+        PriceRuleRequestDTO dto = buildRequestDTO(request, priceId);
+        facilityPriceRuleService.updatePriceRule(dto);
+
+        // Store success message in session (flash message)
+        request.getSession().setAttribute("flashSuccess", "Cập nhật cấu hình giá thành công");
+
+        // Redirect without message in URL
+        response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + dto.getFacilityId()
+                + "&courtTypeId=" + dto.getCourtTypeId()
+                + "&dayType=" + dto.getDayType());
+    }
+
+    private void deletePriceRule(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, BusinessException {
+
+        String priceIdStr = request.getParameter("priceId");
+        if (priceIdStr == null || priceIdStr.isEmpty()) {
+            throw new BusinessException("Price ID is required");
+        }
+
+        int priceId = Integer.parseInt(priceIdStr);
         int facilityId = Integer.parseInt(request.getParameter("facilityId"));
         int courtTypeId = Integer.parseInt(request.getParameter("courtTypeId"));
         String dayType = request.getParameter("dayType");
-        BigDecimal price = new BigDecimal(request.getParameter("price"));
 
-        String[] slotIdsStr = request.getParameterValues("slotIds");
-        if (slotIdsStr == null || slotIdsStr.length == 0) {
-            throw new BusinessException("No slots selected");
+        facilityPriceRuleService.deletePriceRule(priceId);
+
+        // Store success message in session (flash message)
+        request.getSession().setAttribute("flashSuccess", "Xóa cấu hình giá thành công");
+
+        // Redirect without message in URL
+        response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + facilityId
+                + "&courtTypeId=" + courtTypeId
+                + "&dayType=" + dayType);
+    }
+
+    private PriceRuleRequestDTO buildRequestDTO(HttpServletRequest request, Integer priceId)
+            throws BusinessException {
+
+        PriceRuleRequestDTO dto = new PriceRuleRequestDTO();
+        dto.setPriceId(priceId);
+
+        try {
+            dto.setFacilityId(Integer.parseInt(request.getParameter("facilityId")));
+            dto.setCourtTypeId(Integer.parseInt(request.getParameter("courtTypeId")));
+            dto.setDayType(request.getParameter("dayType"));
+
+            String startTimeStr = request.getParameter("startTime");
+            String endTimeStr = request.getParameter("endTime");
+            String priceStr = request.getParameter("price");
+
+            if (startTimeStr == null || endTimeStr == null || priceStr == null) {
+                throw new BusinessException("Start time, end time, and price are required");
+            }
+
+            // Parse times with support for 24:00
+            dto.setStartTime(parseTimeInput(startTimeStr));
+            dto.setEndTime(parseTimeInput(endTimeStr));
+            dto.setPricePerHour(new BigDecimal(priceStr));
+
+        } catch (NumberFormatException e) {
+            throw new BusinessException("Invalid number format");
+        } catch (Exception e) {
+            throw new BusinessException("Invalid input: " + e.getMessage());
         }
 
-        List<Integer> slotIds = new ArrayList<>();
-        for (String id : slotIdsStr) {
-            slotIds.add(Integer.parseInt(id));
+        return dto;
+    }
+
+    /**
+     * Parse time string from UI (supports 24:00 for end of day)
+     * @param timeStr Time string in HH:mm format
+     * @return LocalTime object (24:00 is converted to 23:59:59.999999999)
+     */
+    private LocalTime parseTimeInput(String timeStr) {
+        if (timeStr == null || timeStr.isBlank()) {
+            return null;
         }
 
-        BulkPriceUpdateRequestDTO bulkDTO = new BulkPriceUpdateRequestDTO();
-        bulkDTO.setFacilityId(facilityId);
-        bulkDTO.setCourtTypeId(courtTypeId);
-        bulkDTO.setDayType(dayType);
-        bulkDTO.setPrice(price);
-        bulkDTO.setSlotIds(slotIds);
+        // Special case: Handle 24:00 as end of day
+        if ("24:00".equals(timeStr)) {
+            return LocalTime.of(23, 59, 59, 999999999);
+        }
 
-        facilityPriceRuleService.bulkUpdatePrices(bulkDTO);
-
-        response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + facilityId 
-                + "&courtTypeId=" + courtTypeId + "&dayType=" + dayType);
+        return LocalTime.parse(timeStr);
     }
 }
