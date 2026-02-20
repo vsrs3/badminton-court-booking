@@ -1,5 +1,7 @@
 package com.bcb.service;
 
+import com.bcb.dto.RegisterRequestDTO;
+import com.bcb.exception.BusinessException;
 import com.bcb.model.Account;
 
 /**
@@ -33,4 +35,13 @@ public interface AuthService {
      * @return Hashed password
      */
     String hashPassword(String plainPassword);
+
+    void register(RegisterRequestDTO dto) throws Exception;
+
+    void verifyEmail(String token) throws Exception;
+
+    void forgotPassword(String email) throws BusinessException;
+
+    void resetPassword(String email, String password) throws BusinessException;
+
 }

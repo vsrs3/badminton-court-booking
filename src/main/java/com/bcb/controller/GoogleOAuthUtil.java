@@ -19,7 +19,6 @@ public class GoogleOAuthUtil {
     private static final String CLIENT_SECRET = "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";
     private static final String REDIRECT_URI = "http://localhost:8080/bcb/google-callback";
 
-
     public static String getAccessToken(String code) throws IOException {
         String params =
                 "code=" + URLEncoder.encode(code, "UTF-8") +

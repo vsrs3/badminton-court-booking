@@ -1,16 +1,15 @@
-package com.bcb.dao;
+package com.bcb.repository.impl;
 
 import com.bcb.model.EmailVerification;
+import com.bcb.repository.EmailVerificationRepository;
 import com.bcb.utils.DBContext;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Timestamp;
+import java.sql.*;
 
-public class EmailVerificationDAO {
+public class EmailVerificationRepositoryImpl
+        implements EmailVerificationRepository {
 
-    // ✅ 1. LƯU TOKEN
+    @Override
     public void savePendingRegister(
             String email,
             String passwordHash,
@@ -19,13 +18,13 @@ public class EmailVerificationDAO {
             String role,
             String token,
             Timestamp expireAt
-    ) throws Exception {
+    ) {
 
         String sql = """
         INSERT INTO EmailVerification
         (email, password_hash, full_name, phone, role, token, expire_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-    """;
+        """;
 
         try (Connection con = DBContext.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -38,13 +37,14 @@ public class EmailVerificationDAO {
             ps.setString(6, token);
             ps.setTimestamp(7, expireAt);
             ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-
-    // ✅ 2. TÌM TOKEN
-    public EmailVerification findByToken(String token) throws Exception {
-
+    @Override
+    public EmailVerification findByToken(String token) {
         String sql = "SELECT * FROM EmailVerification WHERE token = ?";
 
         try (Connection con = DBContext.getConnection();
@@ -55,35 +55,26 @@ public class EmailVerificationDAO {
 
             if (rs.next()) {
                 EmailVerification ev = new EmailVerification();
-
                 ev.setId(rs.getInt("id"));
                 ev.setEmail(rs.getString("email"));
                 ev.setPasswordHash(rs.getString("password_hash"));
                 ev.setFullName(rs.getString("full_name"));
                 ev.setPhone(rs.getString("phone"));
                 ev.setRole(rs.getString("role"));
-
                 ev.setToken(rs.getString("token"));
                 ev.setExpireAt(rs.getTimestamp("expire_at"));
-
                 return ev;
             }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
         return null;
     }
 
-    // 🧹 Dọn token hết hạn (dùng cho debug / manual)
-    public void deleteExpiredTokens() throws Exception {
-        String sql = "DELETE FROM EmailVerification WHERE expire_at < GETDATE()";
-        try (Connection con = DBContext.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.executeUpdate();
-        }
-    }
-
-    // ✅ 3. XOÁ TOKEN (SAU KHI VERIFY)
-    public void deleteByToken(String token) throws Exception {
-
+    @Override
+    public void deleteByToken(String token) {
         String sql = "DELETE FROM EmailVerification WHERE token = ?";
 
         try (Connection con = DBContext.getConnection();
@@ -91,6 +82,23 @@ public class EmailVerificationDAO {
 
             ps.setString(1, token);
             ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteExpiredTokens() {
+        String sql = "DELETE FROM EmailVerification WHERE expire_at < GETDATE()";
+
+        try (Connection con = DBContext.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

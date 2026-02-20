@@ -7,7 +7,6 @@
 --%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-/* 👇 3 dòncdscdscs */
 <html>
 <head>
     <meta charset="UTF-8">
@@ -68,8 +67,7 @@
             align-items: center;       /* căn giữa dọc */
             background: linear-gradient(135deg, #6dd5fa, #2980b9);
         }
-
-        .register-card {
+        .register-card{
             width: 420px;
             background: #ffffff;
             padding: 30px 32px;
@@ -80,8 +78,8 @@
 </head>
 
 <body>
-<div class="register-card">
 
+    <div class="register-card">
     <% if (request.getAttribute("error") != null) { %>
     <div class="alert" id="alertBox">
         <%= request.getAttribute("error") %>
@@ -96,8 +94,6 @@
             <input type="text" id="email" name="email"value="${oldEmail != null ? oldEmail : ''}">
             <div class="error" id="emailError"></div>
         </div>
-
-
         <!-- PASSWORD -->
         <div class="form-group">
             <label><span style="color:red">*</span> Mật khẩu</label>
@@ -105,7 +101,6 @@
             <span class="eye" onclick="togglePassword()">👁</span>
             <div class="error" id="pwError"></div>
         </div>
-
 
         <!-- CONFIRM PASSWORD -->
         <div class="form-group">
@@ -134,9 +129,7 @@
 
         <button type="submit">Đăng ký</button>
     </form>
-
     <script>
-
         function togglePassword() {
             const pw = document.getElementById("password");
             const repw = document.getElementById("repassword");

@@ -1,19 +1,19 @@
 package com.bcb.controller;
 
-import com.bcb.dao.AccountDAO;
-import com.bcb.model.Account;
-import com.google.gson.JsonObject;
+import com.bcb.exception.BusinessException;
+import com.bcb.service.AuthService;
+import com.bcb.service.impl.AuthServiceImpl;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 
-
 public class ForgotPasswordController extends HttpServlet {
+
+    private final AuthService authService = new AuthServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -28,7 +28,6 @@ public class ForgotPasswordController extends HttpServlet {
             throws ServletException, IOException {
 
         String action = request.getParameter("action");
-        AccountDAO accountDao = new AccountDAO();
 
         try {
 
@@ -39,16 +38,13 @@ public class ForgotPasswordController extends HttpServlet {
 
                 String email = request.getParameter("email");
 
-                if (!accountDao.isEmailExists(email)) {
-                    request.setAttribute("error", "Email không tồn tại.");
-                    request.getRequestDispatcher("/jsp/common/forgot-password.jsp")
-                            .forward(request, response);
-                    return;
-                }
+                // Gọi service xử lý
+                authService.forgotPassword(email);
 
-                // email tồn tại → chuyển sang reset form
+                // Nếu không có exception → email hợp lệ
                 request.setAttribute("email", email);
                 request.setAttribute("step", "reset");
+
                 request.getRequestDispatcher("/jsp/common/forgot-password.jsp")
                         .forward(request, response);
                 return;
@@ -72,12 +68,17 @@ public class ForgotPasswordController extends HttpServlet {
                     return;
                 }
 
-                String hash = BCrypt.hashpw(password, BCrypt.gensalt());
-
-                accountDao.updatePassword(email, hash);
+                // Gọi service reset
+                authService.resetPassword(email, password);
 
                 response.sendRedirect(request.getContextPath() + "/auth/login");
             }
+
+        } catch (BusinessException e) {
+
+            request.setAttribute("error", e.getMessage());
+            request.getRequestDispatcher("/jsp/common/forgot-password.jsp")
+                    .forward(request, response);
 
         } catch (Exception e) {
             throw new ServletException(e);

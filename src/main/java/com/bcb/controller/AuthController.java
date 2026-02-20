@@ -187,4 +187,35 @@ public class AuthController extends HttpServlet {
 
         response.sendRedirect(request.getContextPath() + "/auth/login");
     }
+
 }
+
+//@WebServlet("/auth/register")
+//public class AuthController extends HttpServlet {
+//
+//    private AuthService authService =
+//            new AuthServiceImpl();
+//
+//    @Override
+//    protected void doPost(HttpServletRequest request,
+//                          HttpServletResponse response)
+//            throws ServletException, IOException {
+//
+//        RegisterRequestDTO dto = new RegisterRequestDTO();
+//        dto.setEmail(request.getParameter("email"));
+//        dto.setPassword(request.getParameter("password"));
+//        dto.setFullName(request.getParameter("fullName"));
+//        dto.setPhone(request.getParameter("phone"));
+//
+//        try {
+//            authService.register(dto);
+//            response.sendRedirect("check-email.jsp");
+//
+//        } catch (BusinessException e) {
+//            request.setAttribute("error", e.getMessage());
+//            request.getRequestDispatcher("/jsp/auth/register.jsp")
+//                    .forward(request, response);
+//        }
+//    }
+//}
+
