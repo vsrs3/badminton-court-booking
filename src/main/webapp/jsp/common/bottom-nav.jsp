@@ -3,17 +3,20 @@
     <div class="bottom-nav-container">
 
         <!-- Home Tab -->
-        <button class="nav-item active" data-tab="home">
-            <i class="bi bi-house-door-fill"></i>
-            <span class="nav-text">Trang chủ</span>
-            <div class="nav-indicator"></div>
-        </button>
+        <a href="${pageContext.request.contextPath}/home" 
+         	class="nav-item" data-tab="home" style="text-decoration:none">
+		    <i class="bi bi-house-door-fill"></i>
+		    <span class="nav-text">Trang chủ</span>
+		    <div class="nav-indicator"></div>
+		</a>
+
 
         <!-- Map Tab -->
         <button class="nav-item" data-tab="map">
             <i class="bi bi-grid-3x3-gap-fill"></i>
             <span class="nav-text">Bản đồ</span>
         </button>
+
 
         <!-- Center Button: Community -->
         <div class="nav-center">
@@ -30,7 +33,8 @@
         </button>
 
         <!-- Profile Tab -->
-        <a href="${pageContext.request.contextPath}/profile" class="nav-item" data-tab="profile" style="text-decoration: none">
+        <a href="${pageContext.request.contextPath}/profile" 
+        	class="nav-item" data-tab ="profile" style="text-decoration:none">
             <i class="bi bi-person-fill"></i>
             <span class="nav-text">Cá nhân</span>
         </a>

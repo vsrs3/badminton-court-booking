@@ -107,11 +107,18 @@
         </div>
 
         <div id="profileTab" class="tab-content">
-            <div class="coming-soon">
-                <i class="bi bi-info-circle"></i>
-                <h2>Tính năng đang phát triển</h2>
-                <p>Vui lòng quay lại sau</p>
-            </div>
+        	<c:choose>
+           		<c:when test="${empty sessionScope.account}">
+           			<div class="coming-soon">
+		                <i class="bi bi-info-circle"></i>
+		                <h2>Tính năng đang phát triển</h2>
+		                <p>Vui lòng quay lại sau</p>
+		            </div>
+           		</c:when>
+           		<c:otherwise>
+           		    <jsp:include page="../customer/profile/profile.jsp" />
+       			</c:otherwise>
+           	</c:choose>
         </div>
 
     </main>
@@ -161,7 +168,7 @@
 <!-- Vietnam Locations Data -->
 <script src="${pageContext.request.contextPath}/assets/js/vietnam-locations.js"></script>
 
-<!-- ✅ Set login status for JavaScript -->
+<!-- Set login status for JavaScript -->
 <script>
     <%
         com.bcb.model.Account currentUser = (com.bcb.model.Account) session.getAttribute("account");
@@ -181,7 +188,7 @@
     console.log('✅ Customer logged in:', window.CURRENT_USER);
     <% } else { %>
     window.CURRENT_USER = null;
-    console.log('👤 Guest user');
+    console.log('Guest user');
     <% } %>
 </script>
 
