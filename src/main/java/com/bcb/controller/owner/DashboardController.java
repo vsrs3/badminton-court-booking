@@ -1,5 +1,6 @@
 package com.bcb.controller.owner;
 
+import com.bcb.utils.BreadcrumbUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -25,6 +26,11 @@ public class DashboardController extends HttpServlet {
         request.setAttribute("totalCourts", 12);          // From CourtService
         request.setAttribute("activeCourts", 10);         // From CourtService
         request.setAttribute("monthlyBookings", 47);      // From BookingService
+
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .active("Dashboard")
+                .build();
 
         // Forward to JSP
         request.getRequestDispatcher("/jsp/owner/dashboard.jsp").forward(request, response);

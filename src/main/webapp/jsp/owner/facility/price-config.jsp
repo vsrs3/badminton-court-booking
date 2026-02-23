@@ -13,17 +13,19 @@
     <div class="content-area">
 
         <%-- PAGE HEADER --%>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="h3 mb-1 text-emerald">Configure Rates</h2>
-                <p class="text-muted mb-0">Set the hourly pricing for <strong>${viewData.facilityName}</strong></p>
-            </div>
-            <div>
-                <a href="${pageContext.request.contextPath}/owner/facility/view/${viewData.facilityId}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Return to Detail
-                </a>
-            </div>
-        </div>
+<%--        <div class="d-flex justify-content-between align-items-center mb-4">--%>
+<%--            <div>--%>
+<%--                <h2 class="h3 mb-1 text-emerald">Cài đặt giá</h2>--%>
+<%--                <p class="text-muted mb-0">Cài đặt giá theo giờ cho <strong>${viewData.facilityName}</strong></p>--%>
+<%--            </div>--%>
+<%--            <div>--%>
+<%--                <a href="${pageContext.request.contextPath}/owner/facility/view/${viewData.facilityId}" class="btn btn-outline-secondary">--%>
+<%--                    <i class="bi bi-arrow-left me-1"></i> Quay lại xem chi tiết--%>
+<%--                </a>--%>
+<%--            </div>--%>
+<%--        </div>--%>
+            <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
+            <%@ include file="../layout/page-header.jsp" %>
 
         <%-- ALERTS - Flash Messages from Session --%>
         <div id="alertContainer">
@@ -59,7 +61,7 @@
                                 <li class="nav-item">
                                     <a class="nav-link ${viewData.currentCourtTypeId == type.courtTypeId ? 'active' : ''}"
                                        href="?facilityId=${viewData.facilityId}&courtTypeId=${type.courtTypeId}&dayType=${viewData.currentDayType}">
-                                        ${type.typeCode} COURTS
+                                        SÂN ${type.typeCode}
                                     </a>
                                 </li>
                             </c:forEach>
@@ -71,11 +73,11 @@
                         <div class="btn-group w-100 p-1 bg-light rounded" role="group">
                             <a href="?facilityId=${viewData.facilityId}&courtTypeId=${viewData.currentCourtTypeId}&dayType=WEEKDAY"
                                class="btn ${viewData.currentDayType == 'WEEKDAY' ? 'btn-primary' : 'btn-outline-secondary'}">
-                                WEEKDAY
+                                TRONG TUẦN(2-6)
                             </a>
                             <a href="?facilityId=${viewData.facilityId}&courtTypeId=${viewData.currentCourtTypeId}&dayType=WEEKEND"
                                class="btn ${viewData.currentDayType == 'WEEKEND' ? 'btn-primary' : 'btn-outline-secondary'}">
-                                WEEKEND
+                                CUỐI TUẦN
                             </a>
                         </div>
                     </div>

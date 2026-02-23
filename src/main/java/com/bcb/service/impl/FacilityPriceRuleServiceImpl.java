@@ -64,8 +64,8 @@ public class FacilityPriceRuleServiceImpl implements FacilityPriceRuleService {
                     dto.setPriceId(rule.getPriceId());
                     dto.setStartTime(rule.getStartTime());
                     dto.setEndTime(rule.getEndTime());
-                    dto.setStartTimeFormatted(rule.getStartTime().format(TIME_FORMATTER));
-                    dto.setEndTimeFormatted(rule.getEndTime().format(TIME_FORMATTER));
+                    dto.setStartTimeFormatted(formatTimeForDisplay(rule.getStartTime()));
+                    dto.setEndTimeFormatted(formatTimeForDisplay(rule.getEndTime()));
                     // Convert from 30-minute price to hourly price for display
                     dto.setPrice(rule.getPrice().multiply(BigDecimal.valueOf(2)));
                     return dto;

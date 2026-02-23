@@ -11,6 +11,7 @@ import com.bcb.service.UploadService;
 import com.bcb.service.impl.FacilityImageServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
 import com.bcb.service.impl.UploadServiceImpl;
+import com.bcb.utils.BreadcrumbUtils;
 import com.bcb.validation.FacilityValidator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -91,6 +92,10 @@ public class OwnerFacilityController extends HttpServlet {
             }
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
+            BreadcrumbUtils.builder(request)
+                    .dashboard()
+                    .active("Địa Điểm Của Tôi")
+                    .build();
             request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                     .forward(request, response);
         }
@@ -114,10 +119,15 @@ public class OwnerFacilityController extends HttpServlet {
             }
         } catch (ValidationException e) {
             request.setAttribute("error", "Validation error occurred");
+            setBreadcrumbForForm(request, "update".equals(action));
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
+            BreadcrumbUtils.builder(request)
+                    .dashboard()
+                    .active("Địa Điểm Của Tôi")
+                    .build();
             request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                     .forward(request, response);
         }
@@ -169,12 +179,30 @@ public class OwnerFacilityController extends HttpServlet {
         Map<Integer, String> addressMap =
                 facilityService.buildDisplayAddressMap(facilities);
 
+        // Build time display map: facilityId -> "HH:mm – HH:mm" (23:59:59 → 24:00)
+        Map<Integer, String> timeMap = new java.util.HashMap<>();
+        for (Facility f : facilities) {
+            if (f.getOpenTime() != null && f.getCloseTime() != null) {
+                timeMap.put(f.getFacilityId(),
+                        formatTimeForInput(f.getOpenTime()) + " – " + formatTimeForInput(f.getCloseTime()));
+            } else {
+                timeMap.put(f.getFacilityId(), "-");
+            }
+        }
+
         request.setAttribute("facilities", facilities);
         request.setAttribute("addressMap", addressMap);
+        request.setAttribute("timeMap", timeMap);
         request.setAttribute("currentPage", page);
         request.setAttribute("pageSize", pageSize);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalRecords", totalCount);
+
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .active("Địa Điểm Của Tôi")
+                .build();
 
         request.getRequestDispatcher("/jsp/owner/facility/facility-list.jsp")
                 .forward(request, response);
@@ -197,6 +225,13 @@ public class OwnerFacilityController extends HttpServlet {
 
         request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
         request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
+
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .active("Chi Tiết Địa Điểm")
+                .build();
 
         request.getRequestDispatcher("/jsp/owner/facility/facility-detail.jsp")
                 .forward(request, response);
@@ -221,6 +256,13 @@ public class OwnerFacilityController extends HttpServlet {
         request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
         request.setAttribute("isEdit", true);
 
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .active("Chỉnh sửa địa điểm")
+                .build();
+
         request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                 .forward(request, response);
     }
@@ -228,6 +270,13 @@ public class OwnerFacilityController extends HttpServlet {
     /* ===================== CREATE ===================== */
     private void showCreateForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .active("Tạo mới địa điểm")
+                .build();
 
         request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                 .forward(request, response);
@@ -237,8 +286,25 @@ public class OwnerFacilityController extends HttpServlet {
     private void createFacility(HttpServletRequest request, HttpServletResponse response)
             throws BusinessException, IOException, ServletException {
 
+        // Validate time inputs first (before parsing)
+        String openTimeStr = request.getParameter("openTime");
+        String closeTimeStr = request.getParameter("closeTime");
+        List<String> timeErrors = new java.util.ArrayList<>();
+
+        String openTimeError = validateTimeInput(openTimeStr, "Giờ mở cửa");
+        String closeTimeError = validateTimeInput(closeTimeStr, "Giờ đóng cửa");
+        if (openTimeError != null) timeErrors.add(openTimeError);
+        if (closeTimeError != null) timeErrors.add(closeTimeError);
+
         Facility facility = buildFacilityFromRequest(request);
         List<String> errors = FacilityValidator.validate(facility);
+        errors.addAll(timeErrors);
+
+        // If time was invalid, reset the formatted value to empty
+        request.setAttribute("openTimeFormatted",
+                openTimeError == null ? (openTimeStr != null ? openTimeStr : "") : "");
+        request.setAttribute("closeTimeFormatted",
+                closeTimeError == null ? (closeTimeStr != null ? closeTimeStr : "") : "");
 
         if (facility.getLatitude() == null || facility.getLongitude() == null) {
             errors.add("Vui lòng chọn vị trí trên bản đồ");
@@ -247,6 +313,7 @@ public class OwnerFacilityController extends HttpServlet {
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
             request.setAttribute("facility", facility);
+            setBreadcrumbForForm(request, false);
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
             return;
@@ -272,6 +339,7 @@ public class OwnerFacilityController extends HttpServlet {
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
             request.setAttribute("facility", facility);
+            setBreadcrumbForForm(request, false);
 
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
@@ -286,6 +354,16 @@ public class OwnerFacilityController extends HttpServlet {
         int facilityId = Integer.parseInt(request.getParameter("facilityId"));
         Facility facility = facilityService.findById(facilityId);
 
+        // Validate time inputs first (before parsing)
+        String openTimeStr = request.getParameter("openTime");
+        String closeTimeStr = request.getParameter("closeTime");
+        List<String> timeErrors = new java.util.ArrayList<>();
+
+        String openTimeError = validateTimeInput(openTimeStr, "Giờ mở cửa");
+        String closeTimeError = validateTimeInput(closeTimeStr, "Giờ đóng cửa");
+        if (openTimeError != null) timeErrors.add(openTimeError);
+        if (closeTimeError != null) timeErrors.add(closeTimeError);
+
         // Cập nhật các trường
         facility.setName(request.getParameter("name"));
         facility.setProvince(request.getParameter("province"));
@@ -293,8 +371,8 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setWard(request.getParameter("ward"));
         facility.setAddress(request.getParameter("address"));
         facility.setDescription(request.getParameter("description"));
-        facility.setOpenTime(parseTimeInput(request.getParameter("openTime")));
-        facility.setCloseTime(parseTimeInput(request.getParameter("closeTime")));
+        facility.setOpenTime(parseTimeInput(openTimeStr));
+        facility.setCloseTime(parseTimeInput(closeTimeStr));
 
         String latStr = request.getParameter("latitude");
         facility.setLatitude(latStr != null && !latStr.isBlank() ? new BigDecimal(latStr) : null);
@@ -303,6 +381,7 @@ public class OwnerFacilityController extends HttpServlet {
         facility.setLongitude(lngStr != null && !lngStr.isBlank() ? new BigDecimal(lngStr) : null);
 
         List<String> errors = FacilityValidator.validate(facility);
+        errors.addAll(timeErrors);
         if (facility.getLatitude() == null || facility.getLongitude() == null) {
             errors.add("Vui lòng chọn vị trí trên bản đồ");
         }
@@ -312,9 +391,13 @@ public class OwnerFacilityController extends HttpServlet {
             request.setAttribute("isEdit", true);
             request.setAttribute("thumbnailImage", facilityImageService.getThumbnail(facilityId));
             request.setAttribute("galleryImages", facilityImageService.getGallery(facilityId));
-            request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
-            request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
+            // If time was invalid, reset to empty; if valid, keep the raw input
+            request.setAttribute("openTimeFormatted",
+                    openTimeError == null ? (openTimeStr != null ? openTimeStr : "") : "");
+            request.setAttribute("closeTimeFormatted",
+                    closeTimeError == null ? (closeTimeStr != null ? closeTimeStr : "") : "");
 
+            setBreadcrumbForForm(request, true);
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
             return;
@@ -348,6 +431,7 @@ public class OwnerFacilityController extends HttpServlet {
             request.setAttribute("openTimeFormatted", formatTimeForInput(facility.getOpenTime()));
             request.setAttribute("closeTimeFormatted", formatTimeForInput(facility.getCloseTime()));
 
+            setBreadcrumbForForm(request, true);
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
         }
@@ -366,6 +450,15 @@ public class OwnerFacilityController extends HttpServlet {
     }
 
     /* ===================== HELPERS ===================== */
+
+    /** Set breadcrumb for facility form (create or edit) */
+    private void setBreadcrumbForForm(HttpServletRequest request, boolean isEdit) {
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .active(isEdit ? "Chỉnh sửa địa điểm" : "Tạo mới địa điểm")
+                .build();
+    }
 
     private Facility buildFacilityFromRequest(HttpServletRequest request) {
         Facility facility = new Facility();
@@ -392,33 +485,58 @@ public class OwnerFacilityController extends HttpServlet {
         return facility;
     }
 
+    /**
+     * Parse time input safely. Returns null if invalid (does NOT throw).
+     */
     private LocalTime parseTimeInput(String timeStr) {
         if (timeStr == null || timeStr.isBlank()) return null;
 
-        try {
-            // Special case: Handle 24:00 as end of day (23:59:59.999999999)
-            if ("24:00".equals(timeStr)) {
-                return LocalTime.of(23, 59, 59, 999999999);
-            }
-
-            LocalTime time = LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
-
-            int minute = time.getMinute();
-
-            // Validate: only 00 or 30 allowed
-            if (minute != 0 && minute != 30) {
-                throw new DateTimeParseException(
-                        "Time must be either on the hour or half hour (e.g. 08:00, 08:30)",
-                        timeStr,
-                        0
-                );
-            }
-
-            return time;
-
-        } catch (DateTimeParseException e) {
-            throw e;
+        // Special case: Handle 24:00 as end of day
+        if ("24:00".equals(timeStr)) {
+            return LocalTime.of(23, 59, 59, 999999999);
         }
+
+        // Reject invalid 24:XX formats
+        if (timeStr.startsWith("24:")) {
+            return null;
+        }
+
+        try {
+            LocalTime time = LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
+            int minute = time.getMinute();
+            // Only 00 or 30 allowed
+            if (minute != 0 && minute != 30) {
+                return null;
+            }
+            return time;
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Validate time input and return error message, or null if valid.
+     */
+    private String validateTimeInput(String timeStr, String fieldLabel) {
+        if (timeStr == null || timeStr.isBlank()) return null; // allow null, required check is elsewhere
+
+        if ("24:00".equals(timeStr)) return null; // valid special case
+
+        if (timeStr.startsWith("24:")) {
+            return fieldLabel + " không hợp lệ. Chỉ 24:00 được phép để biểu thị cuối ngày.";
+        }
+
+        try {
+            LocalTime time = LocalTime.parse(timeStr, TIME_INPUT_FORMATTER);
+            int minute = time.getMinute();
+            if (minute != 0 && minute != 30) {
+                return fieldLabel + " phải là giờ chẵn hoặc nửa giờ (ví dụ: 08:00, 08:30).";
+            }
+        } catch (DateTimeParseException e) {
+            return fieldLabel + " không đúng định dạng thời gian.";
+        }
+
+        return null;
     }
 
     private String formatTimeForInput(LocalTime time) {

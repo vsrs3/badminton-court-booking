@@ -5,6 +5,7 @@ import com.bcb.dto.PriceRuleRequestDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.service.FacilityPriceRuleService;
 import com.bcb.service.impl.FacilityPriceRuleServiceImpl;
+import com.bcb.utils.BreadcrumbUtils;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -45,6 +46,15 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
             FacilityPriceViewDTO viewData = facilityPriceRuleService.getPriceView(facilityId, courtTypeId, dayType);
             request.setAttribute("viewData", viewData);
+
+            // Breadcrumb
+            BreadcrumbUtils.builder(request)
+                    .dashboard()
+                    .facilityList()
+                    .facility(viewData.getFacilityName(), facilityId)
+                    .active("Cài đặt giá")
+                    .build();
+
             request.getRequestDispatcher("/jsp/owner/facility/price-config.jsp").forward(request, response);
 
         } catch (BusinessException | NumberFormatException e) {
@@ -163,6 +173,12 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
                 throw new BusinessException("Start time, end time, and price are required");
             }
 
+            // Validate time inputs
+            String startTimeError = validateTimeInput(startTimeStr, "Giờ bắt đầu");
+            String endTimeError = validateTimeInput(endTimeStr, "Giờ kết thúc");
+            if (startTimeError != null) throw new BusinessException(startTimeError);
+            if (endTimeError != null) throw new BusinessException(endTimeError);
+
             // Parse times with support for 24:00
             dto.setStartTime(parseTimeInput(startTimeStr));
             dto.setEndTime(parseTimeInput(endTimeStr));
@@ -170,6 +186,8 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
         } catch (NumberFormatException e) {
             throw new BusinessException("Invalid number format");
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessException("Invalid input: " + e.getMessage());
         }
@@ -178,9 +196,33 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
     }
 
     /**
-     * Parse time string from UI (supports 24:00 for end of day)
-     * @param timeStr Time string in HH:mm format
-     * @return LocalTime object (24:00 is converted to 23:59:59.999999999)
+     * Validate time input and return error message, or null if valid.
+     */
+    private String validateTimeInput(String timeStr, String fieldLabel) {
+        if (timeStr == null || timeStr.isBlank()) return null;
+
+        if ("24:00".equals(timeStr)) return null; // valid special case
+
+        if (timeStr.startsWith("24:")) {
+            return fieldLabel + " không hợp lệ. Chỉ 24:00 được phép để biểu thị cuối ngày.";
+        }
+
+        try {
+            LocalTime time = LocalTime.parse(timeStr);
+            int minute = time.getMinute();
+            if (minute != 0 && minute != 30) {
+                return fieldLabel + " phải là giờ chẵn hoặc nửa giờ (ví dụ: 08:00, 08:30).";
+            }
+        } catch (Exception e) {
+            return fieldLabel + " không đúng định dạng thời gian.";
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse time string from UI (supports 24:00 for end of day).
+     * Returns null if invalid (does NOT throw).
      */
     private LocalTime parseTimeInput(String timeStr) {
         if (timeStr == null || timeStr.isBlank()) {
@@ -192,6 +234,20 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
             return LocalTime.of(23, 59, 59, 999999999);
         }
 
-        return LocalTime.parse(timeStr);
+        // Reject invalid 24:XX formats
+        if (timeStr.startsWith("24:")) {
+            return null;
+        }
+
+        try {
+            LocalTime time = LocalTime.parse(timeStr);
+            int minute = time.getMinute();
+            if (minute != 0 && minute != 30) {
+                return null;
+            }
+            return time;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

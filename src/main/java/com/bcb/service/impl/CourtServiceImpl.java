@@ -36,6 +36,7 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public int createCourt(Court court) throws ValidationException, BusinessException {
+        trimDescription(court);
         List<String> errors = CourtValidator.validate(court);
         if (!errors.isEmpty()) {
             throw new ValidationException(String.join(", ", errors));
@@ -48,6 +49,7 @@ public class CourtServiceImpl implements CourtService {
 
     @Override
     public void updateCourt(Court court) throws ValidationException, BusinessException {
+        trimDescription(court);
         List<String> errors = CourtValidator.validate(court);
         if (!errors.isEmpty()) {
             throw new ValidationException(String.join(", ", errors));
@@ -72,5 +74,15 @@ public class CourtServiceImpl implements CourtService {
     @Override
     public List<CourtViewDTO> getCourtsByFacilityDTO(int facilityId) {
         return courtRepository.findByFacilityForView(facilityId);
+    }
+
+    /**
+     * Trim description: blank → null, otherwise trim whitespace.
+     */
+    private void trimDescription(Court court) {
+        if (court.getDescription() != null) {
+            String trimmed = court.getDescription().trim();
+            court.setDescription(trimmed.isEmpty() ? null : trimmed);
+        }
     }
 }

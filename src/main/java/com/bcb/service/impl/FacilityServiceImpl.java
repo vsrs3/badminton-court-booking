@@ -528,8 +528,20 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         }
 
         return String.format("%s - %s",
-                openTime.toString().substring(0, 5),
-                closeTime.toString().substring(0, 5));
+                formatSingleTime(openTime),
+                formatSingleTime(closeTime));
+    }
+
+    /**
+     * Format a single LocalTime for display.
+     * Converts 23:59:59 (end of day in DB) to "24:00" for UI.
+     */
+    private String formatSingleTime(LocalTime time) {
+        if (time == null) return "";
+        if (time.getHour() == 23 && time.getMinute() == 59 && time.getSecond() == 59) {
+            return "24:00";
+        }
+        return time.toString().substring(0, 5);
     }
 
     /**

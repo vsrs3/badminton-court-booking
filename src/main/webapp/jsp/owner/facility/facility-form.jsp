@@ -12,23 +12,8 @@
 
     <div class="content-area">
 
-        <%-- PAGE HEADER --%>
-        <c:choose>
-            <c:when test="${requestScope.isEdit}">
-                <c:set var="pageTitle" value="Edit Location"/>
-            </c:when>
-            <c:otherwise>
-                <c:set var="pageTitle" value="Create New Location"/>
-            </c:otherwise>
-        </c:choose>
+        <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
         <%@ include file="../layout/page-header.jsp" %>
-
-        <%-- ACTIONS --%>
-        <div class="d-flex justify-content-end mb-3">
-            <a href="${pageContext.request.contextPath}/owner/facility/list" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to List
-            </a>
-        </div>
 
         <c:if test="${not empty requestScope.errors}">
             <div class="alert alert-danger mb-4">
@@ -53,12 +38,11 @@
                     <%-- Basic Information --%>
                     <div class="card mb-4">
                         <div class="card-header bg-emerald text-white">
-                            <h5 class="mb-0">Basic Information</h5>
+                            <h5 class="mb-0">Thông tin cơ bản</h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Location Name <span
-                                        class="text-danger">*</span></label>
+                                <label for="name" class="form-label">Tên địa điểm <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name" name="name" required
                                        value="${requestScope.facility.name}">
                             </div>
@@ -66,21 +50,21 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="province" class="form-label">Province</label>
+                                        <label for="province" class="form-label">Tỉnh/Thành phố</label>
                                         <input type="text" class="form-control" id="province" name="province"
                                                value="${requestScope.facility.province}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="district" class="form-label">District</label>
+                                        <label for="district" class="form-label">Quận/Huyện</label>
                                         <input type="text" class="form-control" id="district" name="district"
                                                value="${requestScope.facility.district}">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="ward" class="form-label">Ward</label>
+                                        <label for="ward" class="form-label">Phường/Xã</label>
                                         <input type="text" class="form-control" id="ward" name="ward"
                                                value="${requestScope.facility.ward}">
                                     </div>
@@ -88,7 +72,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Address *</label>
+                                <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="text"
                                            class="form-control"
@@ -110,7 +94,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="openTime" class="form-label">Opening Time <span class="text-danger">*</span></label>
+                                        <label for="openTime" class="form-label">Giờ mở cửa <span class="text-danger">*</span></label>
                                         <div class="time-picker-wrapper">
                                             <!-- Display element (user clicks this) -->
                                             <div id="openTimeDisplay" class="time-picker-display" tabindex="0">
@@ -124,7 +108,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="closeTime" class="form-label">Closing Time <span class="text-danger">*</span></label>
+                                        <label for="closeTime" class="form-label">Giờ đóng cửa <span class="text-danger">*</span></label>
                                         <div class="time-picker-wrapper">
                                             <!-- Display element (user clicks this) -->
                                             <div id="closeTimeDisplay" class="time-picker-display" tabindex="0">
@@ -143,14 +127,14 @@
                     <%-- Description --%>
                     <div class="card mb-4">
                         <div class="card-header bg-emerald text-white">
-                            <h5 class="mb-0">Description</h5>
+                            <h5 class="mb-0">Mô tả</h5>
                         </div>
                         <div class="card-body">
                             <div class="mb-0">
-                                <label for="description" class="form-label">Description</label>
+                                <label for="description" class="form-label">Mô tả</label>
                                 <textarea class="form-control" id="description" name="description" rows="5"
-                                          placeholder="Enter location description, rules, facilities, etc.">${requestScope.facility.description}</textarea>
-                                <small class="text-muted">Provide details about your facility</small>
+                                          placeholder="Nhập mô tả về địa điểm, quy định, tiện ích, ...">${requestScope.facility.description}</textarea>
+                                <small class="text-muted">Hãy cung cấp thông tin chi tiết về địa điểm của bạn</small>
                             </div>
                         </div>
                     </div>
@@ -161,7 +145,7 @@
                     <%-- Thumbnail Image--%>
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5 class="mb-0">Thumbnail</h5>
+                            <h5 class="mb-0">Ảnh đại diện</h5>
                         </div>
                         <div class="card-body text-center">
                             <div class="mb-3">
@@ -181,14 +165,14 @@
                             </div>
                             <input type="file" class="form-control" name="thumbnail" accept="image/*"
                                    onchange="previewThumbnail(this)">
-                            <small class="text-muted d-block mt-2">JPG, PNG – max 2MB</small>
+                            <small class="text-muted d-block mt-2">JPG, PNG – tối đa 2MB</small>
                         </div>
                     </div>
 
                     <%-- Gallery--%>
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h5 class="mb-0">Gallery</h5>
+                            <h5 class="mb-0">Thư viện ảnh</h5>
                         </div>
                         <div class="card-body">
                             <input type="hidden" name="deletedIds" id="deletedIds" value="">
@@ -215,7 +199,7 @@
                             </c:if>
 
                             <div class="row g-2" id="newGalleryPreview"></div>
-                            <small class="text-muted d-block mt-2">Upload multiple images for your location.</small>
+                            <small class="text-muted d-block mt-2">Tải lên nhiều ảnh cho địa điểm của bạn.</small>
                         </div>
                     </div>
 
@@ -224,13 +208,13 @@
                             <button type="submit" class="btn btn-accent w-100 mb-2">
                                 <i class="bi bi-check-circle me-1"></i>
                                 <c:choose>
-                                    <c:when test="${requestScope.isEdit}">Update Location</c:when>
-                                    <c:otherwise>Create Location</c:otherwise>
+                                    <c:when test="${requestScope.isEdit}">Cập nhật địa điểm</c:when>
+                                    <c:otherwise>Tạo địa điểm</c:otherwise>
                                 </c:choose>
                             </button>
                             <a href="${pageContext.request.contextPath}/owner/facility/list"
                                class="btn btn-outline-secondary w-100">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
+                                <i class="bi bi-x-circle me-1"></i> Hủy
                             </a>
                         </div>
                     </div>
@@ -277,4 +261,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-

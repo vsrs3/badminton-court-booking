@@ -103,6 +103,7 @@ CREATE TABLE Court (
                        facility_id INT NOT NULL,
                        court_type_id INT NOT NULL,
                        court_name NVARCHAR(100),
+                       description NVARCHAR(500),
                        is_active BIT DEFAULT 1,
 
                        FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),

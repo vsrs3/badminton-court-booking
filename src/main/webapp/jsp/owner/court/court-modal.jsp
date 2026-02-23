@@ -35,6 +35,15 @@
                         </select>
                     </div>
 
+                    <%-- DESCRIPTION --%>
+                    <div class="mb-3">
+                        <label for="courtDescription" class="form-label fw-bold">Mô tả</label>
+                        <textarea name="description" id="courtDescription" class="form-control"
+                                  rows="3" maxlength="500"
+                                  placeholder="Mô tả ngắn về sân (tùy chọn)"></textarea>
+                        <div class="form-text">Tối đa 500 ký tự</div>
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">

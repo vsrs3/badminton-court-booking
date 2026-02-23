@@ -15,6 +15,21 @@
         </div>
 
         <!-- Avatar -->
-        <img href="" src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-white/30" />
+        <c:choose>
+            <c:when test="${not empty sessionScope.account.avatarPath}">
+                <img
+                        src="${pageContext.request.contextPath}/uploads/${sessionScope.account.avatarPath}"
+                        alt="Avatar"
+                        style="width: 36px; height: 36px; object-fit: cover;"
+                        class="rounded-circle border"
+                />
+            </c:when>
+            <c:otherwise>
+                <div style="width: 36px; height: 36px;"
+                     class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
 </nav>

@@ -12,6 +12,7 @@ import java.util.List;
 public class CourtValidator {
 
     private static final int MAX_COURT_NAME_LENGTH = 100;
+    private static final int MAX_DESCRIPTION_LENGTH = 500;
 
     /**
      * Validates court for creation/update
@@ -41,6 +42,11 @@ public class CourtValidator {
         // Validate court type ID
         if (court.getCourtTypeId() <= 0) {
             errors.add("Court type ID is required and must be positive");
+        }
+
+        // Validate description (optional, max length)
+        if (court.getDescription() != null && court.getDescription().length() > MAX_DESCRIPTION_LENGTH) {
+            errors.add("Mô tả sân không được vượt quá " + MAX_DESCRIPTION_LENGTH + " ký tự");
         }
 
         return errors;
