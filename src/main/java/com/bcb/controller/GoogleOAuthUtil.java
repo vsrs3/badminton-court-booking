@@ -17,7 +17,7 @@ public class GoogleOAuthUtil {
 
     private static final String CLIENT_ID = "204559903564-apf9kc8g9k6e5lfgn00r7fr9gpq4ptgp.apps.googleusercontent.com";
     private static final String CLIENT_SECRET = "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";
-    private static final String REDIRECT_URI = "http://localhost:8080/bcb/google-callback";
+    private static final String REDIRECT_URI = "http://localhost:8080/badminton_court_booking/google-callback";
 
     public static String getAccessToken(String code) throws IOException {
         String params =

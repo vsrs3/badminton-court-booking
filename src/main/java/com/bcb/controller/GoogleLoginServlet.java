@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 public class GoogleLoginServlet extends HttpServlet {
 
     private static final String CLIENT_ID = "204559903564-apf9kc8g9k6e5lfgn00r7fr9gpq4ptgp.apps.googleusercontent.com";
-    private static final String REDIRECT_URI = "http://localhost:8080/bcb/google-callback";
+    private static final String REDIRECT_URI = "http://localhost:8080/badminton_court_booking/google-callback";
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)

@@ -25,7 +25,7 @@ public class GoogleAutoLinkController extends HttpServlet {
         String googleOAuthUrl =
                 "https://accounts.google.com/o/oauth2/v2/auth" +
                         "?client_id=204559903564-apf9kc8g9k6e5lfgn00r7fr9gpq4ptgp.apps.googleusercontent.com" +
-                        "&redirect_uri=http://localhost:8080/bcb/google-callback" +
+                        "&redirect_uri=http://localhost:8080/badminton_court_booking/google-callback" +
                         "&response_type=code" +
                         "&scope=openid email profile" +
                         "&state=" + URLEncoder.encode(email, "UTF-8");
