@@ -1,6 +1,5 @@
 package com.bcb.service.impl;
 
-import com.bcb.dao.EmailVerificationDAO;
 import com.bcb.dto.RegisterRequestDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.model.Account;
@@ -24,15 +23,12 @@ import java.util.UUID;
  * Implementation of AuthService
  */
 public class AuthServiceImpl implements AuthService {
-
-
     private final AccountRepository accountRepository;
     private final EmailVerificationRepository emailVerificationRepository;
     public AuthServiceImpl() {
         this.accountRepository = new AccountRepositoryImpl();
         this.emailVerificationRepository = new EmailVerificationRepositoryImpl();
     }
-
     // Constructor for dependency injection (testing)
     public AuthServiceImpl(AccountRepository accountRepository, EmailVerificationRepository emailVerificationRepository) {
         this.accountRepository = accountRepository;
@@ -48,40 +44,35 @@ public class AuthServiceImpl implements AuthService {
 
         if (accountOpt.isEmpty()) {
             System.out.println("❌ Account not found: " + email);
-            throw new RuntimeException("Invalid credentials");
-        }
-
+            throw new RuntimeException("Invalid credentials");}
         Account account = accountOpt.get();
 
         // Check if account is active
         if (!account.getIsActive()) {
             System.out.println("❌ Account is inactive: " + email);
-            throw new RuntimeException("Account is inactive");
-        }
-
+            throw new RuntimeException("Account is inactive");}
         // Verify password
-//        String hashedPassword = hashPassword(password);
-//        System.out.println("CHẸKCE" + hashedPassword);
-//        System.out.println("Pass" + password);
-
+        // String hashedPassword = hashPassword(password);
+        // System.out.println("CHẸKCE" + hashedPassword);
+        // System.out.println("Pass" + password);
         if (!BCrypt.checkpw(password, account.getPasswordHash())) {
             System.out.println("❌ Invalid password for: " + email);
-            throw new RuntimeException("Invalid credentials");
-        }
-
+            throw new RuntimeException("Invalid credentials");}
         System.out.println("✅ Authentication successful: " + email + " (Role: " + account.getRole() + ")");
         return account;
     }
 
     @Override
     public void register(RegisterRequestDTO dto) throws Exception {
-
         if (accountRepository.isEmailExists(dto.getEmail())) {
             throw new BusinessException("Email đã tồn tại");
         }
 
-        String hash = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
+        if (accountRepository.isPhoneExists(dto.getPhone())) {
+            throw new BusinessException("SĐT đã tồn tại");
+        }
 
+        String hash = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
         String token = UUID.randomUUID().toString();
         Timestamp expireAt = new Timestamp(
                 System.currentTimeMillis() + 60 * 1000
@@ -99,28 +90,22 @@ public class AuthServiceImpl implements AuthService {
 
         String verifyLink =
                 "http://localhost:8080/bcb/verify-email?token=" + token;
-
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
     }
 
+
     @Override
     public void verifyEmail(String token) throws Exception {
-
         EmailVerification ev =
                 emailVerificationRepository.findByToken(token);
-
         if (ev == null)
             throw new BusinessException("Token không hợp lệ");
-
-        if (ev.isExpired()) {
+        if (ev.isExpired()){
             emailVerificationRepository.deleteByToken(token);
-            throw new BusinessException("Token hết hạn");
-        }
-
-        if (accountRepository.findByEmail(ev.getEmail()).isPresent()) {
+            throw new BusinessException("Token hết hạn");}
+        if (accountRepository.findByEmail(ev.getEmail()).isPresent()){
             emailVerificationRepository.deleteByToken(token);
-            return;
-        }
+            return;}
 
         Account acc = new Account();
         acc.setEmail(ev.getEmail());
@@ -132,7 +117,6 @@ public class AuthServiceImpl implements AuthService {
         accountRepository.register(acc);
         emailVerificationRepository.deleteByToken(token);
     }
-
 
     @Override
     public void forgotPassword(String email) throws BusinessException {
@@ -160,9 +144,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String hashPassword(String plainPassword) {
         if (plainPassword == null || plainPassword.isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be null or empty");
-        }
-
+        throw new IllegalArgumentException("Password cannot be null or empty");}
         return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
     }
 

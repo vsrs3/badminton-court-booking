@@ -1,208 +1,297 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+    String error = (String) request.getAttribute("error");
+    String step = (String) request.getAttribute("step");
+%>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quên mật khẩu</title>
+    <title>Quên mật khẩu - BadmintonPro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/auth.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #6dd5fa, #2980b9);
+        .form-input-wrapper {
+            position: relative;
         }
 
-        .card {
-            width: 420px;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-        }
-
-        .error {
-            background: #ffe6e6;
-            border: 1px solid #ff4d4d;
-            color: #c0392b;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-
-        button {
-            padding: 8px 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .eye {
+        .password-toggle {
             position: absolute;
-            right: 10px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
+            background: none;
+            border: none;
             cursor: pointer;
-            user-select: none;
+            padding: 0;
+            z-index: 5;
         }
 
-        .rule-container {
-            display: none;
-            margin-top: 8px;
-            font-size: 13px;
-            display: none;
-            flex-wrap: wrap;
-            gap: 10px;
+        .password-toggle i {
+            font-size: 1.1rem;
+            color: #666;
         }
 
-        .rule-container span {
-            color: red;
-        }
-
-        .match-error {
-            color: red;
-            font-size: 13px;
-            margin-top: 6px;
-            display: none;
+        .form-input {
+            padding-right: 45px; /* chừa chỗ cho icon */
         }
     </style>
 </head>
 
 <body>
-<div class="card">
+<div class="auth-page">
 
-    <h3>Quên mật khẩu</h3>
-
-    <% if (request.getAttribute("error") != null) { %>
-    <div class="error">
-        <%= request.getAttribute("error") %>
+    <!-- Back -->
+    <div class="back-to-home">
+        <a href="${pageContext.request.contextPath}/" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            <span>Trang chủ</span>
+        </a>
     </div>
-    <% } %>
-    <%
-        String step = (String) request.getAttribute("step");
-        if (step == null) {
-    %>
 
-    <!-- =========================
-         BƯỚC 1: NHẬP EMAIL
-    ========================== -->
-    <form method="post" action="${pageContext.request.contextPath}/forgot-password">
-        <input type="hidden" name="action" value="checkEmail"/>
+    <div class="auth-card">
 
-        <label>Vui lòng nhập email</label><br>
-        <input type="email" name="email" required/><br><br>
-
-        <button type="submit">Xác nhận</button>
-    </form>
-    <% } else { %>
-
-    <!-- =========================
-         BƯỚC 2: RESET PASSWORD
-    ========================== -->
-    <form method="post"
-          action="${pageContext.request.contextPath}/forgot-password"
-          onsubmit="return validateForm()">
-
-        <input type="hidden" name="action" value="reset"/>
-        <input type="hidden" name="email"
-               value="<%= request.getAttribute("email") %>"/>
-
-        <!-- PASSWORD -->
-        <label>Mật khẩu mới</label>
-        <div style="position:relative;">
-            <input type="password" id="password" name="password" required/>
-            <span class="eye"
-                  onclick="togglePassword('password', this)">👁</span>
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="auth-logo">
+                <i class="bi bi-trophy-fill"></i>
+            </div>
+            <h1 class="auth-brand-name">
+                CHỌN SÂN <span class="highlight">CHƠI NGAY</span>
+            </h1>
+            <p class="auth-tagline">Khôi phục mật khẩu tài khoản</p>
         </div>
-        <!-- RULES -->
-        <div id="ruleContainer" class="rule-container">
-            <span id="ruleLength">≥ 8 ký tự</span>
-            <span id="ruleUpper">Ít nhất 1 chữ in hoa</span>
-            <span id="ruleNumber">Ít nhất 1 chữ số</span>
-            <span id="ruleSpecial">Ít nhất 1 ký tự đặc biệt</span>
+
+        <!-- Body -->
+        <div class="auth-body">
+
+            <h2 class="auth-title">Quên mật khẩu</h2>
+            <p class="auth-subtitle">Lấy lại quyền truy cập của bạn</p>
+            <% if (error != null) { %>
+            <div class="mt-3 p-3 rounded"
+                 style="background:#FEE2E2;border:1px solid #EF4444;">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                <span class="text-danger fw-semibold">
+                    <%= error %>
+                </span>
+            </div>
+            <% } %>
+
+            <% if (step == null) { %>
+
+            <!-- ================= STEP 1 ================= -->
+            <form method="post"
+                  action="${pageContext.request.contextPath}/forgot-password"
+                  class="auth-form mt-4">
+
+                <input type="hidden" name="action" value="checkEmail"/>
+
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <div class="form-input-wrapper">
+                        <i class="bi bi-envelope-fill form-input-icon"></i>
+                        <input type="email"
+                               name="email"
+                               class="form-input"
+                               placeholder="you@example.com"
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-submit-btn mt-3">
+                    <i class="bi bi-send-fill"></i>
+                    <span>Xác nhận</span>
+                </button>
+
+            </form>
+
+            <% } else { %>
+
+            <!-- ================= STEP 2 ================= -->
+            <form method="post"
+                  action="${pageContext.request.contextPath}/forgot-password"
+                  onsubmit="return validateForm()"
+                  class="auth-form mt-4">
+
+                <input type="hidden" name="action" value="reset"/>
+                <input type="hidden" name="email"
+                       value="<%= request.getAttribute("email") %>"/>
+
+                <!-- PASSWORD -->
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu mới</label>
+                    <div class="form-input-wrapper">
+                        <i class="bi bi-lock-fill form-input-icon"></i>
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               class="form-input"
+                               required>
+                        <button type="button" class="password-toggle" id="togglePassword1">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONFIRM -->
+                <div class="form-group">
+                    <label class="form-label">Nhập lại mật khẩu</label>
+                    <div class="form-input-wrapper">
+                        <i class="bi bi-shield-lock-fill form-input-icon"></i>
+                        <input type="password"
+                               id="repassword"
+                               name="repassword"
+                               class="form-input"
+                               required>
+                        <button type="button" class="password-toggle" id="togglePassword2">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RULES -->
+                <div id="ruleContainer"
+                     class="mt-2 small text-danger"
+                     style="display:none;">
+                    <div id="ruleLength">≥ 8 ký tự</div>
+                    <div id="ruleUpper">Ít nhất 1 chữ in hoa</div>
+                    <div id="ruleNumber">Ít nhất 1 chữ số</div>
+                    <div id="ruleSpecial">Ít nhất 1 ký tự đặc biệt</div>
+                </div>
+
+                <div id="matchError"
+                     class="text-danger small mt-2"
+                     style="display:none;">
+                    Mật khẩu không khớp
+                </div>
+
+                <button type="submit" class="auth-submit-btn mt-3">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>Lưu mật khẩu</span>
+                </button>
+
+            </form>
+
+            <% } %>
+
         </div>
-        <br>
-        <!-- CONFIRM PASSWORD -->
-        <label>Nhập lại mật khẩu</label>
-        <div style="position:relative;">
-            <input type="password" id="repassword" name="repassword" required/>
-            <span class="eye"
-                  onclick="togglePassword('repassword', this)">👁</span>
-        </div>
-        <div id="matchError" class="match-error">
-            Mật khẩu không khớp
-        </div>
-        <button type="submit">Lưu mật khẩu</button>
-    </form>
-    <% } %>
+
+
+    </div>
 </div>
+
 <script>
-    function togglePassword(inputId, icon) {
-        const input = document.getElementById(inputId);
-        if (input.type === "password") {
-            input.type = "text";
-            icon.innerText = "🙈";
-        } else {
-            input.type = "password";
-            icon.innerText = "👁";
-        }
-    }
     function validateForm() {
+
         const pw = document.getElementById("password").value;
         const repw = document.getElementById("repassword").value;
+
         const ruleContainer = document.getElementById("ruleContainer");
         const ruleLength = document.getElementById("ruleLength");
         const ruleUpper = document.getElementById("ruleUpper");
         const ruleNumber = document.getElementById("ruleNumber");
         const ruleSpecial = document.getElementById("ruleSpecial");
+
         const matchError = document.getElementById("matchError");
+
         let isValid = true;
-        ruleContainer.style.display = "flex";
-        // ≥ 8 ký tự
+        let hasAnyRuleError = false;
+
+        // ===== CHECK ≥ 8 ký tự =====
         if (pw.length < 8) {
-            ruleLength.style.display = "inline";
+            ruleLength.style.display = "block";
+            hasAnyRuleError = true;
             isValid = false;
         } else {
             ruleLength.style.display = "none";
         }
-        // 1 chữ in hoa
+
+        // ===== CHECK chữ in hoa =====
         if (!/[A-Z]/.test(pw)) {
-            ruleUpper.style.display = "inline";
+            ruleUpper.style.display = "block";
+            hasAnyRuleError = true;
             isValid = false;
         } else {
             ruleUpper.style.display = "none";
-        }// 1 chữ số
+        }
+
+        // ===== CHECK chữ số =====
         if (!/[0-9]/.test(pw)) {
-            ruleNumber.style.display = "inline";
+            ruleNumber.style.display = "block";
+            hasAnyRuleError = true;
             isValid = false;
         } else {
             ruleNumber.style.display = "none";
         }
-        // 1 ký tự đặc biệt
+
+        // ===== CHECK ký tự đặc biệt =====
         if (!/[^A-Za-z0-9]/.test(pw)) {
-            ruleSpecial.style.display = "inline";
+            ruleSpecial.style.display = "block";
+            hasAnyRuleError = true;
             isValid = false;
         } else {
             ruleSpecial.style.display = "none";
         }
-        // Confirm password
+
+        // ===== Hiển thị container nếu có lỗi =====
+        if (hasAnyRuleError) {
+            ruleContainer.style.display = "block";
+        } else {
+            ruleContainer.style.display = "none";
+        }
+
+        // ===== Confirm password =====
         if (pw !== repw) {
             matchError.style.display = "block";
             isValid = false;
         } else {
             matchError.style.display = "none";
         }
+
         return isValid;
     }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const toggle1 = document.getElementById("togglePassword1");
+        const toggle2 = document.getElementById("togglePassword2");
+
+        const password = document.getElementById("password");
+        const repassword = document.getElementById("repassword");
+
+        function setupToggle(toggleBtn, inputField) {
+            if (!toggleBtn) return;
+
+            toggleBtn.addEventListener("click", function() {
+                const type = inputField.type === "password" ? "text" : "password";
+                inputField.type = type;
+
+                const icon = this.querySelector("i");
+                if (type === "password") {
+                    icon.classList.remove("bi-eye-slash-fill");
+                    icon.classList.add("bi-eye-fill");
+                } else {
+                    icon.classList.remove("bi-eye-fill");
+                    icon.classList.add("bi-eye-slash-fill");
+                }
+            });
+        }
+
+        setupToggle(toggle1, password);
+        setupToggle(toggle2, repassword);
+
+    });
 </script>
 </body>
 </html>

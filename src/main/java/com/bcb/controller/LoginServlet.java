@@ -1,15 +1,12 @@
 package com.bcb.controller;
-
-import com.bcb.dao.AccountDAO;
 import com.bcb.model.Account;
+import com.bcb.repository.impl.AccountRepositoryImpl;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
-
 /**
  *
  * @author Nguyen Minh Duc
@@ -36,7 +33,7 @@ public class LoginServlet extends HttpServlet {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
-        AccountDAO dao = new AccountDAO();
+        AccountRepositoryImpl dao = new AccountRepositoryImpl();
         Account acc;
 
         try {

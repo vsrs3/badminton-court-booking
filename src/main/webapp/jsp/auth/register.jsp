@@ -1,229 +1,177 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: Nguyen Minh Duc
-  Date: 04/02/2026
-  Time: 7:37 CH
-  To change this template use File | Settings | File Templates.
---%>
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đăng ký tài khoản</title>
-    <style>
-        form {
-            width: 100%;
-        }
-        .form-group {
-            margin-bottom: 14px;
-            position: relative;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-        /* lỗi inline */
-        .error {
-            color: red;
-            font-size: 12px;
-            display: none;
-            margin-top: 4px;
-        }
-        /* password eye */
-        .eye {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            user-select: none;
-        }
-        .alert {
-            background: #ffe6e6;
-            border: 1px solid #ff4d4d;
-            color: #c0392b;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .alert {
-            transition: opacity 0.5s;
-        }
-        button {
-            padding: 8px 16px;
-            cursor: pointer;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            min-height: 100vh;
-            margin: 0;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - BadmintonPro</title>
 
-            /* 👇 3 dòng quyết định */
-            display: flex;
-            justify-content: center;   /* căn giữa ngang */
-            align-items: center;       /* căn giữa dọc */
-            background: linear-gradient(135deg, #6dd5fa, #2980b9);
-        }
-        .register-card{
-            width: 420px;
-            background: #ffffff;
-            padding: 30px 32px;
-            border-radius: 10px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-        }
-    </style>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/auth.css">
 </head>
-
 <body>
+<div class="auth-page">
 
-    <div class="register-card">
-    <% if (request.getAttribute("error") != null) { %>
-    <div class="alert" id="alertBox">
-        <%= request.getAttribute("error") %>
+    <!-- Back -->
+    <div class="back-to-home">
+        <a href="${pageContext.request.contextPath}/" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            <span>Trang chủ</span>
+        </a>
     </div>
-    <% } %>
 
-    <h3>Đăng ký tài khoản</h3>
-    <form action="${pageContext.request.contextPath}/register" method="post" onsubmit="return validateForm()">
-        <!-- EMAIL -->
-        <div class="form-group">
-            <label><span style="color:red">*</span> Email</label>
-            <input type="text" id="email" name="email"value="${oldEmail != null ? oldEmail : ''}">
-            <div class="error" id="emailError"></div>
-        </div>
-        <!-- PASSWORD -->
-        <div class="form-group">
-            <label><span style="color:red">*</span> Mật khẩu</label>
-            <input type="password" id="password" name="password"value="${oldPasword != null ? oldPasword : ''}">
-            <span class="eye" onclick="togglePassword()">👁</span>
-            <div class="error" id="pwError"></div>
+    <div class="auth-card">
+
+        <!-- Header -->
+        <div class="auth-header text-center">
+            <div class="auth-logo">
+                <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <h1 class="auth-brand-name">
+                TẠO TÀI KHOẢN <span class="highlight">MỚI</span>
+            </h1>
+            <p class="auth-tagline">Tham gia hệ thống đặt sân cầu lông</p>
         </div>
 
-        <!-- CONFIRM PASSWORD -->
-        <div class="form-group">
-            <label><span style="color:red">*</span> Nhập lại mật khẩu</label>
-            <input type="password" id="repassword" name="repassword"value="${oldPasword != null ? oldPasword : ''}">
-            <span class="eye" onclick="togglePassword()">👁</span>
-            <div class="error" id="rePwError"></div>
+        <div class="auth-body">
+            <h2 class="auth-title">Đăng ký</h2>
+            <p class="auth-subtitle">Điền thông tin bên dưới</p>
+
+            <!-- Server Error -->
+            <% if (request.getAttribute("error") != null) { %>
+            <div class="alert alert-danger d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span><%= request.getAttribute("error") %></span>
+            </div>
+            <% } %>
+
+            <!-- FORM -->
+            <form method="POST"
+                  action="${pageContext.request.contextPath}/register"
+                  class="auth-form"
+                  onsubmit="return validateForm()">
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email *</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-envelope-fill"></i>
+                        </span>
+                        <input type="email"
+                               class="form-control"
+                               name="email"
+                               id="email"
+                               value="${oldEmail != null ? oldEmail : ''}"
+                               required>
+                    </div>
+                    <div class="text-danger small" id="emailError"></div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu *</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-lock-fill"></i>
+                        </span>
+                        <input type="password"
+                               class="form-control"
+                               name="password"
+                               id="password"
+                               value="${oldPassword != null ? oldPassword : ''}"
+                               required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                            <i class="bi bi-eye-fill" id="pwIcon"></i>
+                        </button>
+                    </div>
+                    <div class="text-danger small" id="pwError"></div>
+                </div>
+
+                <!-- Confirm -->
+                <div class="mb-3">
+                    <label class="form-label">Nhập lại mật khẩu *</label>
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </span>
+
+                        <input type="password"
+                               class="form-control"
+                               name="repassword"
+                               id="repassword"
+                               value="${oldPassword != null ? oldPassword : ''}"
+                               required>
+                    </div>
+                    <div class="text-danger small" id="rePwError"></div>
+                </div>
+                <!-- Full Name -->
+                <div class="mb-3">
+                    <label class="form-label">Họ và tên *</label>
+                    <input type="text"
+                           class="form-control"
+                           name="fullName"
+                           id="fullName"
+                           value="${oldFullName != null ? oldFullName : ''}"
+                           required>
+                    <div class="text-danger small" id="nameError"></div>
+                </div>
+                <!-- Phone -->
+                <div class="mb-3">
+                    <label class="form-label">Số điện thoại *</label>
+                    <input type="text"
+                           class="form-control"
+                           name="phone"
+                           id="phone"
+                           value="${oldPhone != null ? oldPhone : ''}"
+                           required>
+                    <div class="text-danger small" id="phoneError"></div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-person-check-fill"></i>
+                    Đăng ký
+                </button>
+
+            </form>
+
+            <div class="auth-divider">
+                <span>Hoặc</span>
+            </div>
+
+            <p class="text-center mt-3">
+                Đã có tài khoản?
+                <a href="${pageContext.request.contextPath}/jsp/auth/login.jsp">
+                    Đăng nhập ngay
+                </a>
+            </p>
+
         </div>
-
-
-        <!-- FULL NAME -->
-        <div class="form-group">
-            <label><span style="color:red">*</span> Họ và tên</label>
-            <input type="text" id="fullName" name="fullName"value="${oldFullName != null ? oldFullName : ''}">
-            <div class="error" id="nameError"></div>
-        </div>
-
-        <!-- PHONE (OPTIONAL) -->
-        <div class="form-group">
-            <label><span style="color:red">*</span> Số điện thoại</label>
-            <input type="text" id="phone" name="phone"
-                   value="${oldPhone != null ? oldPhone : ''}">
-            <div class="error" id="phoneError"></div>
-        </div>
-
-
-        <button type="submit">Đăng ký</button>
-    </form>
-    <script>
-        function togglePassword() {
-            const pw = document.getElementById("password");
-            const repw = document.getElementById("repassword");
-            const type = pw.type === "password" ? "text" : "password";
-            pw.type = type;
-            repw.type = type;
-        }
-
-        function showError(id, msg) {
-            const el = document.getElementById(id);
-            el.innerText = msg;
-            el.style.display = "block";
-        }
-
-        function hideErrors() {
-            document.querySelectorAll(".error").forEach(e => {
-                e.style.display = "none";
-            });
-        }
-
-        function validateForm() {
-            hideErrors();
-            let ok = true;
-
-            const email = emailEl = document.getElementById("email").value.trim();
-            const pw = document.getElementById("password").value;
-            const repw = document.getElementById("repassword").value;
-            const name = document.getElementById("fullName").value.trim();
-            const phone = document.getElementById("phone").value.trim();
-
-            // EMAIL
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showError(
-                    "emailError",
-                    "Email không hợp lệ. Ví dụ: tennguoidung@gmail.com"
-                );
-                ok = false;
-            }
-
-
-            // PASSWORD
-            if (
-                pw.length < 8 ||
-                !/[A-Z]/.test(pw) ||
-                !/[0-9]/.test(pw) ||
-                !/[^A-Za-z0-9]/.test(pw)
-            ) {
-                showError(
-                    "pwError",
-                    "Mật khẩu ≥8 ký tự, có in hoa, số và ký tự đặc biệt"
-                );
-                ok = false;
-            }
-
-            // CONFIRM
-            if (pw !== repw) {
-                showError("rePwError", "Mật khẩu không khớp");
-                ok = false;
-            }
-
-            // FULL NAME
-            if (name === "") {
-                showError("nameError", "Họ tên không được để trống");
-                ok = false;
-            }
-
-            // PHONE (OPTIONAL)
-            if (phone === "") {
-                showError("phoneError", "Số điện thoại không được để trống");
-                ok = false;
-            } else if (!/^[0-9]{10}$/.test(phone)) {
-                showError("phoneError", "Số điện thoại phải gồm đúng 10 chữ số");
-                ok = false;
-            }
-
-            return ok;
-        }
-
-    </script>
-
-    <script>
-        window.addEventListener("DOMContentLoaded", () => {
-            const alertBox = document.getElementById("alertBox");
-            if (alertBox) {
-                setTimeout(() => {
-                    alertBox.style.transition = "opacity 0.5s";
-                    alertBox.style.opacity = "0";
-                    setTimeout(() => alertBox.remove(), 500);
-                }, 5000); // 5 giây
-            }
-        });
-    </script>
-
+    </div>
 </div>
+
+<script>
+    function togglePassword() {
+        const pw = document.getElementById("password");
+        const repw = document.getElementById("repassword");
+        const icon = document.getElementById("pwIcon");
+
+        const type = pw.type === "password" ? "text" : "password";
+        pw.type = type;
+        repw.type = type;
+
+        icon.classList.toggle("bi-eye-fill");
+        icon.classList.toggle("bi-eye-slash-fill");
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
-

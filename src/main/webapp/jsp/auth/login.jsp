@@ -147,13 +147,13 @@
             </div>
 
             <!-- Social Login (Optional) -->
-            <a href="${pageContext.request.contextPath}/google-login"
-               style="text-decoration:none; width:100%;">
-                <button type="button" class="social-btn google">
+            <div class="d-grid mt-3">
+                <a href="${pageContext.request.contextPath}/google-login"
+                   class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2">
                     <i class="bi bi-google"></i>
-                    <span>Google</span>
-                </button>
-            </a>
+                    <span>Đăng nhập bằng Google</span>
+                </a>
+            </div>
 
         </div>
 

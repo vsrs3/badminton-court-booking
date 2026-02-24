@@ -1,6 +1,6 @@
 package com.bcb.controller;
 
-import com.bcb.dao.EmailVerificationDAO;
+
 import com.bcb.repository.impl.EmailVerificationRepositoryImpl;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -18,7 +18,9 @@ public class CleanupEmailVerificationController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+
         String token = request.getParameter("token");
+        System.out.println("❌ dddđ: " + token );
         if (token != null && !token.isEmpty()) {
             try {
                 EmailVerificationRepositoryImpl dao = new EmailVerificationRepositoryImpl();

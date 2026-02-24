@@ -1,6 +1,8 @@
 package com.bcb.controller;
 
 import com.bcb.exception.BusinessException;
+import com.bcb.model.EmailVerification;
+import com.bcb.repository.impl.EmailVerificationRepositoryImpl;
 import com.bcb.service.AuthService;
 import com.bcb.service.impl.AuthServiceImpl;
 
@@ -11,6 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class VerifyEmailController extends HttpServlet {
 
@@ -28,6 +32,32 @@ public class VerifyEmailController extends HttpServlet {
             return;
         }
 
+        EmailVerificationRepositoryImpl evDao = new EmailVerificationRepositoryImpl();
+        EmailVerification ev;
+
+        try {
+            ev = evDao.findByToken(token);
+        } catch (Exception e) {
+            throw new ServletException(e);
+        }
+
+        // 1️⃣ Token không tồn tại
+        if (ev == null) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token không hợp lệ");
+            return;
+        }
+
+        // 2️⃣ Token hết hạn
+        if (ev.isExpired()) {
+            try {
+                evDao.deleteByToken(token);
+            } catch (Exception ex) {
+                Logger.getLogger(VerifyEmailController.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token đã hết hạn");
+            return;
+        }
         try {
 
             // 2️⃣ Gọi service xử lý toàn bộ business logic
@@ -40,7 +70,7 @@ public class VerifyEmailController extends HttpServlet {
             }
 
             session = request.getSession(true);
-            session.setAttribute("verifiedEmail", "verified");
+            session.setAttribute("verifiedEmail", ev.getEmail());
 
             // 4️⃣ Redirect sau khi verify thành công
             response.sendRedirect(request.getContextPath() + "/google-link");
