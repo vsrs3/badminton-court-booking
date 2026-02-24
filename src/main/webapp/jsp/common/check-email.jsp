@@ -54,12 +54,14 @@
             </p>
         </div>
 
-<%--        <button type="button"--%>
-<%--                id="backBtn"--%>
-<%--                class="btn btn-outline-primary">--%>
-<%--            <i class="bi bi-arrow-left"></i>--%>
-<%--            Quay lại đăng ký--%>
-<%--        </button>--%>
+        <button
+                type="button"
+                id="backBtn"
+                class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i>
+            Quay lại đăng ký
+        </button>
+
     </div>
 
 </div>
@@ -76,7 +78,6 @@
     // CLEANUP FUNCTION
     // ===============================
     function cleanupAndRedirect() {
-
         clearInterval(interval);
         clearTimeout(timeout);
 
@@ -86,13 +87,13 @@
             formData.append("token", token);
 
             navigator.sendBeacon(
-                "<%= request.getContextPath() %>/cleanup-email",
+                "${pageContext.request.contextPath}/cleanup-email",
                 formData
             );
         }
         window.location.href =
             "${pageContext.request.contextPath}/jsp/auth/register.jsp";
-    }
+        }
     // ===============================
     // COUNTDOWN
     // ===============================
@@ -123,7 +124,6 @@
             cleanupAndRedirect();
         });
     }
-
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

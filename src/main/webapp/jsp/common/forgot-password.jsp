@@ -232,7 +232,6 @@
         } else {
             ruleNumber.style.display = "none";
         }
-
         // ===== CHECK ký tự đặc biệt =====
         if (!/[^A-Za-z0-9]/.test(pw)) {
             ruleSpecial.style.display = "block";
@@ -248,7 +247,6 @@
         } else {
             ruleContainer.style.display = "none";
         }
-
         // ===== Confirm password =====
         if (pw !== repw) {
             matchError.style.display = "block";

@@ -1,6 +1,5 @@
 package com.bcb.controller;
 
-
 import com.bcb.repository.impl.EmailVerificationRepositoryImpl;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
