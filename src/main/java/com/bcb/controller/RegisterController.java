@@ -36,17 +36,18 @@ public class RegisterController extends HttpServlet {
         try {
 
             // 3️⃣ Gọi Service xử lý business logic
-            authService.register(dto);
+            String token = authService.register(dto);
 
             // 4️⃣ Thành công → chuyển sang trang check email
-            response.sendRedirect(request.getContextPath()
-                    + "/jsp/common/check-email.jsp");
+            response.sendRedirect(
+                    request.getContextPath()
+                            + "/jsp/common/check-email.jsp?token=" + token
+            );
 
         } catch (BusinessException e) {
 
             // 5️⃣ Nếu lỗi nghiệp vụ → trả về form
             request.setAttribute("error", e.getMessage());
-
             request.setAttribute("oldEmail", email);
             request.setAttribute("oldFullName", fullName);
             request.setAttribute("oldPhone", phone);

@@ -36,7 +36,7 @@ public interface AuthService {
      */
     String hashPassword(String plainPassword);
 
-    void register(RegisterRequestDTO dto) throws Exception;
+    String register(RegisterRequestDTO dto) throws Exception;
 
     void verifyEmail(String token) throws Exception;
 

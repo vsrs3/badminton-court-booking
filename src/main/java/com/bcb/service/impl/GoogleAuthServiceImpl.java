@@ -42,7 +42,7 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
         System.out.println("llll" + verifiedEmail);
         if (!verifiedEmail.equalsIgnoreCase(googleEmail)) {
         throw new BusinessException(
-        "Đây không phải tài khoản email bạn đã đăng kýyyyy.");}
+        "Đây không phải tài khoản email bạn đã đăng ký.");}
         Account acc = accountRepository.findByEmailAnyStatus(googleEmail);
         if (acc.getGoogleId() == null) {
             accountRepository.updateGoogleId(

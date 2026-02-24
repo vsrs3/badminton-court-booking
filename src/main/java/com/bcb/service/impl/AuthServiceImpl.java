@@ -63,7 +63,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void register(RegisterRequestDTO dto) throws Exception {
+    public String register(RegisterRequestDTO dto) throws Exception {
+
         if (accountRepository.isEmailExists(dto.getEmail())) {
             throw new BusinessException("Email đã tồn tại");
         }
@@ -89,9 +90,12 @@ public class AuthServiceImpl implements AuthService {
         );
 
         String verifyLink =
-                "http://localhost:8080/bcb/verify-email?token=" + token;
+                "http://localhost:8080/badminton_court_booking/verify-email?token=" + token;
+
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
+        return token; // 🔥 QUAN TRỌNG
     }
+
 
 
     @Override

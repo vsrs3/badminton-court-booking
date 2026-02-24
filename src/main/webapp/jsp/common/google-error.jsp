@@ -46,10 +46,12 @@
 
         <!-- Body -->
         <div class="auth-body text-center">
+
             <h2 class="auth-title text-danger">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 Đăng nhập thất bại
             </h2>
+
             <div class="mt-3 p-3 rounded"
                  style="background-color: #FEE2E2; border: 1px solid #EF4444;">
                 <span style="color:#B91C1C; font-weight:600;">
@@ -65,10 +67,9 @@
                     <span>Chọn lại tài khoản Google</span>
                 </a>
             </div>
+
         </div>
-
     </div>
-
 </div>
 
 <!-- Bootstrap JS -->

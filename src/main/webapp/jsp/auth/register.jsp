@@ -8,8 +8,6 @@
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
@@ -17,6 +15,13 @@
 
     <style>
         .form-input-wrapper { position: relative; }
+
+        /* Ẩn icon tự sinh trong auth.css nếu có */
+        .form-input-wrapper i.bi-eye-fill.form-input-icon,
+        .form-input-wrapper i.bi-eye-slash-fill.form-input-icon {
+            display: none !important;
+        }
+
         .password-toggle {
             position: absolute;
             right: 12px;
@@ -26,6 +31,7 @@
             border: none;
             cursor: pointer;
         }
+
         .form-input { padding-right: 45px; }
     </style>
 </head>
@@ -54,6 +60,7 @@
         </div>
 
         <div class="auth-body">
+
             <h2 class="auth-title">Đăng ký</h2>
             <p class="auth-subtitle">Điền thông tin bên dưới</p>
 
@@ -76,7 +83,6 @@
                         <i class="bi bi-envelope-fill form-input-icon"></i>
                         <input type="email" class="form-input"
                                id="email" name="email"
-                               value="${oldEmail != null ? oldEmail : ''}"
                                required>
                     </div>
                     <div class="text-danger small" id="emailError"></div>
@@ -84,18 +90,15 @@
 
                 <!-- PASSWORD -->
                 <div class="form-group mb-3">
-                    <label class="form-label">Mật khẩu *</label>
-                    <div class="form-input-wrapper">
-                        <i class="bi bi-lock-fill form-input-icon"></i>
-                        <input type="password" class="form-input"
-                               id="password" name="password"
-                               required>
-                        <button type="button"
-                                class="password-toggle"
-                                onclick="togglePassword('password', this)">
-                            <i class="bi bi-eye-fill"></i>
-                        </button>
-                    </div>
+                        <label class="form-label">Mật khẩu *</label>
+                        <div class="form-input-wrapper">
+                            <i class="bi bi-lock-fill form-input-icon"></i>
+                            <input type="password"
+                                   class="form-input"
+                                   id="password"
+                                   name="password"
+                                   required>
+                        </div>
 
                     <!-- RULES -->
                     <div id="pwRules" class="small text-danger mt-2" style="display:none;">
@@ -106,20 +109,19 @@
                     </div>
                 </div>
 
-                <!-- CONFIRM -->
+                <!-- CONFIRM PASSWORD -->
                 <div class="form-group mb-3">
+
                     <label class="form-label">Nhập lại mật khẩu *</label>
                     <div class="form-input-wrapper">
                         <i class="bi bi-shield-lock-fill form-input-icon"></i>
-                        <input type="password" class="form-input"
-                               id="repassword" name="repassword"
+                        <input type="password"
+                               class="form-input"
+                               id="repassword"
+                               name="repassword"
                                required>
-                        <button type="button"
-                                class="password-toggle"
-                                onclick="togglePassword('repassword', this)">
-                            <i class="bi bi-eye-fill"></i>
-                        </button>
                     </div>
+
                     <div class="text-danger small" id="rePwError"></div>
                 </div>
 
@@ -127,9 +129,7 @@
                 <div class="form-group mb-3">
                     <label class="form-label">Họ và tên *</label>
                     <input type="text" class="form-control"
-                           id="fullName" name="fullName"
-                           value="${oldFullName != null ? oldFullName : ''}"
-                           required>
+                           id="fullName" name="fullName" required>
                     <div class="text-danger small" id="nameError"></div>
                 </div>
 
@@ -137,9 +137,7 @@
                 <div class="form-group mb-3">
                     <label class="form-label">Số điện thoại *</label>
                     <input type="text" class="form-control"
-                           id="phone" name="phone"
-                           value="${oldPhone != null ? oldPhone : ''}"
-                           required>
+                           id="phone" name="phone" required>
                     <div class="text-danger small" id="phoneError"></div>
                 </div>
 
@@ -147,28 +145,22 @@
                     <i class="bi bi-person-check-fill"></i>
                     <span>Đăng ký</span>
                 </button>
+
             </form>
-
-            <div class="auth-divider mt-4">
-                <span>Đã có tài khoản?</span>
-            </div>
-
-            <p class="text-center mt-2">
-                <a href="${pageContext.request.contextPath}/jsp/auth/login.jsp">
-                    Đăng nhập ngay
-                </a>
-            </p>
 
         </div>
     </div>
 </div>
 
 <script>
-    function togglePassword(inputId, btn) {
-        const input = document.getElementById(inputId);
+    function togglePassword(btn) {
+        const wrapper = btn.closest(".form-input-wrapper");
+        const input = wrapper.querySelector("input");
         const icon = btn.querySelector("i");
+
         const type = input.type === "password" ? "text" : "password";
         input.type = type;
+
         icon.classList.toggle("bi-eye-fill");
         icon.classList.toggle("bi-eye-slash-fill");
     }
@@ -188,12 +180,10 @@
         const ruleUpper = document.getElementById("ruleUpper");
         const ruleNumber = document.getElementById("ruleNumber");
         const ruleSpecial = document.getElementById("ruleSpecial");
-        const rePwError = document.getElementById("rePwError");
 
+        document.querySelectorAll(".text-danger.small").forEach(e => e.innerText = "");
         pwRules.style.display = "none";
-        rePwError.innerText = "";
 
-        // EMAIL
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             document.getElementById("emailError").innerText = "Email không hợp lệ";
             valid = false;
@@ -201,34 +191,22 @@
 
         let hasPwError = false;
 
-        if (pw.length < 8) {
-            ruleLength.style.display = "block";
-            hasPwError = true;
-            valid = false;
-        } else ruleLength.style.display = "none";
+        if (pw.length < 8) { ruleLength.style.display = "block"; hasPwError = true; valid = false; }
+        else ruleLength.style.display = "none";
 
-        if (!/[A-Z]/.test(pw)) {
-            ruleUpper.style.display = "block";
-            hasPwError = true;
-            valid = false;
-        } else ruleUpper.style.display = "none";
+        if (!/[A-Z]/.test(pw)) { ruleUpper.style.display = "block"; hasPwError = true; valid = false; }
+        else ruleUpper.style.display = "none";
 
-        if (!/[0-9]/.test(pw)) {
-            ruleNumber.style.display = "block";
-            hasPwError = true;
-            valid = false;
-        } else ruleNumber.style.display = "none";
+        if (!/[0-9]/.test(pw)) { ruleNumber.style.display = "block"; hasPwError = true; valid = false; }
+        else ruleNumber.style.display = "none";
 
-        if (!/[^A-Za-z0-9]/.test(pw)) {
-            ruleSpecial.style.display = "block";
-            hasPwError = true;
-            valid = false;
-        } else ruleSpecial.style.display = "none";
+        if (!/[^A-Za-z0-9]/.test(pw)) { ruleSpecial.style.display = "block"; hasPwError = true; valid = false; }
+        else ruleSpecial.style.display = "none";
 
         if (hasPwError) pwRules.style.display = "block";
 
         if (pw !== repw) {
-            rePwError.innerText = "Mật khẩu không khớp";
+            document.getElementById("rePwError").innerText = "Mật khẩu không khớp";
             valid = false;
         }
 
@@ -244,6 +222,34 @@
 
         return valid;
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const passwordInputs = document.querySelectorAll('input[type="password"]');
+
+        passwordInputs.forEach(input => {
+
+            const wrapper = input.closest(".form-input-wrapper");
+
+            const toggleBtn = document.createElement("button");
+            toggleBtn.type = "button";
+            toggleBtn.className = "password-toggle";
+
+            toggleBtn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+
+            wrapper.appendChild(toggleBtn);
+
+            toggleBtn.addEventListener("click", function () {
+                const type = input.type === "password" ? "text" : "password";
+                input.type = type;
+
+                const icon = this.querySelector("i");
+                icon.classList.toggle("bi-eye-fill");
+                icon.classList.toggle("bi-eye-slash-fill");
+            });
+        });
+
+    });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

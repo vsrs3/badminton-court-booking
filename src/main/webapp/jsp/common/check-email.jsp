@@ -77,23 +77,33 @@
     // ===============================
     // CLEANUP FUNCTION
     // ===============================
-    function cleanupAndRedirect() {
+    async function cleanupAndRedirect() {
+
         clearInterval(interval);
         clearTimeout(timeout);
 
         if (token && token !== "") {
-
-            const formData = new FormData();
-            formData.append("token", token);
-
-            navigator.sendBeacon(
-                "${pageContext.request.contextPath}/cleanup-email",
-                formData
-            );
+            try {
+                await fetch(
+                    "${pageContext.request.contextPath}/cleanup-email",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: "token=" + encodeURIComponent(token)
+                    }
+                );
+            } catch (e) {
+                console.log("Cleanup lỗi:", e);
+            }
         }
+
         window.location.href =
             "${pageContext.request.contextPath}/jsp/auth/register.jsp";
-        }
+    }
+
+
     // ===============================
     // COUNTDOWN
     // ===============================
