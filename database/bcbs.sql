@@ -96,6 +96,13 @@ CREATE TABLE CourtType (
 );
 GO
 
+INSERT INTO CourtType (type_code, description)
+VALUES
+    ('NORMAL', N'Sân tiêu chuẩn'),
+    ('VIP',    N'Sân VIP chất lượng cao');
+
+
+
 
 -- Court
 CREATE TABLE Court (
@@ -116,10 +123,68 @@ GO
 CREATE TABLE TimeSlot (
                           slot_id INT IDENTITY PRIMARY KEY,
                           start_time TIME NOT NULL,
-                          end_time TIME NOT NULL,
+                          end_time TIME NOT NULL
 
 );
 GO
+
+INSERT INTO TimeSlot (start_time, end_time)
+VALUES
+-- 00:00 - 06:00 (12 slots)
+('00:00', '00:30'),
+('00:30', '01:00'),
+('01:00', '01:30'),
+('01:30', '02:00'),
+('02:00', '02:30'),
+('02:30', '03:00'),
+('03:00', '03:30'),
+('03:30', '04:00'),
+('04:00', '04:30'),
+('04:30', '05:00'),
+('05:00', '05:30'),
+('05:30', '06:00'),
+
+-- 06:00 - 12:00 (12 slots)
+('06:00', '06:30'),
+('06:30', '07:00'),
+('07:00', '07:30'),
+('07:30', '08:00'),
+('08:00', '08:30'),
+('08:30', '09:00'),
+('09:00', '09:30'),
+('09:30', '10:00'),
+('10:00', '10:30'),
+('10:30', '11:00'),
+('11:00', '11:30'),
+('11:30', '12:00'),
+
+-- 12:00 - 18:00 (12 slots)
+('12:00', '12:30'),
+('12:30', '13:00'),
+('13:00', '13:30'),
+('13:30', '14:00'),
+('14:00', '14:30'),
+('14:30', '15:00'),
+('15:00', '15:30'),
+('15:30', '16:00'),
+('16:00', '16:30'),
+('16:30', '17:00'),
+('17:00', '17:30'),
+('17:30', '18:00'),
+
+-- 18:00 - 24:00 (12 slots)
+('18:00', '18:30'),
+('18:30', '19:00'),
+('19:00', '19:30'),
+('19:30', '20:00'),
+('20:00', '20:30'),
+('20:30', '21:00'),
+('21:00', '21:30'),
+('21:30', '22:00'),
+('22:00', '22:30'),
+('22:30', '23:00'),
+('23:00', '23:30'),
+('23:30', '23:59:59');
 
 
 CREATE TABLE FacilityPriceRule (
@@ -129,15 +194,17 @@ CREATE TABLE FacilityPriceRule (
                                    court_type_id INT NOT NULL,
                                    day_type VARCHAR(10)
                                        CHECK (day_type IN ('WEEKDAY','WEEKEND')) NOT NULL,
-                                   slot_id INT NOT NULL,
 
-                                   price DECIMAL(10,2) NOT NULL,
+                                   --slot_id INT NOT NULL,
+                                   start_time TIME NOT NULL, -- thay cho slotid
+                                   end_time TIME NOT NULL, -- thay cho slotid
+
+                                   price DECIMAL(10,2) NOT NULL, -- cho slot 30p backend se xu ly 1h
 
                                    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
                                    FOREIGN KEY (court_type_id) REFERENCES CourtType(court_type_id),
-                                   FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-                                   UNIQUE (facility_id, court_type_id, day_type, slot_id)
+                                   CHECK (end_time > start_time)
 );
 GO
 
@@ -575,7 +642,7 @@ BEGIN
 INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
 VALUES (
            'customer@test.com',
-           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
            N'Nguyễn Văn Customer',
            '0901234567',
            'CUSTOMER',
@@ -590,7 +657,7 @@ BEGIN
 INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
 VALUES (
            'staff@test.com',
-           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
            N'Trần Thị Staff',
            '0902234567',
            'STAFF',
@@ -605,7 +672,7 @@ BEGIN
 INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
 VALUES (
            'owner@test.com',
-           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
            N'Lê Văn Owner',
            '0903234567',
            'OWNER',
@@ -620,7 +687,7 @@ BEGIN
 INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
 VALUES (
            'admin@test.com',
-           '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
            N'Phạm Thị Admin',
            '0904234567',
            'ADMIN',
