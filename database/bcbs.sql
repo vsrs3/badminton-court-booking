@@ -287,7 +287,6 @@ CREATE TABLE Booking (
                          booking_id INT IDENTITY PRIMARY KEY,
 
                          recurring_id INT NULL,
-                        -- court_id INT NOT NULL, gan vao BookingSlot
                          facility_id INT NOT NULL, -- them de nhat quan, giam quer
                          booking_date DATE NOT NULL,
 
