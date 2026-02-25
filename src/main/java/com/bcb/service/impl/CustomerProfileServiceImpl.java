@@ -51,12 +51,15 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
             try {
                 // Nếu có upload mới
-                if(dto.getAvatarFile() != null && dto.getAvatarFile().getSize() > 0) {
-                	newAvatarPath = uploadService.saveImage(
-							dto.getAvatarFile(),
-							ConfigUpload.AVATAR_IMAGE_FOLDER
-					);
-					avatarPath = newAvatarPath;
+                if (dto.getAvatarFile() != null && dto.getAvatarFile().getSize() > 0) {
+
+                    // upload file mới
+                    newAvatarPath = uploadService.saveImage(
+                            dto.getAvatarFile(),
+                            ConfigUpload.AVATAR_IMAGE_FOLDER
+                    );
+
+                    avatarPath = newAvatarPath;
                 }
 
                 boolean isUpdateInfo = repo.updateAccountInfo(

@@ -8,13 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Badminton Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/components.css">
-    
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ============================================
            BADMINTON PRO - ROOT VARIABLES
@@ -92,11 +93,9 @@
             font-family: var(--font-family);
             background-color: var(--color-gray-100);
         }
-
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
-
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -177,12 +176,11 @@
             %>
             </div>
         </div>
-        
         <!-- Bottom Navigation -->
     	<%@ include file="../../common/bottom-nav.jsp" %>
-    	
+
     </div>
-    
+
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Add SweetAlert2 -->
