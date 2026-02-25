@@ -19,6 +19,14 @@
 <body>
 
 <div class="auth-page">
+    <% if (request.getAttribute("error") != null) { %>
+    <div style="margin-top: 1rem; padding: 0.875rem; background-color: #FEE2E2;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>
+        <%= request.getAttribute("error") %>
+    </span>
+    </div>
+    <% } %>
 
     <!-- Back to Home Button -->
     <div class="back-to-home">
@@ -112,7 +120,7 @@
                             Ghi nhớ đăng nhập
                         </label>
                     </div>
-                    <a href="${pageContext.request.contextPath}/auth/forgot-password" class="form-link">
+                    <a href="${pageContext.request.contextPath}/jsp/common/forgot-password.jsp" class="form-link">
                         Quên mật khẩu?
                     </a>
                 </div>
@@ -139,15 +147,12 @@
             </div>
 
             <!-- Social Login (Optional) -->
-            <div class="social-login">
-                <button type="button" class="social-btn google">
+            <div class="d-grid mt-3">
+                <a href="${pageContext.request.contextPath}/google-login"
+                   class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2">
                     <i class="bi bi-google"></i>
-                    <span>Google</span>
-                </button>
-                <button type="button" class="social-btn facebook">
-                    <i class="bi bi-facebook"></i>
-                    <span>Facebook</span>
-                </button>
+                    <span>Đăng nhập bằng Google</span>
+                </a>
             </div>
 
         </div>
@@ -156,7 +161,7 @@
         <div class="auth-footer">
             <p>
                 Chưa có tài khoản?
-                <a href="${pageContext.request.contextPath}/auth/register">Đăng ký ngay</a>
+                <a href="${pageContext.request.contextPath}/jsp/auth/register.jsp">Đăng ký ngay</a>
             </p>
         </div>
 
@@ -188,16 +193,13 @@
         <% if (request.getAttribute("error") != null) { %>
         alert('<%= request.getAttribute("error") %>');
         <% } %>
-
         // ============================================
         // PASSWORD TOGGLE
         // ============================================
-
         if (togglePasswordBtn) {
             togglePasswordBtn.addEventListener('click', function() {
                 const type = passwordInput.type === 'password' ? 'text' : 'password';
                 passwordInput.type = type;
-
                 const icon = this.querySelector('i');
                 if (type === 'password') {
                     icon.classList.remove('bi-eye-slash-fill');
@@ -208,16 +210,13 @@
                 }
             });
         }
-
         // ============================================
         // VALIDATION FUNCTIONS
         // ============================================
-
         function validateEmail(email) {
             const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return re.test(email);
         }
-
         function validatePassword(password) {
             return password.length >= 6;
         }
@@ -292,12 +291,10 @@
                 e.preventDefault();
                 return;
             }
-
             // Show loading state
             submitBtn.disabled = true;
             submitBtn.classList.add('loading');
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Đang xử lý...</span>';
-
             // Form will submit normally to server
         });
 
