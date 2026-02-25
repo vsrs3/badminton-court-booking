@@ -469,7 +469,7 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         // ✅ Get thumbnail image (queried separately)
         String imagePath = facilityRepository.findThumbnailPath(facility.getFacilityId());
         if (imagePath != null && !imagePath.isEmpty()) {
-            dto.setImageUrl("/badminton_court_booking/uploads/" + imagePath);
+            dto.setImageUrl("uploads/" + imagePath);
         } else {
             // Fallback placeholder
             dto.setImageUrl("https://placehold.co/800x450/064E3B/A3E635?text=" +

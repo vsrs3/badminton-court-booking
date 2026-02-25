@@ -2,6 +2,9 @@
  * BADMINTON PRO - Main Application JavaScript
  * Handles: Tabs, Search, Filters, Favorites, Court Details, API Integration
  */
+const contextPath = window.location.pathname.split('/')[1]
+    ? '/' + window.location.pathname.split('/')[1]
+    : '';
 
 (function() {
     'use strict';
@@ -392,7 +395,7 @@
         grid.innerHTML = AppState.filteredCourts.map(court => {
             return templateHTML
                 .replace(/{courtId}/g, court.id)
-                .replace(/{imageUrl}/g, court.imageUrl)
+                .replace(/{imageUrl}/g, contextPath + '/' + court.imageUrl)
                 .replace(/{courtName}/g, court.name)
                 .replace(/{rating}/g, court.rating.toFixed(1))
                 .replace(/{favoriteClass}/g, court.isFavorite ? 'is-favorite' : '')
@@ -600,7 +603,8 @@
         AppState.selectedCourt = court;
 
         // Populate detail panel
-        document.getElementById('detailBannerImg').src = court.imageUrl;
+        document.getElementById('detailBannerImg').src =
+            contextPath + '/' + court.imageUrl;
         document.getElementById('detailBannerImg').alt = court.name;
         document.getElementById('detailRating').textContent = `★ ${court.rating.toFixed(1)} (0 đánh giá)`;
         document.getElementById('detailTitle').textContent = court.name;
