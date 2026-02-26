@@ -17,8 +17,6 @@ GO
 -- Use the newly created database
 USE badminton_court_booking;
 GO
-
-
 -- Account
 CREATE TABLE Account (
                          account_id INT IDENTITY PRIMARY KEY,
@@ -29,21 +27,31 @@ CREATE TABLE Account (
                          phone NVARCHAR(20) UNIQUE NULL,
                          avatar_path NVARCHAR(500) NULL,
                          role VARCHAR(10)
-                             CHECK (role IN ('ADMIN','OWNER','STAFF','CUSTOMER')) NOT NULL,
+                         CHECK (role IN ('ADMIN','OWNER','STAFF','CUSTOMER')) NOT NULL,
                          is_active BIT DEFAULT 1,
                          created_at DATETIME DEFAULT GETDATE()
 );
 GO
-
-
+--Email Verification
+CREATE TABLE [dbo].[EmailVerification](
+[id] [int] IDENTITY(1,1) NOT NULL,
+[email] [nvarchar](255) NOT NULL,
+[password_hash] [nvarchar](255) NOT NULL,
+[full_name] [nvarchar](255) NOT NULL,
+[phone] [nvarchar](20) NULL,
+[role] [varchar](10) NOT NULL,
+    [token] [nvarchar](255) NOT NULL,
+    [expire_at] [datetime] NOT NULL,
+    [created_at] [datetime] NULL);
+GO
 -- Facility
 CREATE TABLE Facility (
-                          facility_id INT IDENTITY PRIMARY KEY,
+facility_id INT IDENTITY PRIMARY KEY,
 
-                          name NVARCHAR(255) NOT NULL,
+ name NVARCHAR(255) NOT NULL,
 
-                          province NVARCHAR(100),
-                          district NVARCHAR(100),
+ province NVARCHAR(100),
+district NVARCHAR(100),
                           ward NVARCHAR(100),
                           address NVARCHAR(255) NOT NULL,
 

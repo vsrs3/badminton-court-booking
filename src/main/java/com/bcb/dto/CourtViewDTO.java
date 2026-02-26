@@ -20,7 +20,6 @@ public class CourtViewDTO {
             String description,
             int courtTypeId,
             String courtTypeCode) {
-
         this.courtId = courtId;
         this.facilityId = facilityId;
         this.courtName = courtName;

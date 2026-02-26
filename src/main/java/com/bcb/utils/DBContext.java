@@ -12,22 +12,18 @@ import java.util.Properties;
  * Loads DB configuration from db.properties and provides Connection instances.
  */
 public class DBContext {
-
     private static final Properties props = new Properties();
     private static final String CONFIG_FILE = "/db.properties";
-
     static {
         try (InputStream input = DBContext.class.getResourceAsStream(CONFIG_FILE)) {
             if (input == null) {
                 throw new RuntimeException("Configuration file not found: " + CONFIG_FILE);
             }
             props.load(input);
-
             String driver = props.getProperty("db.driver");
             if (driver == null || driver.trim().isEmpty()) {
                 throw new RuntimeException("db.driver property not found in " + CONFIG_FILE);
             }
-
             Class.forName(driver);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load database configuration: " + e.getMessage(), e);
@@ -35,7 +31,6 @@ public class DBContext {
             throw new RuntimeException("Failed to load JDBC driver: " + e.getMessage(), e);
         }
     }
-
     /**
      * Gets a new database connection.
      *
@@ -57,10 +52,8 @@ public class DBContext {
             if (password == null) {
                 throw new RuntimeException("db.password property not found");
             }
-
-            return DriverManager.getConnection(url, username, password);
-        } catch (SQLException e) {
+            return DriverManager.getConnection(url, username, password);} catch (SQLException e) {
             throw new RuntimeException("Failed to establish database connection: " + e.getMessage(), e);
-        }
-    }
+            }
+      }
 }

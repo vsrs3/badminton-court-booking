@@ -38,7 +38,7 @@
                 String avatarPath = currentUser.getAvatarPath();
                 if (avatarPath != null && !avatarPath.isEmpty()) {
               %>
-              <img src="${pageContext.request.contextPath}/uploads/<%= avatarPath %>" alt="Avatar">
+              <img src="${pageContext.request.contextPath}/<%= avatarPath %>" alt="Avatar">
               <% } else {
                 // Generate default avatar with first letter
                 String fullName = currentUser.getFullName();
@@ -55,7 +55,7 @@
           <a href="${pageContext.request.contextPath}/auth/login" style="text-decoration: none" class="btn-auth btn-login">
             ĐĂNG NHẬP
           </a>
-          <a href="${pageContext.request.contextPath}/auth/login" style="text-decoration: none" class="btn-auth btn-register">
+          <a href="${pageContext.request.contextPath}/jsp/auth/register.jsp" style="text-decoration: none" class="btn-auth btn-register">
             ĐĂNG KÝ
           </a>
           <% } %>
@@ -63,7 +63,6 @@
       </div>
     </div>
   </div>
-
   <!-- Search & Actions Bar -->
   <div class="header-search-bar">
     <div class="search-container">

@@ -1,6 +1,8 @@
 package com.bcb.repository;
 
 import com.bcb.model.Account;
+
+import java.sql.SQLException;
 import java.util.Optional;
 
 /**
@@ -46,5 +48,24 @@ public interface AccountRepository {
      * @param email Email to check
      * @return true if exists
      */
+
+    public Account findByEmailAnyStatus(String email) throws SQLException;
+
     boolean existsByEmail(String email);
+
+    boolean isPhoneExists(String phone);
+
+    boolean isEmailExists(String email);
+
+    void register(Account acc);
+
+    void registerByGoogle(Account acc);
+
+    Account findByGoogleId(String googleId);
+
+    void updateGoogleId(int accountId, String googleId);
+
+    Account loginByEmailPassword(String email, String rawPassword);
+
+    void updatePassword(String email, String newHashedPassword);
 }
