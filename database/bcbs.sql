@@ -195,9 +195,8 @@ CREATE TABLE FacilityPriceRule (
                                    day_type VARCHAR(10)
                                        CHECK (day_type IN ('WEEKDAY','WEEKEND')) NOT NULL,
 
-                                   --slot_id INT NOT NULL,
-                                   start_time TIME NOT NULL, -- thay cho slotid
-                                   end_time TIME NOT NULL, -- thay cho slotid
+                                   start_time TIME NOT NULL,
+                                   end_time TIME NOT NULL,
 
                                    price DECIMAL(10,2) NOT NULL, -- cho slot 30p backend se xu ly 1h
 

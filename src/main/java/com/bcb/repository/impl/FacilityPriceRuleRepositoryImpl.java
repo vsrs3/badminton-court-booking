@@ -15,7 +15,7 @@ import java.util.Optional;
 public class FacilityPriceRuleRepositoryImpl implements FacilityPriceRuleRepository {
 
     @Override
-    public List<FacilityPriceRule> findByContext(int facilityId, int courtTypeId, String dayType) {
+    public List<FacilityPriceRule> findByFacilityAndCourtTypeAndDayType(int facilityId, int courtTypeId, String dayType) {
         String sql = "SELECT price_id, facility_id, court_type_id, day_type, start_time, end_time, price " +
                      "FROM FacilityPriceRule " +
                      "WHERE facility_id = ? AND court_type_id = ? AND day_type = ? " +

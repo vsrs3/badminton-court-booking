@@ -54,7 +54,7 @@ public class FacilityPriceRuleServiceImpl implements FacilityPriceRuleService {
                 : "WEEKDAY";
 
         // Get all price rules for this context
-        List<FacilityPriceRule> priceRules = facilityPriceRuleRepository.findByContext(
+        List<FacilityPriceRule> priceRules = facilityPriceRuleRepository.findByFacilityAndCourtTypeAndDayType(
                 facilityId, finalCourtTypeId, finalDayType);
 
         // Convert to DTO with price per hour (multiply by 2)
