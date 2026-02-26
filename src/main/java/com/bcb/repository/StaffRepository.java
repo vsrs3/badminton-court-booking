@@ -1,7 +1,9 @@
 package com.bcb.repository;
 
 import java.util.*;
+import com.bcb.model.Staff;
 import com.bcb.model.Account;
+import com.bcb.model.Facility;
 
 public interface StaffRepository {
 	
@@ -47,4 +49,18 @@ public interface StaffRepository {
 	 * @return Optional containing user or empty
 	 */
 	Optional<Account> findById(Integer accountId);
+	
+	
+	/**
+	 * Find facilities associated with a user by account ID.
+	 * @param accountId User ID
+	 * @return List of facilities associated with the user
+	 */
+	List<Facility> findFacilitiesById( Integer accountId);
+	
+	/**
+	 * Get all facilities for dropdown selection.
+	 * @return List of all facilities
+	 */
+	List<Facility> findAllFacilities();
 }

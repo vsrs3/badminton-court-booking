@@ -2,172 +2,13 @@
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
+
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/staff-list.css">
+
 <%@ include file="../layout/layout.jsp"%>
 <%@ include file="../layout/sidebar.jsp"%>
-
-<style>
-.bg-brand {
-	background-color: #064E3B !important;
-}
-
-.text-brand {
-	color: #064E3B !important;
-}
-
-.btn-brand {
-	background-color: #064E3B;
-	color: #fff;
-	border: none;
-}
-
-.btn-brand:hover {
-	background-color: #053d2f;
-	color: #fff;
-}
-
-.staff-card {
-	transition: all 0.25s;
-	border-radius: 1.25rem !important;
-	border: 1px solid #F3F4F6 !important;
-}
-
-.staff-card:hover {
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
-	transform: translateY(-4px);
-}
-
-.staff-avatar {
-	width: 76px;
-	height: 76px;
-	border-radius: 50%;
-	object-fit: cover;
-	border: 3px solid #F3F4F6;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.staff-avatar-placeholder {
-	width: 76px;
-	height: 76px;
-	border-radius: 50%;
-	background: #064E3B;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border: 3px solid #F3F4F6;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	font-size: 1.625rem;
-	font-weight: 900;
-	color: #A3E635;
-	flex-shrink: 0;
-}
-
-.status-dot {
-	width: 16px;
-	height: 16px;
-	border-radius: 50%;
-	border: 2.5px solid #fff;
-	position: absolute;
-	bottom: 3px;
-	right: 3px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.status-dot.active {
-	background: #22C55E;
-}
-
-.status-dot.inactive {
-	background: #9CA3AF;
-}
-
-.icon-box {
-	width: 32px;
-	height: 32px;
-	border-radius: 0.5rem;
-	background: #F3F4F6;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	color: #6B7280;
-}
-
-.info-block {
-	background: #F9FAFB;
-	border: 1px solid #F3F4F6;
-	border-radius: 0.875rem;
-	padding: 0.875rem;
-}
-
-.info-label {
-	font-size: 0.5rem;
-	font-weight: 900;
-	color: #9CA3AF;
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
-	margin-bottom: 0.2rem;
-}
-
-.info-value {
-	font-size: 0.8125rem;
-	font-weight: 700;
-	color: #111827;
-	margin: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.menu-item {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 0.625rem 0.875rem;
-	border-radius: 0.625rem;
-	font-size: 0.875rem;
-	font-weight: 600;
-	color: #374151;
-	text-decoration: none;
-	transition: background 0.15s;
-}
-
-.menu-item:hover {
-	background: #F9FAFB;
-	color: #374151;
-}
-
-.menu-item.danger {
-	color: #DC2626;
-}
-
-.menu-item.danger:hover {
-	background: #FEF2F2;
-}
-
-.menu-icon {
-	width: 28px;
-	height: 28px;
-	border-radius: 0.5rem;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-}
-
-.form-control:focus, .form-select:focus {
-	border-color: #064E3B !important;
-	box-shadow: 0 0 0 0.2rem rgba(6, 78, 59, 0.15) !important;
-}
-
-.page-item.active .page-link {
-	background-color: #064E3B;
-	border-color: #064E3B;
-}
-
-.page-link {
-	color: #064E3B;
-}
-</style>
 
 <div class="main-content">
 	<%@ include file="../layout/header.jsp"%>
@@ -239,11 +80,11 @@
 				</button>
 
 				<%-- Add Staff --%>
-				<a href="${pageContext.request.contextPath}/owner/staffs/create"
-					class="btn fw-bold rounded-3 text-nowrap"
-					style="padding: 0.5rem 1.25rem; font-size: 0.875rem; background: #F97316; color: #fff; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
-					<i class="bi bi-plus-lg me-1"></i> Thêm Nhân Viên
-				</a>
+				<button type="button" onclick="openHireModal()"
+						class="btn fw-bold rounded-3 text-nowrap"
+						style="padding: 0.5rem 1.25rem; font-size: 0.875rem; background: #A3E635; color: #000;">
+						<i class="bi bi-plus-lg me-1"></i> Thêm Nhân Viên
+					</button>
 			</form>
 		</div>
 
@@ -274,7 +115,7 @@
 
 										<%-- Avatar + status dot --%>
 										<div class="position-relative d-inline-block">
-											<a	style="text-decoration: none;"
+											<a style="text-decoration: none;"
 												href="${pageContext.request.contextPath}/owner/staffs/view/${staff.accountId}">
 												<c:choose>
 													<c:when test="${not empty staff.avatarPath}">
@@ -312,22 +153,6 @@
 														style="color: #3B82F6;"></i>
 												</span> Xem Chi Tiết
 												</a> <a
-													href="${pageContext.request.contextPath}/owner/staffs/edit/${staff.accountId}"
-													class="menu-item"> <span class="menu-icon"
-													style="background: #EFF6FF;"> <i
-														class="bi bi-pencil" style="color: #3B82F6;"></i>
-												</span> Chỉnh Sửa
-												</a> <a
-													href="${pageContext.request.contextPath}/owner/staffs/status/${staff.accountId}"
-													onclick="return confirm('${staff.isActive ? 'Vô hiệu hoá nhân viên này?' : 'Kích hoạt lại tài khoản này?'}')"
-													class="menu-item"
-													style="color:${staff.isActive ? '#D97706' : '#16A34A'};">
-													<span class="menu-icon"
-													style="background:${staff.isActive ? '#FEF3C7' : '#F0FDF4'};">
-														<i
-														class="bi ${staff.isActive ? 'bi-person-slash' : 'bi-person-check'}"></i>
-												</span> ${staff.isActive ? 'Vô Hiệu Hoá' : 'Kích Hoạt'}
-												</a> <a
 													href="${pageContext.request.contextPath}/owner/staffs/reset-password/${staff.accountId}"
 													onclick="return confirm('Gửi link đặt lại mật khẩu đến ' + '${staff.email}' + '?')"
 													class="menu-item"> <span class="menu-icon"
@@ -338,12 +163,15 @@
 
 												<hr class="my-1 mx-2">
 
-												<a href="#"
-													onclick="deleteStaff('${staff.accountId}','${staff.fullName}');return false;"
-													class="menu-item danger"> <span class="menu-icon"
-													style="background: #FEF2F2;"> <i class="bi bi-trash"
-														style="color: #DC2626;"></i>
-												</span> Xóa
+												<a
+													href="${pageContext.request.contextPath}/owner/staffs/toggle/${staff.accountId}?redirect=list"
+													class="menu-item"
+													style="color:${staff.isActive ? '#DC2626' : '#16A34A'};">
+													<span class="menu-icon"
+													style="background:${staff.isActive ? '#FEF2F2' : '#F0FDF4'};">
+														<i
+														class="bi ${staff.isActive ? 'bi-trash' : 'bi-person-check'}"></i>
+												</span> ${staff.isActive ? 'Xóa Nhân Viên' : 'Kích Hoạt'}
 												</a>
 											</div>
 										</div>
@@ -389,7 +217,7 @@
 										style="grid-template-columns: 1fr 1fr;">
 										<div>
 											<p class="info-label">Ngày Vào</p>
-											<p class="info-value">${not empty staff.createdAt ? staff.createdAt : '—'}</p>
+											<p class="info-value">${not empty staff.createdAt ? staff.createdAt.toString().substring(0,10) : '—'}</p>
 										</div>
 									</div>
 
@@ -425,6 +253,91 @@
 			</c:otherwise>
 		</c:choose>
 
+		<!-- HIRE STAFF MODAL -->
+		<div class="hs-modal-bg" id="hs-modal">
+			<div class="hs-modal">
+
+				<!-- Header -->
+				<div class="hs-modal-hd">
+					<div class="hs-modal-hd-left">
+						<div class="hs-modal-hd-icon">
+							<i class="bi bi-plus-lg"></i>
+						</div>
+						<h3 class="hs-modal-title">Thêm Nhân Viên Mới</h3>
+					</div>
+				</div>
+
+				<!-- Body -->
+				<div class="hs-modal-bd">
+
+					<!-- CỘT TRÁI: Basic Info -->
+					<div>
+						<div class="hs-section-hd">
+							<div class="hs-section-icon ci-blue">
+								<i class="bi bi-person-fill"></i>
+							</div>
+							<h4 class="hs-section-title">Thông tin cơ bản</h4>
+						</div>
+
+						<div class="hs-form-group">
+							<div>
+								<label class="hs-form-label">Họ và tên *</label> <input
+									type="text" id="hs-fullName" class="hs-form-input"
+									placeholder="Nguyễn Văn A" autocomplete="off">
+							</div>
+							<div>
+								<label class="hs-form-label">Email *</label> <input type="email"
+									id="hs-email" class="hs-form-input" placeholder="staff@bcb.com"
+									autocomplete="off">
+							</div>
+							<div>
+								<label class="hs-form-label">Số điện thoại *</label> <input
+									type="tel" id="hs-phone" class="hs-form-input"
+									placeholder="09xx xxx xxx" autocomplete="off">
+							</div>
+	
+						</div>
+					</div>
+
+					<!-- CỘT PHẢI: Assign Location -->
+					<div>
+						<div class="hs-section-hd">
+							<div class="hs-section-icon ci-green">
+								<i class="bi bi-building-fill"></i>
+							</div>
+							<h4 class="hs-section-title">Phân công cơ sở</h4>
+						</div>
+
+						<div class="hs-search-wrap">
+							<i class="bi bi-search hs-si"></i> <input type="text"
+								class="hs-search" id="hs-loc-search" placeholder="Tìm cơ sở..."
+								oninput="renderHsLocList(this.value)">
+						</div>
+
+						<div class="hs-loc-meta">
+							<span class="hs-selected-count"> <span id="hs-sel-count">0</span>
+								đã chọn
+							</span>
+						</div>
+
+						<div class="hs-loc-list" id="hs-loc-list"></div>
+					</div>
+
+				</div>
+
+				<!-- Footer -->
+				<div class="hs-modal-ft">
+					<button type="button" class="hs-btn-discard" onclick="closeHireModal()">Hủy</button>
+					<button type="button" class="hs-btn-send" id="hs-send-btn"
+						onclick="submitHireForm()">
+						<i class="bi bi-send-fill"></i> <span id="hs-send-txt">Gửi
+							Lời Mời</span>
+					</button>
+				</div>
+
+			</div>
+		</div>
+
 	</div>
 </div>
 
@@ -441,10 +354,27 @@ document.addEventListener('click', () => {
     document.querySelectorAll('[id^="menu-"]').forEach(m => m.classList.add('d-none'));
 });
 
-// Delete confirm
-function deleteStaff(id, name) {
-    if (confirm('Bạn có chắc chắn muốn xóa nhân viên "' + name + '"?\nHành động này không thể hoàn tác.')) {
-        window.location.href = '${pageContext.request.contextPath}/owner/staffs/delete/' + id;
+/* TERMINATE */
+function toggleStaff() {
+    const msg = SD.isActive ? 'Bạn có chắc chắn muốn xóa nhân viên này?' 
+                         : 'Bạn có chắc chắn muốn khôi phục nhân viên này?';
+    if (confirm(msg)) {
+        window.location.href = SD.contextPath + '/owner/staffs/toggle/' +  SD.accountId + '?redirect=detail';
     }
 }
+
+window.SD_CONTEXT_PATH  = "${pageContext.request.contextPath}";
+
+<%-- Tất cả facility của owner --%>
+window.SD_ALL_FACILITIES  = [
+    <c:forEach items="${allFacilities}" var="f" varStatus="st">
+    {
+        id:   "${f.facilityId}",
+        name: "<c:out value='${f.name}'/>",
+        addr: "<c:out value='${f.address}'/>"
+    }<c:if test="${!st.last}">,</c:if>
+    </c:forEach>
+];
 </script>
+
+<script src="${pageContext.request.contextPath}/assets/js/staff-list.js"></script>

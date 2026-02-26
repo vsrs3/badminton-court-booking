@@ -1,6 +1,8 @@
 package com.bcb.service;
 
 import java.util.*;
+import com.bcb.model.Staff;
+import com.bcb.model.Facility;
 import com.bcb.model.Account;
 
 public interface StaffService {
@@ -48,4 +50,18 @@ public interface StaffService {
 	 * @return Optional containing user or empty
 	 */
 	Optional<Account> findById(Integer accountId);
+	
+	
+	/**
+	 * Find facilities associated with a staff member by their account ID.
+	 * @param accountId User ID
+	 * @return List of facilities associated with the staff member
+	 */
+	List<Facility> findFacilitiesById(Integer accountId);
+	
+	/**
+	 * Find all facilities.
+	 * @return List of all facilities
+	 */
+	List<Facility> findFacilities();
 }

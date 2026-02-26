@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bcb.model.Account;
+import com.bcb.model.Facility;
+import com.bcb.model.Staff;
 import com.bcb.repository.impl.StaffRepositoryImpl;
 import com.bcb.repository.StaffRepository;
 import com.bcb.service.StaffService;
@@ -44,6 +46,20 @@ public class StaffServiceImpl implements StaffService {
 	@Override
 	public Optional<Account> findById(Integer accountId) {
 		return staffRepo.findById(accountId);
+	}
+
+	@Override
+	public List<Facility> findFacilitiesById(Integer accountId) {
+		if (accountId == null) {
+			throw new IllegalArgumentException("Account ID cannot be null");
+		}
+		
+		return staffRepo.findFacilitiesById(accountId);
+	}
+
+	@Override
+	public List<Facility> findFacilities() {
+		return staffRepo.findAllFacilities();
 	}
 	
 }

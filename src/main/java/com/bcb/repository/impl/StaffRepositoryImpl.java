@@ -1,15 +1,19 @@
 package com.bcb.repository.impl;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import com.bcb.exception.DataAccessException;
 import com.bcb.model.Account;
+import com.bcb.model.Facility;
+import com.bcb.model.Staff;
 import com.bcb.repository.StaffRepository;
 import com.bcb.utils.DBContext;
 
@@ -165,6 +169,12 @@ public class StaffRepositoryImpl implements StaffRepository {
 		}
 	}
 
+	/**
+	 * Chuyển đổi ResultSet thành đối tượng Account
+	 * @param rs ResultSet chứa dữ liệu của tài khoản
+	 * @return Đối tượng Account được tạo từ ResultSet
+	 * @throws SQLException Nếu có lỗi khi truy xuất dữ liệu từ ResultSet
+	 */
 	private Account mapResultSetToAccount(ResultSet rs) throws SQLException {
 		Account account = new Account();
 		account.setAccountId(rs.getInt("account_id"));
@@ -180,4 +190,78 @@ public class StaffRepositoryImpl implements StaffRepository {
 		return account;
 	}
 
+	
+	@Override
+	public List<Facility> findFacilitiesById(Integer accountId) {
+		String sql = "SELECT f.* FROM Facility f " 
+					+ "JOIN Staff s ON f.facility_id = s.facility_id " 
+					+ "WHERE s.account_id = ?";
+		
+		try (Connection conn = DBContext.getConnection(); 
+				PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setInt(1, accountId);
+			
+			ResultSet rs = ps.executeQuery();
+			List<Facility> facilities = new ArrayList<>();
+			
+			while (rs.next()) {
+				facilities.add(mapResultSetToFacility(rs));
+			}
+			return facilities;
+			
+		} catch (SQLException e) {
+			throw new RuntimeException("Error finding facilities by staff ID: " + e.getMessage(), e);
+		}
+	}
+	
+	
+	/**
+	 * Chuyển đổi ResultSet thành đối tượng Facility
+	 * @param rs ResultSet chứa dữ liệu của cơ sở y tế
+	 * @return Đối tượng Facility được tạo từ ResultSet
+	 * @throws SQLException Nếu có lỗi khi truy xuất dữ liệu từ ResultSet
+	 */
+	private Facility mapResultSetToFacility(ResultSet rs) throws SQLException {
+        Facility f = new Facility();
+        f.setFacilityId(rs.getInt("facility_id"));
+        f.setName(rs.getString("name"));
+        f.setProvince(rs.getString("province"));
+        f.setDistrict(rs.getString("district"));
+        f.setWard(rs.getString("ward"));
+        f.setAddress(rs.getString("address"));
+        BigDecimal lat = rs.getBigDecimal("latitude");
+        BigDecimal lng = rs.getBigDecimal("longitude");
+
+        f.setLatitude(lat);
+        f.setLongitude(lng);
+        f.setDescription(rs.getString("description"));
+        Time openTime = rs.getTime("open_time");
+        f.setOpenTime(openTime != null ? openTime.toLocalTime() : null);
+
+        Time closeTime = rs.getTime("close_time");
+        f.setCloseTime(closeTime != null ? closeTime.toLocalTime() : null);
+        f.setIsActive(rs.getBoolean("is_active"));
+        return f;
+    }
+
+	@Override
+	public List<Facility> findAllFacilities() {
+		String sql = "SELECT * FROM Facility WHERE is_active = 1 ORDER BY name ASC";
+		
+		try (Connection conn = DBContext.getConnection(); 
+				PreparedStatement ps = conn.prepareStatement(sql)) {
+			
+			ResultSet rs = ps.executeQuery();
+			List<Facility> facilities = new ArrayList<>();
+			
+			while (rs.next()) {
+				facilities.add(mapResultSetToFacility(rs));
+			}
+			return facilities;
+			
+		} catch (SQLException e) {
+			throw new RuntimeException("Error finding all facilities: " + e.getMessage(), e);
+		}
+	}
+	
 }
