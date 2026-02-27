@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BCB Admin</title>
+  <title>BCB Court Owner</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 

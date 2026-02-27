@@ -5,6 +5,7 @@ public class Court {
     private Integer facilityId;
     private Integer courtTypeId;
     private String courtName;
+    private String description;
     private Boolean isActive;
 
     public Court() {}
@@ -17,6 +18,8 @@ public class Court {
     public void setCourtTypeId(Integer courtTypeId) { this.courtTypeId = courtTypeId; }
     public String getCourtName() { return courtName; }
     public void setCourtName(String courtName) { this.courtName = courtName; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

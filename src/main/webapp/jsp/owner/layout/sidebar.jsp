@@ -2,8 +2,7 @@
 <div class="sidebar">
     <div class="sidebar-header">
         <a href="${pageContext.request.contextPath}/owner/dashboard" class="sidebar-brand">
-            <i class="bi bi-circle-fill text-accent"></i>
-            <span>BCB Admin</span>
+            <span>BCB Court Owner</span>
         </a>
     </div>
 
@@ -17,18 +16,18 @@
         <a href="${pageContext.request.contextPath}/owner/facility/list"
            class="nav-link ${pageContext.request.requestURI.contains('/facility/list') ? 'active' : ''}">
             <i class="bi bi-building"></i>
-            <span>My Locations</span>
+            <span>Địa Điểm Của Tôi</span>
         </a>
 
         <a href="#" class="nav-link">
             <i class="bi bi-gear"></i>
-            <span>Settings</span>
+            <span>Cài Đặt</span>
         </a>
         
         <div class="mt-auto pt-4">
             <a href="${pageContext.request.contextPath}/auth/logout" class="nav-link text-danger border-top border-secondary mt-3 pt-3">
                 <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
+                <span>Thoát</span>
             </a>
         </div>
     </div>

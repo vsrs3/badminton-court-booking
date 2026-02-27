@@ -10,6 +10,7 @@ import com.bcb.service.FacilityService;
 import com.bcb.service.impl.CourtServiceImpl;
 import com.bcb.service.impl.CourtTypeServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
+import com.bcb.utils.BreadcrumbUtils;
 import com.bcb.validation.CourtValidator;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -98,9 +99,18 @@ public class OwnerCourtController extends HttpServlet {
 
         int facilityId = Integer.parseInt(pathInfo.substring("/list/".length()));
 
-        request.setAttribute("facility", facilityService.findById(facilityId));
+        Facility facility = facilityService.findById(facilityId);
+        request.setAttribute("facility", facility);
         request.setAttribute("courts", courtService.getCourtsByFacilityDTO(facilityId));
         request.setAttribute("courtTypes", courtTypeService.getAllTypes());
+
+        // Breadcrumb
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .facility(facility.getName(), facilityId)
+                .active("Courts")
+                .build();
 
         request.getRequestDispatcher("/jsp/owner/court/court-list.jsp")
                 .forward(request, response);
@@ -123,12 +133,14 @@ public class OwnerCourtController extends HttpServlet {
                         {
                             "courtId": %d,
                             "courtName": "%s",
-                            "courtTypeId": %d
+                            "courtTypeId": %d,
+                            "description": "%s"
                         }
                         """,
                 court.getCourtId(),
                 escapeJson(court.getCourtName()),
-                court.getCourtTypeId()
+                court.getCourtTypeId(),
+                escapeJson(court.getDescription())
         );
 
         response.getWriter().write(json);
@@ -145,6 +157,7 @@ public class OwnerCourtController extends HttpServlet {
 
         String courtName = request.getParameter("courtName");
         String courtTypeIdStr = request.getParameter("courtTypeId");
+        String description = request.getParameter("description");
 
         if (courtTypeIdStr == null || courtTypeIdStr.isEmpty()) {
             throw new ValidationException("Court type is required");
@@ -172,6 +185,7 @@ public class OwnerCourtController extends HttpServlet {
 
         court.setCourtName(courtName);
         court.setCourtTypeId(courtTypeId);
+        court.setDescription(description);
 
         CourtValidator.validate(court);
 

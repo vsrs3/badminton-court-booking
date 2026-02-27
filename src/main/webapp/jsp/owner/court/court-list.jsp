@@ -12,8 +12,7 @@
 
     <div class="content-area">
 
-        <%-- PAGE HEADER --%>
-        <c:set var="pageTitle" value="Courts - ${requestScope.facility.name}"/>
+        <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
         <%@ include file="../layout/page-header.jsp" %>
 
         <%-- ALERTS --%>
@@ -72,6 +71,7 @@
                                 <thead>
                                 <tr>
                                     <th class="px-4">Tên sân</th>
+                                    <th class="px-4">Mô tả</th>
                                     <th class="px-4 text-center">Loại sân</th>
                                     <th class="px-4 text-end">Hành động</th>
                                 </tr>
@@ -79,7 +79,26 @@
                                 <tbody>
                                 <c:forEach items="${requestScope.courts}" var="court">
                                     <tr>
-                                        <td class="px-4 fw-medium text-emerald">${court.courtName}</td>
+                                        <td class="px-4 fw-medium text-emerald"><c:out value="${court.courtName}" /></td>
+                                        <td class="px-4 text-muted small">
+                                            <c:choose>
+                                                <c:when test="${not empty court.description}">
+                                                    <c:choose>
+                                                        <c:when test="${fn:length(court.description) > 50}">
+                                                            <span title="<c:out value='${court.description}' />">
+                                                                <c:out value="${fn:substring(court.description, 0, 50)}" />...
+                                                            </span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <c:out value="${court.description}" />
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="text-muted fst-italic">—</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
                                         <td class="px-4 text-center">
                                             <span class="badge ${court.courtTypeCode == 'VIP' ? 'bg-warning text-dark' : 'bg-info text-white'}">
                                                 ${court.courtTypeCode}
