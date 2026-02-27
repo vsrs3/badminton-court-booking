@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Entity representing a court schedule exception (maintenance, event, etc.).
+ */
 public class CourtScheduleException {
     private Integer exceptionId;
     private Integer courtId;

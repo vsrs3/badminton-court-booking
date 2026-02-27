@@ -3,6 +3,9 @@ package com.bcb.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing an invoice for a booking.
+ */
 public class Invoice {
     private Integer invoiceId;
     private Integer bookingId;
