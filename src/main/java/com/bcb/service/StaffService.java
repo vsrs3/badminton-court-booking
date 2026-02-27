@@ -64,4 +64,14 @@ public interface StaffService {
 	 * @return List of all facilities
 	 */
 	List<Facility> findFacilities();
+	
+	/**
+	 * Create a new staff
+	 * @param fullName
+	 * @param email
+	 * @param phone
+	 * @param facilityId
+	 * @return boolean
+	 */
+	boolean createStaff(String fullName, String email, String phone, Integer facilityId);
 }

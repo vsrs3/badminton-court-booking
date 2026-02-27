@@ -3,9 +3,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
-
-<link rel="stylesheet"
-	href="${pageContext.request.contextPath}/assets/css/staff-list.css">
+<!-- CSS -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff-list.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset-password.css">
 
 <%@ include file="../layout/layout.jsp"%>
 <%@ include file="../layout/sidebar.jsp"%>
@@ -81,10 +81,10 @@
 
 				<%-- Add Staff --%>
 				<button type="button" onclick="openHireModal()"
-						class="btn fw-bold rounded-3 text-nowrap"
-						style="padding: 0.5rem 1.25rem; font-size: 0.875rem; background: #A3E635; color: #000;">
-						<i class="bi bi-plus-lg me-1"></i> Thêm Nhân Viên
-					</button>
+					class="btn fw-bold rounded-3 text-nowrap"
+					style="padding: 0.5rem 1.25rem; font-size: 0.875rem; background: #A3E635; color: #000;">
+					<i class="bi bi-plus-lg me-1"></i> Thêm Nhân Viên
+				</button>
 			</form>
 		</div>
 
@@ -152,14 +152,15 @@
 													style="background: #EFF6FF;"> <i class="bi bi-eye"
 														style="color: #3B82F6;"></i>
 												</span> Xem Chi Tiết
-												</a> <a
-													href="${pageContext.request.contextPath}/owner/staffs/reset-password/${staff.accountId}"
-													onclick="return confirm('Gửi link đặt lại mật khẩu đến ' + '${staff.email}' + '?')"
-													class="menu-item"> <span class="menu-icon"
-													style="background: #F5F3FF;"> <i class="bi bi-key"
-														style="color: #7C3AED;"></i>
-												</span> Đặt Lại Mật Khẩu
 												</a>
+
+												<button type="button" class="menu-item"
+													onclick="openResetModal(${staff.accountId}, '${staff.fullName}')">
+
+													<span class="menu-icon" style="background: #F5F3FF;">
+														<i class="bi bi-key" style="color: #7C3AED;"></i>
+													</span> Đặt Lại Mật Khẩu
+												</button>
 
 												<hr class="my-1 mx-2">
 
@@ -295,7 +296,7 @@
 									type="tel" id="hs-phone" class="hs-form-input"
 									placeholder="09xx xxx xxx" autocomplete="off">
 							</div>
-	
+
 						</div>
 					</div>
 
@@ -327,8 +328,8 @@
 
 				<!-- Footer -->
 				<div class="hs-modal-ft">
-					<button type="button" class="hs-btn-discard" onclick="closeHireModal()">Hủy</button>
-					<button type="button" class="hs-btn-send" id="hs-send-btn"
+					<button class="hs-btn-discard" onclick="closeHireModal()">Hủy</button>
+					<button class="hs-btn-send" id="hs-send-btn"
 						onclick="submitHireForm()">
 						<i class="bi bi-send-fill"></i> <span id="hs-send-txt">Gửi
 							Lời Mời</span>
@@ -340,6 +341,10 @@
 
 	</div>
 </div>
+
+<!-- RESET PASSWORD -->
+<%@ include file="/jsp/owner/staffs/reset-password.jsp"%>
+
 
 <script>
 // Three-dot menu toggle
@@ -353,15 +358,6 @@ function toggleMenu(e, menuId) {
 document.addEventListener('click', () => {
     document.querySelectorAll('[id^="menu-"]').forEach(m => m.classList.add('d-none'));
 });
-
-/* TERMINATE */
-function toggleStaff() {
-    const msg = SD.isActive ? 'Bạn có chắc chắn muốn xóa nhân viên này?' 
-                         : 'Bạn có chắc chắn muốn khôi phục nhân viên này?';
-    if (confirm(msg)) {
-        window.location.href = SD.contextPath + '/owner/staffs/toggle/' +  SD.accountId + '?redirect=detail';
-    }
-}
 
 window.SD_CONTEXT_PATH  = "${pageContext.request.contextPath}";
 
@@ -377,4 +373,9 @@ window.SD_ALL_FACILITIES  = [
 ];
 </script>
 
-<script src="${pageContext.request.contextPath}/assets/js/staff-list.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/toggle-status.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/validation/hire-form-validation.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/staff-list.js"></script>

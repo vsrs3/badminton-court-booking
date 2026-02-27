@@ -63,4 +63,14 @@ public interface StaffRepository {
 	 * @return List of all facilities
 	 */
 	List<Facility> findAllFacilities();
+	
+	/**
+	 * Insert a new staff in account table and staff table
+	 * @param fullName
+	 * @param email
+	 * @param phone
+	 * @param facilityId
+	 * @return boolean 
+	 */
+	boolean createStaff(String fullName, String email, String phone, Integer facilityId);
 }

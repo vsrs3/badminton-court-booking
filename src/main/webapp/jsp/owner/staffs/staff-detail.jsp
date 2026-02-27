@@ -49,7 +49,7 @@
 
 						<%-- Hover overlay camera --%>
 						<div class="sd-avatar-overlay">
-							<i class="bi bi-camera-fill"></i> <span>Đổi ảnh</span>
+							<!-- <i class="bi bi-camera-fill"></i> --> <!-- <span>Đổi ảnh</span> -->
 						</div>
 					</div>
 
@@ -313,152 +313,8 @@
 </div>
 <%-- Đóng main-content --%>
 
-
-<%-- ═══════════════════════════════════════════════
-     MODAL 1 — UPLOAD AVATAR
-     Trigger: click vào vùng avatar ở top bar
-═══════════════════════════════════════════════ --%>
-<%-- <div class="sd-modal-bg" id="sd-av-modal">
-	<div class="sd-modal sd-av-modal">
-		<div class="sd-modal-hd">
-			<div class="d-flex align-items-center gap-3">
-				<div class="sd-modal-hd-icon">
-					<i class="bi bi-camera-fill"></i>
-				</div>
-				<h3 class="sd-modal-title">Cập nhật ảnh đại diện</h3>
-			</div>
-			<button class="sd-modal-x" onclick="closeAvatarModal()">
-				<i class="bi bi-x-lg"></i>
-			</button>
-		</div>
-		<div class="sd-modal-bd">
-
-			Preview ảnh hiện tại / ảnh mới chọn
-			<div class="sd-av-preview-wrap">
-				<c:choose>
-					<c:when test="${not empty staff.avatarPath}">
-						<img id="sd-av-preview-img" class="sd-av-preview"
-							src="${pageContext.request.contextPath}/${staff.avatarPath}"
-							alt="preview">
-						<div id="sd-av-preview-initials"
-							class="sd-av-preview-initials d-none">${not empty staff.fullName ? staff.fullName.substring(0,1).toUpperCase() : '?'}
-						</div>
-					</c:when>
-					<c:otherwise>
-						<img id="sd-av-preview-img" class="sd-av-preview d-none" src=""
-							alt="preview">
-						<div id="sd-av-preview-initials" class="sd-av-preview-initials">
-							${not empty staff.fullName ? staff.fullName.substring(0,1).toUpperCase() : '?'}
-						</div>
-					</c:otherwise>
-				</c:choose>
-			</div>
-
-			Drop zone
-			<div class="sd-drop-zone" id="sd-drop-zone"
-				onclick="document.getElementById('sd-av-input').click()"
-				ondragover="onAvatarDragOver(event)"
-				ondragleave="onAvatarDragLeave()" ondrop="onAvatarDrop(event)">
-				<i class="bi bi-cloud-arrow-up sd-drop-icon"></i>
-				<p class="sd-drop-label">
-					Kéo thả hoặc <span>chọn ảnh từ máy tính</span>
-				</p>
-				<p class="sd-drop-hint">JPG, PNG, WEBP — tối đa 2MB</p>
-			</div>
-
-			Input file ẩn
-			<input type="file" id="sd-av-input"
-				accept="image/jpeg,image/png,image/webp,image/gif"
-				style="display: none" onchange="onAvatarInputChange(event)">
-
-			Thông báo lỗi
-			<div class="sd-av-error" id="sd-av-error">
-				<i class="bi bi-exclamation-circle-fill"></i> <span></span>
-			</div>
-
-			Buttons
-			<div class="d-flex gap-3 mt-4">
-				<button class="sd-btn-m-cancel" onclick="closeAvatarModal()">Hủy</button>
-				<button class="sd-btn-m-confirm" id="sd-av-save-btn"
-					onclick="uploadAvatar()" disabled>
-					<span id="sd-av-save-txt">Lưu ảnh</span>
-				</button>
-			</div>
-
-		</div>
-	</div>
-</div>
- --%>
-
-<%-- ═══════════════════════════════════════════════
-     MODAL 2 — RESET PASSWORD
-═══════════════════════════════════════════════ --%>
-<div class="sd-modal-bg" id="sd-rp-modal">
-	<div class="sd-modal">
-		<div class="sd-modal-hd">
-			<div class="d-flex align-items-center gap-3">
-				<div class="sd-modal-hd-icon">
-					<i class="bi bi-shield-lock-fill"></i>
-				</div>
-				<h3 class="sd-modal-title">Đặt lại mật khẩu</h3>
-			</div>
-			<button class="sd-modal-x" onclick="closeResetModal()">
-				<i class="bi bi-x-lg"></i>
-			</button>
-		</div>
-		<div class="sd-modal-bd">
-
-			<%-- Bước 1: xác nhận --%>
-			<div id="sd-rp-step1">
-				<p
-					style="font-size: .875rem; font-weight: 500; color: var(--color-gray-600); line-height: 1.6; margin-bottom: 1rem;">
-					Bạn có chắc muốn đặt lại mật khẩu cho <strong
-						style="color: var(--color-gray-900);" id="sd-rp-name"></strong>?
-				</p>
-				<div class="sd-warn mb-4">
-					<i class="bi bi-exclamation-triangle-fill me-1"></i> Hành động này
-					sẽ tạo mật khẩu tạm thời mới. Nhân viên sẽ phải đổi mật khẩu ở lần
-					đăng nhập tiếp theo.
-				</div>
-				<div class="d-flex gap-3">
-					<button class="sd-btn-m-cancel" onclick="closeResetModal()">Hủy</button>
-					<button class="sd-btn-m-confirm" id="sd-rp-cfm-btn"
-						onclick="doResetPassword()">
-						<span id="sd-rp-cfm-txt">Xác nhận đặt lại</span>
-					</button>
-				</div>
-			</div>
-
-			<%-- Bước 2: hiển thị mật khẩu tạm --%>
-			<div id="sd-rp-step2" class="d-none">
-				<div class="sd-success-box mb-4">
-					<div class="sd-success-circle">
-						<i class="bi bi-check-lg"></i>
-					</div>
-					<p
-						style="font-size: .875rem; font-weight: 700; color: var(--color-green-700); margin: 0;">
-						Đặt lại mật khẩu thành công!</p>
-				</div>
-				<div class="mb-4">
-					<span class="sd-info-label">Mật khẩu tạm thời</span>
-					<div class="sd-pass-box mt-1">
-						<div class="sd-pass-val" id="sd-pass-val">—</div>
-						<button class="sd-copy-btn" id="sd-copy-btn"
-							onclick="copyPassword()" title="Sao chép">
-							<i class="bi bi-clipboard"></i>
-						</button>
-					</div>
-					<p class="sd-pass-note mt-2">Mật khẩu này sẽ không hiển thị
-						lại. Hãy sao chép ngay.</p>
-				</div>
-				<button class="sd-btn-done" onclick="closeResetModal()">Hoàn
-					tất</button>
-			</div>
-
-		</div>
-	</div>
-</div>
-
+<!-- RESET PASSWORD -->
+<%@ include file="/jsp/owner/staffs/reset-password.jsp" %>
 
 <%--DATA BRIDGE  JSP → JS--%>
 <script>
@@ -483,11 +339,15 @@
     ];
 </script>
 
-<script
-	src="${pageContext.request.contextPath}/assets/js/staff-detail.js"></script>
-<script
-	src="${pageContext.request.contextPath}/assets/js/previewAvatar.js"></script>
-<script
-	src="${pageContext.request.contextPath}/assets/js/validation/staff-validation.js"></script>
+<!-- Link JS -->
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-detail.js"></script>
+
+<script src="${pageContext.request.contextPath}/assets/js/previewAvatar.js"></script>
+
+<script src="${pageContext.request.contextPath}/assets/js/validation/staff-validation.js"></script>
+
+<script src="${pageContext.request.contextPath}/assets/js/staff/toggle-status.js"></script>
+
+<script src="${pageContext.request.contextPath}/assets/js/staff/reset-password.js"></script>
 
 

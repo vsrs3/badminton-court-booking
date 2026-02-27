@@ -61,5 +61,10 @@ public class StaffServiceImpl implements StaffService {
 	public List<Facility> findFacilities() {
 		return staffRepo.findAllFacilities();
 	}
+
+	@Override
+	public boolean createStaff(String fullName, String email, String phone, Integer facilityId) {
+		return staffRepo.createStaff(fullName, email, phone, facilityId);
+	}
 	
 }

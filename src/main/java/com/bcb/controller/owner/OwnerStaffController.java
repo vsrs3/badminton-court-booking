@@ -3,7 +3,10 @@ package com.bcb.controller.owner;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.Optional;
+
+import com.bcb.service.SendEmailService;
 import com.bcb.service.StaffProfilService;
+import com.bcb.service.impl.SendEmailServiceImpl;
 import com.bcb.service.impl.StaffProfileServiceImpl;
 
 import java.io.IOException;
@@ -12,6 +15,7 @@ import com.bcb.service.StaffService;
 import com.bcb.model.Account;
 import com.bcb.model.Facility;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -27,13 +31,16 @@ public class OwnerStaffController extends HttpServlet {
 	
 	// Service instance for staff profile operations (update info, avatar, etc.)
 	private final StaffProfilService staffProfileService = new StaffProfileServiceImpl();
+	
+	// Service instance for sending staff email 
+	private final SendEmailService sendEmail = new SendEmailServiceImpl(); 
 
 	/**
 	 * Handle GET requests for listing staff, viewing staff details, and deleting staff.
 	 * URL patterns:
 	 * - /owner/staffs/list : List all staff with pagination and search
 	 * - /owner/staffs/view/{id} : View details of a specific staff member
-	 * - /owner/staffs/delete/{id} : Soft delete or activate a staff member
+	 * - /owner/staffs/toggle/{id} : Soft delete or activate a staff member
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
@@ -65,6 +72,9 @@ public class OwnerStaffController extends HttpServlet {
 		
 	}
 	
+	/**
+	 * 
+	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
@@ -78,8 +88,8 @@ public class OwnerStaffController extends HttpServlet {
             if (pathInfo.equals("/update")) {
                updateStaffInfo(request, response);
             	
-            } else if (pathInfo.equals("/update-location")) {
-                //deleteStaff(request, response);
+            } else if (pathInfo.equals("/create")) {
+                createStaff(request, response);
 
             } else {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -214,7 +224,13 @@ public class OwnerStaffController extends HttpServlet {
 		}
 	}
 	
-	
+	/**
+	 * Chỉnh sửa Thông tin Nhân Viên
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	private void updateStaffInfo(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 		
@@ -249,6 +265,14 @@ public class OwnerStaffController extends HttpServlet {
 		
 	}
 	
+	
+	/**
+	 * Chuyển đổi trạng thái giữa active và inactive
+	 * @param request
+	 * @param response
+	 * @throws ServletException
+	 * @throws IOException
+	 */
 	private void toggleStatus(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 		
@@ -290,6 +314,48 @@ public class OwnerStaffController extends HttpServlet {
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-detail.jsp").forward(request, response);
 		}
 		
+	}
+	
+	private void createStaff (HttpServletRequest request, HttpServletResponse response) 
+			throws ServletException, IOException {
+		
+		String fullName    = request.getParameter("fullName");
+	    String email       = request.getParameter("email");
+	    String phone       = request.getParameter("phone");
+	    String facilityParam  = request.getParameter("facilityId");
+	    
+	    try {
+	    	int facilityId = Integer.parseInt(facilityParam);
+	    	
+	    	boolean success = staffService.createStaff(fullName, email, phone, facilityId);
+	    	
+	    	if(success) {
+	    		try {
+	    		String loginLink = request.getScheme() + "://"
+				    		        + request.getServerName() + ":"
+				    		        + request.getServerPort()
+				    		        + request.getContextPath()
+				    		        + "/auth/login";
+	    		
+	    		//Send email to staff if create account successful
+	    	    sendEmail.sendWelcomeEmail(email, fullName, loginLink);
+	    	    
+	    		} catch (Exception e) {
+					System.out.print(e.getMessage());
+				}
+	    		
+	    		response.sendRedirect(request.getContextPath() + "/owner/staffs/list");
+	    		
+	    	} else {
+	    		request.setAttribute("error", "Failed to create a new staff");
+	    		request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
+	    	}
+	    	
+	    	
+	    } catch (Exception e) {
+	    	request.setAttribute("error", "Exception error");
+			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
+		}
 	}
 	
 }

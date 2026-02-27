@@ -1,23 +1,40 @@
-//staff-list.jsp
+//staff-list.js
 
 /* ══════════════════════════════════════════
    HIRE STAFF STATE
 ══════════════════════════════════════════ */
 const HS = {
-    selLoc:   null,
-    allLocs:  window.SD_ALL_FACILITIES || [],
-    contextPath: window.SD_CONTEXT_PATH || ''
+    selLoc     : null,
+    allLocs    : window.SD_ALL_FACILITIES || [],
+    contextPath: window.SD_CONTEXT_PATH   || ''
 };
 
 /* ══════════════════════════════════════════
    OPEN / CLOSE
 ══════════════════════════════════════════ */
 function openHireModal() {
+    // Reset state
     HS.selLoc = null;
+
+    // Reset input values
     document.getElementById('hs-fullName').value = '';
     document.getElementById('hs-email').value    = '';
     document.getElementById('hs-phone').value    = '';
     document.getElementById('hs-loc-search').value = '';
+
+    // Init validation lazy (chỉ bind DOM events lần đầu)
+    HireFormValidation.init(
+        {
+            fullName : document.getElementById('hs-fullName'),
+            email    : document.getElementById('hs-email'),
+            phone    : document.getElementById('hs-phone'),
+        },
+        () => HS.selLoc
+    );
+
+    // Reset warnings
+    HireFormValidation.resetAll();
+
     renderHsLocList('');
     document.getElementById('hs-modal').classList.add('open');
 }
@@ -30,29 +47,29 @@ function closeHireModal() {
    LOCATION PICKER
 ══════════════════════════════════════════ */
 function renderHsLocList(query) {
-    const q      = (query || '').toLowerCase();
+    const q        = (query || '').toLowerCase();
     const filtered = HS.allLocs.filter(l =>
-        l.name.toLowerCase().includes(q) || l.addr.toLowerCase().includes(q)
+        l.name.toLowerCase().includes(q) ||
+        l.addr.toLowerCase().includes(q)
     );
-
     const selId = HS.selLoc ? String(HS.selLoc) : null;
 
     document.getElementById('hs-loc-list').innerHTML = filtered.length
         ? filtered.map(loc => {
             const sel = selId === String(loc.id);
-            return '<button type="button"'
-                + ' class="hs-loc-item' + (sel ? ' sel' : '') + '"'
-                + ' onclick="hsSelectLoc(\'' + loc.id + '\')">'
-                + '<div class="hs-loc-icon ' + (sel ? 'on' : 'off') + '">'
-                + '<i class="bi bi-building"></i></div>'
-                + '<div style="flex:1;min-width:0;">'
-                + '<p class="hs-loc-name">' + escHtml(loc.name) + '</p>'
-                + '<p class="hs-loc-addr">' + escHtml(loc.addr) + '</p>'
-                + '</div>'
-                + (sel ? '<i class="bi bi-check-circle-fill hs-loc-check"></i>' : '')
-                + '</button>';
+            return `
+                <div class="hs-loc-item ${sel ? 'selected' : ''}" onclick="hsSelectLoc('${loc.id}')">
+                    <div class="hs-loc-info">
+                        <div class="hs-loc-name">${escHtml(loc.name)}</div>
+                        <div class="hs-loc-addr">${escHtml(loc.addr)}</div>
+                    </div>
+                    ${sel
+                        ? '<span class="hs-loc-check">&#10003;</span>'
+                        : '<span class="hs-loc-check hs-loc-check--empty"></span>'
+                    }
+                </div>`;
         }).join('')
-        : '<p style="font-size:.75rem;color:var(--color-gray-400);text-align:center;padding:1rem 0;font-weight:600;">Không tìm thấy cơ sở</p>';
+        : '<div class="hs-loc-empty">Không tìm thấy cơ sở</div>';
 
     document.getElementById('hs-sel-count').textContent = HS.selLoc ? '1' : '0';
 }
@@ -63,49 +80,46 @@ function hsSelectLoc(id) {
 }
 
 /* ══════════════════════════════════════════
-   DESC COUNTER
-══════════════════════════════════════════ */
-/*function updateDescCount() {
-    const val = document.getElementById('hs-desc').value;
-    if (val.length > 500) document.getElementById('hs-desc').value = val.substring(0, 500);
-    document.getElementById('hs-desc-count').textContent = 
-        Math.min(val.length, 500) + '/500';
-}*/
-
-/* ══════════════════════════════════════════
    SUBMIT
 ══════════════════════════════════════════ */
 function submitHireForm() {
-    const fullName = document.getElementById('hs-fullName').value.trim();
-    const email    = document.getElementById('hs-email').value.trim();
-    const phone    = document.getElementById('hs-phone').value.trim();
+    const { valid, facilityError } = HireFormValidation.validateAll();
 
-    if (!fullName || !email || !phone) {
-        alert('Vui lòng điền đầy đủ thông tin bắt buộc.');
-        return;
-    }
-    if (!HS.selLoc) {
-        alert('Vui lòng chọn cơ sở phụ trách.');
+    // Báo lỗi facility trước (vì không có inline warning cho location)
+    if (facilityError) {
+        if (typeof showPopupWarning === 'function')
+            showPopupWarning('Lỗi', facilityError);
+        else
+            alert(facilityError);
         return;
     }
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = HS.contextPath + '/owner/staffs/create';
+    // Báo lỗi các field còn lại
+    if (!valid) {
+        if (typeof showPopupWarning === 'function')
+            showPopupWarning('Lỗi', 'Vui lòng sửa các lỗi trước khi gửi');
+        else
+            alert('Vui lòng sửa các lỗi trước khi gửi.');
+        return;
+    }
+
+    // Build & submit form
+    const form    = document.createElement('form');
+    form.method   = 'POST';
+    form.action   = HS.contextPath + '/owner/staffs/create';
 
     const fields = {
-        fullName:    fullName,
-        email:       email,
-        phone:       phone,
-        facilityId:  HS.selLoc,
-        description: document.getElementById('hs-desc').value.trim()
+        fullName   : document.getElementById('hs-fullName').value.trim(),
+        email      : document.getElementById('hs-email').value.trim(),
+        phone      : document.getElementById('hs-phone').value.trim(),
+        facilityId : HS.selLoc
     };
 
     Object.entries(fields).forEach(([name, value]) => {
-        const input = document.createElement('input');
-        input.type  = 'hidden';
-        input.name  = name;
-        input.value = value;
+        const input  = document.createElement('input');
+        input.type   = 'hidden';
+        input.name   = name;
+        input.value  = value;
         form.appendChild(input);
     });
 
@@ -118,8 +132,10 @@ function submitHireForm() {
 ══════════════════════════════════════════ */
 function escHtml(str) {
     return String(str)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;');
 }
 
 /* ══════════════════════════════════════════
@@ -127,7 +143,14 @@ function escHtml(str) {
 ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
     renderHsLocList('');
+
+    // Đóng modal khi click ra ngoài
     document.getElementById('hs-modal').addEventListener('click', function (e) {
         if (e.target === this) closeHireModal();
+    });
+
+    // Tìm kiếm cơ sở realtime
+    document.getElementById('hs-loc-search').addEventListener('input', function () {
+        renderHsLocList(this.value);
     });
 });
