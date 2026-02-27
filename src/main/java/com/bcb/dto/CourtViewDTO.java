@@ -5,6 +5,7 @@ public class CourtViewDTO {
     private int courtId;
     private int facilityId;
     private String courtName;
+    private String description;
 
     private int courtTypeId;
     private String courtTypeCode;   // NORMAL | VIP
@@ -16,11 +17,13 @@ public class CourtViewDTO {
             int courtId,
             int facilityId,
             String courtName,
+            String description,
             int courtTypeId,
             String courtTypeCode) {
         this.courtId = courtId;
         this.facilityId = facilityId;
         this.courtName = courtName;
+        this.description = description;
         this.courtTypeId = courtTypeId;
         this.courtTypeCode = courtTypeCode;
     }
@@ -47,6 +50,14 @@ public class CourtViewDTO {
 
     public void setCourtName(String courtName) {
         this.courtName = courtName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public int getCourtTypeId() {

@@ -7,36 +7,64 @@
         <thead>
             <tr>
                 <th class="px-4" style="width: 40%">Khung giờ</th>
-                <th style="width: 40%">Giá (VND)</th>
+                <th style="width: 40%">Giá / giờ (VND)</th>
                 <th class="text-end px-4" style="width: 20%">Hành động</th>
             </tr>
         </thead>
         <tbody>
-            <c:forEach items="${viewData.timeSlotPrices}" var="slot">
-                <tr data-slot-id="${slot.slotId}">
-                    <td class="px-4">
-                        <span class="fw-semibold text-emerald">${slot.startTimeFormatted} – ${slot.endTimeFormatted}</span>
-                    </td>
-                    <td class="price-cell">
-                        <c:choose>
-                            <c:when test="${not empty slot.price}">
+            <c:choose>
+                <c:when test="${empty viewData.timeSlotPrices}">
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-5">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Chưa cấu hình khoảng giá nào
+                        </td>
+                    </tr>
+                </c:when>
+                <c:otherwise>
+                    <c:forEach items="${viewData.timeSlotPrices}" var="slot">
+                        <tr data-price-id="${slot.priceId}">
+                            <td class="px-4">
+                                <span class="fw-semibold text-emerald">${slot.startTimeFormatted} – ${slot.endTimeFormatted}</span>
+                            </td>
+                            <td class="price-cell">
                                 <span class="price-text fw-bold text-dark" data-value="${slot.price}">
                                     <fmt:formatNumber value="${slot.price}" pattern="#,###"/>
                                 </span>
-                            </c:when>
-                            <c:otherwise>
-                                <span class="text-muted price-text" data-value="">—</span>
-                            </c:otherwise>
-                        </c:choose>
-                    </td>
-                    <td class="text-end px-4">
-                        <button class="btn btn-sm btn-outline-warning" 
-                                onclick="enterEditMode(this, ${slot.slotId})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                    </td>
-                </tr>
-            </c:forEach>
+                            </td>
+                            <td class="text-end px-4">
+                                <button class="btn btn-sm btn-outline-warning me-1"
+                                        onclick="openEditModal(${slot.priceId}, '${slot.startTimeFormatted}', '${slot.endTimeFormatted}', ${slot.price})"
+                                        title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDelete(${slot.priceId})"
+                                        title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </c:otherwise>
+            </c:choose>
         </tbody>
     </table>
 </div>
+
+<c:if test="${not empty viewData.timeSlotPrices}">
+    <div class="card-footer bg-light border-top">
+        <button class="btn btn-success" onclick="openCreateModal()">
+            <i class="bi bi-plus-circle me-1"></i> Thêm khoảng giá mới
+        </button>
+    </div>
+</c:if>
+
+<c:if test="${empty viewData.timeSlotPrices}">
+    <div class="p-4 text-center">
+        <button class="btn btn-success" onclick="openCreateModal()">
+            <i class="bi bi-plus-circle me-1"></i> Tạo khoảng giá đầu tiên
+        </button>
+    </div>
+</c:if>
+

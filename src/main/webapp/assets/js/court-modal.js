@@ -11,12 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (courtId) {
             modalTitle.innerText = 'Chỉnh sửa sân';
-            // Optimistic loading: if we already have name/type in data attributes, use them
+            // Optimistic loading: if we already have name/type/description in data attributes, use them
             const name = trigger.getAttribute('data-name');
             const type = trigger.getAttribute('data-type');
-            
+            const description = trigger.getAttribute('data-description');
+
             if (name) document.getElementById('courtName').value = name;
-            
+            if (description !== null) document.getElementById('courtDescription').value = description;
+
             fetch(`${contextPath}/owner/courts/detail/` + courtId)
                 .then(res => {
                     if (!res.ok) throw new Error('Failed to load court');
@@ -26,10 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('courtId').value = data.courtId;
                     document.getElementById('courtName').value = data.courtName;
                     document.getElementById('courtTypeId').value = data.courtTypeId;
+                    document.getElementById('courtDescription').value = data.description || '';
                 })
                 .catch(err => {
                     console.error(err);
-                    // alert('Cannot load court data');
                 });
 
         } else {
@@ -37,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('courtId').value = '';
             document.getElementById('courtName').value = '';
             document.getElementById('courtTypeId').value = '';
+            document.getElementById('courtDescription').value = '';
         }
     });
 });

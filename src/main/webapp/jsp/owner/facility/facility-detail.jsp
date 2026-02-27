@@ -13,7 +13,7 @@
     <div class="content-area">
 
         <%-- PAGE HEADER --%>
-        <c:set var="pageTitle" value="Chi Tiết Địa Điểm" />
+        <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
         <%@ include file="../layout/page-header.jsp" %>
 
         <%-- ACTIONS --%>
@@ -27,9 +27,6 @@
             </a>
             <a href="${pageContext.request.contextPath}/owner/facility/edit/${requestScope.facility.facilityId}" class="btn btn-warning">
                 <i class="bi bi-pencil me-1"></i> Sửa
-            </a>
-            <a href="${pageContext.request.contextPath}/owner/facility/list" class="btn btn-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Quay lại
             </a>
         </div>
 
@@ -90,7 +87,7 @@
                                     <label class="form-label text-success small uppercase fw-bold">Giờ Mở Cửa</label>
                                     <h5 class="mb-0 fw-bold">
                                         <c:choose>
-                                            <c:when test="${not empty requestScope.facility.openTime}">${requestScope.facility.openTime}</c:when>
+                                            <c:when test="${not empty requestScope.openTimeFormatted}">${requestScope.openTimeFormatted}</c:when>
                                             <c:otherwise>-</c:otherwise>
                                         </c:choose>
                                     </h5>
@@ -101,7 +98,7 @@
                                     <label class="form-label text-danger small uppercase fw-bold">Giờ Đóng Cửa</label>
                                     <h5 class="mb-0 fw-bold">
                                         <c:choose>
-                                            <c:when test="${not empty requestScope.facility.closeTime}">${requestScope.facility.closeTime}</c:when>
+                                            <c:when test="${not empty requestScope.closeTimeFormatted}">${requestScope.closeTimeFormatted}</c:when>
                                             <c:otherwise>-</c:otherwise>
                                         </c:choose>
                                     </h5>

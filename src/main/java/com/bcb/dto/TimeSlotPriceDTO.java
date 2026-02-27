@@ -3,20 +3,24 @@ package com.bcb.dto;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
+/**
+ * DTO for displaying price information in the UI.
+ * The price field contains price per hour (already multiplied by 2 from DB).
+ */
 public class TimeSlotPriceDTO {
-    private int slotId;
+    private Integer priceId; // For update operations
     private LocalTime startTime;
     private LocalTime endTime;
-    private BigDecimal price;
+    private BigDecimal price; // Price per hour (for display)
     private String startTimeFormatted;
     private String endTimeFormatted;
 
-    public int getSlotId() {
-        return slotId;
+    public Integer getPriceId() {
+        return priceId;
     }
 
-    public void setSlotId(int slotId) {
-        this.slotId = slotId;
+    public void setPriceId(Integer priceId) {
+        this.priceId = priceId;
     }
 
     public LocalTime getStartTime() {

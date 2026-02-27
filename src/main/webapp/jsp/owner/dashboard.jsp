@@ -15,8 +15,7 @@
 
     <div class="content-area">
 
-        <%-- Set title cho page --%>
-        <c:set var="pageTitle" value="Dashboard" />
+        <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
         <%@ include file="layout/page-header.jsp" %>
 
         <c:if test="${not empty requestScope.error}">

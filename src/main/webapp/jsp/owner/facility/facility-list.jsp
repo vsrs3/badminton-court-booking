@@ -12,8 +12,7 @@
 
     <div class="content-area">
 
-        <%-- PAGE HEADER --%>
-        <c:set var="pageTitle" value="My Locations"/>
+        <%-- PAGE HEADER (breadcrumb + title set by controller) --%>
         <%@ include file="../layout/page-header.jsp" %>
 
         <%-- ALERTS --%>
@@ -74,8 +73,8 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0 d-flex align-items-center">
-                    Locations
-                    <small class="text-muted ms-2">(${requestScope.totalRecords} total)</small>
+                    Địa Điểm
+                    <small class="text-muted ms-2">(${requestScope.totalRecords} địa điểm)</small>
                 </h5>
             </div>
 
@@ -108,8 +107,8 @@
                                         </td>
                                         <td class="px-4 text-muted">
                                             <c:choose>
-                                                <c:when test="${not empty facility.openTime}">
-                                                    ${facility.openTime} – ${facility.closeTime}
+                                                <c:when test="${not empty timeMap[facility.facilityId]}">
+                                                    ${timeMap[facility.facilityId]}
                                                 </c:when>
                                                 <c:otherwise>-</c:otherwise>
                                             </c:choose>

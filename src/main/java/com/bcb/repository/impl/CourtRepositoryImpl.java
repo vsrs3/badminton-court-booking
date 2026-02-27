@@ -20,7 +20,7 @@ public class CourtRepositoryImpl implements CourtRepository {
 
     @Override
     public Optional<Court> findById(int courtId) {
-        String sql = "SELECT court_id, facility_id, court_type_id, court_name, is_active " +
+        String sql = "SELECT court_id, facility_id, court_type_id, court_name, description, is_active " +
                 "FROM Court WHERE court_id = ?";
 
         try (Connection conn = DBContext.getConnection();
@@ -43,8 +43,8 @@ public class CourtRepositoryImpl implements CourtRepository {
 
     @Override
     public int insert(Court court) {
-        String sql = "INSERT INTO Court (facility_id, court_type_id, court_name, is_active) " +
-                "VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -52,7 +52,8 @@ public class CourtRepositoryImpl implements CourtRepository {
             pstmt.setInt(1, court.getFacilityId());
             pstmt.setInt(2, court.getCourtTypeId());
             pstmt.setString(3, court.getCourtName());
-            pstmt.setBoolean(4, court.getIsActive());
+            pstmt.setNString(4, court.getDescription());
+            pstmt.setBoolean(5, court.getIsActive());
 
             pstmt.executeUpdate();
 
@@ -70,7 +71,7 @@ public class CourtRepositoryImpl implements CourtRepository {
 
     @Override
     public int update(Court court) {
-        String sql = "UPDATE Court SET court_type_id = ?, court_name = ? " +
+        String sql = "UPDATE Court SET court_type_id = ?, court_name = ?, description = ? " +
                 "WHERE court_id = ?";
 
         try (Connection conn = DBContext.getConnection();
@@ -78,7 +79,8 @@ public class CourtRepositoryImpl implements CourtRepository {
 
             pstmt.setInt(1, court.getCourtTypeId());
             pstmt.setString(2, court.getCourtName());
-            pstmt.setInt(3, court.getCourtId());
+            pstmt.setNString(3, court.getDescription());
+            pstmt.setInt(4, court.getCourtId());
 
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -103,7 +105,7 @@ public class CourtRepositoryImpl implements CourtRepository {
 
     @Override
     public List<CourtViewDTO> findByFacilityForView(int facilityId) {
-        String sql = "SELECT c.court_id, c.facility_id, c.court_type_id, ct.type_code, c.court_name " +
+        String sql = "SELECT c.court_id, c.facility_id, c.court_type_id, ct.type_code, c.court_name, c.description " +
                 "FROM Court c " +
                 "JOIN CourtType ct ON c.court_type_id = ct.court_type_id " +
                 "WHERE c.facility_id = ? AND c.is_active = 1 " +
@@ -122,6 +124,7 @@ public class CourtRepositoryImpl implements CourtRepository {
                             rs.getInt("court_id"),
                             rs.getInt("facility_id"),
                             rs.getString("court_name"),
+                            rs.getNString("description"),
                             rs.getInt("court_type_id"),
                             rs.getString("type_code")
                     ));
@@ -145,6 +148,7 @@ public class CourtRepositoryImpl implements CourtRepository {
         court.setFacilityId(rs.getInt("facility_id"));
         court.setCourtTypeId(rs.getInt("court_type_id"));
         court.setCourtName(rs.getString("court_name"));
+        court.setDescription(rs.getNString("description"));
 
         boolean isActiveValue = rs.getBoolean("is_active");
         if (rs.wasNull()) {
