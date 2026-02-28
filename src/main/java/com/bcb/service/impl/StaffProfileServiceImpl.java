@@ -28,4 +28,14 @@ public class StaffProfileServiceImpl implements StaffProfilService {
 		return profileRepo.softDeleteAndActive(accountId);
 	}
 
+
+	@Override
+	public boolean resetPassword(Integer accountId, String passwordHash) {
+		if (accountId == null || accountId <= 0) {
+			throw new IllegalArgumentException("Invalid account ID");
+		}
+		
+		return profileRepo.resetPassword(accountId, passwordHash);
+	}
+
 }

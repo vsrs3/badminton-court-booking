@@ -48,33 +48,60 @@ public class SendEmailServiceImpl implements SendEmailService {
 	public void sendWelcomeEmail(String toEmail, String userName, String loginLink)
 			throws MessagingException{
 		
-		String body = "<h2>Xin chào " + userName + ",</h2>"
+		String body = "<h2>Xin chào " + userName + "</h2>"
 
         + "<p>Tài khoản nhân viên của bạn đã được tạo thành công trên hệ thống.</p>"
         + "<p>Vui lòng nhấn vào nút bên dưới để đăng nhập và bắt đầu sử dụng:</p>"
-
+        + "<p>Email đăng nhập: " + toEmail + "</p>"
+        + "<p>Mật khẩu đăng nhập: 123456</p>"
         + "<p>"
 	        + "<a href='" + loginLink + "' "
-	        + "style='display:inline-block;padding:10px 18px;"
-	        + "background-color:#064E3B;color:white;"
-	        + "text-decoration:none;border-radius:5px;font-weight:bold;'>"
-	        + "Đăng nhập hệ thống"
+	        + "style='display:inline-block;"
+	        + "padding:12px 20px;"
+	        + "background-color:#A3E635;"
+	        + "color:#064E3B;"
+	        + "text-decoration:none;"
+	        + "font-weight:600;"
+	        + "border-radius:8px;'>"
+	        + "Đăng nhập ngay"
 	        + "</a>"
         + "</p>"
-
-        + "<p>Vui lòng không chia sẻ email này để đảm bảo an toàn cho doanh nghiệp.</p>"
-        + "<p>Trân trọng,<br><strong>Ban Quản Trị Hệ Thống BCB</strong></p>";
+		+ "<p style='margin-top:20px;font-size:14px;color:#555;'>"
+			+ "Vì lý do bảo mật, vui lòng không chia sẻ email này với bất kỳ ai."
+		+ "</p>"
+        + "<p>Trân trọng,<br><strong>Ban Quản Trị Hệ Thống BCB</strong></p>"
+        + "</div>";
 
         send(toEmail, "Tài khoản của bạn đã được tạo", body);
 	}
 
 	@Override
-	public void resetStaffPassword(String toEmail, String userName, String loginLink)  throws MessagingException{
-		String body = "<h2>Xin chào " + userName + ",</h2>"
-	            + "<p>Yêu cầu đặt lại mật khẩu đã được gửi.</p>"
-	            + "<a href='" + loginLink + "'>Đăng nhập ngay</a>"
-	            + "<p>Link có hiệu lực trong 1 giờ.</p>";
-	        send(toEmail, "Yêu cầu đặt lại mật khẩu", body);
+	public void resetStaffPassword(String toEmail, String userName, String tempPassword, String loginLink)  throws MessagingException{
+		String body = "<div style='font-family: Arial, sans-serif; line-height: 1.6;'>"
+		        + "<h2>Xin chào " + userName + "</h2>"
+		        + "<p>Hệ thống đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>"
+		        + "<p>Mật khẩu tạm thời đã được cấp. Vui lòng đăng nhập và thay đổi mật khẩu ngay sau khi truy cập.</p>"
+		        + "<p>Email đăng nhập: " + toEmail + "</p>"
+		        + "<p>Mật khẩu đăng nhập: " + tempPassword + "</p>"
+		        + "<p style='margin: 24px 0;'>"
+			        + "<a href='" + loginLink + "' "
+			        + "style='display:inline-block;"
+			        + "padding:12px 20px;"
+			        + "background-color:#A3E635;"
+			        + "color:#064E3B;"
+			        + "text-decoration:none;"
+			        + "font-weight:600;"
+			        + "border-radius:8px;'>"
+			        + "Đăng nhập ngay"
+			        + "</a>"
+		        + "</p>"
+		        + "<p style='margin-top:20px;font-size:14px;color:#555;'>"
+		        	+ "Vì lý do bảo mật, vui lòng không chia sẻ email này với bất kỳ ai."
+		        + "</p>"
+		        + "<p>Trân trọng,<br>Ban Quản Trị Hệ Thống BCB</p>"
+		        + "</div>";
+
+		send(toEmail, "Mật khẩu tạm thời của bạn", body);
 
 	}
 

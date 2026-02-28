@@ -30,4 +30,11 @@ public interface StaffProfileRepository {
 	 * @return true if operation successful, false otherwise
 	 */
 	boolean softDeleteAndActive(Integer accountId);
+	
+	/**
+	 * Reset Staff Password
+	 * @param accountId
+	 * @return
+	 */
+	boolean resetPassword(Integer accountId, String passwordHash);
 }

@@ -88,4 +88,26 @@ public class StaffProfileRepositoryImpl implements StaffProfileRepository {
 		}
 	}
 
+
+	@Override
+	public boolean resetPassword(Integer accountId, String passwordHash) {
+		String sql = "Update Account Set "
+					+ "password_hash = ? "
+					+ "Where account_id = ?";
+		
+		try (Connection conn = DBContext.getConnection(); 
+				PreparedStatement ps = conn.prepareStatement(sql)){
+			
+			ps.setString(1, passwordHash);
+			ps.setInt(2, accountId);
+			
+			int result = ps.executeUpdate();
+			return result > 0;
+			
+		} catch (Exception e) {
+			System.out.print(e.getMessage());
+			return false;
+		}
+	}
+
 }

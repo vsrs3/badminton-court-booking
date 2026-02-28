@@ -4,8 +4,10 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <!-- CSS -->
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff-list.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset-password.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/staff-list.css">
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/assets/css/reset-password.css">
 
 <%@ include file="../layout/layout.jsp"%>
 <%@ include file="../layout/sidebar.jsp"%>
@@ -155,7 +157,9 @@
 												</a>
 
 												<button type="button" class="menu-item"
-													onclick="openResetModal(${staff.accountId}, '${staff.fullName}')">
+													data-account-id="${staff.accountId}"
+													data-staff-name="${staff.fullName}"
+													onclick="openResetModal(this.dataset.accountId, this.dataset.staffName)">
 
 													<span class="menu-icon" style="background: #F5F3FF;">
 														<i class="bi bi-key" style="color: #7C3AED;"></i>
@@ -172,7 +176,7 @@
 													style="background:${staff.isActive ? '#FEF2F2' : '#F0FDF4'};">
 														<i
 														class="bi ${staff.isActive ? 'bi-trash' : 'bi-person-check'}"></i>
-												</span> ${staff.isActive ? 'Xóa Nhân Viên' : 'Kích Hoạt'}
+												</span> ${staff.isActive ? 'Xóa Nhân Viên' : 'Khôi Phục Nhân Viên'}
 												</a>
 											</div>
 										</div>
@@ -373,9 +377,15 @@ window.SD_ALL_FACILITIES  = [
 ];
 </script>
 
+<!-- JS load -->
 <script
 	src="${pageContext.request.contextPath}/assets/js/staff/toggle-status.js"></script>
+
 <script
 	src="${pageContext.request.contextPath}/assets/js/validation/hire-form-validation.js"></script>
+
 <script
 	src="${pageContext.request.contextPath}/assets/js/staff/staff-list.js"></script>
+
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/reset-password.js"></script>

@@ -49,7 +49,8 @@
 
 						<%-- Hover overlay camera --%>
 						<div class="sd-avatar-overlay">
-							<!-- <i class="bi bi-camera-fill"></i> --> <!-- <span>Đổi ảnh</span> -->
+							<!-- <i class="bi bi-camera-fill"></i> -->
+							<!-- <span>Đổi ảnh</span> -->
 						</div>
 					</div>
 
@@ -78,16 +79,18 @@
 						id="sd-btn-cancel">
 						<i class="bi bi-x"></i> Hủy chỉnh sửa
 					</button>
-					<button onclick="openResetModal()" class="sd-btn changePass">
+					<button
+						onclick="openResetModal(${staff.accountId}, '${staff.fullName}')"
+						class="sd-btn changePass">
 						<i class="bi bi-shield-lock"></i> Đặt lại mật khẩu
 					</button>
 					<button onclick="toggleStaff()"
 						class="sd-btn ${staff.isActive ? 'term' : 'restore'}">
 						<i class="bi bi-person-${staff.isActive ? 'x' : 'check'}"></i>
-						${staff.isActive ? 'Xóa Nhân Viên' : 'Khôi Phục'}
+						${staff.isActive ? 'Xóa Nhân Viên' : 'Khôi Phục Nhân Viên'}
 					</button>
 				</div>
-				
+
 			</div>
 
 			<%-- TAB NAV --%>
@@ -314,7 +317,7 @@
 <%-- Đóng main-content --%>
 
 <!-- RESET PASSWORD -->
-<%@ include file="/jsp/owner/staffs/reset-password.jsp" %>
+<%@ include file="/jsp/owner/staffs/reset-password.jsp"%>
 
 <%--DATA BRIDGE  JSP → JS--%>
 <script>
@@ -340,14 +343,19 @@
 </script>
 
 <!-- Link JS -->
-<script src="${pageContext.request.contextPath}/assets/js/staff/staff-detail.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/staff-detail.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/previewAvatar.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/previewAvatar.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/validation/staff-validation.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/validation/staff-validation.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/staff/toggle-status.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/toggle-status.js"></script>
 
-<script src="${pageContext.request.contextPath}/assets/js/staff/reset-password.js"></script>
+<script
+	src="${pageContext.request.contextPath}/assets/js/staff/reset-password.js"></script>
 
 

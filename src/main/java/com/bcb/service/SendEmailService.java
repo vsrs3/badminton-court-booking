@@ -26,5 +26,5 @@ public interface SendEmailService {
 	 * @param userName
 	 * @param link
 	 */
-	void resetStaffPassword(String toEmail, String userName, String loginLink)  throws MessagingException;
+	void resetStaffPassword(String toEmail, String userName, String tempPassword, String loginLink)  throws MessagingException;
 }
