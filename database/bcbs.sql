@@ -338,7 +338,7 @@ CREATE TABLE BookingSlot (
                                  CHECK (slot_status IN ('PENDING','CHECKED_IN','CHECK_OUT','NO_SHOW','CANCELLED'))
                                  DEFAULT 'PENDING',
                              checkin_time DATETIME NULL,
-                             checkin_time DATETIME NULL,
+                             checkout_time DATETIME NULL,
 
                              FOREIGN KEY (booking_id) REFERENCES Booking(booking_id) ON DELETE CASCADE,
                              FOREIGN KEY (court_id) REFERENCES Court(court_id),
