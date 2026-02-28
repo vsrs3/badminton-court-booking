@@ -24,24 +24,30 @@ public class TimeSlotRepositoryImpl implements TimeSlotRepository {
     @Override
     public List<SingleBookingMatrixTimeSlotDTO> findByTimeRange(LocalTime openTime, LocalTime closeTime) {
         String sql = "SELECT slot_id, start_time, end_time FROM TimeSlot "
-                   + "WHERE start_time >= ? AND end_time <= ? ORDER BY start_time";
+                + "WHERE start_time >= CAST(? AS TIME) AND end_time <= CAST(? AS TIME) ORDER BY start_time";
         List<SingleBookingMatrixTimeSlotDTO> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setTime(1, Time.valueOf(openTime));
-            ps.setTime(2, Time.valueOf(closeTime));
+            // Dùng setString với format HH:mm:ss để tránh type mismatch
+            ps.setString(1, openTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            ps.setString(2, closeTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     SingleBookingMatrixTimeSlotDTO dto = new SingleBookingMatrixTimeSlotDTO();
                     dto.setSlotId(rs.getInt("slot_id"));
-                    dto.setStartTime(rs.getTime("start_time").toLocalTime().format(TF));
-                    dto.setEndTime(rs.getTime("end_time").toLocalTime().format(TF));
+                    String st = rs.getString("start_time");
+                    String et = rs.getString("end_time");
+                    if (st == null || et == null) continue;
+                    // Cắt lấy HH:mm từ "HH:mm:ss.0000000"
+                    dto.setStartTime(st.substring(0, 5));
+                    dto.setEndTime(et.substring(0, 5));
                     list.add(dto);
                 }
             }
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to find time slots by range", e);
+            throw new DataAccessException("Failed to find time slots by range | Cause: " + e.getMessage(), e);
         }
         return list;
     }
+
 }
