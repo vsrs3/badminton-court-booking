@@ -21,9 +21,10 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     private final String UPDATE_PASSWORD = "Update Account Set " +
                                                 "password_hash = ? " +
                                                 "Where account_id = ?";
-            //"And password_hash = ?"
+            									//"And password_hash = ?"
 
     private final String GET_CUSTOMER_BY_ID = "Select * From Account Where account_id = ?";
+    
     private final String GET_LIST_EMAIL = "SELECT email, [role] "
                                         + "FROM Account "
                                         + "WHERE email IS NOT NULL "

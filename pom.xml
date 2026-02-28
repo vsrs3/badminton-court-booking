@@ -59,6 +59,7 @@
             <version>20240303</version>
         </dependency>
 
+        <!-- jbcrypt -->
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
@@ -86,6 +87,14 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Jakarta Mail -->
+        <dependency>
+		    <groupId>org.eclipse.angus</groupId>
+		    <artifactId>angus-mail</artifactId>
+		    <version>2.0.3</version>
+		</dependency>
+
     </dependencies>
 
     <build>
