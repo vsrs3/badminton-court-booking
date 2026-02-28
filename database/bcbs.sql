@@ -701,3 +701,127 @@ VALUES (
            GETDATE()
        );
 END
+
+-- ============================================================
+-- SAMPLE DATA: Court (sân) cho 5 facility đầu tiên
+-- ============================================================
+-- Facility 1: CLB Cầu Lông Hà Đông Star (3 sân NORMAL, 1 sân VIP)
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+(1, 1, N'Sân A1', N'Sân tiêu chuẩn', 1),
+(1, 1, N'Sân A2', N'Sân tiêu chuẩn', 1),
+(1, 1, N'Sân A3', N'Sân tiêu chuẩn', 1),
+(1, 2, N'Sân VIP 1', N'Sân VIP chất lượng cao', 1);
+
+-- Facility 2: CLB Cầu Lông Thanh Xuân Pro
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+(2, 1, N'Sân B1', N'Sân tiêu chuẩn', 1),
+(2, 1, N'Sân B2', N'Sân tiêu chuẩn', 1),
+(2, 2, N'Sân VIP 1', N'Sân VIP', 1);
+
+-- Facility 3: CLB Cầu Lông Văn Quán
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+(3, 1, N'Sân C1', N'Sân tiêu chuẩn', 1),
+(3, 1, N'Sân C2', N'Sân tiêu chuẩn', 1);
+
+-- Facility 4: CLB Cầu Lông Yên Nghĩa
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+(4, 1, N'Sân D1', N'Sân tiêu chuẩn', 1),
+(4, 1, N'Sân D2', N'Sân tiêu chuẩn', 1),
+(4, 1, N'Sân D3', N'Sân tiêu chuẩn', 1);
+
+-- Facility 5: CLB Cầu Lông Kiến Hưng
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+(5, 1, N'Sân E1', N'Sân tiêu chuẩn', 1),
+(5, 1, N'Sân E2', N'Sân tiêu chuẩn', 1),
+(5, 2, N'Sân VIP 1', N'Sân VIP', 1);
+GO
+
+-- ============================================================
+-- SAMPLE DATA: FacilityPriceRule
+-- Giá mỗi 30 phút, chia theo khung giờ sáng/chiều/tối và WEEKDAY/WEEKEND
+-- ============================================================
+
+-- Facility 1 – NORMAL courts (court_type_id=1)
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(1, 1, 'WEEKDAY', '05:30', '11:00', 60000),   -- Sáng
+(1, 1, 'WEEKDAY', '11:00', '17:00', 50000),   -- Chiều
+(1, 1, 'WEEKDAY', '17:00', '22:00', 75000),   -- Tối
+(1, 1, 'WEEKEND', '05:30', '11:00', 75000),
+(1, 1, 'WEEKEND', '11:00', '17:00', 65000),
+(1, 1, 'WEEKEND', '17:00', '22:00', 90000);
+
+-- Facility 1 – VIP courts (court_type_id=2)
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(1, 2, 'WEEKDAY', '05:30', '11:00', 100000),
+(1, 2, 'WEEKDAY', '11:00', '17:00', 90000),
+(1, 2, 'WEEKDAY', '17:00', '22:00', 120000),
+(1, 2, 'WEEKEND', '05:30', '11:00', 120000),
+(1, 2, 'WEEKEND', '11:00', '17:00', 110000),
+(1, 2, 'WEEKEND', '17:00', '22:00', 140000);
+
+-- Facility 2 – NORMAL
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(2, 1, 'WEEKDAY', '06:00', '11:00', 55000),
+(2, 1, 'WEEKDAY', '11:00', '17:00', 45000),
+(2, 1, 'WEEKDAY', '17:00', '23:00', 70000),
+(2, 1, 'WEEKEND', '06:00', '11:00', 70000),
+(2, 1, 'WEEKEND', '11:00', '17:00', 60000),
+(2, 1, 'WEEKEND', '17:00', '23:00', 85000);
+
+-- Facility 2 – VIP
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(2, 2, 'WEEKDAY', '06:00', '11:00', 90000),
+(2, 2, 'WEEKDAY', '11:00', '17:00', 80000),
+(2, 2, 'WEEKDAY', '17:00', '23:00', 110000),
+(2, 2, 'WEEKEND', '06:00', '11:00', 110000),
+(2, 2, 'WEEKEND', '11:00', '17:00', 100000),
+(2, 2, 'WEEKEND', '17:00', '23:00', 130000);
+
+-- Facility 3 – NORMAL
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(3, 1, 'WEEKDAY', '06:00', '17:00', 50000),
+(3, 1, 'WEEKDAY', '17:00', '22:00', 65000),
+(3, 1, 'WEEKEND', '06:00', '17:00', 65000),
+(3, 1, 'WEEKEND', '17:00', '22:00', 80000);
+
+-- Facility 4 – NORMAL
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(4, 1, 'WEEKDAY', '05:00', '11:00', 55000),
+(4, 1, 'WEEKDAY', '11:00', '17:00', 45000),
+(4, 1, 'WEEKDAY', '17:00', '22:00', 70000),
+(4, 1, 'WEEKEND', '05:00', '11:00', 70000),
+(4, 1, 'WEEKEND', '11:00', '17:00', 60000),
+(4, 1, 'WEEKEND', '17:00', '22:00', 85000);
+
+-- Facility 5 – NORMAL (open 06:00 – 22:30)
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(5, 1, 'WEEKDAY', '06:00', '11:00', 50000),
+(5, 1, 'WEEKDAY', '11:00', '17:00', 45000),
+(5, 1, 'WEEKDAY', '17:00', '22:30', 70000),
+(5, 1, 'WEEKEND', '06:00', '11:00', 65000),
+(5, 1, 'WEEKEND', '11:00', '17:00', 55000),
+(5, 1, 'WEEKEND', '17:00', '22:30', 85000);
+
+-- Facility 5 – VIP
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+(5, 2, 'WEEKDAY', '06:00', '11:00', 90000),
+(5, 2, 'WEEKDAY', '11:00', '17:00', 80000),
+(5, 2, 'WEEKDAY', '17:00', '22:30', 110000),
+(5, 2, 'WEEKEND', '06:00', '11:00', 110000),
+(5, 2, 'WEEKEND', '11:00', '17:00', 100000),
+(5, 2, 'WEEKEND', '17:00', '22:30', 130000);
+GO
+
