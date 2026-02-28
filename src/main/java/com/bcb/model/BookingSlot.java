@@ -1,6 +1,7 @@
 package com.bcb.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class BookingSlot {
     private Integer bookingSlotId;
@@ -8,6 +9,10 @@ public class BookingSlot {
     private Integer courtID;
     private Integer slotId;
     private BigDecimal price;
+
+    private String bookingStatus;
+    private LocalDateTime checkinTime;
+    private LocalDateTime checkoutTime;
 
     public BookingSlot() {}
 
@@ -26,5 +31,29 @@ public class BookingSlot {
 
     public void setCourtID(Integer courtID) {
         this.courtID = courtID;
+    }
+
+    public String getBookingStatus() {
+        return bookingStatus;
+    }
+
+    public void setBookingStatus(String bookingStatus) {
+        this.bookingStatus = bookingStatus;
+    }
+
+    public LocalDateTime getCheckinTime() {
+        return checkinTime;
+    }
+
+    public void setCheckinTime(LocalDateTime checkinTime) {
+        this.checkinTime = checkinTime;
+    }
+
+    public LocalDateTime getCheckoutTime() {
+        return checkoutTime;
+    }
+
+    public void setCheckoutTime(LocalDateTime checkoutTime) {
+        this.checkoutTime = checkoutTime;
     }
 }
