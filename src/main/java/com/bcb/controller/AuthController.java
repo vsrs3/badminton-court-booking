@@ -163,7 +163,7 @@ public class AuthController extends HttpServlet {
 
         } catch (RuntimeException e) {
             // Authentication failed - show generic error
-            System.out.println("❌ Login failed: " + e.getMessage());
+            System.out.println(" Login failed: " + e.getMessage());
 
             request.setAttribute("error", "Email hoặc mật khẩu không đúng");
             request.setAttribute("email", email); // Preserve email input
@@ -181,7 +181,7 @@ public class AuthController extends HttpServlet {
         if (session != null) {
             String email = (String) session.getAttribute("email");
             session.invalidate();
-            System.out.println("👋 User logged out: " + email);
+            System.out.println(" User logged out: " + email);
         }
 
         response.sendRedirect(request.getContextPath() + "/auth/login");
