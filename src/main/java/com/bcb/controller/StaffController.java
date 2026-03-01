@@ -20,6 +20,8 @@ import java.util.List;
 /**
  * Front controller for all /staff/* page routes.
  * API routes are handled by separate servlets under /api/staff/*.
+ *
+ * Task 9c: Added /booking/create route.
  */
 @WebServlet(name = "StaffController", urlPatterns = {"/staff/*"})
 public class StaffController extends HttpServlet {
@@ -63,6 +65,10 @@ public class StaffController extends HttpServlet {
 
             case "/booking/list":
                 forward(request, response, "/jsp/staff/staff-booking-list.jsp");
+                break;
+
+            case "/booking/create":
+                forward(request, response, "/jsp/staff/staff-booking-create.jsp");
                 break;
 
             default:

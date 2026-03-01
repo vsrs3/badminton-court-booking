@@ -1,24 +1,19 @@
 /* ================================================================
    STAFF TIMELINE — staff-timeline.css
    Prefix: st- (staff-timeline)
+   Task 9a: Booking proxy mode
    ================================================================ */
 
-/* ===== FIX: Horizontal scroll for timeline grid =====
-   emerald-admin.css sets body { overflow-x: hidden } which prevents
-   ALL horizontal scrolling on the page.
-
-   Solution: Constrain .main-content width so it never overflows body,
-   then let .st-grid-scroll handle horizontal scroll internally. */
+/* ===== FIX: Horizontal scroll for timeline grid ===== */
 .main-content {
     max-width: calc(100vw - var(--sidebar-width, 260px));
-    overflow-x: hidden;  /* .main-content itself doesn't scroll */
+    overflow-x: hidden;
 }
 
 .main-content .content-area {
-    overflow: hidden;    /* contain children */
+    overflow: hidden;
 }
 
-/* On mobile (sidebar hidden), full width */
 @media (max-width: 991.98px) {
     .main-content {
         max-width: 100vw;
@@ -155,6 +150,7 @@
 .st-dot-completed  { background: #DBEAFE; border: 1px solid #93C5FD; }
 .st-dot-cancelled  { background: #FEE2E2; border: 1px solid #FCA5A5; }
 .st-dot-disabled   { background: #E5E7EB; border: 1px solid #D1D5DB; }
+.st-dot-selected   { background: #7C3AED; border: 1px solid #8B5CF6; }
 
 /* ===== GRID WRAPPER ===== */
 .st-grid-wrapper {
@@ -380,6 +376,175 @@
     letter-spacing: 0.04em;
 }
 
+/* ================================================================
+   TASK 9a: PROXY MODE — Selected cells + UI
+   ================================================================ */
+
+/* Proxy mode button */
+.st-proxy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border: 2px solid var(--primary-color, #064e3b);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    color: var(--primary-color, #064e3b);
+}
+.st-proxy-btn:hover {
+    background: var(--primary-color, #064e3b);
+    color: white;
+}
+
+.st-proxy-btn-cancel {
+    border-color: #DC2626;
+    color: #DC2626;
+    background: white;
+}
+.st-proxy-btn-cancel:hover {
+    background: #DC2626;
+    color: white;
+}
+
+/* Available cell in proxy mode: clickable */
+.st-proxy-mode .st-cell-available .st-cell-inner {
+    cursor: pointer;
+    border: 1px dashed #8B5CF6;
+    background: #FAFAFE;
+    color: #8B5CF6;
+}
+.st-proxy-mode .st-cell-available .st-cell-inner:hover {
+    background: #EDE9FE;
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+/* Cancelled cell in proxy mode: also clickable (slot is free) */
+.st-proxy-mode .st-cell-cancelled .st-cell-inner {
+    cursor: pointer;
+}
+
+/* SELECTED cell */
+.st-cell-selected .st-cell-inner {
+    background: #7C3AED !important;
+    border: 2px solid #6D28D9 !important;
+    color: white !important;
+    cursor: pointer !important;
+    font-weight: 700;
+}
+.st-cell-selected .st-cell-inner:hover {
+    background: #6D28D9 !important;
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+}
+
+/* Error highlight: lone slot */
+.st-cell-error .st-cell-inner {
+    animation: st-shake 0.4s ease;
+    box-shadow: 0 0 0 3px #EF4444 !important;
+}
+
+@keyframes st-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-3px); }
+    40%, 80% { transform: translateX(3px); }
+}
+
+/* ===== BOTTOM BAR (sticky) ===== */
+.st-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: var(--sidebar-width, 260px);
+    right: 0;
+    background: white;
+    border-top: 2px solid #E5E7EB;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    z-index: 100;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    animation: st-slide-up 0.25s ease;
+}
+
+@keyframes st-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
+@media (max-width: 991.98px) {
+    .st-bottom-bar {
+        left: 0;
+    }
+}
+
+.st-bottom-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.st-bottom-count {
+    color: #7C3AED;
+    font-weight: 800;
+}
+
+.st-bottom-sep {
+    color: #D1D5DB;
+}
+
+.st-bottom-price {
+    color: var(--primary-color, #064e3b);
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.st-bottom-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.st-bottom-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.st-bottom-btn-clear {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+.st-bottom-btn-clear:hover {
+    background: #E5E7EB;
+    color: #374151;
+}
+
+.st-bottom-btn-continue {
+    background: var(--primary-color, #064e3b);
+    color: white;
+}
+.st-bottom-btn-continue:hover {
+    background: #047857;
+    box-shadow: 0 4px 12px rgba(6, 95, 70, 0.3);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 767.98px) {
     .st-date-bar {
@@ -397,5 +562,16 @@
     }
     .st-cell {
         min-width: 70px;
+    }
+    .st-bottom-bar {
+        flex-direction: column;
+        padding: 0.625rem 1rem;
+        gap: 0.5rem;
+    }
+    .st-bottom-actions {
+        width: 100%;
+    }
+    .st-bottom-btn-continue {
+        flex: 1;
     }
 }

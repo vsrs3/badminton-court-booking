@@ -1,4 +1,4 @@
-<%-- staff-timeline.jsp — Task 2: Timeline Page --%>
+<%-- staff-timeline.jsp — Task 9a: Booking proxy mode --%>
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -33,6 +33,16 @@
                         <c:out value="${sessionScope.facilityName}" default="cơ sở của bạn"/>
                     </strong>
                 </p>
+            </div>
+
+            <%-- Task 9a: Booking proxy button --%>
+            <div>
+                <button type="button" class="st-proxy-btn" id="btnProxyMode">
+                    <i class="bi bi-plus-circle me-1"></i>Đặt hộ khách
+                </button>
+                <button type="button" class="st-proxy-btn st-proxy-btn-cancel d-none" id="btnProxyCancel">
+                    <i class="bi bi-x-circle me-1"></i>Hủy đặt hộ
+                </button>
             </div>
         </div>
 
@@ -77,6 +87,10 @@
             <div class="st-legend-item">
                 <span class="st-legend-dot st-dot-disabled"></span>Bảo trì
             </div>
+            <%-- Task 9a: Selected legend (hidden by default) --%>
+            <div class="st-legend-item d-none" id="legendSelected">
+                <span class="st-legend-dot st-dot-selected"></span>Đã chọn
+            </div>
         </div>
 
         <%-- ===== TIMELINE GRID CONTAINER ===== --%>
@@ -109,15 +123,30 @@
                     <thead>
                     <tr id="gridHeaderRow">
                         <th class="st-grid-corner">Sân \ Giờ</th>
-                        <%-- Time slot headers will be injected by JS --%>
                     </tr>
                     </thead>
                     <tbody id="gridBody">
-                    <%-- Court rows + cells will be injected by JS --%>
                     </tbody>
                 </table>
             </div>
 
+        </div>
+
+        <%-- ===== Task 9a: BOTTOM BAR (sticky) ===== --%>
+        <div class="st-bottom-bar d-none" id="bottomBar">
+            <div class="st-bottom-info">
+                <span class="st-bottom-count" id="bottomCount">0 slot</span>
+                <span class="st-bottom-sep">·</span>
+                <span class="st-bottom-price" id="bottomPrice">0đ</span>
+            </div>
+            <div class="st-bottom-actions">
+                <button type="button" class="st-bottom-btn st-bottom-btn-clear" id="btnClearAll">
+                    <i class="bi bi-trash me-1"></i>Bỏ chọn
+                </button>
+                <button type="button" class="st-bottom-btn st-bottom-btn-continue" id="btnContinue">
+                    Tiếp tục<i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
         </div>
 
     </div>
@@ -134,7 +163,6 @@
     window.ST_FACILITY_ID = '${sessionScope.facilityId}';
 </script>
 
-<%-- Timeline JS (Task 3 sẽ thêm logic, hiện tại chỉ init date) --%>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-timeline.js"></script>
 
 </body>
