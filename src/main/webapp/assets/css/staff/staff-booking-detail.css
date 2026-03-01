@@ -1,0 +1,342 @@
+/* ================================================================
+   STAFF BOOKING DETAIL — staff-booking-detail.css
+   Prefix: sbd- (staff-booking-detail)
+   Task 8 v2: Session-based checkin/checkout
+   ================================================================ */
+
+/* Back link */
+.sbd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary-color, #064e3b);
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.15s;
+}
+.sbd-back-link:hover {
+    opacity: 0.7;
+    color: var(--primary-color, #064e3b);
+}
+
+/* Loading / Error state */
+.sbd-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 5rem 2rem;
+    text-align: center;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+/* Card styling */
+.sbd-card {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    overflow: hidden;
+    margin-bottom: 0; /* let Bootstrap g-4 handle gap */
+}
+
+.sbd-card-header {
+    background: #F8FAFC !important;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #374151;
+    padding: 0.875rem 1.25rem !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    border-radius: 0 !important;
+    display: flex;
+    align-items: center;
+}
+
+/* Field label + value */
+.sbd-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sbd-field-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sbd-field-value {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1F2937;
+}
+
+.sbd-field-value.sbd-money {
+    font-weight: 800;
+    color: var(--primary-color, #064e3b);
+    font-size: 1rem;
+}
+
+/* Status badge (large) */
+.sbd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sbd-status-pending   { background: #FEF3C7; color: #92400E; }
+.sbd-status-confirmed { background: #D1FAE5; color: #065F46; }
+.sbd-status-completed { background: #DBEAFE; color: #1E40AF; }
+.sbd-status-cancelled { background: #FEE2E2; color: #991B1B; }
+.sbd-status-expired   { background: #F3F4F6; color: #6B7280; }
+
+/* Payment status badges */
+.sbd-pay-unpaid  { background: #FEE2E2; color: #991B1B; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+.sbd-pay-partial { background: #FEF3C7; color: #92400E; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+.sbd-pay-paid    { background: #D1FAE5; color: #065F46; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+
+/* No data text */
+.sbd-no-data {
+    color: #D1D5DB;
+    font-style: italic;
+    font-size: 0.8125rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* ================================================================
+   SESSION CARD — Phiên chơi
+   ================================================================ */
+
+/* Progress text in card header */
+.sbd-session-progress {
+    margin-left: auto;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #6B7280;
+    background: #F3F4F6;
+    padding: 0.15rem 0.5rem;
+    border-radius: 1rem;
+}
+
+/* Each session row */
+.sbd-session {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #F3F4F6;
+    transition: background-color 0.15s;
+}
+.sbd-session:last-child {
+    border-bottom: none;
+}
+.sbd-session:hover {
+    background-color: #FAFBFC;
+}
+
+/* Session index badge (circle number) */
+.sbd-session-idx {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    background: #F3F4F6;
+    color: #6B7280;
+}
+.sbd-session.sbd-ss-checked_in .sbd-session-idx {
+    background: #D1FAE5;
+    color: #065F46;
+}
+.sbd-session.sbd-ss-completed .sbd-session-idx {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* Session info block */
+.sbd-session-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.sbd-session-court {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 0.125rem;
+}
+
+.sbd-session-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.sbd-session-meta span {
+    font-size: 0.75rem;
+    color: #6B7280;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.sbd-session-meta span i {
+    font-size: 0.6875rem;
+}
+
+.sbd-session-price {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--primary-color, #064e3b);
+    white-space: nowrap;
+}
+
+/* Session status text */
+.sbd-session-status {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    white-space: nowrap;
+}
+.sbd-ss-label-pending   { background: #F3F4F6; color: #9CA3AF; }
+.sbd-ss-label-checked_in { background: #D1FAE5; color: #065F46; }
+.sbd-ss-label-completed  { background: #DBEAFE; color: #1E40AF; }
+.sbd-ss-label-waiting    { background: #FEF3C7; color: #92400E; }
+
+/* Timestamp display below status */
+.sbd-session-time-info {
+    font-size: 0.6875rem;
+    color: #9CA3AF;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+/* Session action area */
+.sbd-session-action {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.375rem;
+    min-width: 120px;
+}
+
+/* Action buttons */
+.sbd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    width: 100%;
+}
+.sbd-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Check-in button: green */
+.sbd-btn-checkin {
+    background: #065F46;
+    color: white;
+}
+.sbd-btn-checkin:hover:not(:disabled) {
+    background: #047857;
+    box-shadow: 0 2px 8px rgba(6, 95, 70, 0.25);
+}
+
+/* Check-out button: blue */
+.sbd-btn-checkout {
+    background: #1E40AF;
+    color: white;
+}
+.sbd-btn-checkout:hover:not(:disabled) {
+    background: #1D4ED8;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
+}
+
+/* Waiting button (disabled look) */
+.sbd-btn-waiting {
+    background: #F3F4F6;
+    color: #9CA3AF;
+    cursor: default;
+    font-weight: 600;
+}
+
+/* Loading spinner on button */
+.sbd-btn .sbd-btn-spinner {
+    display: inline-block;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: sbd-spin 0.6s linear infinite;
+}
+
+@keyframes sbd-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Toast message (success/error) */
+.sbd-toast {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: white;
+    z-index: 9999;
+    animation: sbd-slide-in 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.sbd-toast-success { background: #065F46; }
+.sbd-toast-error   { background: #991B1B; }
+
+@keyframes sbd-slide-in {
+    from { opacity: 0; transform: translateX(1rem); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 575.98px) {
+    .sbd-session {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .sbd-session-action {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+    }
+    .sbd-btn {
+        width: auto;
+        flex: 1;
+    }
+}
