@@ -1,24 +1,24 @@
 /**
- * staff-timeline.js — Task 3: Real AJAX fetch + dynamic render
+ * staff-timeline.js — Task 3 + Task 6: Support ?date= URL param
  */
 (function () {
     'use strict';
 
     // ─── DOM refs ───
-    const btnToday      = document.getElementById('btnToday');
-    const btnTomorrow   = document.getElementById('btnTomorrow');
-    const dateInput     = document.getElementById('datePickerInput');
-    const dateDisplay   = document.getElementById('currentDateDisplay');
-    const stateLoading  = document.getElementById('stateLoading');
-    const stateError    = document.getElementById('stateError');
-    const stateEmpty    = document.getElementById('stateEmpty');
-    const gridScroll    = document.getElementById('gridScroll');
-    const gridHeaderRow = document.getElementById('gridHeaderRow');
-    const gridBody      = document.getElementById('gridBody');
+    var btnToday      = document.getElementById('btnToday');
+    var btnTomorrow   = document.getElementById('btnTomorrow');
+    var dateInput     = document.getElementById('datePickerInput');
+    var dateDisplay   = document.getElementById('currentDateDisplay');
+    var stateLoading  = document.getElementById('stateLoading');
+    var stateError    = document.getElementById('stateError');
+    var stateEmpty    = document.getElementById('stateEmpty');
+    var gridScroll    = document.getElementById('gridScroll');
+    var gridHeaderRow = document.getElementById('gridHeaderRow');
+    var gridBody      = document.getElementById('gridBody');
 
-    const CTX         = window.ST_CTX || '';
-    const FACILITY_ID = window.ST_FACILITY_ID || '';
-    let currentDate   = todayStr();
+    var CTX         = window.ST_CTX || '';
+    var FACILITY_ID = window.ST_FACILITY_ID || '';
+    var currentDate = todayStr();
 
     // ─── Date helpers ───
     function todayStr() {
@@ -26,23 +26,23 @@
     }
 
     function tomorrowStr() {
-        const d = new Date();
+        var d = new Date();
         d.setDate(d.getDate() + 1);
         return fmtDate(d);
     }
 
     function fmtDate(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
         return y + '-' + m + '-' + day;
     }
 
     function fmtDisplayDate(dateStr) {
-        const d = new Date(dateStr + 'T00:00:00');
-        const wd = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-        const day = String(d.getDate()).padStart(2, '0');
-        const mon = String(d.getMonth() + 1).padStart(2, '0');
+        var d = new Date(dateStr + 'T00:00:00');
+        var wd = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+        var day = String(d.getDate()).padStart(2, '0');
+        var mon = String(d.getMonth() + 1).padStart(2, '0');
         return wd[d.getDay()] + ', ' + day + '/' + mon + '/' + d.getFullYear();
     }
 
@@ -74,7 +74,11 @@
         updateButtons(dateStr);
         showState('loading');
 
-        const url = CTX + '/api/staff/timeline?date=' + encodeURIComponent(dateStr);
+        // Update URL without reload (so back button preserves date)
+        var newUrl = window.location.pathname + '?date=' + dateStr;
+        history.replaceState(null, '', newUrl);
+
+        var url = CTX + '/api/staff/timeline?date=' + encodeURIComponent(dateStr);
 
         fetch(url, {
             method: 'GET',
@@ -96,22 +100,19 @@
                     throw new Error(body.message || 'Lỗi không xác định');
                 }
 
-                const data = body.data;
+                var data = body.data;
 
-                // No courts → empty
                 if (!data.courts || data.courts.length === 0) {
                     showState('empty');
                     return;
                 }
 
-                // No slots → empty
                 if (!data.slots || data.slots.length === 0) {
                     showState('empty');
                     return;
                 }
 
-                // Build cell lookup map: "courtId-slotId" → cell
-                const cellMap = {};
+                var cellMap = {};
                 if (data.cells) {
                     data.cells.forEach(function (c) {
                         cellMap[c.courtId + '-' + c.slotId] = c;
@@ -128,55 +129,47 @@
 
     // ─── RENDER grid ───
     function renderGrid(courts, slots, cellMap) {
-        // Clear
         gridHeaderRow.innerHTML = '<th class="st-grid-corner">Sân \\ Giờ</th>';
         gridBody.innerHTML = '';
 
-        // Header row: time slots
         slots.forEach(function (s) {
-            const th = document.createElement('th');
+            var th = document.createElement('th');
             th.textContent = s.startTime;
             gridHeaderRow.appendChild(th);
         });
 
-        // Court rows
         courts.forEach(function (court) {
-            const tr = document.createElement('tr');
+            var tr = document.createElement('tr');
 
-            // Court name (sticky)
-            const tdName = document.createElement('td');
+            var tdName = document.createElement('td');
             tdName.className = 'st-court-name';
             tdName.textContent = court.courtName;
             tr.appendChild(tdName);
 
-            // Cells
             slots.forEach(function (slot) {
-                const key = court.courtId + '-' + slot.slotId;
-                const cell = cellMap[key] || { state: 'AVAILABLE' };
+                var key = court.courtId + '-' + slot.slotId;
+                var cell = cellMap[key] || { state: 'AVAILABLE' };
 
-                const td = document.createElement('td');
+                var td = document.createElement('td');
                 td.className = 'st-cell';
 
-                const inner = document.createElement('div');
+                var inner = document.createElement('div');
                 inner.className = 'st-cell-inner';
 
                 if (cell.state === 'BOOKED') {
-                    const statusLower = cell.bookingStatus.toLowerCase();
+                    var statusLower = cell.bookingStatus.toLowerCase();
                     td.classList.add('st-cell-' + statusLower);
 
-                    // Customer name
-                    const nameEl = document.createElement('span');
+                    var nameEl = document.createElement('span');
                     nameEl.className = 'st-cell-customer';
                     nameEl.textContent = cell.customerName || '—';
                     inner.appendChild(nameEl);
 
-                    // Status label
-                    const statusEl = document.createElement('span');
+                    var statusEl = document.createElement('span');
                     statusEl.className = 'st-cell-status';
                     statusEl.textContent = statusLabel(cell.bookingStatus);
                     inner.appendChild(statusEl);
 
-                    // Click → detail page
                     if (cell.bookingId) {
                         inner.style.cursor = 'pointer';
                         inner.setAttribute('data-booking-id', cell.bookingId);
@@ -187,13 +180,12 @@
 
                 } else if (cell.state === 'DISABLED') {
                     td.classList.add('st-cell-disabled');
-                    const reasonEl = document.createElement('span');
+                    var reasonEl = document.createElement('span');
                     reasonEl.className = 'st-cell-reason';
                     reasonEl.textContent = cell.disabledReason || 'Không khả dụng';
                     inner.appendChild(reasonEl);
 
                 } else {
-                    // AVAILABLE
                     td.classList.add('st-cell-available');
                 }
 
@@ -237,7 +229,13 @@
         }
     });
 
-    // ─── Init: load today ───
-    fetchTimeline(todayStr());
+    // ─── Init: check ?date= URL param, else load today ───
+    var urlParams = new URLSearchParams(window.location.search);
+    var initDate = urlParams.get('date');
+    if (initDate && /^\d{4}-\d{2}-\d{2}$/.test(initDate)) {
+        fetchTimeline(initDate);
+    } else {
+        fetchTimeline(todayStr());
+    }
 
 })();

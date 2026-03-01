@@ -1,4 +1,4 @@
-<%-- staff-booking-detail.jsp — Task 4 --%>
+<%-- staff-booking-detail.jsp — Task 4 + Task 6 polish --%>
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -21,8 +21,8 @@
     <%-- 5. Content area --%>
     <div class="content-area">
 
-        <%-- Back button --%>
-        <a href="javascript:history.back()" class="sbd-back-link">
+        <%-- Back button — smart: go to previous page or fallback to timeline --%>
+        <a href="#" class="sbd-back-link" id="backLink">
             <i class="bi bi-arrow-left"></i> Quay lại
         </a>
 
@@ -36,7 +36,8 @@
         <div id="stateError" class="sbd-state d-none">
             <i class="bi bi-exclamation-triangle" style="font-size:2.5rem; color:#EF4444;"></i>
             <p id="errorMessage">Không thể tải dữ liệu.</p>
-            <a href="javascript:history.back()" class="btn btn-brand btn-sm rounded-3">
+            <a href="#" class="btn btn-sm rounded-3" id="backLinkError"
+               style="background:var(--primary-color);color:white;">
                 <i class="bi bi-arrow-left me-1"></i>Quay lại
             </a>
         </div>
