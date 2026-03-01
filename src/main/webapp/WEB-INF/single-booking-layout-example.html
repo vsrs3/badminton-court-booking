@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Đặt lịch sân bóng</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <style>
+        body { background: #f8fafc; font-family: system-ui, sans-serif; }
+        .table-container { max-height: 600px; overflow: auto; }
+        .slot-cell {
+            height: 48px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.15s;
+        }
+        .slot-cell:hover:not(.disabled) {
+            border-color: #10b981;
+            z-index: 10;
+        }
+        .slot-cell.selected {
+            background-color: #10b981 !important;
+            border-color: #059669;
+            z-index: 10;
+        }
+        .slot-cell.booked { background-color: #fee2e2; cursor: not-allowed; }
+        .slot-cell.past   { background-color: #f1f5f9; cursor: not-allowed; }
+        .sticky-left {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.05);
+        }
+        .calendar-popup {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 1000;
+            width: 18rem;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+        .calendar-day {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        .calendar-day:hover:not(.disabled) { background: #f1f5f9; }
+        .calendar-day.selected { background: #10b981; color: white; font-weight: bold; }
+        .calendar-day.today { border: 2px solid #6ee7b7; color: #10b981; }
+        .calendar-day.disabled { opacity: 0.2; cursor: not-allowed; }
+        .legend-dot { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="bg-white border-bottom shadow-sm sticky-top">
+    <div class="container py-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <h4 class="mb-0 d-flex align-items-center gap-2">
+                    <i data-lucide="calendar-check" class="text-success"></i>
+                    Đặt lịch sân
+                </h4>
+                <small class="text-muted">Chọn sân và khung giờ phù hợp</small>
+            </div>
+
+            <div class="position-relative" id="datePickerWrapper">
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-2" id="dateBtn">
+                    <i data-lucide="calendar"></i>
+                    <span id="selectedDateText"></span>
+                </button>
+
+                <div class="calendar-popup d-none" id="calendarPopup">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-sm btn-link" id="prevMonth"><i data-lucide="chevron-left"></i></button>
+                        <span class="fw-bold" id="monthYear"></span>
+                        <button class="btn btn-sm btn-link" id="nextMonth"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="row g-1 text-center mb-2">
+                        <div class="col text-muted small fw-bold">CN</div><div class="col text-muted small fw-bold">T2</div>
+                        <div class="col text-muted small fw-bold">T3</div><div class="col text-muted small fw-bold">T4</div>
+                        <div class="col text-muted small fw-bold">T5</div><div class="col text-muted small fw-bold">T6</div>
+                        <div class="col text-muted small fw-bold">T7</div>
+                    </div>
+                    <div class="row g-1 justify-content-center" id="calendarDays"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex flex-wrap gap-4 mt-3 small text-muted" id="legendDaily">
+            <div class="d-flex align-items-center gap-2">
+                <div class="legend-dot bg-white border border-secondary"></div> Có thể đặt
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="legend-dot bg-success"></div> Đang chọn
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="legend-dot bg-danger"></div> Đã đặt
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="legend-dot bg-secondary-subtle"></div> Quá khứ
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="container py-4 pb-5 mb-5">
+
+    <div id="dailyView">
+        <div class="card shadow-sm">
+            <div class="table-container">
+                <table class="table table-bordered mb-0 table-sm text-center">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="sticky-left text-start p-3">Sân / Giờ</th>
+                    </tr>
+                    </thead>
+                    <tbody id="slotsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="alert alert-info mt-4 d-flex gap-3">
+            <i data-lucide="info" class="fs-4 mt-1"></i>
+            <div>
+                <strong>Hướng dẫn:</strong>
+                <ul class="mb-0 mt-2 small">
+                    <li>Chọn ngày → click vào ô trống để chọn khung giờ.</li>
+                    <li>Có thể chọn nhiều slot, nhiều sân.</li>
+                    <li>Tổng tiền tự động cập nhật bên dưới.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Sticky Footer Summary -->
+<footer class="fixed-bottom bg-white border-top shadow-lg d-none" id="summaryBar">
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-4">
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                    <div class="bg-light rounded-circle p-2">
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <div>
+                        <div class="text-uppercase fw-bold small">Thời lượng</div>
+                        <div class="fw-bold" id="totalHours">0 giờ</div>
+                    </div>
+                </div>
+                <div class="vr d-none d-sm-block"></div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-success-subtle rounded-circle p-2">
+                        <i data-lucide="check-circle-2" class="text-success"></i>
+                    </div>
+                    <div>
+                        <div class="text-uppercase fw-bold small text-muted">Tổng thanh toán</div>
+                        <div class="fs-4 fw-bold text-success" id="totalPrice">0 ₫</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-success btn-lg px-5 d-flex align-items-center gap-2">
+                TIẾP THEO <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    lucide.createIcons();
+
+    // Dữ liệu giả lập
+    const courts = [
+        { id: 1, name: "Sân A1" }, { id: 2, name: "Sân A2" }, { id: 3, name: "Sân A3" },
+        { id: 4, name: "Sân B1" }, { id: 5, name: "Sân B2" }, { id: 6, name: "Sân B3" },
+        { id: 7, name: "Sân C1" }, { id: 8, name: "Sân C2" },
+    ];
+
+    const generateTimeSlots = () => {
+        const slots = [];
+        for (let h = 6; h < 22; h++) {
+            slots.push({ time: `${h.toString().padStart(2,'0')}:00`, end: `${h.toString().padStart(2,'0')}:30` });
+            slots.push({ time: `${h.toString().padStart(2,'0')}:30`, end: `${(h+1).toString().padStart(2,'0')}:00` });
+        }
+        return slots;
+    };
+
+    const timeSlots = generateTimeSlots();
+
+    courts.forEach(c => {
+        c.slots = timeSlots.map(s => ({
+            ...s,
+            status: Math.random() > 0.8 ? "BOOKED" : "AVAILABLE",
+            price: 100000
+        }));
+    });
+
+    let selectedDate = new Date();
+    let selectedSlots = [];
+    let viewDate = new Date();
+
+    const pricePerSlot = 100000;
+
+    // DOM
+    const datePickerWrapper = document.getElementById("datePickerWrapper");
+    const dateBtn           = document.getElementById("dateBtn");
+    const selectedDateText  = document.getElementById("selectedDateText");
+    const calendarPopup     = document.getElementById("calendarPopup");
+    const calendarDaysEl    = document.getElementById("calendarDays");
+    const monthYearEl       = document.getElementById("monthYear");
+    const prevMonthBtn      = document.getElementById("prevMonth");
+    const nextMonthBtn      = document.getElementById("nextMonth");
+    const slotsBody         = document.getElementById("slotsBody");
+    const summaryBar        = document.getElementById("summaryBar");
+    const totalHoursEl      = document.getElementById("totalHours");
+    const totalPriceEl      = document.getElementById("totalPrice");
+
+    // Calendar functions
+    function updateDateDisplay() {
+        selectedDateText.textContent = selectedDate.toLocaleDateString("vi-VN", {day:"2-digit", month:"2-digit", year:"numeric"});
+    }
+
+    function isPastDate(date) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        return date < today;
+    }
+
+    function isPastSlot(endTime) {
+        const [h, m] = endTime.split(":").map(Number);
+        const dt = new Date(selectedDate); dt.setHours(h, m, 0, 0);
+        return dt < new Date();
+    }
+
+    function renderCalendar() {
+        const y = viewDate.getFullYear(), m = viewDate.getMonth();
+        monthYearEl.textContent = `Tháng ${m+1}, ${y}`;
+
+        const first = new Date(y, m, 1).getDay();
+        const daysInM = new Date(y, m+1, 0).getDate();
+
+        calendarDaysEl.innerHTML = "";
+        for (let i = 0; i < first; i++) calendarDaysEl.innerHTML += `<div class="col"></div>`;
+
+        for (let d = 1; d <= daysInM; d++) {
+            const dayEl = document.createElement("div");
+            dayEl.className = "col calendar-day";
+            dayEl.textContent = d;
+
+            const thisDate = new Date(y, m, d);
+            if (thisDate.toDateString() === selectedDate.toDateString()) dayEl.classList.add("selected");
+            if (thisDate.toDateString() === new Date().toDateString()) dayEl.classList.add("today");
+            if (isPastDate(thisDate)) dayEl.classList.add("disabled");
+
+            if (!isPastDate(thisDate)) {
+                dayEl.onclick = () => {
+                    selectedDate = thisDate;
+                    updateDateDisplay();
+                    calendarPopup.classList.add("d-none");
+                    renderTable();
+                    selectedSlots = [];
+                    updateSummary();
+                };
+            }
+            calendarDaysEl.appendChild(dayEl);
+        }
+    }
+
+    dateBtn.onclick = e => { e.stopPropagation(); calendarPopup.classList.toggle("d-none"); renderCalendar(); };
+    document.addEventListener("click", e => {
+        if (!datePickerWrapper.contains(e.target)) calendarPopup.classList.add("d-none");
+    });
+    prevMonthBtn.onclick = () => { viewDate.setMonth(viewDate.getMonth()-1); renderCalendar(); };
+    nextMonthBtn.onclick = () => { viewDate.setMonth(viewDate.getMonth()+1); renderCalendar(); };
+
+    // Render bảng slot
+    function renderTable() {
+        let thead = `<tr><th class="sticky-left text-start p-3">Sân / Giờ</th>`;
+        timeSlots.forEach(s => thead += `<th class="small text-muted">${s.time}</th>`);
+        thead += `</tr>`;
+        document.querySelector("thead").innerHTML = thead;
+
+        let html = "";
+        courts.forEach(court => {
+            html += `<tr><td class="sticky-left fw-bold p-3">${court.name}</td>`;
+            court.slots.forEach((slot, idx) => {
+                const sel = selectedSlots.some(s => s.courtId === court.id && s.slotIndex === idx);
+                const past = isPastSlot(slot.end);
+                const booked = slot.status === "BOOKED";
+
+                let cls = "slot-cell";
+                if (sel) cls += " selected";
+                if (booked) cls += " booked";
+                if (past) cls += " past";
+
+                html += `
+            <td class="${cls}" data-court="${court.id}" data-index="${idx}"
+              ${!booked && !past ? `title="Giá: ${slot.price.toLocaleString('vi-VN')} ₫"` : ""}></td>`;
+            });
+            html += `</tr>`;
+        });
+        slotsBody.innerHTML = html;
+
+        // Gắn sự kiện click (chỉ gắn 1 lần, nhưng vì render lại table nên phải gắn lại mỗi lần)
+        document.querySelectorAll(".slot-cell").forEach(cell => {
+            cell.addEventListener("click", () => {
+                if (cell.classList.contains("booked") || cell.classList.contains("past")) return;
+                const cid = parseInt(cell.dataset.court);
+                const idx = parseInt(cell.dataset.index);
+                const pos = selectedSlots.findIndex(s => s.courtId === cid && s.slotIndex === idx);
+
+                if (pos > -1) selectedSlots.splice(pos, 1);
+                else selectedSlots.push({courtId: cid, slotIndex: idx});
+
+                renderTable();
+                updateSummary();
+            });
+        });
+    }
+
+    function updateSummary() {
+        if (selectedSlots.length === 0) {
+            summaryBar.classList.add("d-none");
+            return;
+        }
+        summaryBar.classList.remove("d-none");
+
+        const count = selectedSlots.length;
+        const total = count * pricePerSlot;
+        const hours = (count * 0.5).toFixed(1);
+
+        totalHoursEl.textContent = `${hours} giờ`;
+        totalPriceEl.textContent = total.toLocaleString("vi-VN") + " ₫";
+    }
+
+    // Khởi tạo
+    updateDateDisplay();
+    renderTable();
+    updateSummary();
+</script>
+</body>
+</html>

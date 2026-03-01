@@ -200,6 +200,7 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
         List<FacilityPriceRule> rules =
                 priceRuleRepo.findByFacilityAndCourtTypeAndDayType(facilityId, courtTypeId, dayType);
         List<FacilityPriceRule> matching = rules.stream()
+                .filter(r -> r.getStartTime() != null && r.getEndTime() != null)
                 .filter(r -> !r.getStartTime().isAfter(slotStart) && !r.getEndTime().isBefore(slotEnd))
                 .collect(Collectors.toList());
 
