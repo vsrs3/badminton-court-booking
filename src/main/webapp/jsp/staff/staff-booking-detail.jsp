@@ -1,4 +1,4 @@
-<%-- staff-booking-detail.jsp — Task 4 + Task 6 polish --%>
+<%-- staff-booking-detail.jsp — Task 8 v2: Sessions checkin/checkout --%>
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -21,7 +21,7 @@
     <%-- 5. Content area --%>
     <div class="content-area">
 
-        <%-- Back button — smart: go to previous page or fallback to timeline --%>
+        <%-- Back button --%>
         <a href="#" class="sbd-back-link" id="backLink">
             <i class="bi bi-arrow-left"></i> Quay lại
         </a>
@@ -65,7 +65,7 @@
                 <%-- LEFT COLUMN --%>
                 <div class="col-lg-8">
 
-                    <%-- Card: Booking Info --%>
+                    <%-- Card: Booking Info (removed checkin/checkout fields) --%>
                     <div class="card sbd-card">
                         <div class="card-header sbd-card-header">
                             <i class="bi bi-info-circle me-2"></i>Thông tin đặt sân
@@ -96,42 +96,18 @@
                                         <span class="sbd-field-value" id="dCreatedAt"></span>
                                     </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <div class="sbd-field">
-                                        <span class="sbd-field-label">Check-in</span>
-                                        <span class="sbd-field-value" id="dCheckinTime"></span>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="sbd-field">
-                                        <span class="sbd-field-label">Check-out</span>
-                                        <span class="sbd-field-value" id="dCheckoutTime"></span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <%-- Card: Slot List --%>
+                    <%-- Card: Phiên chơi (Sessions) — rendered by JS --%>
                     <div class="card sbd-card">
                         <div class="card-header sbd-card-header">
-                            <i class="bi bi-clock me-2"></i>Danh sách slot
+                            <i class="bi bi-controller me-2"></i>Phiên chơi
+                            <span class="sbd-session-progress" id="sessionProgress"></span>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th>Sân</th>
-                                        <th>Bắt đầu</th>
-                                        <th>Kết thúc</th>
-                                        <th class="text-end">Giá</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="dSlotTableBody">
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="card-body p-0" id="sessionsContainer">
+                            <%-- JS will render session rows here --%>
                         </div>
                     </div>
 
