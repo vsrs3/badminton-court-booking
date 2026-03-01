@@ -1,0 +1,401 @@
+/* ================================================================
+   STAFF TIMELINE — staff-timeline.css
+   Prefix: st- (staff-timeline)
+   ================================================================ */
+
+/* ===== FIX: Horizontal scroll for timeline grid =====
+   emerald-admin.css sets body { overflow-x: hidden } which prevents
+   ALL horizontal scrolling on the page.
+
+   Solution: Constrain .main-content width so it never overflows body,
+   then let .st-grid-scroll handle horizontal scroll internally. */
+.main-content {
+    max-width: calc(100vw - var(--sidebar-width, 260px));
+    overflow-x: hidden;  /* .main-content itself doesn't scroll */
+}
+
+.main-content .content-area {
+    overflow: hidden;    /* contain children */
+}
+
+/* On mobile (sidebar hidden), full width */
+@media (max-width: 991.98px) {
+    .main-content {
+        max-width: 100vw;
+    }
+}
+
+/* ===== DATE FILTER BAR ===== */
+.st-date-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.st-date-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.st-date-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.st-date-btn:hover {
+    background: #E5E7EB;
+    color: #111827;
+}
+
+.st-date-btn.active {
+    background: var(--primary-color, #064e3b);
+    color: white;
+    border-color: var(--primary-color, #064e3b);
+}
+
+/* Date input wrapper */
+.st-date-input-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.st-date-input-wrap > i {
+    position: absolute;
+    left: 0.75rem;
+    color: #9CA3AF;
+    font-size: 0.875rem;
+    pointer-events: none;
+}
+
+.st-date-input {
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    width: 165px;
+}
+
+.st-date-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #064e3b);
+    box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.1);
+}
+
+/* Current date display */
+.st-date-display {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--primary-color, #064e3b);
+    background: #F0FDF4;
+    border: 1px solid #D1FAE5;
+    border-radius: 2rem;
+    padding: 0.375rem 1rem;
+    white-space: nowrap;
+}
+
+/* ===== LEGEND ===== */
+.st-legend {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+}
+
+.st-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6B7280;
+}
+
+.st-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.st-dot-available  { background: #F3F4F6; border: 1px solid #D1D5DB; }
+.st-dot-pending    { background: #FEF3C7; border: 1px solid #FCD34D; }
+.st-dot-confirmed  { background: #D1FAE5; border: 1px solid #6EE7B7; }
+.st-dot-completed  { background: #DBEAFE; border: 1px solid #93C5FD; }
+.st-dot-cancelled  { background: #FEE2E2; border: 1px solid #FCA5A5; }
+.st-dot-disabled   { background: #E5E7EB; border: 1px solid #D1D5DB; }
+
+/* ===== GRID WRAPPER ===== */
+.st-grid-wrapper {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-height: 300px;
+}
+
+/* ===== STATES: Loading / Error / Empty ===== */
+.st-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #6B7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.st-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #E5E7EB;
+    border-top-color: var(--primary-color, #064e3b);
+    border-radius: 50%;
+    animation: st-spin 0.8s linear infinite;
+}
+
+@keyframes st-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== SCROLLABLE GRID ===== */
+.st-grid-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+}
+
+/* ===== TIMELINE TABLE ===== */
+.st-grid {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Corner cell */
+.st-grid-corner {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: #F8FAFC;
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9CA3AF;
+    border-bottom: 2px solid #E5E7EB;
+    border-right: 2px solid #E5E7EB;
+    white-space: nowrap;
+}
+
+/* Time slot headers */
+.st-grid thead th:not(.st-grid-corner) {
+    padding: 0.625rem 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #6B7280;
+    text-align: center;
+    background: #F8FAFC;
+    border-bottom: 2px solid #E5E7EB;
+    border-right: 1px solid #F3F4F6;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+/* Court name (row header) */
+.st-court-name {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: white;
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1F2937;
+    border-bottom: 1px solid #F3F4F6;
+    border-right: 2px solid #E5E7EB;
+    white-space: nowrap;
+}
+
+.st-grid tbody tr:nth-child(even) .st-court-name {
+    background: #FAFBFC;
+}
+.st-grid tbody tr:nth-child(even) .st-cell {
+    background: #FAFBFC;
+}
+
+/* ===== CELL STATES ===== */
+.st-cell {
+    padding: 0.25rem;
+    border-bottom: 1px solid #F3F4F6;
+    border-right: 1px solid #F3F4F6;
+    vertical-align: top;
+    min-width: 80px;
+    height: 56px;
+}
+
+.st-cell-inner {
+    width: 100%;
+    height: 100%;
+    min-height: 44px;
+    border-radius: 0.375rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    padding: 0.25rem 0.375rem;
+    text-align: center;
+    overflow: hidden;
+}
+
+.st-cell-available .st-cell-inner {
+    background: #F9FAFB;
+    border: 1px dashed #E5E7EB;
+    color: #D1D5DB;
+}
+
+.st-cell-pending .st-cell-inner {
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    color: #92400E;
+    cursor: pointer;
+}
+.st-cell-pending .st-cell-inner:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(234, 179, 8, 0.25);
+}
+
+.st-cell-confirmed .st-cell-inner {
+    background: #D1FAE5;
+    border: 1px solid #6EE7B7;
+    color: #065F46;
+    cursor: pointer;
+}
+.st-cell-confirmed .st-cell-inner:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.st-cell-completed .st-cell-inner {
+    background: #DBEAFE;
+    border: 1px solid #93C5FD;
+    color: #1E40AF;
+    cursor: pointer;
+}
+.st-cell-completed .st-cell-inner:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+.st-cell-cancelled .st-cell-inner {
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.st-cell-cancelled .st-cell-inner:hover {
+    opacity: 1;
+}
+
+.st-cell-disabled .st-cell-inner {
+    background: repeating-linear-gradient(
+            135deg,
+            #F3F4F6,
+            #F3F4F6 4px,
+            #E5E7EB 4px,
+            #E5E7EB 8px
+    );
+    border: 1px solid #D1D5DB;
+    color: #9CA3AF;
+    cursor: not-allowed;
+}
+
+.st-cell-customer {
+    font-weight: 700;
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.st-cell-status {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+}
+
+.st-cell-reason {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 767.98px) {
+    .st-date-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .st-date-display {
+        justify-content: center;
+    }
+    .st-legend {
+        gap: 0.75rem;
+    }
+    .st-grid-corner {
+        min-width: 90px;
+    }
+    .st-cell {
+        min-width: 70px;
+    }
+}
