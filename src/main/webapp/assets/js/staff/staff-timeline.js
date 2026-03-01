@@ -1,5 +1,5 @@
 /**
- * staff-timeline.js — Task 9a: Booking proxy mode (slot selection)
+ * staff-timeline.js — Task 9a + 9c-fix v3: Past slot ONLY in proxy mode
  */
 (function () {
     'use strict';
@@ -28,19 +28,28 @@
 
     var CTX         = window.ST_CTX || '';
     var FACILITY_ID = window.ST_FACILITY_ID || '';
-    var currentDate = todayStr();
+    var currentDate = '';
+
+    // ─── FIX: Cache today's date string ONCE at page load ───
+    var TODAY_STR = (function () {
+        var d = new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    })();
 
     // ─── Task 9a: Proxy mode state ───
-    var proxyMode    = false;      // is proxy mode active?
-    var selectedSlots = [];         // [{courtId, courtName, slotId, startTime, endTime, price}]
-    var priceMap      = {};         // "courtId-slotId" → price (number)
-    var courtsData    = [];         // [{courtId, courtName}] — saved from timeline fetch
-    var slotsData     = [];         // [{slotId, startTime, endTime}] — saved from timeline fetch
-    var cellMapData   = {};         // saved cellMap
+    var proxyMode     = false;
+    var selectedSlots = [];
+    var priceMap      = {};
+    var courtsData    = [];
+    var slotsData     = [];
+    var cellMapData   = {};
 
     // ─── Date helpers ───
     function todayStr() {
-        return fmtDate(new Date());
+        return TODAY_STR;
     }
 
     function tomorrowStr() {
@@ -67,6 +76,25 @@
     function formatMoney(amount) {
         if (amount == null) return '0đ';
         return Number(amount).toLocaleString('vi-VN') + 'đ';
+    }
+
+    /**
+     * Check if a slot is in the past (only relevant when viewing today).
+     * A slot is "past" if current time >= slot's end_time.
+     */
+    function isSlotPast(slotEndTime) {
+        if (currentDate !== TODAY_STR) return false;
+
+        var now = new Date();
+        var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        var parts = slotEndTime.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return false;
+
+        var slotEndMinutes = h * 60 + m;
+        return nowMinutes >= slotEndMinutes;
     }
 
     // ─── UI state helpers ───
@@ -97,7 +125,6 @@
         updateButtons(dateStr);
         showState('loading');
 
-        // Reset selection when date changes
         if (proxyMode) {
             selectedSlots = [];
             updateBottomBar();
@@ -133,7 +160,6 @@
                     return;
                 }
 
-                // Save data for proxy mode
                 courtsData = data.courts;
                 slotsData  = data.slots;
 
@@ -146,7 +172,6 @@
 
                 renderGrid(data.courts, data.slots, cellMapData);
 
-                // If proxy mode active, also fetch prices
                 if (proxyMode) {
                     fetchPrices(dateStr);
                 }
@@ -165,6 +190,10 @@
         slots.forEach(function (s) {
             var th = document.createElement('th');
             th.textContent = s.startTime;
+            // FIX: Only dim past headers in proxy mode
+            if (proxyMode && isSlotPast(s.endTime)) {
+                th.classList.add('st-th-past');
+            }
             gridHeaderRow.appendChild(th);
         });
 
@@ -179,6 +208,7 @@
             slots.forEach(function (slot) {
                 var key = court.courtId + '-' + slot.slotId;
                 var cell = cellMap[key] || { state: 'AVAILABLE' };
+                var past = isSlotPast(slot.endTime);
 
                 var td = document.createElement('td');
                 td.className = 'st-cell';
@@ -189,19 +219,19 @@
                 inner.className = 'st-cell-inner';
 
                 // Check if this slot is selected (proxy mode)
-                var isSelected = proxyMode && isSlotSelected(court.courtId, slot.slotId);
+                var isSelected = proxyMode && isSlotSelectedFn(court.courtId, slot.slotId);
 
                 if (isSelected) {
+                    // ─── SELECTED (proxy mode) ───
                     td.className = 'st-cell st-cell-selected';
-                    var priceVal = priceMap[key];
                     inner.innerHTML = '<i class="bi bi-check-lg" style="font-size:1rem;"></i>';
+                    var priceVal = priceMap[key];
                     if (priceVal != null) {
                         var priceSpan = document.createElement('span');
                         priceSpan.style.cssText = 'font-size:0.6rem;font-weight:700;';
                         priceSpan.textContent = formatMoney(priceVal);
                         inner.appendChild(priceSpan);
                     }
-                    // Click to deselect
                     (function (cId, sId) {
                         inner.addEventListener('click', function () {
                             toggleSlot(cId, sId);
@@ -209,8 +239,14 @@
                     })(court.courtId, slot.slotId);
 
                 } else if (cell.state === 'BOOKED') {
+                    // ─── BOOKED ───
                     var statusLower = cell.bookingStatus.toLowerCase();
                     td.classList.add('st-cell-' + statusLower);
+
+                    // FIX: Only grey out past booked cells in proxy mode
+                    if (proxyMode && past && cell.bookingStatus !== 'COMPLETED') {
+                        td.classList.add('st-cell-past');
+                    }
 
                     var nameEl = document.createElement('span');
                     nameEl.className = 'st-cell-customer';
@@ -225,12 +261,15 @@
                     if (!proxyMode && cell.bookingId) {
                         inner.style.cursor = 'pointer';
                         inner.setAttribute('data-booking-id', cell.bookingId);
-                        inner.addEventListener('click', function () {
-                            window.location.href = CTX + '/staff/booking/detail/' + cell.bookingId;
-                        });
+                        (function (bid) {
+                            inner.addEventListener('click', function () {
+                                window.location.href = CTX + '/staff/booking/detail/' + bid;
+                            });
+                        })(cell.bookingId);
                     }
 
                 } else if (cell.state === 'DISABLED') {
+                    // ─── DISABLED ───
                     td.classList.add('st-cell-disabled');
                     var reasonEl = document.createElement('span');
                     reasonEl.className = 'st-cell-reason';
@@ -238,11 +277,16 @@
                     inner.appendChild(reasonEl);
 
                 } else {
-                    // AVAILABLE
+                    // ─── AVAILABLE ───
                     td.classList.add('st-cell-available');
 
-                    if (proxyMode) {
-                        // Show price hint
+                    // FIX: Only grey out past available cells in proxy mode
+                    if (proxyMode && past) {
+                        td.classList.add('st-cell-past');
+                    }
+
+                    if (proxyMode && !past) {
+                        // Show price hint in proxy mode
                         var pVal = priceMap[key];
                         if (pVal != null) {
                             inner.textContent = formatMoney(pVal);
@@ -286,8 +330,6 @@
         btnProxyMode.classList.add('d-none');
         btnProxyCancel.classList.remove('d-none');
         legendSelected.classList.remove('d-none');
-
-        // Fetch prices then re-render
         fetchPrices(currentDate);
     }
 
@@ -300,8 +342,6 @@
         btnProxyCancel.classList.add('d-none');
         legendSelected.classList.add('d-none');
         bottomBar.classList.add('d-none');
-
-        // Re-render without proxy mode
         renderGrid(courtsData, slotsData, cellMapData);
     }
 
@@ -317,7 +357,6 @@
                 (body.data.prices || []).forEach(function (p) {
                     priceMap[p.courtId + '-' + p.slotId] = p.price;
                 });
-                // Re-render grid with prices
                 renderGrid(courtsData, slotsData, cellMapData);
             })
             .catch(function (err) {
@@ -325,7 +364,7 @@
             });
     }
 
-    function isSlotSelected(courtId, slotId) {
+    function isSlotSelectedFn(courtId, slotId) {
         return selectedSlots.some(function (s) {
             return s.courtId === courtId && s.slotId === slotId;
         });
@@ -334,22 +373,22 @@
     function toggleSlot(courtId, slotId) {
         if (!proxyMode) return;
 
+        // Find slot data to check if past
+        var slot = slotsData.find(function (s) { return s.slotId === slotId; });
+        if (slot && isSlotPast(slot.endTime)) return; // can't select past slots
+
         var idx = selectedSlots.findIndex(function (s) {
             return s.courtId === courtId && s.slotId === slotId;
         });
 
         if (idx >= 0) {
-            // Deselect
             selectedSlots.splice(idx, 1);
         } else {
-            // Check if cell is actually available
             var key = courtId + '-' + slotId;
             var cell = cellMapData[key];
-            if (cell && cell.state !== 'AVAILABLE' && cell.bookingStatus !== 'CANCELLED') return; // can't select booked/disabled
+            if (cell && cell.state !== 'AVAILABLE' && cell.bookingStatus !== 'CANCELLED') return;
 
-            // Find court and slot info
             var court = courtsData.find(function (c) { return c.courtId === courtId; });
-            var slot  = slotsData.find(function (s) { return s.slotId === slotId; });
             if (!court || !slot) return;
 
             var price = priceMap[key] || 0;
@@ -383,9 +422,7 @@
         bottomPrice.textContent = formatMoney(totalPrice);
     }
 
-    // ─── Validate: each court group must have ≥ 2 consecutive slots ───
     function validateSelection() {
-        // Group by courtId
         var groups = {};
         selectedSlots.forEach(function (s) {
             if (!groups[s.courtId]) groups[s.courtId] = [];
@@ -396,12 +433,10 @@
 
         for (var courtId in groups) {
             var courtSlots = groups[courtId];
-            // Sort by startTime
             courtSlots.sort(function (a, b) {
                 return a.startTime.localeCompare(b.startTime);
             });
 
-            // Find consecutive groups
             var sessions = [];
             var currentSession = [courtSlots[0]];
 
@@ -416,7 +451,6 @@
             }
             sessions.push(currentSession);
 
-            // Each session must have ≥ 2 slots
             for (var j = 0; j < sessions.length; j++) {
                 if (sessions[j].length < 2) {
                     errors.push(sessions[j]);
@@ -425,7 +459,6 @@
         }
 
         if (errors.length > 0) {
-            // Highlight error slots
             errors.forEach(function (session) {
                 session.forEach(function (s) {
                     var td = document.querySelector('td[data-court-id="' + s.courtId + '"][data-slot-id="' + s.slotId + '"]');
@@ -443,7 +476,6 @@
         return true;
     }
 
-    // ─── Continue → save to sessionStorage → redirect to create page ───
     function goToCreatePage() {
         if (!validateSelection()) return;
 
