@@ -147,13 +147,19 @@
             </div>
             <div class="hidden lg:block flex-1 bg-gray-brand overflow-y-auto">
                 <%
-                    String section = request.getParameter("section");
+                    String section = (String) request.getAttribute("section");
+                    if (section == null) {
+                        section = request.getParameter("section");
+                    }
                     if (section == null) {
                         section = "history";
                     }
                     switch (section) {
                         case "history":
                 %> <%@ include file="customer_history.jsp" %> <%
+                    break;
+                case "booking-detail":
+            %> <%@ include file="customer_booking_detail.jsp" %> <%
                     break;
                 case "settings":
             %> <%@ include file="customer_settings.jsp" %> <%
@@ -177,7 +183,8 @@
             </div>
         </div>
         <!-- Bottom Navigation -->
-    	<%@ include file="../../common/bottom-nav.jsp" %>
+<%--    	<%@ include file="../../common/bottom-nav.jsp" %>--%>
+        <%@ include file="bottomnav.jsp" %>
 
     </div>
 
