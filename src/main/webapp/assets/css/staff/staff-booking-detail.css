@@ -1,0 +1,128 @@
+/* ================================================================
+   STAFF BOOKING DETAIL — staff-booking-detail.css
+   Prefix: sbd- (staff-booking-detail)
+   ================================================================ */
+
+/* Back link */
+.sbd-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary-color, #064e3b);
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.15s;
+}
+.sbd-back-link:hover {
+    opacity: 0.7;
+    color: var(--primary-color, #064e3b);
+}
+
+/* Loading / Error state */
+.sbd-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 5rem 2rem;
+    text-align: center;
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+/* Card styling */
+.sbd-card {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    overflow: hidden;
+}
+
+.sbd-card-header {
+    background: #F8FAFC !important;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #374151;
+    padding: 0.875rem 1.25rem !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    border-radius: 0 !important;
+}
+
+/* Field label + value */
+.sbd-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sbd-field-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sbd-field-value {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1F2937;
+}
+
+.sbd-field-value.sbd-money {
+    font-weight: 800;
+    color: var(--primary-color, #064e3b);
+    font-size: 1rem;
+}
+
+/* Status badge (large) */
+.sbd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sbd-status-pending   { background: #FEF3C7; color: #92400E; }
+.sbd-status-confirmed { background: #D1FAE5; color: #065F46; }
+.sbd-status-completed { background: #DBEAFE; color: #1E40AF; }
+.sbd-status-cancelled { background: #FEE2E2; color: #991B1B; }
+.sbd-status-expired   { background: #F3F4F6; color: #6B7280; }
+
+/* Payment status badges */
+.sbd-pay-unpaid  { background: #FEE2E2; color: #991B1B; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+.sbd-pay-partial { background: #FEF3C7; color: #92400E; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+.sbd-pay-paid    { background: #D1FAE5; color: #065F46; padding: 0.25rem 0.625rem; border-radius: 1rem; font-size: 0.6875rem; font-weight: 700; }
+
+/* Table tweaks */
+.sbd-card .table thead th {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.25rem;
+    background: #FAFBFC;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.sbd-card .table tbody td {
+    font-size: 0.8125rem;
+    padding: 0.75rem 1.25rem;
+    color: #374151;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+/* No data text */
+.sbd-no-data {
+    color: #D1D5DB;
+    font-style: italic;
+    font-size: 0.8125rem;
+}
