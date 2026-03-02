@@ -68,30 +68,34 @@
         </div>
 
         <%-- ===== LEGEND ===== --%>
-        <div class="st-legend">
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-available"></span>Trống
+            <div class="st-legend">
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-available"></span>Trống
+                </div>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-pending"></span>Chờ xác nhận
+                </div>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-confirmed"></span>Đã xác nhận
+                </div>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-completed"></span>Hoàn thành
+                </div>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-cancelled"></span>Đã hủy
+                </div>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-disabled"></span>Bảo trì
+                </div>
+                <%-- NO_SHOW legend --%>
+                <div class="st-legend-item">
+                    <span class="st-legend-dot st-dot-noshow"></span>Vắng mặt
+                </div>
+                <%-- Task 9a: Selected legend (hidden by default) --%>
+                <div class="st-legend-item d-none" id="legendSelected">
+                    <span class="st-legend-dot st-dot-selected"></span>Đã chọn
+                </div>
             </div>
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-pending"></span>Chờ xác nhận
-            </div>
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-confirmed"></span>Đã xác nhận
-            </div>
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-completed"></span>Hoàn thành
-            </div>
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-cancelled"></span>Đã hủy
-            </div>
-            <div class="st-legend-item">
-                <span class="st-legend-dot st-dot-disabled"></span>Bảo trì
-            </div>
-            <%-- Task 9a: Selected legend (hidden by default) --%>
-            <div class="st-legend-item d-none" id="legendSelected">
-                <span class="st-legend-dot st-dot-selected"></span>Đã chọn
-            </div>
-        </div>
 
         <%-- ===== TIMELINE GRID CONTAINER ===== --%>
         <div class="st-grid-wrapper" id="timelineContainer">

@@ -1,5 +1,8 @@
 /**
- * staff-timeline.js — Task 9a + 9c-fix v3: Past slot ONLY in proxy mode
+ * staff-timeline.js — Task 9a + 9c-fix v5
+ * Fixes:
+ * - Past date: ALL cells greyed out in proxy mode (including COMPLETED)
+ * - No-price slots: greyed out, unclickable in proxy mode
  */
 (function () {
     'use strict';
@@ -43,6 +46,7 @@
     var proxyMode     = false;
     var selectedSlots = [];
     var priceMap      = {};
+    var priceLoaded   = false;
     var courtsData    = [];
     var slotsData     = [];
     var cellMapData   = {};
@@ -79,10 +83,13 @@
     }
 
     /**
-     * Check if a slot is in the past (only relevant when viewing today).
-     * A slot is "past" if current time >= slot's end_time.
+     * Check if a slot is in the past.
+     * - All slots on past dates are past.
+     * - For today: past if current time >= slot's end_time.
+     * - For future dates: never past.
      */
     function isSlotPast(slotEndTime) {
+        if (currentDate < TODAY_STR) return true;
         if (currentDate !== TODAY_STR) return false;
 
         var now = new Date();
@@ -95,6 +102,15 @@
 
         var slotEndMinutes = h * 60 + m;
         return nowMinutes >= slotEndMinutes;
+    }
+
+    /**
+     * Check if a slot has NO configured price.
+     */
+    function hasNoPrice(courtId, slotId) {
+        if (!priceLoaded) return false;
+        var key = courtId + '-' + slotId;
+        return !(key in priceMap);
     }
 
     // ─── UI state helpers ───
@@ -190,7 +206,6 @@
         slots.forEach(function (s) {
             var th = document.createElement('th');
             th.textContent = s.startTime;
-            // FIX: Only dim past headers in proxy mode
             if (proxyMode && isSlotPast(s.endTime)) {
                 th.classList.add('st-th-past');
             }
@@ -243,8 +258,13 @@
                     var statusLower = cell.bookingStatus.toLowerCase();
                     td.classList.add('st-cell-' + statusLower);
 
-                    // FIX: Only grey out past booked cells in proxy mode
-                    if (proxyMode && past && cell.bookingStatus !== 'COMPLETED') {
+                    // If this specific slot is NO_SHOW, override with no-show style
+                    if (cell.slotStatus === 'NO_SHOW') {
+                        td.classList.add('st-cell-noshow');
+                    }
+
+                    // FIX v5: In proxy mode, ALL past booked cells are greyed out
+                    if (proxyMode && past) {
                         td.classList.add('st-cell-past');
                     }
 
@@ -255,7 +275,10 @@
 
                     var statusEl = document.createElement('span');
                     statusEl.className = 'st-cell-status';
-                    statusEl.textContent = statusLabel(cell.bookingStatus);
+                    // Show slot-level status if NO_SHOW, otherwise booking-level status
+                    statusEl.textContent = (cell.slotStatus === 'NO_SHOW')
+                        ? statusLabel('NO_SHOW')
+                        : statusLabel(cell.bookingStatus);
                     inner.appendChild(statusEl);
 
                     if (!proxyMode && cell.bookingId) {
@@ -271,6 +294,12 @@
                 } else if (cell.state === 'DISABLED') {
                     // ─── DISABLED ───
                     td.classList.add('st-cell-disabled');
+
+                    // Also grey out disabled cells in proxy past mode
+                    if (proxyMode && past) {
+                        td.classList.add('st-cell-past');
+                    }
+
                     var reasonEl = document.createElement('span');
                     reasonEl.className = 'st-cell-reason';
                     reasonEl.textContent = cell.disabledReason || 'Không khả dụng';
@@ -280,19 +309,25 @@
                     // ─── AVAILABLE ───
                     td.classList.add('st-cell-available');
 
-                    // FIX: Only grey out past available cells in proxy mode
                     if (proxyMode && past) {
                         td.classList.add('st-cell-past');
                     }
 
-                    if (proxyMode && !past) {
-                        // Show price hint in proxy mode
+                    var noPrice = proxyMode && !past && hasNoPrice(court.courtId, slot.slotId);
+
+                    if (noPrice) {
+                        td.classList.remove('st-cell-available');
+                        td.classList.add('st-cell-no-price');
+                        var noPriceEl = document.createElement('span');
+                        noPriceEl.className = 'st-cell-reason';
+                        noPriceEl.textContent = 'Chưa có giá';
+                        inner.appendChild(noPriceEl);
+                    } else if (proxyMode && !past) {
                         var pVal = priceMap[key];
                         if (pVal != null) {
                             inner.textContent = formatMoney(pVal);
                             inner.style.fontSize = '0.625rem';
                         }
-                        // Click to select
                         (function (cId, sId) {
                             inner.addEventListener('click', function () {
                                 toggleSlot(cId, sId);
@@ -317,6 +352,7 @@
             case 'CONFIRMED': return 'Đã XN';
             case 'COMPLETED': return 'Xong';
             case 'CANCELLED': return 'Đã hủy';
+            case 'NO_SHOW':   return 'Vắng';
             default:          return status;
         }
     }
@@ -326,6 +362,7 @@
     function enterProxyMode() {
         proxyMode = true;
         selectedSlots = [];
+        priceLoaded = false;
         document.getElementById('timelineContainer').classList.add('st-proxy-mode');
         btnProxyMode.classList.add('d-none');
         btnProxyCancel.classList.remove('d-none');
@@ -337,6 +374,7 @@
         proxyMode = false;
         selectedSlots = [];
         priceMap = {};
+        priceLoaded = false;
         document.getElementById('timelineContainer').classList.remove('st-proxy-mode');
         btnProxyMode.classList.remove('d-none');
         btnProxyCancel.classList.add('d-none');
@@ -346,6 +384,7 @@
     }
 
     function fetchPrices(dateStr) {
+        priceLoaded = false;
         fetch(CTX + '/api/staff/booking/slot-prices?date=' + encodeURIComponent(dateStr), {
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
@@ -357,6 +396,7 @@
                 (body.data.prices || []).forEach(function (p) {
                     priceMap[p.courtId + '-' + p.slotId] = p.price;
                 });
+                priceLoaded = true;
                 renderGrid(courtsData, slotsData, cellMapData);
             })
             .catch(function (err) {
@@ -373,9 +413,10 @@
     function toggleSlot(courtId, slotId) {
         if (!proxyMode) return;
 
-        // Find slot data to check if past
         var slot = slotsData.find(function (s) { return s.slotId === slotId; });
-        if (slot && isSlotPast(slot.endTime)) return; // can't select past slots
+        if (slot && isSlotPast(slot.endTime)) return;
+
+        if (hasNoPrice(courtId, slotId)) return;
 
         var idx = selectedSlots.findIndex(function (s) {
             return s.courtId === courtId && s.slotId === slotId;
@@ -391,7 +432,8 @@
             var court = courtsData.find(function (c) { return c.courtId === courtId; });
             if (!court || !slot) return;
 
-            var price = priceMap[key] || 0;
+            var price = priceMap[key];
+            if (price == null) return;
 
             selectedSlots.push({
                 courtId: courtId,

@@ -18,6 +18,8 @@ import java.sql.ResultSet;
  *
  * Searches for CUSTOMER accounts by phone or email (partial match).
  * Returns max 10 results.
+ *
+ * FIX: wrap array inside {"data":{"customers":[...]}} to match frontend expectation
  */
 @WebServlet(name = "StaffCustomerSearchApiServlet", urlPatterns = {"/api/staff/customer/search"})
 public class StaffCustomerSearchApiServlet extends HttpServlet {
@@ -33,7 +35,7 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
 
         String q = request.getParameter("q");
         if (q == null || q.trim().isEmpty()) {
-            response.getWriter().print("{\"success\":true,\"data\":[]}");
+            response.getWriter().print("{\"success\":true,\"data\":{\"customers\":[]}}");
             return;
         }
 
@@ -59,7 +61,7 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
         String pattern = "%" + q + "%";
 
         StringBuilder json = new StringBuilder(512);
-        json.append("{\"success\":true,\"data\":[");
+        json.append("{\"success\":true,\"data\":{\"customers\":[");
 
         boolean first = true;
         try (Connection conn = DBContext.getConnection();
@@ -79,7 +81,7 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
             }
         }
 
-        json.append("]}");
+        json.append("]}}");
         return json.toString();
     }
 }
