@@ -26,6 +26,7 @@ import java.util.List;
  *
  * Rules:
  * - Booking must be CONFIRMED, booking_date = today
+ * - Invoice must be PAID (payment confirmed) before check-in/check-out
  * - Check-in must follow session time order (earlier sessions first)
  * - Check-out only for sessions already checked in
  * - When all sessions are checked out → Booking.booking_status = COMPLETED
@@ -206,7 +207,7 @@ public class StaffCheckinApiServlet extends HttpServlet {
         }
     }
 
-    // ─── Validate booking: CONFIRMED, today, same facility ───
+    // ─── Validate booking: CONFIRMED, today, same facility, PAID ───
     private String validateBooking(Connection conn, int bookingId, int facilityId) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT booking_status, booking_date, facility_id FROM Booking WHERE booking_id = ?")) {
@@ -226,6 +227,22 @@ public class StaffCheckinApiServlet extends HttpServlet {
                     return "{\"success\":false,\"message\":\"Chỉ check-in/out booking ngày hôm nay\"}";
             }
         }
+
+        // ─── Validate payment status: must be PAID ───
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT payment_status FROM Invoice WHERE booking_id = ?")) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return "{\"success\":false,\"message\":\"Không tìm thấy hóa đơn cho booking này\"}";
+                }
+                String paymentStatus = rs.getString("payment_status");
+                if (!"PAID".equals(paymentStatus)) {
+                    return "{\"success\":false,\"message\":\"Booking chưa thanh toán đủ. Vui lòng xác nhận thanh toán trước khi check-in/check-out.\"}";
+                }
+            }
+        }
+
         return null; // OK
     }
 
@@ -280,10 +297,7 @@ public class StaffCheckinApiServlet extends HttpServlet {
         }
         sessions.add(current);
 
-        // Sort by first slot's start_time (need to re-query or track)
-        // Since we ordered by court_id, start_time, sessions are already grouped.
-        // But we need to sort sessions by the earliest start_time across courts.
-        // Re-sort using slotData index mapping:
+        // Sort by first slot's start_time
         sessions.sort((a, b) -> {
             int idxA = findSlotIndex(slotData, a.get(0));
             int idxB = findSlotIndex(slotData, b.get(0));

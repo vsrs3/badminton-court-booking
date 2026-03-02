@@ -1,5 +1,5 @@
 /**
- * staff-booking-detail.js — Task 8 v2: Session-based checkin/checkout
+ * staff-booking-detail.js — Task 8 v2 + Payment confirmation before check-in/out
  */
 (function () {
     'use strict';
@@ -7,17 +7,33 @@
     var CTX = window.ST_CTX || '';
 
     // DOM
-    var stateLoading     = document.getElementById('stateLoading');
-    var stateError       = document.getElementById('stateError');
-    var errorMessage     = document.getElementById('errorMessage');
-    var detailContent    = document.getElementById('detailContent');
-    var backLink         = document.getElementById('backLink');
-    var backLinkError    = document.getElementById('backLinkError');
+    var stateLoading      = document.getElementById('stateLoading');
+    var stateError        = document.getElementById('stateError');
+    var errorMessage      = document.getElementById('errorMessage');
+    var detailContent     = document.getElementById('detailContent');
+    var backLink          = document.getElementById('backLink');
+    var backLinkError     = document.getElementById('backLinkError');
     var sessionsContainer = document.getElementById('sessionsContainer');
-    var sessionProgress  = document.getElementById('sessionProgress');
+    var sessionProgress   = document.getElementById('sessionProgress');
+
+    // Payment DOM
+    var confirmPaymentBtnWrap = document.getElementById('confirmPaymentBtnWrap');
+    var btnConfirmPayment     = document.getElementById('btnConfirmPayment');
+    var paymentWarningBanner  = document.getElementById('paymentWarningBanner');
+    var remainingField        = document.getElementById('dRemainingField');
+
+    // Modal DOM
+    var paymentModal        = document.getElementById('paymentModal');
+    var paymentModalClose   = document.getElementById('paymentModalClose');
+    var paymentModalCancel  = document.getElementById('paymentModalCancel');
+    var paymentModalConfirm = document.getElementById('paymentModalConfirm');
+    var paymentAmountInput  = document.getElementById('paymentAmountInput');
+    var paymentModalError   = document.getElementById('paymentModalError');
+    var paymentInputHint    = document.getElementById('paymentInputHint');
 
     // State
     var bookingData = null;
+    var pendingAction = null; // {type: 'checkin'|'checkout', sessionIndex: N}
 
     // ─── Smart back URL ───
     var backUrl = CTX + '/staff/timeline';
@@ -38,6 +54,31 @@
         showError('Booking ID không hợp lệ.');
         return;
     }
+
+    // ─── Modal event listeners ───
+    if (btnConfirmPayment) {
+        btnConfirmPayment.addEventListener('click', function () {
+            pendingAction = null;
+            openPaymentModal();
+        });
+    }
+    if (paymentModalClose)   paymentModalClose.addEventListener('click', closePaymentModal);
+    if (paymentModalCancel)  paymentModalCancel.addEventListener('click', closePaymentModal);
+    if (paymentModalConfirm) paymentModalConfirm.addEventListener('click', handleConfirmPayment);
+
+    // Close modal on overlay click
+    if (paymentModal) {
+        paymentModal.addEventListener('click', function (e) {
+            if (e.target === paymentModal) closePaymentModal();
+        });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && paymentModal && !paymentModal.classList.contains('d-none')) {
+            closePaymentModal();
+        }
+    });
 
     // ─── Load ───
     loadDetail();
@@ -76,7 +117,10 @@
         errorMessage.textContent = msg;
     }
 
-    // ─── Render ───
+    // ═══════════════════════════════════════════
+    // RENDER
+    // ═════════════════════════════════════════���═
+
     function render(d) {
         stateLoading.classList.add('d-none');
         stateError.classList.add('d-none');
@@ -106,20 +150,58 @@
         setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'Tài khoản' : 'Khách vãng lai');
 
         // Invoice
-        if (d.invoice) {
-            setText('dTotalAmount', formatMoney(d.invoice.totalAmount));
-            setText('dPaidAmount', formatMoney(d.invoice.paidAmount));
-            var payEl = document.getElementById('dPaymentStatus');
-            payEl.innerHTML = '<span class="sbd-pay-' + d.invoice.paymentStatus.toLowerCase() + '">' +
-                paymentLabel(d.invoice.paymentStatus) + '</span>';
-        } else {
-            setText('dTotalAmount', '—');
-            setText('dPaidAmount', '—');
-            setText('dPaymentStatus', '—');
-        }
+        renderInvoice(d);
 
         // Sessions
         renderSessions(d);
+    }
+
+    // ─── Render Invoice ───
+    function renderInvoice(d) {
+        if (d.invoice) {
+            var totalAmount = d.invoice.totalAmount;
+            var paidAmount = d.invoice.paidAmount;
+            var remaining = totalAmount - paidAmount;
+            var isPaid = d.invoice.paymentStatus === 'PAID';
+            var isConfirmed = (d.bookingStatus === 'CONFIRMED');
+
+            setText('dTotalAmount', formatMoney(totalAmount));
+            setText('dPaidAmount', formatMoney(paidAmount));
+
+            // Remaining field: only show when not paid AND booking is confirmed
+            if (isPaid || !isConfirmed) {
+                remainingField.classList.add('d-none');
+            } else {
+                remainingField.classList.remove('d-none');
+                setText('dRemainingAmount', formatMoney(remaining));
+            }
+
+            var payEl = document.getElementById('dPaymentStatus');
+            payEl.innerHTML = '<span class="sbd-pay-' + d.invoice.paymentStatus.toLowerCase() + '">' +
+                paymentLabel(d.invoice.paymentStatus) + '</span>';
+
+            // Show confirm payment button ONLY when: not PAID + booking CONFIRMED
+            if (!isPaid && isConfirmed) {
+                confirmPaymentBtnWrap.classList.remove('d-none');
+                // Show warning banner only when actions would be shown (today + confirmed)
+                var isToday = (d.bookingDate === todayStr());
+                if (isToday) {
+                    paymentWarningBanner.classList.remove('d-none');
+                } else {
+                    paymentWarningBanner.classList.add('d-none');
+                }
+            } else {
+                confirmPaymentBtnWrap.classList.add('d-none');
+                paymentWarningBanner.classList.add('d-none');
+            }
+        } else {
+            setText('dTotalAmount', '—');
+            setText('dPaidAmount', '—');
+            remainingField.classList.add('d-none');
+            setText('dPaymentStatus', '—');
+            confirmPaymentBtnWrap.classList.add('d-none');
+            paymentWarningBanner.classList.add('d-none');
+        }
     }
 
     // ─── Render Sessions ───
@@ -214,9 +296,9 @@
     function renderSessionAction(container, session, idx, d) {
         container.innerHTML = '';
         var sessions = d.sessions;
+        var isPaid = d.invoice && d.invoice.paymentStatus === 'PAID';
 
         if (session.sessionStatus === 'COMPLETED') {
-            // Done ✓
             var label = document.createElement('span');
             label.className = 'sbd-session-status sbd-ss-label-completed';
             label.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Hoàn thành';
@@ -225,16 +307,22 @@
         }
 
         if (session.sessionStatus === 'CHECKED_IN') {
-            // Show Check-out button
             var btnOut = document.createElement('button');
             btnOut.className = 'sbd-btn sbd-btn-checkout';
             btnOut.innerHTML = '<i class="bi bi-box-arrow-right me-1"></i>Check-out';
-            btnOut.addEventListener('click', function () { handleCheckout(idx); });
+            btnOut.addEventListener('click', function () {
+                if (!isPaid) {
+                    pendingAction = { type: 'checkout', sessionIndex: idx };
+                    openPaymentModal();
+                } else {
+                    handleCheckout(idx);
+                }
+            });
             container.appendChild(btnOut);
             return;
         }
 
-        // PENDING — check if this session can be checked in (all previous must be checked in or completed)
+        // PENDING — check if this session can be checked in
         var canCheckin = true;
         for (var i = 0; i < idx; i++) {
             if (sessions[i].sessionStatus === 'PENDING') {
@@ -247,7 +335,14 @@
             var btnIn = document.createElement('button');
             btnIn.className = 'sbd-btn sbd-btn-checkin';
             btnIn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Check-in';
-            btnIn.addEventListener('click', function () { handleCheckin(idx); });
+            btnIn.addEventListener('click', function () {
+                if (!isPaid) {
+                    pendingAction = { type: 'checkin', sessionIndex: idx };
+                    openPaymentModal();
+                } else {
+                    handleCheckin(idx);
+                }
+            });
             container.appendChild(btnIn);
         } else {
             var waitBtn = document.createElement('span');
@@ -257,7 +352,135 @@
         }
     }
 
-    // ─── Check-in handler ───
+    // ═══════════════════════════════════════════
+    // PAYMENT MODAL
+    // ═══════════════════════════════════════════
+
+    function openPaymentModal() {
+        if (!bookingData || !bookingData.invoice) return;
+
+        var inv = bookingData.invoice;
+        var remaining = inv.totalAmount - inv.paidAmount;
+
+        setText('modalTotalAmount', formatMoney(inv.totalAmount));
+        setText('modalPaidAmount', formatMoney(inv.paidAmount));
+        setText('modalRemainingAmount', formatMoney(remaining));
+
+        paymentAmountInput.value = remaining;
+        paymentAmountInput.max = remaining;
+        paymentInputHint.textContent = 'Nhập đúng ' + formatMoney(remaining) + ' để hoàn tất thanh toán';
+
+        hideModalError();
+        paymentModal.classList.remove('d-none');
+
+        // Focus input after a short delay (allow CSS transition)
+        setTimeout(function () {
+            paymentAmountInput.focus();
+            paymentAmountInput.select();
+        }, 100);
+    }
+
+    function closePaymentModal() {
+        paymentModal.classList.add('d-none');
+        pendingAction = null;
+        hideModalError();
+    }
+
+    function showModalError(msg) {
+        paymentModalError.textContent = msg;
+        paymentModalError.classList.remove('d-none');
+    }
+
+    function hideModalError() {
+        paymentModalError.classList.add('d-none');
+        paymentModalError.textContent = '';
+    }
+
+    function handleConfirmPayment() {
+        hideModalError();
+
+        var inv = bookingData.invoice;
+        var remaining = inv.totalAmount - inv.paidAmount;
+        var inputVal = paymentAmountInput.value.trim();
+
+        if (!inputVal || isNaN(inputVal)) {
+            showModalError('Vui lòng nhập số tiền hợp lệ.');
+            return;
+        }
+
+        var amount = parseFloat(inputVal);
+        if (amount <= 0) {
+            showModalError('Số tiền phải lớn hơn 0.');
+            return;
+        }
+        if (amount !== remaining) {
+            showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiền.');
+            return;
+        }
+
+        // Disable confirm button
+        paymentModalConfirm.disabled = true;
+        paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
+
+        fetch(CTX + '/api/staff/payment/confirm', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ bookingId: parseInt(bookingId), amount: amount })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (body) {
+                if (!body.success) {
+                    showModalError(body.message || 'Xác nhận thanh toán thất bại.');
+                    resetConfirmButton();
+                    return;
+                }
+
+                // Update local state
+                bookingData.invoice.paidAmount = body.data.paidAmount;
+                bookingData.invoice.paymentStatus = body.data.paymentStatus;
+
+                showToast('Xác nhận thanh toán thành công!', 'success');
+                closePaymentModal();
+                resetConfirmButton();
+
+                // Re-render invoice section
+                renderInvoice(bookingData);
+
+                // Re-render sessions (buttons now enabled)
+                renderSessions(bookingData);
+
+                // Execute pending action if any
+                if (pendingAction) {
+                    var action = pendingAction;
+                    pendingAction = null;
+
+                    // Small delay so user can see the payment success toast
+                    setTimeout(function () {
+                        if (action.type === 'checkin') {
+                            handleCheckin(action.sessionIndex);
+                        } else if (action.type === 'checkout') {
+                            handleCheckout(action.sessionIndex);
+                        }
+                    }, 500);
+                }
+            })
+            .catch(function (err) {
+                console.error('Payment confirm error:', err);
+                showModalError('Lỗi kết nối. Vui lòng thử lại.');
+                resetConfirmButton();
+            });
+    }
+
+    function resetConfirmButton() {
+        paymentModalConfirm.disabled = false;
+        paymentModalConfirm.innerHTML = '<i class="bi bi-check-lg me-1"></i>Xác nhận';
+    }
+
+    // ═══════════════════════════════════════════
+    // CHECK-IN / CHECK-OUT HANDLERS
+    // ═══════════════════════════════════════════
+
     function handleCheckin(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
         if (!confirm('Xác nhận CHECK-IN phiên ' + (sessionIndex + 1) + '?\n' +
@@ -305,7 +528,6 @@
             });
     }
 
-    // ─── Check-out handler ───
     function handleCheckout(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
         if (!confirm('Xác nhận CHECK-OUT phiên ' + (sessionIndex + 1) + '?\n' +
@@ -369,7 +591,10 @@
             });
     }
 
-    // ─── Toast notification ───
+    // ═══════════════════════════════════════════
+    // TOAST NOTIFICATION
+    // ═══════════════════════════════════════════
+
     function showToast(msg, type) {
         var toast = document.createElement('div');
         toast.className = 'sbd-toast sbd-toast-' + type;
@@ -382,7 +607,10 @@
         }, 3000);
     }
 
-    // ─── Helpers ───
+    // ═══════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════
+
     function setText(id, val) {
         var el = document.getElementById(id);
         if (el) el.textContent = val;
