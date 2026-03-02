@@ -1,7 +1,7 @@
 /**
- * staff-timeline.js — Task 9a + 9c-fix v4
+ * staff-timeline.js — Task 9a + 9c-fix v5
  * Fixes:
- * - Past date: all slots greyed out in proxy mode
+ * - Past date: ALL cells greyed out in proxy mode (including COMPLETED)
  * - No-price slots: greyed out, unclickable in proxy mode
  */
 (function () {
@@ -45,8 +45,8 @@
     // ─── Task 9a: Proxy mode state ───
     var proxyMode     = false;
     var selectedSlots = [];
-    var priceMap      = {};       // key → price (number) — only contains slots WITH price
-    var priceLoaded   = false;    // whether prices have been fetched for current date
+    var priceMap      = {};
+    var priceLoaded   = false;
     var courtsData    = [];
     var slotsData     = [];
     var cellMapData   = {};
@@ -83,26 +83,15 @@
     }
 
     /**
-     * Check if a date is in the past (before today).
-     */
-    function isPastDate() {
-        return currentDate < TODAY_STR;
-    }
-
-    /**
      * Check if a slot is in the past.
      * - All slots on past dates are past.
      * - For today: past if current time >= slot's end_time.
      * - For future dates: never past.
      */
     function isSlotPast(slotEndTime) {
-        // All slots on past dates are past
         if (currentDate < TODAY_STR) return true;
-
-        // Future dates: never past
         if (currentDate !== TODAY_STR) return false;
 
-        // Today: check end time
         var now = new Date();
         var nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -117,11 +106,9 @@
 
     /**
      * Check if a slot has NO configured price.
-     * Returns true if priceMap has been loaded but this slot has no entry.
-     * Price = 0 is a valid price (free slot), only null/undefined = no price.
      */
     function hasNoPrice(courtId, slotId) {
-        if (!priceLoaded) return false; // prices not loaded yet, don't block
+        if (!priceLoaded) return false;
         var key = courtId + '-' + slotId;
         return !(key in priceMap);
     }
@@ -219,7 +206,6 @@
         slots.forEach(function (s) {
             var th = document.createElement('th');
             th.textContent = s.startTime;
-            // Dim past headers in proxy mode
             if (proxyMode && isSlotPast(s.endTime)) {
                 th.classList.add('st-th-past');
             }
@@ -272,8 +258,9 @@
                     var statusLower = cell.bookingStatus.toLowerCase();
                     td.classList.add('st-cell-' + statusLower);
 
-                    // Grey out past booked cells in proxy mode
-                    if (proxyMode && past && cell.bookingStatus !== 'COMPLETED') {
+                    // FIX v5: In proxy mode, ALL past booked cells are greyed out
+                    // (including COMPLETED — no exceptions)
+                    if (proxyMode && past) {
                         td.classList.add('st-cell-past');
                     }
 
@@ -300,6 +287,12 @@
                 } else if (cell.state === 'DISABLED') {
                     // ─── DISABLED ───
                     td.classList.add('st-cell-disabled');
+
+                    // Also grey out disabled cells in proxy past mode
+                    if (proxyMode && past) {
+                        td.classList.add('st-cell-past');
+                    }
+
                     var reasonEl = document.createElement('span');
                     reasonEl.className = 'st-cell-reason';
                     reasonEl.textContent = cell.disabledReason || 'Không khả dụng';
@@ -309,16 +302,13 @@
                     // ─── AVAILABLE ───
                     td.classList.add('st-cell-available');
 
-                    // Grey out past available cells in proxy mode
                     if (proxyMode && past) {
                         td.classList.add('st-cell-past');
                     }
 
-                    // Check if slot has no configured price (proxy mode only)
                     var noPrice = proxyMode && !past && hasNoPrice(court.courtId, slot.slotId);
 
                     if (noPrice) {
-                        // ─── NO PRICE — show as disabled, unclickable ───
                         td.classList.remove('st-cell-available');
                         td.classList.add('st-cell-no-price');
                         var noPriceEl = document.createElement('span');
@@ -326,13 +316,11 @@
                         noPriceEl.textContent = 'Chưa có giá';
                         inner.appendChild(noPriceEl);
                     } else if (proxyMode && !past) {
-                        // Show price hint in proxy mode
                         var pVal = priceMap[key];
                         if (pVal != null) {
                             inner.textContent = formatMoney(pVal);
                             inner.style.fontSize = '0.625rem';
                         }
-                        // Click to select
                         (function (cId, sId) {
                             inner.addEventListener('click', function () {
                                 toggleSlot(cId, sId);
@@ -417,11 +405,9 @@
     function toggleSlot(courtId, slotId) {
         if (!proxyMode) return;
 
-        // Find slot data to check if past
         var slot = slotsData.find(function (s) { return s.slotId === slotId; });
-        if (slot && isSlotPast(slot.endTime)) return; // can't select past slots
+        if (slot && isSlotPast(slot.endTime)) return;
 
-        // Can't select slots without configured price
         if (hasNoPrice(courtId, slotId)) return;
 
         var idx = selectedSlots.findIndex(function (s) {
@@ -439,7 +425,6 @@
             if (!court || !slot) return;
 
             var price = priceMap[key];
-            // price can be 0 (free) — that's valid. Only null/undefined = no price.
             if (price == null) return;
 
             selectedSlots.push({
