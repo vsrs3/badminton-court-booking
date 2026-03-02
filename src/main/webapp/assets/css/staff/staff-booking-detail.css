@@ -4,6 +4,32 @@
    Task 8 v2: Session-based checkin/checkout
    ================================================================ */
 
+/* ===== FIX: Prevent horizontal overflow ===== */
+.main-content {
+    max-width: calc(100vw - var(--sidebar-width, 260px));
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+.main-content .content-area {
+    overflow: hidden;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Ensure the Bootstrap row doesn't overflow */
+.main-content .content-area .row {
+    margin-left: 0;
+    margin-right: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .main-content {
+        max-width: 100vw;
+    }
+}
+
 /* Back link */
 .sbd-back-link {
     display: inline-flex;
