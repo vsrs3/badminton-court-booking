@@ -37,8 +37,7 @@ public class AdminController extends HttpServlet {
             // Handle other admin routes (future implementation)
             switch (pathInfo) {
                 case "/users":
-                    // TODO: User management
-                    response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+                    response.sendRedirect(request.getContextPath() + "/admin/accounts/list");
                     break;
 
                 case "/facilities":
