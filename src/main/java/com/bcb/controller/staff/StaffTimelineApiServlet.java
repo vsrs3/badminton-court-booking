@@ -143,6 +143,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
             json.append("]");
 
             // ─── 4. Booked cells (ONLY non-empty) ───
+            // FIX: Exclude CANCELLED bookings from timeline (they are shown in booking list)
             String sqlBooked = """
                 SELECT csb.court_id, csb.slot_id, b.booking_id, b.booking_status,
                        COALESCE(a.full_name, g.guest_name) AS customer_name
@@ -152,7 +153,8 @@ public class StaffTimelineApiServlet extends HttpServlet {
                 LEFT JOIN Account a ON b.account_id = a.account_id
                 LEFT JOIN Guest g   ON b.guest_id = g.guest_id
                 JOIN Court c        ON csb.court_id = c.court_id
-                WHERE c.facility_id = ? AND csb.booking_date = ? AND b.booking_status != 'EXPIRED'
+                WHERE c.facility_id = ? AND csb.booking_date = ?
+                  AND b.booking_status NOT IN ('EXPIRED', 'CANCELLED')
             """;
 
             Map<String, String[]> bookedMap = new LinkedHashMap<>();

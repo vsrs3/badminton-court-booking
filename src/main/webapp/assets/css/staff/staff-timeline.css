@@ -1,11 +1,8 @@
 /* ================================================================
    STAFF TIMELINE — staff-timeline.css
    Prefix: st- (staff-timeline)
-   Task 9a: Booking proxy mode
-   Task 9c-fix: Past slot support
    ================================================================ */
 
-/* ===== FIX: Horizontal scroll for timeline grid ===== */
 .main-content {
     max-width: calc(100vw - var(--sidebar-width, 260px));
     overflow-x: hidden;
@@ -462,10 +459,10 @@
 }
 
 /* ================================================================
-   PAST SLOT — slot đã qua giờ (chỉ ngày hôm nay)
+   PAST SLOT — slot đã qua giờ (today) or past date
    ================================================================ */
 
-/* Past slot in normal mode: greyed out */
+/* Past slot: greyed out */
 .st-cell-past .st-cell-inner {
     background: #F3F4F6 !important;
     border: 1px solid #E5E7EB !important;
@@ -489,6 +486,35 @@
     transform: none !important;
     box-shadow: none !important;
     background: #F3F4F6 !important;
+}
+
+/* ================================================================
+   NO PRICE — slot chưa config giá (proxy mode only)
+   ================================================================ */
+
+.st-cell-no-price .st-cell-inner {
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    color: #D1D5DB;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.st-cell-no-price .st-cell-inner:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Override proxy mode purple border for no-price cells */
+.st-proxy-mode .st-cell-no-price .st-cell-inner {
+    cursor: not-allowed;
+    border: 1px solid #E5E7EB;
+    background: #F3F4F6;
+    color: #D1D5DB;
+}
+.st-proxy-mode .st-cell-no-price .st-cell-inner:hover {
+    background: #F3F4F6;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ===== BOTTOM BAR (sticky) ===== */
