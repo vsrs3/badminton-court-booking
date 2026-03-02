@@ -498,7 +498,7 @@
                 return;
             }
 
-            /* SUCCESS → redirect to payment URL or home */
+            /* SUCCESS → redirect straight to VNPay gateway */
             sessionStorage.removeItem('sbPreviewData');
             const data   = json.data || json;
             const payUrl = data.paymentUrl;

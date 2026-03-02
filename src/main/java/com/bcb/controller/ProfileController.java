@@ -42,7 +42,14 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        // Show profile page
+        // Default: redirect to my-bookings so booking history shows first
+        String section = request.getParameter("section");
+        if (section == null || section.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/my-bookings");
+            return;
+        }
+
+        // Show profile page with requested section
         request.getRequestDispatcher("/jsp/customer/profile/profile.jsp").forward(request, response);
     }
 }

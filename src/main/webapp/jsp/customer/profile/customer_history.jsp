@@ -107,6 +107,27 @@
         background-color: #FCA5A5;
         color: #7F1D1D;
     }
+    .pay-btn {
+        background-color: #D1FAE5;
+        color: #065F46;
+        border: 1px solid #6EE7B7;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+    }
+    .pay-btn:hover {
+        background-color: #6EE7B7;
+        color: #064E3B;
+    }
+    .pay-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>
 
 <div class="flex flex-col h-full bg-white">
@@ -297,6 +318,13 @@
                                 </c:if>
                             </div>
                             <div class="flex items-center space-x-2">
+                                <!-- Pay button: only for PENDING + UNPAID -->
+                                <c:if test="${booking.bookingStatus == 'PENDING' && booking.paymentStatus == 'UNPAID'}">
+                                    <button type="button" class="pay-btn"
+                                            onclick="retryPayment(${booking.bookingId}, this)">
+                                        Thanh toán
+                                    </button>
+                                </c:if>
                                 <!-- Cancel button: only for PENDING/CONFIRMED + UNPAID -->
                                 <c:if test="${(booking.bookingStatus == 'PENDING' || booking.bookingStatus == 'CONFIRMED') && booking.paymentStatus == 'UNPAID'}">
                                     <form method="post" action="${pageContext.request.contextPath}/my-bookings"
@@ -367,5 +395,38 @@
             return false;
         }
         return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
+    }
+
+    function retryPayment(bookingId, btnEl) {
+        if (btnEl.disabled) return;
+        btnEl.disabled = true;
+        var origText = btnEl.innerHTML;
+        btnEl.innerHTML = 'Đang xử lý...';
+
+        fetch('${pageContext.request.contextPath}/api/payment/retry', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bookingId: bookingId })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+            if (json.success && json.data && json.data.paymentUrl) {
+                window.location.href = json.data.paymentUrl;
+            } else {
+                var msg = (json.error && json.error.message) || 'Không thể tạo link thanh toán.';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
+                } else { alert(msg); }
+                btnEl.disabled = false;
+                btnEl.innerHTML = origText;
+            }
+        })
+        .catch(function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối. Vui lòng thử lại.' });
+            } else { alert('Lỗi kết nối.'); }
+            btnEl.disabled = false;
+            btnEl.innerHTML = origText;
+        });
     }
 </script>

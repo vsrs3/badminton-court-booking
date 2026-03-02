@@ -32,7 +32,7 @@
             if (currentUser != null && "CUSTOMER".equals(currentUser.getRole())) {
           %>
           <!-- ✅ Customer logged in state -->
-          <a href="${pageContext.request.contextPath}/profile" class="customer-profile-link">
+          <a href="${pageContext.request.contextPath}/my-bookings" class="customer-profile-link">
             <div class="customer-avatar">
               <%
                 String avatarPath = currentUser.getAvatarPath();
@@ -88,10 +88,10 @@
           <i class="bi bi-map"></i>
           <span class="action-text">Bản đồ sân</span>
         </button>
-        <button class="action-btn" id="historyBtn">
+        <a href="${pageContext.request.contextPath}/my-bookings" class="action-btn" id="historyBtn" style="text-decoration:none;">
           <i class="bi bi-calendar-check"></i>
           <span class="action-text">Lịch sử đặt</span>
-        </button>
+        </a>
         <button
                 id="favoriteBtn"
                 class="action-btn">

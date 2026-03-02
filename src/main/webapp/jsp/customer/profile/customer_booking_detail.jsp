@@ -288,6 +288,13 @@
                        class="flex-1 text-center py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
                         ← Quay lại
                     </a>
+                    <c:if test="${d.bookingStatus == 'PENDING' && d.paymentStatus == 'UNPAID'}">
+                        <button type="button" id="detailPayBtn"
+                                class="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors"
+                                onclick="retryPaymentDetail(${d.bookingId}, this)">
+                            Thanh toán
+                        </button>
+                    </c:if>
                     <c:if test="${(d.bookingStatus == 'PENDING' || d.bookingStatus == 'CONFIRMED') && d.paymentStatus == 'UNPAID'}">
                         <form method="post" action="${pageContext.request.contextPath}/my-bookings"
                               class="flex-1"
@@ -340,5 +347,38 @@
             return false;
         }
         return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
+    }
+
+    function retryPaymentDetail(bookingId, btnEl) {
+        if (btnEl.disabled) return;
+        btnEl.disabled = true;
+        var origText = btnEl.innerHTML;
+        btnEl.innerHTML = 'Đang xử lý...';
+
+        fetch('${pageContext.request.contextPath}/api/payment/retry', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bookingId: bookingId })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+            if (json.success && json.data && json.data.paymentUrl) {
+                window.location.href = json.data.paymentUrl;
+            } else {
+                var msg = (json.error && json.error.message) || 'Không thể tạo link thanh toán.';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
+                } else { alert(msg); }
+                btnEl.disabled = false;
+                btnEl.innerHTML = origText;
+            }
+        })
+        .catch(function() {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối. Vui lòng thử lại.' });
+            } else { alert('Lỗi kết nối.'); }
+            btnEl.disabled = false;
+            btnEl.innerHTML = origText;
+        });
     }
 </script>

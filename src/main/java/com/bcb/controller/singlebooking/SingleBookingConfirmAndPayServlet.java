@@ -20,7 +20,8 @@ import java.io.IOException;
 
 /**
  * POST /api/single-booking/confirm-and-pay
- * Authenticates user, validates, locks slots, creates booking + invoice.
+ * Authenticates user, validates, locks slots, creates booking + invoice + VNPay payment.
+ * Returns JSON with paymentUrl (VNPay gateway URL) for direct redirect.
  *
  * @author AnhTN
  */
@@ -48,7 +49,7 @@ public class SingleBookingConfirmAndPayServlet extends HttpServlet {
             SingleBookingConfirmRequestDTO request =
                     SingleBookingJsonUtil.readBody(req, SingleBookingConfirmRequestDTO.class);
 
-            SingleBookingConfirmResponseDTO data = confirmService.confirmAndPay(accountId, request);
+            SingleBookingConfirmResponseDTO data = confirmService.confirmAndPay(accountId, request, req);
             SingleBookingApiResponseUtil.writeSuccess(resp, 200, data);
 
         } catch (SingleBookingUnauthorizedException e) {
@@ -60,6 +61,7 @@ public class SingleBookingConfirmAndPayServlet extends HttpServlet {
         } catch (SingleBookingConflictException e) {
             SingleBookingApiResponseUtil.writeError(resp, 409, e.getCode(), e.getMessage(), null);
         } catch (Exception e) {
+            e.printStackTrace();
             SingleBookingApiResponseUtil.writeError(resp, 500, "INTERNAL_ERROR",
                     "An internal error occurred.", null);
         }
