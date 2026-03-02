@@ -245,19 +245,23 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
 
     /**
      * Derive session status from slot statuses:
+     * - All NO_SHOW → "NO_SHOW"
      * - All CHECK_OUT → "COMPLETED"
-     * - Any CHECKED_IN (none CHECK_OUT) → "CHECKED_IN"
+     * - Any CHECKED_IN → "CHECKED_IN"
      * - Otherwise → "PENDING" (waiting for check-in)
      */
     private String deriveSessionStatus(List<SlotRow> session) {
         boolean allCheckout = true;
+        boolean allNoShow = true;
         boolean anyCheckedIn = false;
 
         for (SlotRow s : session) {
             if (!"CHECK_OUT".equals(s.slotStatus)) allCheckout = false;
+            if (!"NO_SHOW".equals(s.slotStatus)) allNoShow = false;
             if ("CHECKED_IN".equals(s.slotStatus)) anyCheckedIn = true;
         }
 
+        if (allNoShow) return "NO_SHOW";
         if (allCheckout) return "COMPLETED";
         if (anyCheckedIn) return "CHECKED_IN";
         return "PENDING";

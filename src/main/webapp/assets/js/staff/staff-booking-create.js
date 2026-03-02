@@ -1,5 +1,6 @@
 /**
  * staff-booking-create.js — Task 9c: Booking proxy create page
+ * Fix: phone validation 10 digits + real-time feedback
  */
 (function () {
     'use strict';
@@ -26,6 +27,7 @@
     var selectedAccountId = document.getElementById('selectedAccountId');
     var guestNameInput    = document.getElementById('guestName');
     var guestPhoneInput   = document.getElementById('guestPhone');
+    var phoneHint         = document.getElementById('phoneHint');
     var formError         = document.getElementById('formError');
     var btnSubmit         = document.getElementById('btnSubmit');
 
@@ -52,85 +54,39 @@
         return;
     }
 
+    // Show content
     createContent.classList.remove('d-none');
-    renderSummary();
 
-    // ─── Render slot summary ───
-    function renderSummary() {
-        // Format date
-        var d = new Date(bookingData.date + 'T00:00:00');
-        var wd = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-        var day = String(d.getDate()).padStart(2, '0');
-        var mon = String(d.getMonth() + 1).padStart(2, '0');
-        summaryDate.textContent = wd[d.getDay()] + ', ' + day + '/' + mon + '/' + d.getFullYear();
+    // ─── Render summary ───
+    summaryDate.textContent = formatDate(bookingData.date);
 
-        // Group slots into sessions (consecutive slots on same court)
-        var sessions = groupSessions(bookingData.slots);
+    // Group slots into sessions (same court, consecutive)
+    var sessions = buildSessions(bookingData.slots);
 
-        sessionsContainer.innerHTML = '';
-        var total = 0;
+    var totalPrice = 0;
+    sessionsContainer.innerHTML = '';
 
-        sessions.forEach(function (session, i) {
-            var sessionPrice = 0;
-            session.slots.forEach(function (s) { sessionPrice += (s.price || 0); });
-            total += sessionPrice;
+    sessions.forEach(function (session, idx) {
+        var sessionPrice = 0;
+        session.forEach(function (s) { sessionPrice += (s.price || 0); });
+        totalPrice += sessionPrice;
 
-            var div = document.createElement('div');
-            div.className = 'sbc-session';
-            div.innerHTML =
-                '<div class="sbc-session-court">' + session.courtName + '</div>' +
-                '<div class="sbc-session-meta">' +
-                '<span><i class="bi bi-clock me-1"></i>' + session.startTime + ' → ' + session.endTime + '</span>' +
-                '<span>' + session.slots.length + ' slot</span>' +
-                '<span class="sbc-session-price">' + formatMoney(sessionPrice) + '</span>' +
-                '</div>';
-            sessionsContainer.appendChild(div);
-        });
+        var div = document.createElement('div');
+        div.className = 'sbc-session';
+        div.innerHTML =
+            '<div class="sbc-session-idx">' + (idx + 1) + '</div>' +
+            '<div class="sbc-session-info">' +
+            '  <div class="sbc-session-court">' + escapeHtml(session[0].courtName) + '</div>' +
+            '  <div class="sbc-session-meta">' +
+            '    <span><i class="bi bi-clock"></i>' + session[0].startTime + ' → ' + session[session.length - 1].endTime + '</span>' +
+            '    <span><i class="bi bi-layers"></i>' + session.length + ' slot</span>' +
+            '    <span class="sbc-session-price">' + formatMoney(sessionPrice) + '</span>' +
+            '  </div>' +
+            '</div>';
+        sessionsContainer.appendChild(div);
+    });
 
-        summaryTotal.textContent = formatMoney(total);
-    }
-
-    function groupSessions(slots) {
-        // Group by courtId
-        var groups = {};
-        slots.forEach(function (s) {
-            var key = s.courtId;
-            if (!groups[key]) groups[key] = { courtName: s.courtName, slots: [] };
-            groups[key].slots.push(s);
-        });
-
-        var sessions = [];
-        for (var courtId in groups) {
-            var g = groups[courtId];
-            // Sort by startTime
-            g.slots.sort(function (a, b) { return a.startTime.localeCompare(b.startTime); });
-
-            // Find consecutive sessions
-            var current = [g.slots[0]];
-            for (var i = 1; i < g.slots.length; i++) {
-                var prev = current[current.length - 1];
-                if (prev.endTime === g.slots[i].startTime) {
-                    current.push(g.slots[i]);
-                } else {
-                    sessions.push({
-                        courtName: g.courtName,
-                        startTime: current[0].startTime,
-                        endTime: current[current.length - 1].endTime,
-                        slots: current
-                    });
-                    current = [g.slots[i]];
-                }
-            }
-            sessions.push({
-                courtName: g.courtName,
-                startTime: current[0].startTime,
-                endTime: current[current.length - 1].endTime,
-                slots: current
-            });
-        }
-
-        return sessions;
-    }
+    summaryTotal.textContent = formatMoney(totalPrice);
 
     // ─── Tab switching ───
     tabAccount.addEventListener('click', function () {
@@ -151,65 +107,50 @@
         hideError();
     });
 
-    // ─── Customer search (debounce) ───
+    // ─── Customer search (ACCOUNT) ───
     customerSearch.addEventListener('input', function () {
-        clearTimeout(searchTimer);
         var q = this.value.trim();
         if (q.length < 2) {
             searchDropdown.classList.add('d-none');
             return;
         }
+
+        clearTimeout(searchTimer);
         searchTimer = setTimeout(function () {
-            searchCustomers(q);
+            fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (body) {
+                    if (!body.success) return;
+                    renderSearchResults(body.data.customers || []);
+                })
+                .catch(function (err) {
+                    console.error('Search error:', err);
+                });
         }, 300);
     });
 
-    // Close dropdown on outside click
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.sbc-search-wrap')) {
-            searchDropdown.classList.add('d-none');
-        }
-    });
-
-    function searchCustomers(q) {
-        fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json' }
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (body) {
-                if (!body.success) return;
-                renderSearchResults(body.data);
-            })
-            .catch(function (err) {
-                console.error('Search error:', err);
-            });
-    }
-
-    function renderSearchResults(results) {
+    function renderSearchResults(customers) {
         searchDropdown.innerHTML = '';
-
-        if (results.length === 0) {
-            searchDropdown.innerHTML = '<div class="sbc-search-empty">Không tìm thấy khách hàng</div>';
+        if (customers.length === 0) {
+            searchDropdown.innerHTML = '<div class="sbc-search-empty">Không tìm thấy</div>';
             searchDropdown.classList.remove('d-none');
             return;
         }
 
-        results.forEach(function (c) {
+        customers.forEach(function (c) {
             var item = document.createElement('div');
             item.className = 'sbc-search-item';
             item.innerHTML =
-                '<div class="sbc-search-item-name">' + escapeHtml(c.fullName) + '</div>' +
-                '<div class="sbc-search-item-meta">' +
-                (c.phone ? c.phone : '') +
-                (c.email ? ' · ' + c.email : '') +
-                '</div>';
+                '<div class="sbc-search-name">' + escapeHtml(c.fullName) + '</div>' +
+                '<div class="sbc-search-detail">' + escapeHtml(c.phone || '') + ' · ' + escapeHtml(c.email || '') + '</div>';
             item.addEventListener('click', function () {
                 selectCustomer(c);
             });
             searchDropdown.appendChild(item);
         });
-
         searchDropdown.classList.remove('d-none');
     }
 
@@ -221,22 +162,91 @@
         selectedCustomer.classList.remove('d-none');
         customerSearch.value = '';
         searchDropdown.classList.add('d-none');
-        customerSearch.style.display = 'none';
         hideError();
     }
 
     btnRemoveCustomer.addEventListener('click', function () {
         selectedAccountId.value = '';
         selectedCustomer.classList.add('d-none');
-        customerSearch.style.display = '';
-        customerSearch.focus();
     });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.sbc-search-wrap')) {
+            searchDropdown.classList.add('d-none');
+        }
+    });
+
+    // ─── Phone validation helper ───
+    function isValidPhone(phone) {
+        // Vietnamese phone: exactly 10 digits, starts with 0
+        var cleaned = phone.replace(/\s+/g, '');
+        return /^0\d{9}$/.test(cleaned);
+    }
+
+    // ─── Real-time phone validation on input ───
+    if (guestPhoneInput) {
+        // Only allow digits
+        guestPhoneInput.addEventListener('input', function () {
+            // Strip non-digit characters
+            var raw = this.value.replace(/[^\d]/g, '');
+            // Limit to 10 digits
+            if (raw.length > 10) {
+                raw = raw.substring(0, 10);
+            }
+            this.value = raw;
+
+            // Show real-time hint
+            updatePhoneHint(raw);
+        });
+
+        // Also validate on paste
+        guestPhoneInput.addEventListener('paste', function () {
+            var self = this;
+            setTimeout(function () {
+                var raw = self.value.replace(/[^\d]/g, '');
+                if (raw.length > 10) raw = raw.substring(0, 10);
+                self.value = raw;
+                updatePhoneHint(raw);
+            }, 0);
+        });
+    }
+
+    function updatePhoneHint(digits) {
+        if (!phoneHint) return;
+
+        if (digits.length === 0) {
+            phoneHint.classList.add('d-none');
+            guestPhoneInput.classList.remove('sbc-input-error');
+            guestPhoneInput.classList.remove('sbc-input-valid');
+            return;
+        }
+
+        phoneHint.classList.remove('d-none');
+
+        if (digits.length < 10) {
+            phoneHint.textContent = 'Còn thiếu ' + (10 - digits.length) + ' số';
+            phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
+            guestPhoneInput.classList.remove('sbc-input-valid');
+            guestPhoneInput.classList.add('sbc-input-error');
+        } else if (digits.length === 10 && digits.charAt(0) === '0') {
+            phoneHint.textContent = '✓ Số điện thoại hợp lệ';
+            phoneHint.className = 'sbc-phone-hint sbc-hint-ok';
+            guestPhoneInput.classList.remove('sbc-input-error');
+            guestPhoneInput.classList.add('sbc-input-valid');
+        } else {
+            phoneHint.textContent = 'Số điện thoại phải bắt đầu bằng 0';
+            phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
+            guestPhoneInput.classList.remove('sbc-input-valid');
+            guestPhoneInput.classList.add('sbc-input-error');
+        }
+    }
 
     // ─── Submit ───
     btnSubmit.addEventListener('click', function () {
         hideError();
 
-        // Validate customer info
+        // Validate customer
         if (customerType === 'ACCOUNT') {
             if (!selectedAccountId.value) {
                 showError('Vui lòng tìm và chọn khách hàng');
@@ -250,6 +260,11 @@
             }
             if (!guestPhoneInput.value.trim()) {
                 showError('Vui lòng nhập số điện thoại');
+                guestPhoneInput.focus();
+                return;
+            }
+            if (!isValidPhone(guestPhoneInput.value)) {
+                showError('Số điện thoại phải đúng 10 chữ số và bắt đầu bằng 0');
                 guestPhoneInput.focus();
                 return;
             }
@@ -321,6 +336,51 @@
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        var d = new Date(dateStr + 'T00:00:00');
+        return String(d.getDate()).padStart(2, '0') + '/' +
+            String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+    }
+
+    function buildSessions(slots) {
+        // Group by courtId
+        var groups = {};
+        slots.forEach(function (s) {
+            if (!groups[s.courtId]) groups[s.courtId] = [];
+            groups[s.courtId].push(s);
+        });
+
+        var sessions = [];
+
+        for (var courtId in groups) {
+            var courtSlots = groups[courtId];
+            courtSlots.sort(function (a, b) {
+                return a.startTime.localeCompare(b.startTime);
+            });
+
+            var currentSession = [courtSlots[0]];
+
+            for (var i = 1; i < courtSlots.length; i++) {
+                var prev = currentSession[currentSession.length - 1];
+                if (prev.endTime === courtSlots[i].startTime) {
+                    currentSession.push(courtSlots[i]);
+                } else {
+                    sessions.push(currentSession);
+                    currentSession = [courtSlots[i]];
+                }
+            }
+            sessions.push(currentSession);
+        }
+
+        // Sort by start time
+        sessions.sort(function (a, b) {
+            return a[0].startTime.localeCompare(b[0].startTime);
+        });
+
+        return sessions;
     }
 
 })();

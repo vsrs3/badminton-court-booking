@@ -15,6 +15,8 @@ import java.sql.*;
  * REST API: GET /api/staff/booking/list?search=...&page=...&size=...
  * Search by: customer_name, phone, booking_id
  * Data scope: Booking.facility_id = staff's facility
+ *
+ * Updated: thêm hasNoShow flag — true nếu booking có ít nhất 1 slot NO_SHOW
  */
 @WebServlet(name = "StaffBookingListApiServlet", urlPatterns = {"/api/staff/booking/list"})
 public class StaffBookingListApiServlet extends HttpServlet {
@@ -88,14 +90,18 @@ public class StaffBookingListApiServlet extends HttpServlet {
             if (page > totalPages) page = totalPages;
             int offset = (page - 1) * size;
 
-            // ─── 2. Fetch ───
+            // ─── 2. Fetch (thêm has_no_show subquery) ───
             String sqlData = """
                 SELECT b.booking_id,
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
                        COALESCE(a.phone, g.phone) AS phone,
                        b.booking_date, b.booking_status, i.payment_status,
                        (SELECT COUNT(DISTINCT bs2.court_id) FROM BookingSlot bs2 WHERE bs2.booking_id = b.booking_id) AS court_count,
-                       (SELECT TOP 1 c2.court_name FROM BookingSlot bs3 JOIN Court c2 ON bs3.court_id = c2.court_id WHERE bs3.booking_id = b.booking_id ORDER BY c2.court_name) AS first_court_name
+                       (SELECT TOP 1 c2.court_name FROM BookingSlot bs3 JOIN Court c2 ON bs3.court_id = c2.court_id WHERE bs3.booking_id = b.booking_id ORDER BY c2.court_name) AS first_court_name,
+                       CASE WHEN EXISTS (
+                           SELECT 1 FROM BookingSlot bsn
+                           WHERE bsn.booking_id = b.booking_id AND bsn.slot_status = 'NO_SHOW'
+                       ) THEN 1 ELSE 0 END AS has_no_show
             """ + fromJoin + " LEFT JOIN Invoice i ON b.booking_id = i.booking_id " + whereBase + whereSearch +
                     " ORDER BY b.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -123,6 +129,8 @@ public class StaffBookingListApiServlet extends HttpServlet {
                                 ? "Nhiều sân (" + courtCount + ")"
                                 : rs.getString("first_court_name");
 
+                        boolean hasNoShow = rs.getInt("has_no_show") == 1;
+
                         json.append("{\"bookingId\":").append(rs.getInt("booking_id"));
                         json.append(",\"customerName\":").append(StaffAuthUtil.escapeJson(rs.getString("customer_name")));
                         json.append(",\"phone\":").append(StaffAuthUtil.escapeJson(rs.getString("phone")));
@@ -130,6 +138,7 @@ public class StaffBookingListApiServlet extends HttpServlet {
                         json.append(",\"bookingStatus\":\"").append(rs.getString("booking_status")).append("\"");
                         json.append(",\"paymentStatus\":").append(StaffAuthUtil.escapeJson(rs.getString("payment_status")));
                         json.append(",\"courtDisplay\":").append(StaffAuthUtil.escapeJson(courtDisplay));
+                        json.append(",\"hasNoShow\":").append(hasNoShow);
                         json.append("}");
                     }
                 }
