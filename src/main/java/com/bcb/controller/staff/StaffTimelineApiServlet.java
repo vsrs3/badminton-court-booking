@@ -143,9 +143,10 @@ public class StaffTimelineApiServlet extends HttpServlet {
             json.append("]");
 
             // ─── 4. Booked cells (ONLY non-empty) ───
-            // FIX: Exclude CANCELLED bookings from timeline (they are shown in booking list)
+            // Include slot_status to differentiate NO_SHOW vs other states on timeline
             String sqlBooked = """
                 SELECT csb.court_id, csb.slot_id, b.booking_id, b.booking_status,
+                       bs.slot_status,
                        COALESCE(a.full_name, g.guest_name) AS customer_name
                 FROM CourtSlotBooking csb
                 JOIN BookingSlot bs ON csb.booking_slot_id = bs.booking_slot_id
@@ -167,7 +168,8 @@ public class StaffTimelineApiServlet extends HttpServlet {
                         bookedMap.put(key, new String[]{
                                 String.valueOf(rs.getInt("booking_id")),
                                 rs.getString("booking_status"),
-                                rs.getString("customer_name")
+                                rs.getString("customer_name"),
+                                rs.getString("slot_status")   // NEW: slot-level status
                         });
                     }
                 }
@@ -207,7 +209,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
             boolean first = true;
 
             for (Map.Entry<String, String[]> entry : bookedMap.entrySet()) {
-                if (disabledMap.containsKey(entry.getKey())) continue; // disabled overrides
+                if (disabledMap.containsKey(entry.getKey())) continue;
                 if (!first) json.append(",");
                 first = false;
                 String[] parts = entry.getKey().split("-");
@@ -218,6 +220,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
                 json.append(",\"bookingId\":").append(b[0]);
                 json.append(",\"bookingStatus\":\"").append(b[1]).append("\"");
                 json.append(",\"customerName\":").append(StaffAuthUtil.escapeJson(b[2]));
+                json.append(",\"slotStatus\":\"").append(b[3]).append("\"");  // NEW
                 json.append("}");
             }
 

@@ -234,3 +234,11 @@
         display: none;  /* hide Thanh toán */
     }
 }
+
+/* NO_SHOW indicator badge in booking list */
+.sbl-status-noshow {
+    background: #FFEDD5;
+    color: #C2410C;
+    font-size: 0.5625rem;
+    margin-left: 0.25rem;
+}

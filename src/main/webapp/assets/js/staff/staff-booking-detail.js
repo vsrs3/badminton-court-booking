@@ -1,10 +1,11 @@
 /**
- * staff-booking-detail.js — Task 8 v2 + Payment confirmation before check-in/out
+ * staff-booking-detail.js — Task 8 v2 + Payment + NO_SHOW
  */
 (function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
+    var NO_SHOW_BUFFER_MINUTES = 15;
 
     // DOM
     var stateLoading      = document.getElementById('stateLoading');
@@ -33,7 +34,7 @@
 
     // State
     var bookingData = null;
-    var pendingAction = null; // {type: 'checkin'|'checkout', sessionIndex: N}
+    var pendingAction = null;
 
     // ─── Smart back URL ───
     var backUrl = CTX + '/staff/timeline';
@@ -66,14 +67,11 @@
     if (paymentModalCancel)  paymentModalCancel.addEventListener('click', closePaymentModal);
     if (paymentModalConfirm) paymentModalConfirm.addEventListener('click', handleConfirmPayment);
 
-    // Close modal on overlay click
     if (paymentModal) {
         paymentModal.addEventListener('click', function (e) {
             if (e.target === paymentModal) closePaymentModal();
         });
     }
-
-    // Close modal on Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && paymentModal && !paymentModal.classList.contains('d-none')) {
             closePaymentModal();
@@ -119,7 +117,7 @@
 
     // ═══════════════════════════════════════════
     // RENDER
-    // ═════════════════════════════════════════���═
+    // ═══════════════════════════════════════════
 
     function render(d) {
         stateLoading.classList.add('d-none');
@@ -149,10 +147,7 @@
         setText('dCustomerPhone', d.customerPhone || '—');
         setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'Tài khoản' : 'Khách vãng lai');
 
-        // Invoice
         renderInvoice(d);
-
-        // Sessions
         renderSessions(d);
     }
 
@@ -168,7 +163,6 @@
             setText('dTotalAmount', formatMoney(totalAmount));
             setText('dPaidAmount', formatMoney(paidAmount));
 
-            // Remaining field: only show when not paid AND booking is confirmed
             if (isPaid || !isConfirmed) {
                 remainingField.classList.add('d-none');
             } else {
@@ -180,10 +174,8 @@
             payEl.innerHTML = '<span class="sbd-pay-' + d.invoice.paymentStatus.toLowerCase() + '">' +
                 paymentLabel(d.invoice.paymentStatus) + '</span>';
 
-            // Show confirm payment button ONLY when: not PAID + booking CONFIRMED
             if (!isPaid && isConfirmed) {
                 confirmPaymentBtnWrap.classList.remove('d-none');
-                // Show warning banner only when actions would be shown (today + confirmed)
                 var isToday = (d.bookingDate === todayStr());
                 if (isToday) {
                     paymentWarningBanner.classList.remove('d-none');
@@ -204,7 +196,7 @@
         }
     }
 
-    // ─── Render Sessions ───
+    // ─── Render Sessions (with NO_SHOW support) ───
     function renderSessions(d) {
         sessionsContainer.innerHTML = '';
         var sessions = d.sessions || [];
@@ -215,12 +207,20 @@
             return;
         }
 
-        // Progress: count completed
-        var completedCount = 0;
-        sessions.forEach(function (s) { if (s.sessionStatus === 'COMPLETED') completedCount++; });
-        sessionProgress.textContent = completedCount + '/' + sessions.length + ' hoàn thành';
+        // Progress: count finished (COMPLETED or NO_SHOW)
+        var finishedCount = 0;
+        var noShowCount = 0;
+        sessions.forEach(function (s) {
+            if (s.sessionStatus === 'COMPLETED' || s.sessionStatus === 'NO_SHOW') finishedCount++;
+            if (s.sessionStatus === 'NO_SHOW') noShowCount++;
+        });
 
-        // Is booking today + CONFIRMED? → show action buttons
+        var progressText = finishedCount + '/' + sessions.length + ' hoàn thành';
+        if (noShowCount > 0) {
+            progressText += ' (' + noShowCount + ' vắng)';
+        }
+        sessionProgress.textContent = progressText;
+
         var isToday = (d.bookingDate === todayStr());
         var isConfirmed = (d.bookingStatus === 'CONFIRMED');
         var showActions = isToday && isConfirmed;
@@ -237,6 +237,8 @@
                 idxEl.innerHTML = '<i class="bi bi-check-lg"></i>';
             } else if (s.sessionStatus === 'CHECKED_IN') {
                 idxEl.innerHTML = '<i class="bi bi-play-fill"></i>';
+            } else if (s.sessionStatus === 'NO_SHOW') {
+                idxEl.innerHTML = '<i class="bi bi-person-x-fill"></i>';
             } else {
                 idxEl.textContent = i + 1;
             }
@@ -259,7 +261,7 @@
                 '<span class="sbd-session-price">' + formatMoney(s.totalPrice) + '</span>';
             infoEl.appendChild(metaEl);
 
-            // Time info (checkin/checkout times)
+            // Time info
             if (s.checkinTime || s.checkoutTime) {
                 var timeInfoEl = document.createElement('div');
                 timeInfoEl.className = 'sbd-session-time-info';
@@ -280,7 +282,6 @@
             if (showActions) {
                 renderSessionAction(actionEl, s, i, d);
             } else {
-                // Just show status label
                 var labelEl = document.createElement('span');
                 labelEl.className = 'sbd-session-status ' + sessionStatusLabelClass(s.sessionStatus);
                 labelEl.textContent = sessionStatusLabel(s.sessionStatus);
@@ -292,12 +293,13 @@
         });
     }
 
-    // ─── Render action for a single session ───
+    // ─── Render action for a single session (with NO_SHOW) ───
     function renderSessionAction(container, session, idx, d) {
         container.innerHTML = '';
         var sessions = d.sessions;
         var isPaid = d.invoice && d.invoice.paymentStatus === 'PAID';
 
+        // ─── COMPLETED ───
         if (session.sessionStatus === 'COMPLETED') {
             var label = document.createElement('span');
             label.className = 'sbd-session-status sbd-ss-label-completed';
@@ -306,6 +308,16 @@
             return;
         }
 
+        // ─── NO_SHOW ───
+        if (session.sessionStatus === 'NO_SHOW') {
+            var nsLabel = document.createElement('span');
+            nsLabel.className = 'sbd-session-status sbd-ss-label-no_show';
+            nsLabel.innerHTML = '<i class="bi bi-person-x-fill me-1"></i>Vắng mặt';
+            container.appendChild(nsLabel);
+            return;
+        }
+
+        // ─── CHECKED_IN ───
         if (session.sessionStatus === 'CHECKED_IN') {
             var btnOut = document.createElement('button');
             btnOut.className = 'sbd-btn sbd-btn-checkout';
@@ -322,16 +334,25 @@
             return;
         }
 
-        // PENDING — check if this session can be checked in
-        var canCheckin = true;
+        // ─── PENDING ───
+        // Check if previous sessions allow this one to be actionable
+        // Previous sessions must be NOT PENDING (i.e., CHECKED_IN, COMPLETED, or NO_SHOW)
+        var canAct = true;
         for (var i = 0; i < idx; i++) {
             if (sessions[i].sessionStatus === 'PENDING') {
-                canCheckin = false;
+                // Check if that previous PENDING session is past due
+                // If past due → backend will auto-mark NO_SHOW on check-in, so allow
+                if (isSessionPastDue(sessions[i])) {
+                    // OK — backend will auto-mark this as NO_SHOW
+                    continue;
+                }
+                canAct = false;
                 break;
             }
         }
 
-        if (canCheckin) {
+        if (canAct) {
+            // Show check-in button
             var btnIn = document.createElement('button');
             btnIn.className = 'sbd-btn sbd-btn-checkin';
             btnIn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Check-in';
@@ -344,6 +365,17 @@
                 }
             });
             container.appendChild(btnIn);
+
+            // Also show no-show button if this session itself is past due
+            if (isSessionPastDue(session)) {
+                var btnNs = document.createElement('button');
+                btnNs.className = 'sbd-btn sbd-btn-noshow';
+                btnNs.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
+                btnNs.addEventListener('click', function () {
+                    handleNoShow(idx);
+                });
+                container.appendChild(btnNs);
+            }
         } else {
             var waitBtn = document.createElement('span');
             waitBtn.className = 'sbd-btn sbd-btn-waiting';
@@ -352,13 +384,32 @@
         }
     }
 
+    /**
+     * Check if a session is past due (now > startTime + 15 min buffer).
+     * startTime is "HH:mm" format from API.
+     */
+    function isSessionPastDue(session) {
+        if (!session.startTime) return false;
+        var parts = session.startTime.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return false;
+
+        // Add buffer
+        var deadlineMinutes = h * 60 + m + NO_SHOW_BUFFER_MINUTES;
+
+        var now = new Date();
+        var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        return nowMinutes > deadlineMinutes;
+    }
+
     // ═══════════════════════════════════════════
-    // PAYMENT MODAL
+    // PAYMENT MODAL (unchanged)
     // ═══════════════════════════════════════════
 
     function openPaymentModal() {
         if (!bookingData || !bookingData.invoice) return;
-
         var inv = bookingData.invoice;
         var remaining = inv.totalAmount - inv.paidAmount;
 
@@ -373,7 +424,6 @@
         hideModalError();
         paymentModal.classList.remove('d-none');
 
-        // Focus input after a short delay (allow CSS transition)
         setTimeout(function () {
             paymentAmountInput.focus();
             paymentAmountInput.select();
@@ -390,7 +440,6 @@
         paymentModalError.textContent = msg;
         paymentModalError.classList.remove('d-none');
     }
-
     function hideModalError() {
         paymentModalError.classList.add('d-none');
         paymentModalError.textContent = '';
@@ -398,7 +447,6 @@
 
     function handleConfirmPayment() {
         hideModalError();
-
         var inv = bookingData.invoice;
         var remaining = inv.totalAmount - inv.paidAmount;
         var inputVal = paymentAmountInput.value.trim();
@@ -407,7 +455,6 @@
             showModalError('Vui lòng nhập số tiền hợp lệ.');
             return;
         }
-
         var amount = parseFloat(inputVal);
         if (amount <= 0) {
             showModalError('Số tiền phải lớn hơn 0.');
@@ -418,7 +465,6 @@
             return;
         }
 
-        // Disable confirm button
         paymentModalConfirm.disabled = true;
         paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
 
@@ -435,33 +481,20 @@
                     resetConfirmButton();
                     return;
                 }
-
-                // Update local state
                 bookingData.invoice.paidAmount = body.data.paidAmount;
                 bookingData.invoice.paymentStatus = body.data.paymentStatus;
-
                 showToast('Xác nhận thanh toán thành công!', 'success');
                 closePaymentModal();
                 resetConfirmButton();
-
-                // Re-render invoice section
                 renderInvoice(bookingData);
-
-                // Re-render sessions (buttons now enabled)
                 renderSessions(bookingData);
 
-                // Execute pending action if any
                 if (pendingAction) {
                     var action = pendingAction;
                     pendingAction = null;
-
-                    // Small delay so user can see the payment success toast
                     setTimeout(function () {
-                        if (action.type === 'checkin') {
-                            handleCheckin(action.sessionIndex);
-                        } else if (action.type === 'checkout') {
-                            handleCheckout(action.sessionIndex);
-                        }
+                        if (action.type === 'checkin') handleCheckin(action.sessionIndex);
+                        else if (action.type === 'checkout') handleCheckout(action.sessionIndex);
                     }, 500);
                 }
             })
@@ -478,7 +511,7 @@
     }
 
     // ═══════════════════════════════════════════
-    // CHECK-IN / CHECK-OUT HANDLERS
+    // CHECK-IN / CHECK-OUT / NO-SHOW HANDLERS
     // ═══════════════════════════════════════════
 
     function handleCheckin(sessionIndex) {
@@ -486,7 +519,7 @@
         if (!confirm('Xác nhận CHECK-IN phiên ' + (sessionIndex + 1) + '?\n' +
             session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')')) return;
 
-        var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn');
+        var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-checkin');
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
@@ -509,13 +542,26 @@
                     return;
                 }
 
-                showToast('Check-in phiên ' + (sessionIndex + 1) + ' thành công!', 'success');
-
-                // Update local state
+                // Update local state for target session
                 bookingData.sessions[sessionIndex].sessionStatus = 'CHECKED_IN';
                 bookingData.sessions[sessionIndex].checkinTime = body.data.checkinTime;
 
-                // Re-render sessions
+                // Auto-mark previous sessions as NO_SHOW if backend did so
+                var autoCount = body.data.autoNoShowCount || 0;
+                if (autoCount > 0) {
+                    for (var i = 0; i < sessionIndex; i++) {
+                        if (bookingData.sessions[i].sessionStatus === 'PENDING') {
+                            bookingData.sessions[i].sessionStatus = 'NO_SHOW';
+                        }
+                    }
+                }
+
+                var msg = 'Check-in phiên ' + (sessionIndex + 1) + ' thành công!';
+                if (autoCount > 0) {
+                    msg += ' (' + autoCount + ' phiên trước đánh dấu vắng)';
+                }
+                showToast(msg, 'success');
+
                 renderSessions(bookingData);
             })
             .catch(function (err) {
@@ -557,28 +603,13 @@
                 }
 
                 showToast('Check-out phiên ' + (sessionIndex + 1) + ' thành công!', 'success');
-
-                // Update local state
                 bookingData.sessions[sessionIndex].sessionStatus = 'COMPLETED';
                 bookingData.sessions[sessionIndex].checkoutTime = body.data.checkoutTime;
 
-                // If all completed → update booking status
                 if (body.data.bookingCompleted) {
-                    bookingData.bookingStatus = 'COMPLETED';
-
-                    // Update header badge
-                    var badge = document.getElementById('dStatusBadge');
-                    badge.textContent = bookingStatusLabel('COMPLETED');
-                    badge.className = 'sbd-status-badge sbd-status-completed';
-
-                    var statusEl = document.getElementById('dBookingStatus');
-                    statusEl.innerHTML = '<span class="sbd-status-badge sbd-status-completed" style="font-size:0.6875rem;padding:0.2rem 0.6rem;">' +
-                        bookingStatusLabel('COMPLETED') + '</span>';
-
-                    showToast('🎉 Tất cả phiên hoàn thành — Booking đã COMPLETED!', 'success');
+                    updateBookingCompleted();
                 }
 
-                // Re-render sessions
                 renderSessions(bookingData);
             })
             .catch(function (err) {
@@ -591,8 +622,70 @@
             });
     }
 
+    function handleNoShow(sessionIndex) {
+        var session = bookingData.sessions[sessionIndex];
+        if (!confirm('Đánh dấu VẮNG MẶT phiên ' + (sessionIndex + 1) + '?\n' +
+            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')\n\n' +
+            'Hành động này không thể hoàn tác.')) return;
+
+        var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-noshow');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
+        }
+
+        fetch(CTX + '/api/staff/noshow', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ bookingId: parseInt(bookingId), sessionIndex: sessionIndex })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (body) {
+                if (!body.success) {
+                    showToast(body.message || 'Đánh dấu vắng thất bại', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
+                    }
+                    return;
+                }
+
+                showToast('Phiên ' + (sessionIndex + 1) + ' đã đánh dấu vắng mặt', 'warning');
+                bookingData.sessions[sessionIndex].sessionStatus = 'NO_SHOW';
+
+                if (body.data.bookingCompleted) {
+                    updateBookingCompleted();
+                }
+
+                renderSessions(bookingData);
+            })
+            .catch(function (err) {
+                console.error('No-show error:', err);
+                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
+                }
+            });
+    }
+
+    function updateBookingCompleted() {
+        bookingData.bookingStatus = 'COMPLETED';
+
+        var badge = document.getElementById('dStatusBadge');
+        badge.textContent = bookingStatusLabel('COMPLETED');
+        badge.className = 'sbd-status-badge sbd-status-completed';
+
+        var statusEl = document.getElementById('dBookingStatus');
+        statusEl.innerHTML = '<span class="sbd-status-badge sbd-status-completed" style="font-size:0.6875rem;padding:0.2rem 0.6rem;">' +
+            bookingStatusLabel('COMPLETED') + '</span>';
+
+        showToast('📋 Booking đã COMPLETED!', 'success');
+    }
+
     // ═══════════════════════════════════════════
-    // TOAST NOTIFICATION
+    // TOAST
     // ═══════════════════════════════════════════
 
     function showToast(msg, type) {
@@ -609,7 +702,7 @@
 
     // ═══════════════════════════════════════════
     // HELPERS
-    // ═══════════════════════════════════════════
+    // ════════════════════════════════════════���══
 
     function setText(id, val) {
         var el = document.getElementById(id);
@@ -641,12 +734,17 @@
     }
 
     function sessionStatusLabel(s) {
-        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Hoàn thành' };
+        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Hoàn thành', NO_SHOW: 'Vắng mặt' };
         return m[s] || s;
     }
 
     function sessionStatusLabelClass(s) {
-        var m = { PENDING: 'sbd-ss-label-pending', CHECKED_IN: 'sbd-ss-label-checked_in', COMPLETED: 'sbd-ss-label-completed' };
+        var m = {
+            PENDING: 'sbd-ss-label-pending',
+            CHECKED_IN: 'sbd-ss-label-checked_in',
+            COMPLETED: 'sbd-ss-label-completed',
+            NO_SHOW: 'sbd-ss-label-no_show'
+        };
         return m[s] || 'sbd-ss-label-pending';
     }
 

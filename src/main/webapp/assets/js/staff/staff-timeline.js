@@ -258,8 +258,12 @@
                     var statusLower = cell.bookingStatus.toLowerCase();
                     td.classList.add('st-cell-' + statusLower);
 
+                    // If this specific slot is NO_SHOW, override with no-show style
+                    if (cell.slotStatus === 'NO_SHOW') {
+                        td.classList.add('st-cell-noshow');
+                    }
+
                     // FIX v5: In proxy mode, ALL past booked cells are greyed out
-                    // (including COMPLETED — no exceptions)
                     if (proxyMode && past) {
                         td.classList.add('st-cell-past');
                     }
@@ -271,7 +275,10 @@
 
                     var statusEl = document.createElement('span');
                     statusEl.className = 'st-cell-status';
-                    statusEl.textContent = statusLabel(cell.bookingStatus);
+                    // Show slot-level status if NO_SHOW, otherwise booking-level status
+                    statusEl.textContent = (cell.slotStatus === 'NO_SHOW')
+                        ? statusLabel('NO_SHOW')
+                        : statusLabel(cell.bookingStatus);
                     inner.appendChild(statusEl);
 
                     if (!proxyMode && cell.bookingId) {
@@ -345,6 +352,7 @@
             case 'CONFIRMED': return 'Đã XN';
             case 'COMPLETED': return 'Xong';
             case 'CANCELLED': return 'Đã hủy';
+            case 'NO_SHOW':   return 'Vắng';
             default:          return status;
         }
     }

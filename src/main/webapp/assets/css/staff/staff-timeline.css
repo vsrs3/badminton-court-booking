@@ -459,6 +459,27 @@
 }
 
 /* ================================================================
+   NO_SHOW — slot vắng mặt trên timeline
+   ================================================================ */
+
+.st-cell-noshow .st-cell-inner {
+    background: #FFF7ED !important;
+    border: 1px solid #FDBA74 !important;
+    color: #C2410C !important;
+    cursor: pointer;
+}
+.st-cell-noshow .st-cell-inner:hover {
+    transform: scale(1.03);
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
+}
+
+/* NO_SHOW legend dot */
+.st-dot-noshow {
+    background: #FFF7ED;
+    border: 1px solid #FDBA74;
+}
+
+/* ================================================================
    PAST SLOT — slot đã qua giờ (today) or past date
    ================================================================ */
 

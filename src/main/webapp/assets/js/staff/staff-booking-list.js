@@ -111,13 +111,20 @@
                 window.location.href = CTX + '/staff/booking/detail/' + b.bookingId;
             });
 
+            // Build status cell: if COMPLETED + hasNoShow → show extra badge
+            var statusHtml = '<span class="sbl-status sbl-status-' + b.bookingStatus.toLowerCase() + '">' +
+                statusLabel(b.bookingStatus) + '</span>';
+            if (b.bookingStatus === 'COMPLETED' && b.hasNoShow) {
+                statusHtml += ' <span class="sbl-status sbl-status-noshow">Có vắng</span>';
+            }
+
             tr.innerHTML =
                 '<td><span class="sbl-booking-id">#' + b.bookingId + '</span></td>' +
                 '<td><span class="sbl-customer-name">' + esc(b.customerName) + '</span></td>' +
                 '<td>' + esc(b.phone) + '</td>' +
                 '<td>' + fmtDate(b.bookingDate) + '</td>' +
                 '<td>' + esc(b.courtDisplay) + '</td>' +
-                '<td><span class="sbl-status sbl-status-' + b.bookingStatus.toLowerCase() + '">' + statusLabel(b.bookingStatus) + '</span></td>' +
+                '<td>' + statusHtml + '</td>' +
                 '<td>' + paymentBadge(b.paymentStatus) + '</td>';
 
             tableBody.appendChild(tr);
