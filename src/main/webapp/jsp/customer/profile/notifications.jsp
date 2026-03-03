@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <div class="flex flex-col h-full bg-white">
     <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
         <a href="profile?section=settings" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
@@ -24,4 +24,4 @@
         </div>
         <button class="w-full py-4 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700">Lưu thay đổi</button>
     </div>
-</div>
+</div> --%>

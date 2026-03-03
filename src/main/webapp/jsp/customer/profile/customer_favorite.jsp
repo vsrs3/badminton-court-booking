@@ -1,4 +1,4 @@
-<%--
+<%-- <%--
   Created by IntelliJ IDEA.
   User: dattr
   Date: 1/28/2026
@@ -27,3 +27,4 @@
 </section>
 </body>
 </html>
+ --%>

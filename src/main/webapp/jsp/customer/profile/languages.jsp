@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <div class="flex flex-col h-full bg-white">
     <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
         <a href="profile?section=settings" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
@@ -58,4 +58,4 @@
         // Default vi
         languages[0].click();
     });
-</script>
+</script> --%>
