@@ -459,8 +459,9 @@ const contextPath = window.location.pathname.split('/')[1]
             });
         });
 
-        // Book buttons
+        // Book buttons — open Booking Type Modal (booking-type-modal.jsp)
         document.querySelectorAll('.btn-book').forEach(btn => {
+            if (btn.dataset.bkBound === '1') return; // skip if already bound by modal script
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
 
@@ -469,13 +470,27 @@ const contextPath = window.location.pathname.split('/')[1]
                     return;
                 }
 
-                const courtId = this.dataset.courtId;
-                const court = AppState.courts.find(c => c.id === courtId);
-                if (court) {
-                    // TODO: Navigate to booking page
-                    console.log('📅 Opening booking form for:', court.name);
-                    // For now, show toast
-                    showToast('Chức năng đặt sân đang được phát triển');
+                const courtId   = this.dataset.courtId;
+                const court     = AppState.courts.find(c => String(c.id) === String(courtId));
+                const courtName = court ? court.name : 'Sân cầu lông';
+                // venueId = facilityId = court.facilityId (từ API trả về)
+                const venueId   = court ? (court.facilityId || court.id) : courtId;
+
+                console.log('📅 Opening booking modal for:', courtName, 'venueId:', venueId);
+
+                // Ưu tiên dùng BookingTypeModal nếu đã load từ jsp/components
+                if (window.BookingTypeModal) {
+                    window.BookingTypeModal.open(venueId, courtName);
+                } else {
+                    // Fallback: navigate thẳng tới single-booking
+                    const today = new Date();
+                    const dateStr = today.getFullYear() + '-'
+                        + String(today.getMonth()+1).padStart(2,'0') + '-'
+                        + String(today.getDate()).padStart(2,'0');
+                    window.location.href = contextPath
+                        + '/jsp/booking/singlebooking/single-booking.jsp'
+                        + '?facilityId=' + encodeURIComponent(venueId)
+                        + '&date='   + encodeURIComponent(dateStr);
                 }
             });
         });
@@ -972,13 +987,26 @@ const contextPath = window.location.pathname.split('/')[1]
             detailBookBtn.addEventListener('click', function() {
                 // ✅ Require login
                 if (!requireLogin('Đặt sân')) {
-                    closeCourtDetail(); // Close detail first
+                    closeCourtDetail();
                     return;
                 }
 
                 if (AppState.selectedCourt) {
-                    console.log('📅 Opening booking form for:', AppState.selectedCourt.name);
-                    showToast('Chức năng đặt sân đang được phát triển');
+                    const court   = AppState.selectedCourt;
+                    const venueId = court.facilityId || court.id;
+                    const courtName = court.name;
+
+                    closeCourtDetail();
+
+                    if (window.BookingTypeModal) {
+                        window.BookingTypeModal.open(venueId, courtName);
+                    } else {
+                        const today = new Date();
+                        const ds = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+                        window.location.href = contextPath
+                            +'/jsp/booking/singlebooking/single-booking.jsp'
+                            +'?facilityId='+encodeURIComponent(venueId)+'&date='+encodeURIComponent(ds);
+                    }
                 }
             });
         }

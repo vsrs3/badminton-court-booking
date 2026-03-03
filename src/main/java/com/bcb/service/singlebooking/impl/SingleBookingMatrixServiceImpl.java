@@ -180,6 +180,7 @@ public class SingleBookingMatrixServiceImpl implements SingleBookingMatrixServic
 
                 // Find matching rules: rule.start_time <= slot.start_time AND rule.end_time >= slot.end_time
                 List<FacilityPriceRule> matchingRules = rules.stream()
+                        .filter(r -> r.getStartTime() != null && r.getEndTime() != null)
                         .filter(r -> !r.getStartTime().isAfter(slotStart) && !r.getEndTime().isBefore(slotEnd))
                         .collect(Collectors.toList());
 
