@@ -1,0 +1,244 @@
+/* ================================================================
+   STAFF BOOKING LIST — staff-booking-list.css
+   Prefix: sbl- (staff-booking-list)
+   ================================================================ */
+
+/* ===== FIX: Constrain main-content width (same as timeline fix) ===== */
+.main-content {
+    max-width: calc(100vw - var(--sidebar-width, 260px));
+    overflow-x: hidden;
+}
+
+@media (max-width: 991.98px) {
+    .main-content {
+        max-width: 100vw;
+    }
+}
+
+/* ===== SEARCH BAR ===== */
+.sbl-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex-wrap: nowrap;
+}
+
+.sbl-search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;         /* allow flex shrink */
+    display: flex;
+    align-items: center;
+}
+
+.sbl-search-input-wrap > i {
+    position: absolute;
+    left: 0.75rem;
+    color: #9CA3AF;
+    font-size: 0.875rem;
+    pointer-events: none;
+}
+
+.sbl-search-input {
+    width: 100%;
+    padding: 0.6rem 2.5rem 0.6rem 2.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    transition: border-color 0.15s;
+}
+
+.sbl-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #064e3b);
+    box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.1);
+    background: white;
+}
+
+.sbl-search-input::placeholder {
+    color: #9CA3AF;
+    font-weight: 400;
+}
+
+.sbl-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: #9CA3AF;
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 50%;
+    transition: color 0.15s;
+}
+.sbl-search-clear:hover {
+    color: #374151;
+}
+
+.sbl-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: white;
+    background: var(--primary-color, #064e3b);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;       /* prevent button from shrinking */
+}
+.sbl-search-btn:hover {
+    opacity: 0.9;
+}
+
+/* ===== RESULTS INFO ===== */
+.sbl-results-info {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+}
+
+/* ===== TABLE WRAPPER ===== */
+.sbl-table-wrapper {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-height: 200px;
+}
+
+/* ===== TABLE ===== */
+.sbl-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Column widths — total = 100% */
+.sbl-table thead th:nth-child(1) { width: 6%; }        /* Mã */
+.sbl-table thead th:nth-child(2) { width: 20%; }       /* Khách hàng */
+.sbl-table thead th:nth-child(3) { width: 13%; }       /* SĐT */
+.sbl-table thead th:nth-child(4) { width: 13%; }       /* Ngày đặt */
+.sbl-table thead th:nth-child(5) { width: 16%; }       /* Sân */
+.sbl-table thead th:nth-child(6) { width: 14%; }       /* Trạng thái */
+.sbl-table thead th:nth-child(7) { width: 13%; }       /* Thanh toán */
+
+.sbl-table thead th {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.875rem 0.75rem;
+    background: #F8FAFC;
+    border-bottom: 2px solid #E5E7EB;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sbl-table tbody td {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.875rem 0.75rem;
+    color: #374151;
+    border-bottom: 1px solid #F3F4F6;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sbl-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+.sbl-table tbody tr:hover {
+    background-color: #F0FDF4;
+}
+
+/* Booking ID column */
+.sbl-booking-id {
+    font-weight: 700;
+    color: var(--primary-color, #064e3b);
+}
+
+/* Customer name */
+.sbl-customer-name {
+    font-weight: 600;
+    color: #1F2937;
+}
+
+/* ===== STATUS BADGES ===== */
+.sbl-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.sbl-status-pending   { background: #FEF3C7; color: #92400E; }
+.sbl-status-confirmed { background: #D1FAE5; color: #065F46; }
+.sbl-status-completed { background: #DBEAFE; color: #1E40AF; }
+.sbl-status-cancelled { background: #FEE2E2; color: #991B1B; }
+
+.sbl-pay-unpaid  { background: #FEE2E2; color: #991B1B; }
+.sbl-pay-partial { background: #FEF3C7; color: #92400E; }
+.sbl-pay-paid    { background: #D1FAE5; color: #065F46; }
+
+/* ===== PAGINATION ===== */
+.sbl-pagination {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    border-top: 1px solid #F3F4F6;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 767.98px) {
+    .sbl-search-bar {
+        flex-wrap: wrap;
+    }
+    .sbl-search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    /* On mobile: hide less important columns */
+    .sbl-table thead th:nth-child(3),
+    .sbl-table tbody td:nth-child(3) {
+        display: none;  /* hide SĐT */
+    }
+    .sbl-table thead th:nth-child(7),
+    .sbl-table tbody td:nth-child(7) {
+        display: none;  /* hide Thanh toán */
+    }
+}
+
+/* NO_SHOW indicator badge in booking list */
+.sbl-status-noshow {
+    background: #FFEDD5;
+    color: #C2410C;
+    font-size: 0.5625rem;
+    margin-left: 0.25rem;
+}

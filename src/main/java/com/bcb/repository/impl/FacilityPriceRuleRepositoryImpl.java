@@ -36,8 +36,10 @@ public class FacilityPriceRuleRepositoryImpl implements FacilityPriceRuleReposit
                     rule.setFacilityId(rs.getInt("facility_id"));
                     rule.setCourtTypeId(rs.getInt("court_type_id"));
                     rule.setDayType(rs.getString("day_type"));
-                    rule.setStartTime(rs.getTime("start_time").toLocalTime());
-                    rule.setEndTime(rs.getTime("end_time").toLocalTime());
+                    java.sql.Time st = rs.getTime("start_time");
+                    java.sql.Time et = rs.getTime("end_time");
+                    rule.setStartTime(st != null ? st.toLocalTime() : null);
+                    rule.setEndTime(et != null ? et.toLocalTime() : null);
                     rule.setPrice(rs.getBigDecimal("price"));
                     list.add(rule);
                 }

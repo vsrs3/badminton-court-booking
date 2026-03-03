@@ -132,11 +132,40 @@ public class SingleBookingPreviewServiceImpl implements SingleBookingPreviewServ
         }
 
         SingleBookingPreviewResponseDTO resp = new SingleBookingPreviewResponseDTO();
+        resp.setFacilityId(facility.getFacilityId());
+        resp.setFacilityName(facility.getName());
+        // Build full address: address, ward, district, province
+        String fullAddress = buildFullAddress(facility);
+        resp.setFacilityAddress(fullAddress);
+        resp.setBookingDate(bookingDate.toString());
         resp.setTotalSlots(totalSlots);
         resp.setTotalMinutes(totalMinutes);
         resp.setEstimatedTotal(estimatedTotal);
         resp.setRangesByCourt(ranges);
         return resp;
+    }
+
+    /**
+     * Builds full address string from facility location fields.
+     */
+    private String buildFullAddress(Facility facility) {
+        StringBuilder sb = new StringBuilder();
+        if (facility.getAddress() != null && !facility.getAddress().isBlank()) {
+            sb.append(facility.getAddress());
+        }
+        if (facility.getWard() != null && !facility.getWard().isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(facility.getWard());
+        }
+        if (facility.getDistrict() != null && !facility.getDistrict().isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(facility.getDistrict());
+        }
+        if (facility.getProvince() != null && !facility.getProvince().isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(facility.getProvince());
+        }
+        return sb.toString();
     }
 
     /**
@@ -158,6 +187,7 @@ public class SingleBookingPreviewServiceImpl implements SingleBookingPreviewServ
         List<FacilityPriceRule> rules =
                 priceRuleRepo.findByFacilityAndCourtTypeAndDayType(facilityId, courtTypeId, dayType);
         List<FacilityPriceRule> matching = rules.stream()
+                .filter(r -> r.getStartTime() != null && r.getEndTime() != null)
                 .filter(r -> !r.getStartTime().isAfter(slotStart) && !r.getEndTime().isBefore(slotEnd))
                 .collect(Collectors.toList());
 

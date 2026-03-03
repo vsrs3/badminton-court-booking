@@ -34,7 +34,7 @@
     </div>
     <div class="p-4 bg-gray-50/50">
         <div class="grid grid-cols-4 gap-2">
-            <a href="profile?section=history" class="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+            <a href="${pageContext.request.contextPath}/my-bookings" class="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <i data-lucide="calendar" class="w-5 h-5 text-orange-500"></i>
                 <span class="text-[10px] text-gray-600 font-medium text-center">Lịch đã đặt</span>
             </a>

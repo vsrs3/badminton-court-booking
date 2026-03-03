@@ -18,7 +18,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
     /** {@inheritDoc} */
     @Override
     public Optional<Facility> findActiveById(int facilityId) {
-        String sql = "SELECT facility_id, name, open_time, close_time "
+        String sql = "SELECT facility_id, name, province, district, ward, address, open_time, close_time "
                    + "FROM Facility WHERE facility_id = ? AND is_active = 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -28,8 +28,14 @@ public class FacilityRepositoryImpl implements FacilityRepository {
                     Facility f = new Facility();
                     f.setFacilityId(rs.getInt("facility_id"));
                     f.setName(rs.getString("name"));
-                    f.setOpenTime(rs.getTime("open_time").toLocalTime());
-                    f.setCloseTime(rs.getTime("close_time").toLocalTime());
+                    f.setProvince(rs.getString("province"));
+                    f.setDistrict(rs.getString("district"));
+                    f.setWard(rs.getString("ward"));
+                    f.setAddress(rs.getString("address"));
+                    java.sql.Time openT  = rs.getTime("open_time");
+                    java.sql.Time closeT = rs.getTime("close_time");
+                    f.setOpenTime(openT  != null ? openT.toLocalTime()  : java.time.LocalTime.of(6, 0));
+                    f.setCloseTime(closeT != null ? closeT.toLocalTime() : java.time.LocalTime.of(22, 0));
                     return Optional.of(f);
                 }
             }

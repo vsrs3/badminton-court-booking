@@ -61,8 +61,14 @@ public class SingleBookingMatrixDataServlet extends HttpServlet {
         } catch (SingleBookingNotFoundException e) {
             SingleBookingApiResponseUtil.writeError(resp, 404, e.getCode(), e.getMessage(), null);
         } catch (Exception e) {
-            SingleBookingApiResponseUtil.writeError(resp, 500, "INTERNAL_ERROR",
-                    "An internal error occurred.", null);
+            // Log full stack trace to server console
+            e.printStackTrace();
+            // Build detailed message including root cause
+            String msg = e.getMessage();
+            if (e.getCause() != null && e.getCause().getMessage() != null) {
+                msg = msg + " | Cause: " + e.getCause().getMessage();
+            }
+            SingleBookingApiResponseUtil.writeError(resp, 500, "INTERNAL_ERROR", msg, null);
         }
     }
 }
