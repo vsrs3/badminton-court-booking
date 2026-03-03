@@ -1,4 +1,6 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<!-- page-header.jsp -->
+
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <%-- Breadcrumb Navigation --%>
 <c:if test="${not empty breadcrumbItems}">
@@ -28,5 +30,4 @@
         <c:out value="${pageTitle}" />
     </h4>
 </div>
-
-<hr class="mt-0">
+<hr class="mt-0 mb-4" style="border-color:var(--color-gray-200);">

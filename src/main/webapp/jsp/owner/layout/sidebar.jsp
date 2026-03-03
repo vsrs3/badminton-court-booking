@@ -1,34 +1,47 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!-- sidebar.jsp -->
+
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <div class="sidebar">
-    <div class="sidebar-header">
-        <a href="${pageContext.request.contextPath}/owner/dashboard" class="sidebar-brand">
-            <span>BCB Court Owner</span>
-        </a>
-    </div>
+	<div class="sidebar-header">
+		<a href="${pageContext.request.contextPath}/owner/dashboard"
+			class="sidebar-brand"> <i class="bi bi-circle-fill text-accent" style="color:#A3E635"></i>
+			<span style="color:#A3E635">BCB Court Owner</span>
+		</a>
+	</div>
 
-    <div class="sidebar-nav">
-        <a href="${pageContext.request.contextPath}/owner/dashboard"
-           class="nav-link ${pageContext.request.requestURI.contains('/dashboard') ? 'active' : ''}">
-            <i class="bi bi-speedometer2"></i>
-            <span>Dashboard</span>
-        </a>
-        
-        <a href="${pageContext.request.contextPath}/owner/facility/list"
-           class="nav-link ${pageContext.request.requestURI.contains('/facility/list') ? 'active' : ''}">
-            <i class="bi bi-building"></i>
-            <span>Địa Điểm Của Tôi</span>
-        </a>
+	<div class="sidebar-nav">
 
-        <a href="#" class="nav-link">
-            <i class="bi bi-gear"></i>
-            <span>Cài Đặt</span>
-        </a>
-        
-        <div class="mt-auto pt-4">
-            <a href="${pageContext.request.contextPath}/auth/logout" class="nav-link text-danger border-top border-secondary mt-3 pt-3">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Thoát</span>
-            </a>
-        </div>
-    </div>
+		<%-- Dashboard --%>
+		<a href="${pageContext.request.contextPath}/owner/dashboard"
+			class="nav-link ${pageContext.request.requestURI.contains('/dashboard') ? 'active' : ''}">
+			<i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+		</a>
+
+		<%-- My Locations --%>
+		<a href="${pageContext.request.contextPath}/owner/facility/list"
+			class="nav-link ${pageContext.request.requestURI.contains('/facility') ? 'active' : ''}">
+			<i class="bi bi-building"></i> <span>Danh Sách Địa Điểm</span>
+		</a>
+
+		<%-- Staff Management --%>
+		<a href="${pageContext.request.contextPath}/owner/staffs/list"
+			class="nav-link ${pageContext.request.requestURI.contains('/staff') ? 'active' : ''}">
+			<i class="bi bi-person-badge"></i> <span>Quản Lý Nhân Viên</span>
+		</a>
+
+		<%-- Settings --%>
+		<a href="#"
+			class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">
+			<i class="bi bi-gear"></i> <span>Cài Đặt</span>
+		</a>
+
+		<%-- Logout --%>
+		<div class="mt-auto pt-4">
+			<a href="${pageContext.request.contextPath}/auth/logout"
+				class="nav-link nav-logout border-t border-gray-600 mt-3 pt-3">
+				<i class="bi bi-box-arrow-right"></i> <span>Đăng Xuất</span>
+			</a>
+		</div>
+
+	</div>
 </div>

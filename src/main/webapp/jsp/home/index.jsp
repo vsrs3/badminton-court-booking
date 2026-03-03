@@ -138,6 +138,9 @@
     <!-- Auth Modal -->
     <jsp:include page="../common/auth-modal.jsp" />
 
+    <!-- Booking Type Modal (Đặt lịch lẻ / Đặt lịch cố định) -->
+    <jsp:include page="../components/booking-type-modal.jsp" />
+
     <!-- Toast Notification -->
     <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
         <div id="toast" class="toast custom-toast align-items-center" role="alert">

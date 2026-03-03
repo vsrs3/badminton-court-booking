@@ -147,8 +147,8 @@
 
         <div class="row g-3">
           <div class="col-md-4">
-            <a href="#" class="btn btn-outline-success w-100 p-3">
-              <i class="bi bi-people"></i> Quản lý người dùng
+            <a href="${pageContext.request.contextPath}/admin/accounts/list" class="btn btn-outline-success w-100 p-3">
+              <i class="bi bi-people"></i> Quản lý tài khoản
             </a>
           </div>
           <div class="col-md-4">
