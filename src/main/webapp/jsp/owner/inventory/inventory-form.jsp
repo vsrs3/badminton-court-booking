@@ -36,6 +36,7 @@
                                value="${inventory.inventoryId}"/>
                     </c:if>
 
+                    <!-- NAME -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Name</label>
                         <input type="text" name="name"
@@ -43,6 +44,7 @@
                                value="${inventory.name}" required/>
                     </div>
 
+                    <!-- BRAND -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Brand</label>
                         <input type="text" name="brand"
@@ -50,6 +52,7 @@
                                value="${inventory.brand}" required/>
                     </div>
 
+                    <!-- DESCRIPTION -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Description</label>
                         <textarea name="description"
@@ -57,6 +60,7 @@
                                   rows="4">${inventory.description}</textarea>
                     </div>
 
+                    <!-- RENTAL PRICE -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Rental Price</label>
                         <input type="number" step="0.01"
@@ -65,6 +69,23 @@
                                value="${inventory.rentalPrice}" required/>
                     </div>
 
+                    <!-- COURT DROPDOWN -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Court</label>
+                        <select name="courtId" class="form-select rounded-3">
+                            <option value="">-- Select Court --</option>
+                            <c:forEach items="${courts}" var="c">
+                                <option value="${c.courtId}"
+                                    <c:if test="${inventory != null && inventory.courtId == c.courtId}">
+                                        selected
+                                    </c:if>>
+                                    ${c.courtName}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <!-- ACTIVE -->
                     <div class="form-check mb-4">
                         <input class="form-check-input"
                                type="checkbox"
@@ -79,6 +100,7 @@
                         </label>
                     </div>
 
+                    <!-- BUTTONS -->
                     <div class="d-flex gap-3">
                         <button type="submit"
                                 class="btn btn-brand rounded-3 px-4">

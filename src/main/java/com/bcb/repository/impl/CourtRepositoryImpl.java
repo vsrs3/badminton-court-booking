@@ -160,5 +160,28 @@ public class CourtRepositoryImpl implements CourtRepository {
         return court;
     }
 
+    
+    @Override
+    public List<Court> findAllActive() {
+
+        String sql = "SELECT court_id, facility_id, court_type_id, court_name, description, is_active " +
+                     "FROM Court WHERE is_active = 1 ORDER BY court_id";
+
+        List<Court> courts = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                courts.add(mapResultSetToCourt(rs));
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to fetch active courts", e);
+        }
+
+        return courts;
+    }
 
 }

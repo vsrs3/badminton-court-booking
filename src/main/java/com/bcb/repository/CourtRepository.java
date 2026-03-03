@@ -42,7 +42,7 @@ public interface CourtRepository {
      */
     void deactivate(int courtId);
 
-
+    List<Court> findAllActive();
 
     List<CourtViewDTO> findByFacilityForView(int facilityId);
 }

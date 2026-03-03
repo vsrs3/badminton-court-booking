@@ -68,6 +68,7 @@
                             <th>Brand</th>
                             <th>Price</th>
                             <th>Status</th>
+                            <th>Court</th>
                             <th class="text-end">Action</th>
                         </tr>
                         </thead>
@@ -88,6 +89,11 @@
                                         </c:otherwise>
                                     </c:choose>
                                 </td>
+                                <td>
+    <c:if test="${not empty i.courtName}">
+        ${i.courtName}
+    </c:if>
+</td>
                                 <td class="text-end">
                                     <a href="${pageContext.request.contextPath}/owner/inventory?action=edit&id=${i.inventoryId}"
                                        class="btn btn-sm btn-outline-primary">
@@ -105,7 +111,7 @@
 
                         <c:if test="${empty inventories}">
                             <tr>
-                                <td colspan="6" class="text-center text-muted">
+                                <td colspan="7" class="text-center text-muted">
                                     No inventory found.
                                 </td>
                             </tr>

@@ -16,4 +16,12 @@ public interface InventoryRepository {
     void update(Inventory inventory);
 
     void delete(int id);
+    List<Inventory> findByFacility(int facilityId, int limit, int offset, String keyword);
+    int countByFacility(int facilityId, String keyword);
+
+    List<Inventory> findUnassigned(int limit, int offset, String keyword);
+    int countUnassigned(String keyword);
+
+    void assignToCourt(int inventoryId, int courtId);
+    void removeFromCourt(int inventoryId);
 }

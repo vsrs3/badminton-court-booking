@@ -9,18 +9,23 @@ public class Inventory {
     private String description;
     private BigDecimal rentalPrice;
     private boolean isActive;
-
+    private Integer courtId;
+    private String courtName;
+    
     public Inventory() {}
-
+    
     public Inventory(int inventoryId, String name, String brand,
-                     String description, BigDecimal rentalPrice, boolean isActive) {
-        this.inventoryId = inventoryId;
-        this.name = name;
-        this.brand = brand;
-        this.description = description;
-        this.rentalPrice = rentalPrice;
-        this.isActive = isActive;
-    }
+            String description, BigDecimal rentalPrice,
+            boolean isActive, Integer courtId) {
+this.inventoryId = inventoryId;
+this.name = name;
+this.brand = brand;
+this.description = description;
+this.rentalPrice = rentalPrice;
+this.isActive = isActive;
+this.courtId = courtId;
+
+}
 
 	public int getInventoryId() {
 		return inventoryId;
@@ -70,4 +75,19 @@ public class Inventory {
 		this.isActive = isActive;
 	}
 
+	public Integer getCourtId() {
+	    return courtId;
+	}
+
+	public void setCourtId(Integer courtId) {
+	    this.courtId = courtId;
+	}
+	public String getCourtName() {
+	    return courtName;
+	}
+
+	public void setCourtName(String courtName) {
+	    this.courtName = courtName;
+	}
+	
 }

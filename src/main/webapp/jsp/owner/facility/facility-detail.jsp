@@ -18,6 +18,10 @@
 
         <%-- ACTIONS --%>
         <div class="d-flex justify-content-end gap-2 mb-4">
+        <a href="${pageContext.request.contextPath}/owner/facility/inventory/${requestScope.facility.facilityId}"
+   class="btn btn-success">
+    <i class="bi bi-box-seam me-1"></i> Kho đồ
+</a>
             <a href="${pageContext.request.contextPath}/owner/courts/list/${requestScope.facility.facilityId}" class="btn btn-accent">
                 <i class="bi bi-grid-3x3 me-1"></i> Quản lý sân
             </a>

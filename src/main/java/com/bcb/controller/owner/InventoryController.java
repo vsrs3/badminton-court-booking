@@ -1,8 +1,11 @@
 package com.bcb.controller.owner;
 
 import com.bcb.model.Inventory;
+import com.bcb.model.Court;
 import com.bcb.service.InventoryService;
 import com.bcb.service.impl.InventoryServiceImpl;
+import com.bcb.repository.impl.CourtRepositoryImpl;
+import com.bcb.repository.CourtRepository;
 
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,7 +18,7 @@ import java.util.List;
 public class InventoryController extends HttpServlet {
 
     private final InventoryService service = new InventoryServiceImpl();
-
+    private final CourtRepository courtRepository = new CourtRepositoryImpl();
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -26,11 +29,19 @@ public class InventoryController extends HttpServlet {
 
             int id = Integer.parseInt(req.getParameter("id"));
             Inventory inventory = service.getById(id);
+
+            List<Court> courts = courtRepository.findAllActive();
+
             req.setAttribute("inventory", inventory);
+            req.setAttribute("courts", courts);
+
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
 
         } else if ("add".equals(action)) {
+
+            List<Court> courts = courtRepository.findAllActive();
+            req.setAttribute("courts", courts);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
@@ -39,6 +50,7 @@ public class InventoryController extends HttpServlet {
 
             int id = Integer.parseInt(req.getParameter("id"));
             service.delete(id);
+
             resp.sendRedirect(req.getContextPath() + "/owner/inventory");
 
         } else {
@@ -69,6 +81,15 @@ public class InventoryController extends HttpServlet {
         inventory.setDescription(req.getParameter("description"));
         inventory.setRentalPrice(new BigDecimal(req.getParameter("price")));
         inventory.setActive(req.getParameter("active") != null);
+
+        // ===== Court ID handling =====
+        String courtIdParam = req.getParameter("courtId");
+
+        if (courtIdParam != null && !courtIdParam.isEmpty()) {
+            inventory.setCourtId(Integer.parseInt(courtIdParam));
+        } else {
+            inventory.setCourtId(null);
+        }
 
         if (idParam == null || idParam.isEmpty()) {
             service.create(inventory);
