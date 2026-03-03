@@ -292,7 +292,6 @@ GO
 -- Booking
 CREATE TABLE Booking (
                          booking_id INT IDENTITY PRIMARY KEY,
-
                          recurring_id INT NULL,
                          facility_id INT NOT NULL, -- them de nhat quan, giam quer
                          booking_date DATE NOT NULL,
@@ -497,7 +496,6 @@ CREATE TABLE CourtScheduleException (
                                         exception_id INT IDENTITY(1,1) PRIMARY KEY,
                                         court_id     INT NOT NULL,
                                         facility_id  INT NOT NULL,
-
                                         start_date   DATE NOT NULL,
                                         end_date     DATE NOT NULL,
 
