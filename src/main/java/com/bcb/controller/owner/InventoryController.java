@@ -1,15 +1,16 @@
 package com.bcb.controller.owner;
 
 import com.bcb.model.Inventory;
-import com.bcb.model.Court;
+import com.bcb.model.Facility;
 import com.bcb.service.InventoryService;
 import com.bcb.service.impl.InventoryServiceImpl;
-import com.bcb.repository.impl.CourtRepositoryImpl;
-import com.bcb.repository.CourtRepository;
+import com.bcb.repository.FacilityRepository;
+import com.bcb.repository.impl.FacilityRepositoryImpl;
 
-import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -18,7 +19,8 @@ import java.util.List;
 public class InventoryController extends HttpServlet {
 
     private final InventoryService service = new InventoryServiceImpl();
-    private final CourtRepository courtRepository = new CourtRepositoryImpl();
+    private final FacilityRepository facilityRepository = new FacilityRepositoryImpl();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -28,38 +30,49 @@ public class InventoryController extends HttpServlet {
         if ("edit".equals(action)) {
 
             int id = Integer.parseInt(req.getParameter("id"));
+
             Inventory inventory = service.getById(id);
 
-            List<Court> courts = courtRepository.findAllActive();
+            List<Facility> facilities = facilityRepository.findAllActive();
 
             req.setAttribute("inventory", inventory);
-            req.setAttribute("courts", courts);
+            req.setAttribute("facilities", facilities);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
 
-        } else if ("add".equals(action)) {
+            return;
+        }
 
-            List<Court> courts = courtRepository.findAllActive();
-            req.setAttribute("courts", courts);
+        else if ("add".equals(action)) {
+
+            List<Facility> facilities = facilityRepository.findAllActive();
+
+            req.setAttribute("facilities", facilities);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
 
-        } else if ("delete".equals(action)) {
+        }
+
+        else if ("delete".equals(action)) {
 
             int id = Integer.parseInt(req.getParameter("id"));
+
             service.delete(id);
 
             resp.sendRedirect(req.getContextPath() + "/owner/inventory");
 
-        } else {
+        }
+
+        else {
 
             String keyword = req.getParameter("keyword");
 
-            List<Inventory> list = (keyword == null || keyword.trim().isEmpty())
-                    ? service.getAll()
-                    : service.search(keyword);
+            List<Inventory> list =
+                    (keyword == null || keyword.trim().isEmpty())
+                            ? service.getAll()
+                            : service.search(keyword);
 
             req.setAttribute("inventories", list);
             req.setAttribute("keyword", keyword);
@@ -76,25 +89,36 @@ public class InventoryController extends HttpServlet {
         String idParam = req.getParameter("id");
 
         Inventory inventory = new Inventory();
+
         inventory.setName(req.getParameter("name"));
         inventory.setBrand(req.getParameter("brand"));
         inventory.setDescription(req.getParameter("description"));
-        inventory.setRentalPrice(new BigDecimal(req.getParameter("price")));
+
+        inventory.setRentalPrice(
+                new BigDecimal(req.getParameter("price"))
+        );
+
         inventory.setActive(req.getParameter("active") != null);
 
-        // ===== Court ID handling =====
-        String courtIdParam = req.getParameter("courtId");
+        String facilityIdParam = req.getParameter("facilityId");
 
-        if (courtIdParam != null && !courtIdParam.isEmpty()) {
-            inventory.setCourtId(Integer.parseInt(courtIdParam));
+        if (facilityIdParam != null && !facilityIdParam.isEmpty()) {
+
+            inventory.setFacilityId(Integer.parseInt(facilityIdParam));
+
         } else {
-            inventory.setCourtId(null);
+
+            inventory.setFacilityId(null);
         }
 
         if (idParam == null || idParam.isEmpty()) {
+
             service.create(inventory);
+
         } else {
+
             inventory.setInventoryId(Integer.parseInt(idParam));
+
             service.update(inventory);
         }
 

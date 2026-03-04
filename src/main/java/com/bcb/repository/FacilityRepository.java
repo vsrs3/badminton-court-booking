@@ -85,4 +85,5 @@ public interface FacilityRepository {
     int softDelete(int facilityId);
 
     Double getAverageRating(Integer facilityId);
+    List<Facility> findAllActive();
 }

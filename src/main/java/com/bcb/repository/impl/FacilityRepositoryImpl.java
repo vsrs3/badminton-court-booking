@@ -424,5 +424,37 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         return 0.0;
     }
 
+    @Override
+    public List<Facility> findAllActive() {
+
+        List<Facility> list = new ArrayList<>();
+
+        String sql = """
+        SELECT facility_id, name
+        FROM Facility
+        WHERE is_active = 1
+        ORDER BY name
+        """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Facility f = new Facility();
+
+                f.setFacilityId(rs.getInt("facility_id"));
+                f.setName(rs.getString("name"));
+
+                list.add(f);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 
 }

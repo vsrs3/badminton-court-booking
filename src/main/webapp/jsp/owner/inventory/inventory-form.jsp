@@ -5,120 +5,215 @@
 <%@ include file="../layout/sidebar.jsp"%>
 
 <div class="main-content">
-    <%@ include file="../layout/header.jsp"%>
 
-    <div class="content-area">
+<%@ include file="../layout/header.jsp"%>
 
-        <!-- PAGE HEADER -->
-        <div class="mb-4">
-            <h1 class="fw-black mb-1"
-                style="font-size:1.75rem;color:var(--color-gray-900);letter-spacing:-0.02em;">
-                <c:choose>
-                    <c:when test="${inventory != null}">
-                        Edit Inventory
-                    </c:when>
-                    <c:otherwise>
-                        Add New Inventory
-                    </c:otherwise>
-                </c:choose>
-            </h1>
-        </div>
+<div class="content-area">
 
-        <div class="card border-0 rounded-4"
-             style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-            <div class="card-body p-4">
+<!-- PAGE HEADER -->
 
-                <form method="post"
-                      action="${pageContext.request.contextPath}/owner/inventory">
+<div class="mb-4">
 
-                    <c:if test="${inventory != null}">
-                        <input type="hidden" name="id"
-                               value="${inventory.inventoryId}"/>
-                    </c:if>
+<h1 class="fw-black mb-1"
+style="font-size:1.75rem;color:var(--color-gray-900);">
 
-                    <!-- NAME -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Name</label>
-                        <input type="text" name="name"
-                               class="form-control rounded-3"
-                               value="${inventory.name}" required/>
-                    </div>
+<c:choose>
 
-                    <!-- BRAND -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Brand</label>
-                        <input type="text" name="brand"
-                               class="form-control rounded-3"
-                               value="${inventory.brand}" required/>
-                    </div>
+<c:when test="${inventory != null}">
+Edit Inventory
+</c:when>
 
-                    <!-- DESCRIPTION -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Description</label>
-                        <textarea name="description"
-                                  class="form-control rounded-3"
-                                  rows="4">${inventory.description}</textarea>
-                    </div>
+<c:otherwise>
+Add New Inventory
+</c:otherwise>
 
-                    <!-- RENTAL PRICE -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Rental Price</label>
-                        <input type="number" step="0.01"
-                               name="price"
-                               class="form-control rounded-3"
-                               value="${inventory.rentalPrice}" required/>
-                    </div>
+</c:choose>
 
-                    <!-- COURT DROPDOWN -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Court</label>
-                        <select name="courtId" class="form-select rounded-3">
-                            <option value="">-- Select Court --</option>
-                            <c:forEach items="${courts}" var="c">
-                                <option value="${c.courtId}"
-                                    <c:if test="${inventory != null && inventory.courtId == c.courtId}">
-                                        selected
-                                    </c:if>>
-                                    ${c.courtName}
-                                </option>
-                            </c:forEach>
-                        </select>
-                    </div>
+</h1>
 
-                    <!-- ACTIVE -->
-                    <div class="form-check mb-4">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               name="active"
-                               id="activeCheck"
-                               <c:if test="${inventory != null && inventory.active}">
-                                   checked
-                               </c:if> />
-                        <label class="form-check-label fw-semibold"
-                               for="activeCheck">
-                            Active
-                        </label>
-                    </div>
+</div>
 
-                    <!-- BUTTONS -->
-                    <div class="d-flex gap-3">
-                        <button type="submit"
-                                class="btn btn-brand rounded-3 px-4">
-                            Save
-                        </button>
 
-                        <a href="${pageContext.request.contextPath}/owner/inventory"
-                           class="btn btn-outline-secondary rounded-3 px-4">
-                            Cancel
-                        </a>
-                    </div>
+<div class="card border-0 rounded-4"
+style="box-shadow:0 1px 6px rgba(0,0,0,0.08);">
 
-                </form>
+<div class="card-body p-4">
 
-            </div>
-        </div>
 
-    </div>
+<form method="post"
+action="${pageContext.request.contextPath}/owner/inventory">
 
-    <%@ include file="../layout/footer.jsp"%>
+
+<c:if test="${inventory != null}">
+
+<input type="hidden"
+name="id"
+value="${inventory.inventoryId}"/>
+
+</c:if>
+
+
+<!-- NAME -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Equipment Name
+</label>
+
+<input type="text"
+name="name"
+class="form-control rounded-3"
+value="${inventory.name}"
+required/>
+
+</div>
+
+
+<!-- BRAND -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Brand
+</label>
+
+<input type="text"
+name="brand"
+class="form-control rounded-3"
+value="${inventory.brand}"
+required/>
+
+</div>
+
+
+<!-- DESCRIPTION -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Description
+</label>
+
+<textarea name="description"
+class="form-control rounded-3"
+rows="4">
+
+${inventory.description}
+
+</textarea>
+
+</div>
+
+
+<!-- PRICE -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Rental Price
+</label>
+
+<input type="number"
+step="0.01"
+name="price"
+class="form-control rounded-3"
+value="${inventory.rentalPrice}"
+required/>
+
+</div>
+
+
+<!-- FACILITY DROPDOWN -->
+
+<div class="mb-3">
+
+<label class="form-label fw-semibold">
+Facility
+</label>
+
+<select name="facilityId"
+class="form-select rounded-3">
+
+<option value="">
+-- Select Facility --
+</option>
+
+<c:forEach items="${facilities}" var="f">
+
+<option value="${f.facilityId}"
+
+<c:if test="${inventory != null && inventory.facilityId == f.facilityId}">
+selected
+</c:if>
+
+>
+
+${f.name}
+
+</option>
+
+</c:forEach>
+
+</select>
+
+</div>
+
+
+<!-- ACTIVE -->
+
+<div class="form-check mb-4">
+
+<input class="form-check-input"
+type="checkbox"
+name="active"
+id="activeCheck"
+
+<c:if test="${inventory != null && inventory.active}">
+checked
+</c:if>
+
+/>
+
+<label class="form-check-label fw-semibold"
+for="activeCheck">
+
+Active
+
+</label>
+
+</div>
+
+
+<!-- BUTTON -->
+
+<div class="d-flex gap-3">
+
+<button type="submit"
+class="btn btn-success rounded-3 px-4">
+
+Save
+
+</button>
+
+<a href="${pageContext.request.contextPath}/owner/inventory"
+class="btn btn-outline-secondary rounded-3 px-4">
+
+Cancel
+
+</a>
+
+</div>
+
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+<%@ include file="../layout/footer.jsp"%>
+
 </div>

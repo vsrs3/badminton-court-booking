@@ -12,19 +12,22 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public List<Inventory> findAll() {
+
         List<Inventory> list = new ArrayList<>();
+
         String sql = """
-        	    SELECT i.inventory_id,
-        	           i.name,
-        	           i.brand,
-        	           i.description,
-        	           i.rental_price,
-        	           i.is_active,
-        	           i.court_id,
-        	           c.court_name
-        	    FROM Inventory i
-        	    LEFT JOIN Court c ON i.court_id = c.court_id
-        	""";
+                SELECT i.inventory_id,
+                       i.name,
+                       i.brand,
+                       i.description,
+                       i.rental_price,
+                       i.is_active,
+                       i.facility_id,
+                       f.name AS facility_name
+                FROM Inventory i
+                LEFT JOIN Facility f
+                ON i.facility_id = f.facility_id
+                """;
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -43,21 +46,24 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public List<Inventory> search(String keyword) {
+
         List<Inventory> list = new ArrayList<>();
+
         String sql = """
-        	    SELECT i.inventory_id,
-        	           i.name,
-        	           i.brand,
-        	           i.description,
-        	           i.rental_price,
-        	           i.is_active,
-        	           i.court_id,
-        	           c.court_name
-        	    FROM Inventory i
-        	    LEFT JOIN Court c ON i.court_id = c.court_id
-        	    WHERE i.name LIKE ? OR i.brand LIKE ?
-        	""";
-        
+                SELECT i.inventory_id,
+                       i.name,
+                       i.brand,
+                       i.description,
+                       i.rental_price,
+                       i.is_active,
+                       i.facility_id,
+                       f.name AS facility_name
+                FROM Inventory i
+                LEFT JOIN Facility f
+                ON i.facility_id = f.facility_id
+                WHERE i.name LIKE ? OR i.brand LIKE ?
+                """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -76,30 +82,46 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
         return list;
     }
-
+    
     @Override
     public Inventory findById(int id) {
-    	String sql = """
-    		    SELECT i.inventory_id,
-    		           i.name,
-    		           i.brand,
-    		           i.description,
-    		           i.rental_price,
-    		           i.is_active,
-    		           i.court_id,
-    		           c.court_name
-    		    FROM Inventory i
-    		    LEFT JOIN Court c ON i.court_id = c.court_id
-    		    WHERE i.inventory_id = ?
-    		""";
+
+        String sql = """
+            SELECT i.inventory_id,
+                   i.name,
+                   i.brand,
+                   i.description,
+                   i.rental_price,
+                   i.is_active,
+                   i.facility_id,
+                   f.name AS facility_name
+            FROM Inventory i
+            LEFT JOIN Facility f
+            ON i.facility_id = f.facility_id
+            WHERE i.inventory_id = ?
+            """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
+
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                return mapRow(rs);
+
+                Inventory i = new Inventory();
+
+                i.setInventoryId(rs.getInt("inventory_id"));
+                i.setName(rs.getString("name"));
+                i.setBrand(rs.getString("brand"));
+                i.setDescription(rs.getString("description"));
+                i.setRentalPrice(rs.getBigDecimal("rental_price"));
+                i.setActive(rs.getBoolean("is_active"));
+                i.setFacilityId((Integer) rs.getObject("facility_id"));
+                i.setFacilityName(rs.getString("facility_name"));
+
+                return i;
             }
 
         } catch (Exception e) {
@@ -111,7 +133,13 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public void save(Inventory inventory) {
-    	String sql = "INSERT INTO Inventory(name, brand, description, rental_price, is_active, court_id) VALUES (?, ?, ?, ?, ?, ?)";
+
+        String sql = """
+                INSERT INTO Inventory
+                (name, brand, description, rental_price, is_active, facility_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -120,8 +148,8 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             ps.setString(3, inventory.getDescription());
             ps.setBigDecimal(4, inventory.getRentalPrice());
             ps.setBoolean(5, inventory.isActive());
-            ps.setObject(6, inventory.getCourtId(), Types.INTEGER);
-            
+            ps.setObject(6, inventory.getFacilityId(), Types.INTEGER);
+
             ps.executeUpdate();
 
         } catch (Exception e) {
@@ -131,17 +159,28 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public void update(Inventory inventory) {
-    	String sql = "UPDATE Inventory SET name=?, brand=?, description=?, rental_price=?, is_active=?, court_id=? WHERE inventory_id=?";
+
+        String sql = """
+                UPDATE Inventory
+                SET name=?,
+                    brand=?,
+                    description=?,
+                    rental_price=?,
+                    is_active=?,
+                    facility_id=?
+                WHERE inventory_id=?
+                """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        	ps.setString(1, inventory.getName());
-        	ps.setString(2, inventory.getBrand());
-        	ps.setString(3, inventory.getDescription());
-        	ps.setBigDecimal(4, inventory.getRentalPrice());
-        	ps.setBoolean(5, inventory.isActive());
-        	ps.setObject(6, inventory.getCourtId(), Types.INTEGER);
-        	ps.setInt(7, inventory.getInventoryId());
+            ps.setString(1, inventory.getName());
+            ps.setString(2, inventory.getBrand());
+            ps.setString(3, inventory.getDescription());
+            ps.setBigDecimal(4, inventory.getRentalPrice());
+            ps.setBoolean(5, inventory.isActive());
+            ps.setObject(6, inventory.getFacilityId(), Types.INTEGER);
+            ps.setInt(7, inventory.getInventoryId());
 
             ps.executeUpdate();
 
@@ -152,7 +191,8 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public void delete(int id) {
-        String sql = "DELETE FROM Inventory WHERE inventory_id = ?";
+
+        String sql = "DELETE FROM Inventory WHERE inventory_id=?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -165,38 +205,35 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         }
     }
 
-    private Inventory mapRow(ResultSet rs) throws SQLException {
-        Inventory i = new Inventory();
-        i.setInventoryId(rs.getInt("inventory_id"));
-        i.setName(rs.getString("name"));
-        i.setBrand(rs.getString("brand"));
-        i.setDescription(rs.getString("description"));
-        i.setRentalPrice(rs.getBigDecimal("rental_price"));
-        i.setActive(rs.getBoolean("is_active"));
-        i.setCourtId((Integer) rs.getObject("court_id"));
-        i.setCourtName(rs.getString("court_name"));
-        return i;
-    }
-    
-    
     @Override
     public List<Inventory> findByFacility(int facilityId, int limit, int offset, String keyword) {
+
         List<Inventory> list = new ArrayList<>();
 
         String sql = """
-            SELECT i.*, c.court_name
-            FROM Inventory i
-            JOIN Court c ON i.court_id = c.court_id
-            WHERE c.facility_id = ?
-            """ + (keyword != null && !keyword.isBlank()
-                ? " AND (i.name LIKE ? OR i.brand LIKE ?) "
-                : "") +
-            " ORDER BY i.inventory_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+                SELECT i.inventory_id,
+                       i.name,
+                       i.brand,
+                       i.description,
+                       i.rental_price,
+                       i.is_active,
+                       i.facility_id,
+                       f.name AS facility_name
+                FROM Inventory i
+                JOIN Facility f
+                ON i.facility_id = f.facility_id
+                WHERE i.facility_id = ?
+                """ +
+                (keyword != null && !keyword.isBlank()
+                        ? " AND (i.name LIKE ? OR i.brand LIKE ?) "
+                        : "") +
+                " ORDER BY i.inventory_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             int index = 1;
+
             ps.setInt(index++, facilityId);
 
             if (keyword != null && !keyword.isBlank()) {
@@ -208,10 +245,9 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             ps.setInt(index, limit);
 
             ResultSet rs = ps.executeQuery();
+
             while (rs.next()) {
-                Inventory i = mapRow(rs);
-                i.setCourtName(rs.getString("court_name"));
-                list.add(i);
+                list.add(mapRow(rs));
             }
 
         } catch (Exception e) {
@@ -223,19 +259,21 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
     @Override
     public int countByFacility(int facilityId, String keyword) {
+
         String sql = """
-            SELECT COUNT(*)
-            FROM Inventory i
-            JOIN Court c ON i.court_id = c.court_id
-            WHERE c.facility_id = ?
-            """ + (keyword != null && !keyword.isBlank()
-                ? " AND (i.name LIKE ? OR i.brand LIKE ?) "
-                : "");
+                SELECT COUNT(*)
+                FROM Inventory
+                WHERE facility_id = ?
+                """ +
+                (keyword != null && !keyword.isBlank()
+                        ? " AND (name LIKE ? OR brand LIKE ?) "
+                        : "");
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             int index = 1;
+
             ps.setInt(index++, facilityId);
 
             if (keyword != null && !keyword.isBlank()) {
@@ -244,6 +282,7 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             }
 
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) return rs.getInt(1);
 
         } catch (Exception e) {
@@ -253,71 +292,77 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         return 0;
     }
 
-   @Override
-public List<Inventory> findUnassigned(int limit, int offset, String keyword) {
-    List<Inventory> list = new ArrayList<>();
+    @Override
+    public List<Inventory> findUnassigned(int limit, int offset, String keyword) {
 
-    String sql = """
-        SELECT i.inventory_id,
-               i.name,
-               i.brand,
-               i.description,
-               i.rental_price,
-               i.is_active,
-               i.court_id,
-               c.court_name
-        FROM Inventory i
-        LEFT JOIN Court c ON i.court_id = c.court_id
-        WHERE i.court_id IS NULL
-        """ + (keyword != null && !keyword.isBlank()
-            ? " AND (i.name LIKE ? OR i.brand LIKE ?) "
-            : "") +
-        " ORDER BY i.inventory_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        List<Inventory> list = new ArrayList<>();
 
-    try (Connection conn = DBContext.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql = """
+                SELECT i.inventory_id,
+                       i.name,
+                       i.brand,
+                       i.description,
+                       i.rental_price,
+                       i.is_active,
+                       i.facility_id
+                FROM Inventory i
+                WHERE i.facility_id IS NULL
+                """ +
+                (keyword != null && !keyword.isBlank()
+                        ? " AND (i.name LIKE ? OR i.brand LIKE ?) "
+                        : "") +
+                " ORDER BY i.inventory_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
-        int index = 1;
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        if (keyword != null && !keyword.isBlank()) {
-            ps.setString(index++, "%" + keyword + "%");
-            ps.setString(index++, "%" + keyword + "%");
+            int index = 1;
+
+            if (keyword != null && !keyword.isBlank()) {
+                ps.setString(index++, "%" + keyword + "%");
+                ps.setString(index++, "%" + keyword + "%");
+            }
+
+            ps.setInt(index++, offset);
+            ps.setInt(index, limit);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        ps.setInt(index++, offset);
-        ps.setInt(index, limit);
-
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            list.add(mapRow(rs));
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace();
+        return list;
     }
 
-    return list;
-}
-   
     @Override
     public int countUnassigned(String keyword) {
+
         String sql = """
-            SELECT COUNT(*)
-            FROM Inventory
-            WHERE court_id IS NULL
-            """ + (keyword != null && !keyword.isBlank()
-                ? " AND (name LIKE ? OR brand LIKE ?) "
-                : "");
+                SELECT COUNT(*)
+                FROM Inventory
+                WHERE facility_id IS NULL
+                """ +
+                (keyword != null && !keyword.isBlank()
+                        ? " AND (name LIKE ? OR brand LIKE ?) "
+                        : "");
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             if (keyword != null && !keyword.isBlank()) {
+
                 ps.setString(1, "%" + keyword + "%");
                 ps.setString(2, "%" + keyword + "%");
+
             }
 
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) return rs.getInt(1);
 
         } catch (Exception e) {
@@ -327,14 +372,41 @@ public List<Inventory> findUnassigned(int limit, int offset, String keyword) {
         return 0;
     }
 
+    private Inventory mapRow(ResultSet rs) throws SQLException {
+
+        Inventory i = new Inventory();
+
+        i.setInventoryId(rs.getInt("inventory_id"));
+        i.setName(rs.getString("name"));
+        i.setBrand(rs.getString("brand"));
+        i.setDescription(rs.getString("description"));
+        i.setRentalPrice(rs.getBigDecimal("rental_price"));
+        i.setActive(rs.getBoolean("is_active"));
+
+        i.setFacilityId((Integer) rs.getObject("facility_id"));
+
+        try {
+            i.setFacilityName(rs.getString("facility_name"));
+        } catch (Exception ignored) {}
+
+        return i;
+    }
+
     @Override
-    public void assignToCourt(int inventoryId, int courtId) {
-        String sql = "UPDATE Inventory SET court_id=? WHERE inventory_id=?";
+    public void assignToCourt(int inventoryId, int facilityId) {
+
+        String sql = """
+            UPDATE Inventory
+            SET facility_id = ?
+            WHERE inventory_id = ?
+        """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, courtId);
+            ps.setInt(1, facilityId);
             ps.setInt(2, inventoryId);
+
             ps.executeUpdate();
 
         } catch (Exception e) {
@@ -344,11 +416,18 @@ public List<Inventory> findUnassigned(int limit, int offset, String keyword) {
 
     @Override
     public void removeFromCourt(int inventoryId) {
-        String sql = "UPDATE Inventory SET court_id=NULL WHERE inventory_id=?";
+
+        String sql = """
+            UPDATE Inventory
+            SET facility_id = NULL
+            WHERE inventory_id = ?
+        """;
+
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, inventoryId);
+
             ps.executeUpdate();
 
         } catch (Exception e) {

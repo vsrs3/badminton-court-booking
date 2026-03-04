@@ -10,4 +10,13 @@ public interface InventoryService {
     void create(Inventory inventory);
     void update(Inventory inventory);
     void delete(int id);
+    List<Inventory> getByFacility(int facilityId, int limit, int offset, String keyword);
+
+    int countByFacility(int facilityId, String keyword);
+
+    List<Inventory> getUnassigned(int limit, int offset, String keyword);
+
+    void assignToFacility(int inventoryId, int facilityId);
+
+    void removeFromFacility(int inventoryId);
 }

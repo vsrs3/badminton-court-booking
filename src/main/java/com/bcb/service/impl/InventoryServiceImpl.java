@@ -40,4 +40,28 @@ public class InventoryServiceImpl implements InventoryService {
     public void delete(int id) {
         repository.delete(id);
     }
+    @Override
+    public List<Inventory> getByFacility(int facilityId, int limit, int offset, String keyword) {
+        return repository.findByFacility(facilityId, limit, offset, keyword);
+    }
+
+    @Override
+    public int countByFacility(int facilityId, String keyword) {
+        return repository.countByFacility(facilityId, keyword);
+    }
+
+    @Override
+    public List<Inventory> getUnassigned(int limit, int offset, String keyword) {
+        return repository.findUnassigned(limit, offset, keyword);
+    }
+
+    @Override
+    public void assignToFacility(int inventoryId, int facilityId) {
+        repository.assignToCourt(inventoryId, facilityId);
+    }
+
+    @Override
+    public void removeFromFacility(int inventoryId) {
+        repository.removeFromCourt(inventoryId);
+    }
 }

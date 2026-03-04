@@ -1,95 +1,123 @@
 package com.bcb.controller.owner;
 
 import com.bcb.model.Inventory;
-import com.bcb.model.Court;
-import com.bcb.repository.InventoryRepository;
-import com.bcb.repository.CourtRepository;
-import com.bcb.repository.impl.InventoryRepositoryImpl;
-import com.bcb.repository.impl.CourtRepositoryImpl;
+import com.bcb.service.InventoryService;
+import com.bcb.service.impl.InventoryServiceImpl;
+import com.bcb.utils.BreadcrumbUtils;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.util.List;
 
 public class OwnerFacilityInventoryController extends HttpServlet {
 
-    private final InventoryRepository inventoryRepo = new InventoryRepositoryImpl();
-    private final CourtRepository courtRepo = new CourtRepositoryImpl();
+    private InventoryService inventoryService;
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    public void init() {
+        inventoryService = new InventoryServiceImpl();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String path = req.getPathInfo();
-        int facilityId = Integer.parseInt(path.substring(1));
+        String pathInfo = request.getPathInfo();
 
-        int page = parseInt(req.getParameter("page"), 1);
-        int pageUn = parseInt(req.getParameter("pageUn"), 1);
-        int size = 5;
+        if (pathInfo == null || pathInfo.equals("/")) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
 
-        String keyword = req.getParameter("keyword");
-        String keywordUn = req.getParameter("keywordUn");
+        int facilityId = Integer.parseInt(pathInfo.substring(1));
+
+        String keyword = request.getParameter("keyword");
+        String keywordUn = request.getParameter("keywordUn");
+
+        int page = 1;
+        int size = 10;
+
+        try {
+            page = Integer.parseInt(request.getParameter("page"));
+        } catch (Exception ignored) {}
 
         int offset = (page - 1) * size;
-        int offsetUn = (pageUn - 1) * size;
 
         List<Inventory> inventories =
-                inventoryRepo.findByFacility(facilityId, size, offset, keyword);
+                inventoryService.getByFacility(facilityId, size, offset, keyword);
 
-        int total = inventoryRepo.countByFacility(facilityId, keyword);
-        int totalPages = (int) Math.ceil((double) total / size);
+        int total = inventoryService.countByFacility(facilityId, keyword);
 
         List<Inventory> unassigned =
-                inventoryRepo.findUnassigned(size, offsetUn, keywordUn);
+                inventoryService.getUnassigned(size, 0, keywordUn);
 
-        int totalUn = inventoryRepo.countUnassigned(keywordUn);
-        int totalPagesUn = (int) Math.ceil((double) totalUn / size);
+        int totalPages = (int) Math.ceil((double) total / size);
 
-        List<Court> courts = courtRepo.findAllActive();
+        request.setAttribute("facilityId", facilityId);
+        request.setAttribute("inventories", inventories);
+        request.setAttribute("unassigned", unassigned);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
 
-        req.setAttribute("inventories", inventories);
-        req.setAttribute("unassigned", unassigned);
-        req.setAttribute("courts", courts);
+        BreadcrumbUtils.builder(request)
+                .dashboard()
+                .facilityList()
+                .active("Kho đồ")
+                .build();
 
-        req.setAttribute("facilityId", facilityId);
-        req.setAttribute("currentPage", page);
-        req.setAttribute("totalPages", totalPages);
-        req.setAttribute("currentPageUn", pageUn);
-        req.setAttribute("totalPagesUn", totalPagesUn);
-
-        req.getRequestDispatcher("/jsp/owner/facility/facility-inventory.jsp")
-                .forward(req, resp);
+        request.getRequestDispatcher("/jsp/owner/facility/facility-inventory.jsp")
+                .forward(request, response);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        String action = req.getParameter("action");
-        int facilityId = Integer.parseInt(req.getParameter("facilityId"));
+        String action = request.getParameter("action");
+        String facilityParam = request.getParameter("facilityId");
 
-        if ("assign".equals(action)) {
-            int inventoryId = Integer.parseInt(req.getParameter("inventoryId"));
-            int courtId = Integer.parseInt(req.getParameter("courtId"));
-            inventoryRepo.assignToCourt(inventoryId, courtId);
+        if (facilityParam == null || facilityParam.isEmpty()) {
+            response.sendError(400, "Facility ID missing");
+            return;
         }
 
-        if ("remove".equals(action)) {
-            int inventoryId = Integer.parseInt(req.getParameter("inventoryId"));
-            inventoryRepo.removeFromCourt(inventoryId);
+        int facilityId = Integer.parseInt(facilityParam);
+
+        try {
+
+            if ("assign".equals(action)) {
+
+                String inventoryParam = request.getParameter("inventoryId");
+
+                if (inventoryParam != null) {
+
+                    int inventoryId = Integer.parseInt(inventoryParam);
+
+                    inventoryService.assignToFacility(inventoryId, facilityId);
+                }
+            }
+
+            if ("remove".equals(action)) {
+
+                String inventoryParam = request.getParameter("inventoryId");
+
+                if (inventoryParam != null) {
+
+                    int inventoryId = Integer.parseInt(inventoryParam);
+
+                    inventoryService.removeFromFacility(inventoryId);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        resp.sendRedirect(req.getContextPath()
-                + "/owner/facility/inventory/" + facilityId);
-    }
-
-    private int parseInt(String val, int def) {
-        try { return Integer.parseInt(val); }
-        catch (Exception e) { return def; }
+        response.sendRedirect(
+                request.getContextPath()
+                        + "/owner/facility/inventory/" + facilityId
+        );
     }
 }
