@@ -6,195 +6,229 @@
 
 <div class="main-content">
 
-    <%@ include file="../layout/header.jsp"%>
+<%@ include file="../layout/header.jsp"%>
 
-    <div class="content-area">
+<div class="content-area">
 
-        <div class="d-flex align-items-center justify-content-between mb-4">
+<div class="d-flex align-items-center justify-content-between mb-4">
 
-            <div>
-                <h1 class="fw-black mb-1"
-                    style="font-size:1.75rem;color:var(--color-gray-900);">
-                    Inventory Management
-                </h1>
+<div>
+<h1 class="fw-black mb-1"
+style="font-size:1.75rem;color:var(--color-gray-900);">
 
-                <p class="text-secondary mb-0">
-                    Manage rental equipment
-                </p>
-            </div>
+Inventory Management
 
-            <a href="${pageContext.request.contextPath}/owner/inventory?action=add"
-               class="btn btn-success rounded-3 px-4">
+</h1>
 
-                <i class="bi bi-plus-circle"></i>
-                Add Equipment
-            </a>
+<p class="text-secondary mb-0">
+Manage rental equipment
+</p>
+</div>
 
-        </div>
+<a href="${pageContext.request.contextPath}/owner/inventory?action=add"
+class="btn btn-success rounded-3 px-4">
 
-        <!-- SEARCH -->
-        <div class="card border-0 rounded-4 mb-4"
-             style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<i class="bi bi-plus-circle"></i>
+Add Equipment
 
-            <div class="card-body">
+</a>
 
-                <form method="get"
-                      action="${pageContext.request.contextPath}/owner/inventory"
-                      class="row g-3">
+</div>
 
-                    <div class="col-md-4">
 
-                        <input type="text"
-                               name="keyword"
-                               value="${keyword}"
-                               class="form-control rounded-3"
-                               placeholder="Search equipment...">
+<!-- SEARCH -->
 
-                    </div>
+<div class="card border-0 rounded-4 mb-4"
+style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
-                    <div class="col-auto">
+<div class="card-body">
 
-                        <button class="btn btn-outline-success rounded-3">
-                            <i class="bi bi-search"></i>
-                            Search
-                        </button>
+<form method="get"
+action="${pageContext.request.contextPath}/owner/inventory"
+class="row g-3">
 
-                    </div>
+<div class="col-md-4">
 
-                </form>
+<input type="text"
+name="keyword"
+value="${keyword}"
+class="form-control rounded-3"
+placeholder="Search equipment...">
 
-            </div>
+</div>
 
-        </div>
+<div class="col-auto">
 
-        <!-- TABLE -->
-        <div class="card border-0 rounded-4"
-             style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<button class="btn btn-outline-success rounded-3">
 
-            <div class="card-body">
+<i class="bi bi-search"></i>
+Search
 
-                <div class="table-responsive">
+</button>
 
-                    <table class="table align-middle">
+</div>
 
-                        <thead class="table-light">
+</form>
 
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Brand</th>
-                            <th>Price</th>
-                            <th>Status</th>
-                            <th>Facility</th>
-                            <th class="text-end">Action</th>
-                        </tr>
+</div>
 
-                        </thead>
+</div>
 
-                        <tbody>
 
-                        <c:forEach items="${inventories}" var="i">
+<!-- TABLE -->
 
-                            <tr>
+<div class="card border-0 rounded-4"
+style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
-                                <td>${i.inventoryId}</td>
+<div class="card-body">
 
-                                <td class="fw-semibold">${i.name}</td>
+<div class="table-responsive">
 
-                                <td>${i.brand}</td>
+<table class="table align-middle">
 
-                                <td class="text-success fw-bold">
-                                    ${i.rentalPrice}
-                                </td>
+<thead class="table-light">
 
-                                <td>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Brand</th>
+<th>Price</th>
+<th>Status</th>
+<th>Facility</th>
+<th class="text-end">Action</th>
+</tr>
 
-                                    <c:choose>
+</thead>
 
-                                        <c:when test="${i.active}">
-                                            <span class="badge bg-success">
-                                                Active
-                                            </span>
-                                        </c:when>
+<tbody>
 
-                                        <c:otherwise>
-                                            <span class="badge bg-secondary">
-                                                Inactive
-                                            </span>
-                                        </c:otherwise>
+<c:forEach items="${inventories}" var="i">
 
-                                    </c:choose>
+<tr>
 
-                                </td>
+<td>${i.inventoryId}</td>
 
-                                <td>
+<td class="fw-semibold">${i.name}</td>
 
-                                    <c:choose>
+<td>${i.brand}</td>
 
-                                        <c:when test="${not empty i.facilityName}">
-                                            ${i.facilityName}
-                                        </c:when>
+<td class="text-success fw-bold">
 
-                                        <c:otherwise>
-                                            <span class="text-muted">
-                                                Not assigned
-                                            </span>
-                                        </c:otherwise>
+${i.rentalPrice}
 
-                                    </c:choose>
+</td>
 
-                                </td>
+<td>
 
-                                <td class="text-end">
+<c:choose>
 
-                                    <a href="${pageContext.request.contextPath}/owner/inventory?action=edit&id=${i.inventoryId}"
-                                       class="btn btn-sm btn-outline-primary">
+<c:when test="${i.active}">
+<span class="badge bg-success">Active</span>
+</c:when>
 
-                                        <i class="bi bi-pencil"></i>
+<c:otherwise>
+<span class="badge bg-secondary">Inactive</span>
+</c:otherwise>
 
-                                    </a>
+</c:choose>
 
-                                    <a href="${pageContext.request.contextPath}/owner/inventory?action=delete&id=${i.inventoryId}"
-                                       onclick="return confirm('Delete this item?')"
-                                       class="btn btn-sm btn-outline-danger">
+</td>
 
-                                        <i class="bi bi-trash"></i>
+<td>
 
-                                    </a>
+<c:choose>
 
-                                </td>
+<c:when test="${not empty i.facilityName}">
+${i.facilityName}
+</c:when>
 
-                            </tr>
+<c:otherwise>
+<span class="text-muted">
+Not assigned
+</span>
+</c:otherwise>
 
-                        </c:forEach>
+</c:choose>
 
-                        <c:if test="${empty inventories}">
+</td>
 
-                            <tr>
+<td class="text-end">
 
-                                <td colspan="7"
-                                    class="text-center text-muted">
+<a href="${pageContext.request.contextPath}/owner/inventory?action=edit&id=${i.inventoryId}"
+class="btn btn-sm btn-outline-primary">
 
-                                    No inventory found
+<i class="bi bi-pencil"></i>
 
-                                </td>
+</a>
 
-                            </tr>
+<a href="${pageContext.request.contextPath}/owner/inventory?action=delete&id=${i.inventoryId}"
+onclick="return confirm('Delete this item?')"
+class="btn btn-sm btn-outline-danger">
 
-                        </c:if>
+<i class="bi bi-trash"></i>
 
-                        </tbody>
+</a>
 
-                    </table>
+</td>
 
-                </div>
+</tr>
 
-            </div>
+</c:forEach>
 
-        </div>
+<c:if test="${empty inventories}">
 
-    </div>
+<tr>
 
-    <%@ include file="../layout/footer.jsp"%>
+<td colspan="7"
+class="text-center text-muted">
+
+No inventory found
+
+</td>
+
+</tr>
+
+</c:if>
+
+</tbody>
+
+</table>
+
+</div>
+
+
+<!-- PAGINATION -->
+
+<nav class="mt-4">
+
+<ul class="pagination justify-content-center">
+
+<c:forEach begin="1" end="${totalPages}" var="p">
+
+<li class="page-item ${p==currentPage?'active':''}">
+
+<a class="page-link"
+href="${pageContext.request.contextPath}/owner/inventory?page=${p}&keyword=${keyword}">
+
+${p}
+
+</a>
+
+</li>
+
+</c:forEach>
+
+</ul>
+
+</nav>
+
+
+</div>
+
+</div>
+
+</div>
+
+<%@ include file="../layout/footer.jsp"%>
 
 </div>

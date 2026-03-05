@@ -231,19 +231,19 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
+            
             int index = 1;
-
             ps.setInt(index++, facilityId);
 
             if (keyword != null && !keyword.isBlank()) {
                 ps.setString(index++, "%" + keyword + "%");
                 ps.setString(index++, "%" + keyword + "%");
             }
-
+   
             ps.setInt(index++, offset);
             ps.setInt(index, limit);
-
+            
+            
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -343,27 +343,22 @@ public class InventoryRepositoryImpl implements InventoryRepository {
     public int countUnassigned(String keyword) {
 
         String sql = """
-                SELECT COUNT(*)
-                FROM Inventory
-                WHERE facility_id IS NULL
-                """ +
-                (keyword != null && !keyword.isBlank()
-                        ? " AND (name LIKE ? OR brand LIKE ?) "
-                        : "");
+            SELECT COUNT(*)
+            FROM Inventory
+            WHERE facility_id IS NULL
+            AND name LIKE ?
+        """;
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            if (keyword != null && !keyword.isBlank()) {
-
-                ps.setString(1, "%" + keyword + "%");
-                ps.setString(2, "%" + keyword + "%");
-
-            }
+            ps.setString(1, "%" + (keyword == null ? "" : keyword) + "%");
 
             ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -371,7 +366,6 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
         return 0;
     }
-
     private Inventory mapRow(ResultSet rs) throws SQLException {
 
         Inventory i = new Inventory();
@@ -434,4 +428,100 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             e.printStackTrace();
         }
     }
+    
+    
+    @Override
+    public List<Inventory> findWithPagination(int limit, int offset, String keyword) {
+
+        List<Inventory> list = new ArrayList<>();
+
+        String sql = """
+            SELECT i.*, f.name as facility_name
+            FROM Inventory i
+            LEFT JOIN Facility f ON i.facility_id = f.facility_id
+            WHERE (? IS NULL OR i.name LIKE ?)
+            ORDER BY i.inventory_id ASC
+            OFFSET ? ROWS
+            FETCH NEXT ? ROWS ONLY
+        """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(1, Types.VARCHAR);
+                ps.setNull(2, Types.VARCHAR);
+            } else {
+                ps.setString(1, keyword);
+                ps.setString(2, "%" + keyword + "%");
+            }
+
+            ps.setInt(3, offset);
+            ps.setInt(4, limit);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Inventory i = new Inventory();
+
+                i.setInventoryId(rs.getInt("inventory_id"));
+                i.setName(rs.getString("name"));
+                i.setBrand(rs.getString("brand"));
+                i.setDescription(rs.getString("description"));
+                i.setRentalPrice(rs.getBigDecimal("rental_price"));
+                i.setActive(rs.getBoolean("is_active"));
+                i.setFacilityId((Integer) rs.getObject("facility_id"));
+                i.setFacilityName(rs.getString("facility_name"));
+
+                list.add(i);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    @Override
+    public int countInventory(String keyword) {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM Inventory
+            WHERE (? IS NULL OR name LIKE ?)
+        """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(1, Types.VARCHAR);
+                ps.setNull(2, Types.VARCHAR);
+            } else {
+                ps.setString(1, keyword);
+                ps.setString(2, "%" + keyword + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+    
 }
+       
+    
+    
+    
+   
+    
+    

@@ -19,4 +19,10 @@ public interface InventoryService {
     void assignToFacility(int inventoryId, int facilityId);
 
     void removeFromFacility(int inventoryId);
+    
+    int countUnassigned(String keyword);
+    
+    List<Inventory> getWithPagination(int limit, int offset, String keyword);
+
+    int countInventory(String keyword);
 }

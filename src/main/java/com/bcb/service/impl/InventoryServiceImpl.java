@@ -61,7 +61,23 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    public int countUnassigned(String keyword) {
+        return repository.countUnassigned(keyword);
+    }
+    
+    @Override
     public void removeFromFacility(int inventoryId) {
         repository.removeFromCourt(inventoryId);
+    }
+    
+    
+    @Override
+    public List<Inventory> getWithPagination(int limit, int offset, String keyword) {
+        return repository.findWithPagination(limit, offset, keyword);
+    }
+
+    @Override
+    public int countInventory(String keyword) {
+        return repository.countInventory(keyword);
     }
 }

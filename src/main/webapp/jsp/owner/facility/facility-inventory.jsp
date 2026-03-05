@@ -19,39 +19,12 @@
 <div class="card mb-4 shadow-sm border-0 rounded-4">
 <div class="card-body p-4">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-<div>
-<h4 class="fw-bold text-emerald mb-1">
+<h4 class="fw-bold text-emerald mb-3">
 Kho đồ của sân
 </h4>
 
-<p class="text-muted small mb-0">
-Danh sách dụng cụ đang thuộc sân này
-</p>
-</div>
-
-<form method="get"
-action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}"
-class="d-flex gap-2">
-
-<input type="text"
-name="keyword"
-value="${param.keyword}"
-class="form-control rounded-3"
-placeholder="Tìm kiếm dụng cụ...">
-
-<button class="btn btn-accent">
-<i class="bi bi-search"></i>
-</button>
-
-</form>
-
-</div>
-
-
 <div class="table-responsive">
-<table class="table table-hover align-middle">
+<table class="table table-hover">
 
 <thead class="table-light">
 <tr>
@@ -70,7 +43,7 @@ placeholder="Tìm kiếm dụng cụ...">
 
 <c:when test="${empty inventories}">
 <tr>
-<td colspan="6" class="text-center text-muted py-4">
+<td colspan="6" class="text-center text-muted">
 Không có dụng cụ
 </td>
 </tr>
@@ -83,21 +56,12 @@ Không có dụng cụ
 <tr>
 
 <td>${i.inventoryId}</td>
-
-<td class="fw-semibold">
-${i.name}
-</td>
-
-<td>
-${i.brand}
-</td>
-
-<td class="text-success fw-bold">
-${i.rentalPrice}
-</td>
+<td>${i.name}</td>
+<td>${i.brand}</td>
+<td>${i.rentalPrice}</td>
 
 <td>
-<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+<span class="badge bg-success">
 ${i.facilityName}
 </span>
 </td>
@@ -105,18 +69,14 @@ ${i.facilityName}
 <td class="text-end">
 
 <form method="post"
-action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}"
-class="d-inline">
+action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}">
 
 <input type="hidden" name="action" value="remove"/>
 <input type="hidden" name="facilityId" value="${facilityId}"/>
 <input type="hidden" name="inventoryId" value="${i.inventoryId}"/>
 
-<button class="btn btn-sm btn-outline-danger"
-onclick="return confirm('Xóa dụng cụ khỏi sân này?')">
-
-<i class="bi bi-trash"></i>
-
+<button class="btn btn-sm btn-danger">
+Xóa
 </button>
 
 </form>
@@ -136,6 +96,29 @@ onclick="return confirm('Xóa dụng cụ khỏi sân này?')">
 </table>
 </div>
 
+<!-- PAGINATION INVENTORY -->
+
+<nav>
+<ul class="pagination justify-content-center">
+
+<c:forEach begin="1" end="${totalPages}" var="p">
+
+<li class="page-item ${p==currentPage?'active':''}">
+
+<a class="page-link"
+href="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}?page=${p}">
+
+${p}
+
+</a>
+
+</li>
+
+</c:forEach>
+
+</ul>
+</nav>
+
 </div>
 </div>
 
@@ -147,39 +130,13 @@ onclick="return confirm('Xóa dụng cụ khỏi sân này?')">
 <div class="card shadow-sm border-0 rounded-4">
 <div class="card-body p-4">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-<div>
-<h5 class="fw-bold mb-1">
+<h5 class="fw-bold mb-3">
 Dụng cụ chưa gán sân
 </h5>
 
-<p class="text-muted small mb-0">
-Gán dụng cụ vào sân hiện tại
-</p>
-</div>
-
-<form method="get"
-action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}"
-class="d-flex gap-2">
-
-<input type="text"
-name="keywordUn"
-value="${param.keywordUn}"
-class="form-control rounded-3"
-placeholder="Tìm kiếm...">
-
-<button class="btn btn-outline-secondary">
-<i class="bi bi-search"></i>
-</button>
-
-</form>
-
-</div>
-
 <div class="table-responsive">
 
-<table class="table table-hover align-middle">
+<table class="table table-hover">
 
 <thead class="table-light">
 <tr>
@@ -195,7 +152,7 @@ placeholder="Tìm kiếm...">
 
 <c:when test="${empty unassigned}">
 <tr>
-<td colspan="3" class="text-center text-muted py-4">
+<td colspan="3" class="text-center text-muted">
 Không có dụng cụ trống
 </td>
 </tr>
@@ -207,13 +164,8 @@ Không có dụng cụ trống
 
 <tr>
 
-<td class="fw-semibold">
-${i.name}
-</td>
-
-<td>
-${i.brand}
-</td>
+<td>${i.name}</td>
+<td>${i.brand}</td>
 
 <td class="text-end">
 
@@ -225,8 +177,6 @@ action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId
 <input type="hidden" name="inventoryId" value="${i.inventoryId}"/>
 
 <button class="btn btn-success btn-sm">
-
-<i class="bi bi-plus-circle"></i>
 
 Gán vào sân
 
@@ -249,6 +199,29 @@ Gán vào sân
 </table>
 
 </div>
+
+<!-- PAGINATION UNASSIGNED -->
+
+<nav>
+<ul class="pagination justify-content-center">
+
+<c:forEach begin="1" end="${totalPagesUn}" var="p">
+
+<li class="page-item ${p==currentPageUn?'active':''}">
+
+<a class="page-link"
+href="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}?pageUn=${p}">
+
+${p}
+
+</a>
+
+</li>
+
+</c:forEach>
+
+</ul>
+</nav>
 
 </div>
 </div>

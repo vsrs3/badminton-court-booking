@@ -3,6 +3,8 @@ package com.bcb.repository;
 import com.bcb.model.Facility;
 import java.util.List;
 import java.util.Optional;
+import com.bcb.model.Inventory;
+
 
 /**
  * Repository interface for Facility data access
@@ -86,4 +88,6 @@ public interface FacilityRepository {
 
     Double getAverageRating(Integer facilityId);
     List<Facility> findAllActive();
+    
+  
 }

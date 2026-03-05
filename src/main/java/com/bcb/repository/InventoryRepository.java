@@ -24,4 +24,8 @@ public interface InventoryRepository {
 
     void assignToCourt(int inventoryId, int courtId);
     void removeFromCourt(int inventoryId);
+    
+    List<Inventory> findWithPagination(int limit, int offset, String keyword);
+
+    int countInventory(String keyword);
 }

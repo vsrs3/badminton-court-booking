@@ -27,6 +27,9 @@ public class InventoryController extends HttpServlet {
 
         String action = req.getParameter("action");
 
+        /* =========================
+           EDIT
+        ========================= */
         if ("edit".equals(action)) {
 
             int id = Integer.parseInt(req.getParameter("id"));
@@ -40,10 +43,12 @@ public class InventoryController extends HttpServlet {
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
-
             return;
         }
 
+        /* =========================
+           ADD
+        ========================= */
         else if ("add".equals(action)) {
 
             List<Facility> facilities = facilityRepository.findAllActive();
@@ -52,9 +57,12 @@ public class InventoryController extends HttpServlet {
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
-
+            return;
         }
 
+        /* =========================
+           DELETE
+        ========================= */
         else if ("delete".equals(action)) {
 
             int id = Integer.parseInt(req.getParameter("id"));
@@ -62,20 +70,37 @@ public class InventoryController extends HttpServlet {
             service.delete(id);
 
             resp.sendRedirect(req.getContextPath() + "/owner/inventory");
-
+            return;
         }
 
+        /* =========================
+           LIST + PAGINATION
+        ========================= */
         else {
 
             String keyword = req.getParameter("keyword");
 
+            int page = 1;
+            int size = 10;
+
+            try {
+                page = Integer.parseInt(req.getParameter("page"));
+            } catch (Exception ignored) {}
+
+            int offset = (page - 1) * size;
+
             List<Inventory> list =
-                    (keyword == null || keyword.trim().isEmpty())
-                            ? service.getAll()
-                            : service.search(keyword);
+                    service.getWithPagination(size, offset, keyword);
+
+            int total = service.countInventory(keyword);
+
+            int totalPages = (int) Math.ceil((double) total / size);
 
             req.setAttribute("inventories", list);
             req.setAttribute("keyword", keyword);
+
+            req.setAttribute("currentPage", page);
+            req.setAttribute("totalPages", totalPages);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-list.jsp")
                     .forward(req, resp);

@@ -36,8 +36,13 @@ public class OwnerFacilityInventoryController extends HttpServlet {
         String keyword = request.getParameter("keyword");
         String keywordUn = request.getParameter("keywordUn");
 
-        int page = 1;
         int size = 10;
+
+        /* =========================
+           PAGINATION INVENTORY
+        ========================= */
+
+        int page = 1;
 
         try {
             page = Integer.parseInt(request.getParameter("page"));
@@ -50,16 +55,40 @@ public class OwnerFacilityInventoryController extends HttpServlet {
 
         int total = inventoryService.countByFacility(facilityId, keyword);
 
-        List<Inventory> unassigned =
-                inventoryService.getUnassigned(size, 0, keywordUn);
-
         int totalPages = (int) Math.ceil((double) total / size);
 
+        /* =========================
+           PAGINATION UNASSIGNED
+        ========================= */
+
+        int pageUn = 1;
+
+        try {
+            pageUn = Integer.parseInt(request.getParameter("pageUn"));
+        } catch (Exception ignored) {}
+
+        int offsetUn = (pageUn - 1) * size;
+
+        List<Inventory> unassigned =
+                inventoryService.getUnassigned(size, offsetUn, keywordUn);
+
+        int totalUn = inventoryService.countUnassigned(keywordUn);
+
+        int totalPagesUn = (int) Math.ceil((double) totalUn / size);
+
+        /* =========================
+           SET ATTRIBUTE
+        ========================= */
+
         request.setAttribute("facilityId", facilityId);
+
         request.setAttribute("inventories", inventories);
-        request.setAttribute("unassigned", unassigned);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
+
+        request.setAttribute("unassigned", unassigned);
+        request.setAttribute("currentPageUn", pageUn);
+        request.setAttribute("totalPagesUn", totalPagesUn);
 
         BreadcrumbUtils.builder(request)
                 .dashboard()
@@ -78,7 +107,7 @@ public class OwnerFacilityInventoryController extends HttpServlet {
         String action = request.getParameter("action");
         String facilityParam = request.getParameter("facilityId");
 
-        if (facilityParam == null || facilityParam.isEmpty()) {
+        if (facilityParam == null) {
             response.sendError(400, "Facility ID missing");
             return;
         }
@@ -89,26 +118,18 @@ public class OwnerFacilityInventoryController extends HttpServlet {
 
             if ("assign".equals(action)) {
 
-                String inventoryParam = request.getParameter("inventoryId");
+                int inventoryId = Integer.parseInt(request.getParameter("inventoryId"));
 
-                if (inventoryParam != null) {
+                inventoryService.assignToFacility(inventoryId, facilityId);
 
-                    int inventoryId = Integer.parseInt(inventoryParam);
-
-                    inventoryService.assignToFacility(inventoryId, facilityId);
-                }
             }
 
             if ("remove".equals(action)) {
 
-                String inventoryParam = request.getParameter("inventoryId");
+                int inventoryId = Integer.parseInt(request.getParameter("inventoryId"));
 
-                if (inventoryParam != null) {
+                inventoryService.removeFromFacility(inventoryId);
 
-                    int inventoryId = Integer.parseInt(inventoryParam);
-
-                    inventoryService.removeFromFacility(inventoryId);
-                }
             }
 
         } catch (Exception e) {
