@@ -1,9 +1,12 @@
+<!-- customer_history.jsp -->
+
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-history.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-booking-history.css">
+<%-- <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-review.css"> --%>
 
 <div class="flex flex-col h-full bg-white">
     <div class="p-6 pb-3">
@@ -14,10 +17,9 @@
                 </div>
                 <h1 class="text-xl font-bold text-gray-800">Lịch sử đặt sân</h1>
             </div>
-
             <a href="${pageContext.request.contextPath}/home"
                 class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
-                <i data-lucide="arrow-left" class="w-6 h-6"></i> 
+                <i data-lucide="arrow-left" class="w-6 h-6"></i>
                 <span>Quay Lại Trang Chủ</span>
             </a>
         </div>
@@ -45,12 +47,12 @@
         </form>
 
         <div class="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar" id="filter-tabs">
-            <button data-status="all" class="filter-btn <c:if test='${selectedStatus == \"all\" || empty selectedStatus}'>active</c:if>" onclick="filterByStatus('all')">Tất cả</button>
-            <button data-status="PENDING" class="filter-btn <c:if test='${selectedStatus == \"PENDING\"}'>active</c:if>" onclick="filterByStatus('PENDING')">Chờ thanh toán</button>
-            <button data-status="CONFIRMED" class="filter-btn <c:if test='${selectedStatus == \"CONFIRMED\"}'>active</c:if>" onclick="filterByStatus('CONFIRMED')">Đã xác nhận</button>
-            <button data-status="COMPLETED" class="filter-btn <c:if test='${selectedStatus == \"COMPLETED\"}'>active</c:if>" onclick="filterByStatus('COMPLETED')">Hoàn thành</button>
-            <button data-status="CANCELLED" class="filter-btn <c:if test='${selectedStatus == \"CANCELLED\"}'>active</c:if>" onclick="filterByStatus('CANCELLED')">Đã hủy</button>
-            <button data-status="EXPIRED" class="filter-btn <c:if test='${selectedStatus == \"EXPIRED\"}'>active</c:if>" onclick="filterByStatus('EXPIRED')">Hết hạn</button>
+            <button data-status="all" class="filter-btn <c:if test='${selectedStatus == "all" || empty selectedStatus}'>active</c:if>" onclick="filterByStatus('all')">Tất cả</button>
+            <button data-status="PENDING" class="filter-btn <c:if test='${selectedStatus == "PENDING"}'>active</c:if>" onclick="filterByStatus('PENDING')">Chờ thanh toán</button>
+            <button data-status="CONFIRMED" class="filter-btn <c:if test='${selectedStatus == "CONFIRMED"}'>active</c:if>" onclick="filterByStatus('CONFIRMED')">Đã xác nhận</button>
+            <button data-status="COMPLETED" class="filter-btn <c:if test='${selectedStatus == "COMPLETED"}'>active</c:if>" onclick="filterByStatus('COMPLETED')">Hoàn thành</button>
+            <button data-status="CANCELLED" class="filter-btn <c:if test='${selectedStatus == "CANCELLED"}'>active</c:if>" onclick="filterByStatus('CANCELLED')">Đã hủy</button>
+            <button data-status="EXPIRED" class="filter-btn <c:if test='${selectedStatus == "EXPIRED"}'>active</c:if>" onclick="filterByStatus('EXPIRED')">Hết hạn</button>
         </div>
         <div class="h-[1px] bg-gray-100 w-full"></div>
     </div>
@@ -128,16 +130,19 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
                             <div>
                                 <span class="text-sm font-bold text-gray-800">
                                     <fmt:formatNumber value="${booking.totalAmount}" type="number" groupingUsed="true" />đ
                                 </span>
                                 <c:if test="${not empty booking.paymentStatus}">
-                                    <span class="text-xs ml-1.5">• ${booking.paymentStatus == 'PAID' ? 'Đã thanh toán' : (booking.paymentStatus == 'PARTIAL' ? 'Đã cọc' : 'Chưa thanh toán')}</span>
+                                    <span class="text-xs ml-1.5 ${booking.paymentStatus == 'PAID' ? 'pay-paid' : (booking.paymentStatus == 'PARTIAL' ? 'pay-partial' : 'pay-unpaid')}">
+                                        • ${booking.paymentStatus == 'PAID' ? 'Đã thanh toán' : (booking.paymentStatus == 'PARTIAL' ? 'Đã cọc' : 'Chưa thanh toán')}
+                                    </span>
                                 </c:if>
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-2 flex-wrap gap-1">
+                                <%-- Cancel button --%>
                                 <c:if test="${(booking.bookingStatus == 'PENDING' || booking.bookingStatus == 'CONFIRMED') && booking.paymentStatus == 'UNPAID'}">
                                     <form method="post" action="${pageContext.request.contextPath}/my-bookings" onsubmit="return confirmCancel(this, ${booking.bookingId})">
                                         <input type="hidden" name="action" value="cancel" />
@@ -145,7 +150,38 @@
                                         <button type="submit" class="cancel-btn">Hủy</button>
                                     </form>
                                 </c:if>
-                                <a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${booking.bookingId}" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-[#064E3B] text-white rounded-md text-xs font-semibold hover:bg-[#065F46] transition-colors">
+
+                                <%-- ========================================
+                                 Review buttons — only for COMPLETED bookings 
+                                =============================================--%>
+                                <c:if test="${booking.bookingStatus == 'COMPLETED'}">
+                                    <c:choose>
+                                        <c:when test="${booking.reviewed}">
+                                            <%-- Already reviewed: Edit + View --%>
+                                            
+                                            <%-- <a href="${pageContext.request.contextPath}/review-locations/view/id=${booking.facilityId}"
+                                               class="btn-review btn-review-view">
+                                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Xem đánh giá
+                                            </a> --%>
+                                            
+                                            <a href="${pageContext.request.contextPath}/review-locations/edit?booking_id=${booking.bookingId}&facility_id=${booking.facilityId}"
+                                               class="btn-review btn-review-edit">
+                                                <i data-lucide="pen" class="w-3.5 h-3.5"></i> Sửa đánh giá
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <%-- Not yet reviewed --%>
+                                            <a href="${pageContext.request.contextPath}/review-locations/write?booking_id=${booking.bookingId}&facility_id=${booking.facilitId}"
+                                               class="btn-review btn-review-write">
+                                                <i data-lucide="star" class="w-3.5 h-3.5"></i> Viết Đánh giá
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:if>
+
+                                <%-- Detail button --%>
+                                <a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${booking.bookingId}"
+                                   class="inline-flex items-center space-x-1 px-3 py-1.5 bg-[#064E3B] text-white rounded-md text-xs font-semibold hover:bg-[#065F46] transition-colors">
                                     <span>Chi tiết</span>
                                     <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                                 </a>
@@ -166,6 +202,7 @@
 </div>
 
 <script>
+    /* ── Filter ── */
     function filterByStatus(status) {
         var params = new URLSearchParams(window.location.search);
         params.set('status', status);

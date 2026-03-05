@@ -3,6 +3,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-booking-detail.css">
 
 <div class="flex flex-col h-full bg-gray-50">
     <c:choose>
