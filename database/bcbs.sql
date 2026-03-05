@@ -470,6 +470,11 @@ CREATE TABLE Payment (
                          payment_id INT IDENTITY PRIMARY KEY,
                          invoice_id INT NOT NULL,
 
+                         vnpay_txn_no NVARCHAR(100) NULL,          -- VNPay transaction number (trả về)
+                         vnpay_response_code VARCHAR(10) NULL,       -- VNPay response code
+                         expire_at DATETIME NULL,                    -- thời hạn thanh toán
+                         created_at DATETIME DEFAULT GETDATE(),      -- thời điểm tạo paymen
+
                          gateway VARCHAR(20) DEFAULT 'VNPAY',
                          transaction_code NVARCHAR(100),
                          paid_amount DECIMAL(12,2),

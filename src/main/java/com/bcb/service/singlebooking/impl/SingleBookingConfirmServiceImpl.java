@@ -1,5 +1,7 @@
 package com.bcb.service.singlebooking.impl;
 
+import com.bcb.config.VNPayConfig;
+import com.bcb.dto.payment.PaymentCreateResult;
 import com.bcb.dto.singlebooking.*;
 import com.bcb.exception.DataAccessException;
 import com.bcb.exception.singlebooking.SingleBookingConflictException;
@@ -10,10 +12,13 @@ import com.bcb.repository.booking.*;
 import com.bcb.repository.booking.impl.*;
 import com.bcb.repository.FacilityPriceRuleRepository;
 import com.bcb.repository.impl.FacilityPriceRuleRepositoryImpl;
+import com.bcb.service.payment.PaymentService;
+import com.bcb.service.payment.impl.PaymentServiceImpl;
 import com.bcb.service.singlebooking.SingleBookingConfirmService;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.singlebooking.SingleBookingDayTypeUtil;
 import com.bcb.validation.singlebooking.SingleBookingSelectionValidator;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,14 +34,13 @@ import java.util.stream.Collectors;
 /**
  * Transactional confirm-and-pay service.
  * Creates Booking (PENDING) + BookingSlot + CourtSlotBooking locks + Invoice
- * inside a single JDBC transaction. Hold duration: 10 minutes.
+ * inside a single JDBC transaction. Hold duration synced with VNPay expire.
  *
  * @author AnhTN
  */
 public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmService {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int HOLD_MINUTES = 10;
 
     private final FacilityRepository facilityRepo;
     private final CourtRepository courtRepo;
@@ -46,6 +50,7 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
     private final BookingSlotRepository bookingSlotRepo;
     private final CourtSlotBookingRepository courtSlotBookingRepo;
     private final InvoiceRepository invoiceRepo;
+    private final PaymentService paymentService;
 
     public SingleBookingConfirmServiceImpl() {
         this.facilityRepo = new FacilityRepositoryImpl();
@@ -56,11 +61,14 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
         this.bookingSlotRepo = new BookingSlotRepositoryImpl();
         this.courtSlotBookingRepo = new CourtSlotBookingRepositoryImpl();
         this.invoiceRepo = new InvoiceRepositoryImpl();
+        this.paymentService = new PaymentServiceImpl();
     }
 
     /** {@inheritDoc} */
     @Override
-    public SingleBookingConfirmResponseDTO confirmAndPay(int accountId, SingleBookingConfirmRequestDTO request) {
+    public SingleBookingConfirmResponseDTO confirmAndPay(int accountId,
+                                                            SingleBookingConfirmRequestDTO request,
+                                                            HttpServletRequest httpReq) {
         // --- Pre-transaction validation ---
         SingleBookingSelectionValidator.validateSelectionsNotEmpty(request.getFacilityId(), request.getSelections());
         LocalDate bookingDate = SingleBookingSelectionValidator.parseAndValidateDate(request.getBookingDate());
@@ -107,8 +115,8 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Create Booking PENDING
-            LocalDateTime holdExpiredAt = LocalDateTime.now().plusMinutes(HOLD_MINUTES);
+            // 1. Create Booking PENDING — hold synced with VNPay expire
+            LocalDateTime holdExpiredAt = LocalDateTime.now().plusMinutes(VNPayConfig.EXPIRE_MINUTES);
             Booking booking = new Booking();
             booking.setFacilityId(facility.getFacilityId());
             booking.setBookingDate(bookingDate);
@@ -149,9 +157,6 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
             invoice.setTotalAmount(totalAmount);
             invoice.setDepositPercent(request.getDepositPercent());
             invoice.setPaymentStatus("UNPAID");
-
-            BigDecimal paidAmount = totalAmount.multiply(BigDecimal.valueOf(request.getDepositPercent()))
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             invoice.setPaidAmount(BigDecimal.ZERO);
 
             int invoiceId = invoiceRepo.insertInvoice(conn, invoice);
@@ -159,13 +164,30 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
             // 4. Commit
             conn.commit();
 
-            // 5. Build response
+            // 5. Create VNPay payment (outside transaction — payment has its own txn)
+            BigDecimal paidAmount = totalAmount.multiply(BigDecimal.valueOf(request.getDepositPercent()))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+            String paymentType = request.getDepositPercent() >= 100 ? "FULL" : "DEPOSIT";
+            String desc = "Thanh toan dat san #" + bookingId + " tai " + facility.getName();
+
+            PaymentCreateResult payResult = paymentService.createVNPayPayment(
+                    invoiceId, paidAmount.longValue(), paymentType, desc, httpReq);
+
+            // 6. Build response
             SingleBookingConfirmResponseDTO resp = new SingleBookingConfirmResponseDTO();
             resp.setBookingId(bookingId);
             resp.setInvoiceId(invoiceId);
             resp.setHoldExpiredAt(holdExpiredAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
             resp.setTotalAmount(totalAmount);
+            resp.setPayAmount(paidAmount);
             resp.setDepositPercent(request.getDepositPercent());
+
+            if (payResult.isSuccess()) {
+                resp.setPaymentUrl(payResult.getPaymentUrl());
+                resp.setTransactionCode(payResult.getTransactionCode());
+            }
+            // Keep stub as fallback
             resp.setPaymentUrlStub("/payment/stub?invoiceId=" + invoiceId
                     + "&amount=" + paidAmount + "&bookingId=" + bookingId);
             return resp;

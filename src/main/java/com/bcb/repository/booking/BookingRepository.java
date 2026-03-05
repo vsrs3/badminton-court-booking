@@ -26,4 +26,21 @@ public interface BookingRepository {
      * Finds PENDING bookings whose hold has expired.
      */
     List<Booking> findExpiredPendingBookings();
+
+    /**
+     * Verifies booking belongs to a given account and returns [bookingStatus, facilityName].
+     * Returns null if not found or not owned by accountId.
+     *
+     * @author AnhTN
+     */
+    String[] findBookingOwnershipInfo(int bookingId, int accountId);
+
+    /**
+     * Extends hold_expired_at for a PENDING booking.
+     *
+     * @param bookingId       the booking to extend hold for
+     * @param newHoldExpireAt the new hold expiry timestamp
+     * @author AnhTN
+     */
+    void extendHold(int bookingId, java.time.LocalDateTime newHoldExpireAt);
 }
