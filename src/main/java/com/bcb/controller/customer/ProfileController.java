@@ -1,4 +1,4 @@
-package com.bcb.controller;
+package com.bcb.controller.customer;
 
 import com.bcb.model.Account;
 import jakarta.servlet.ServletException;

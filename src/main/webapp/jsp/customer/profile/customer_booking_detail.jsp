@@ -3,76 +3,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<style>
-    .detail-section {
-        background: white;
-        border: 1px solid #F3F4F6;
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-    }
-    .detail-section h3 {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #374151;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #F9FAFB;
-    }
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-    .detail-label {
-        font-size: 0.8rem;
-        color: #6B7280;
-    }
-    .detail-value {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #1F2937;
-        text-align: right;
-    }
-    .slot-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.6rem 0.75rem;
-        background-color: #F9FAFB;
-        border-radius: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    .slot-row:last-child {
-        margin-bottom: 0;
-    }
-    /* Reuse badge styles from customer_history */
-    .detail-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-    }
-    .detail-badge-pending { background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
-    .detail-badge-confirmed { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
-    .detail-badge-completed { background-color: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
-    .detail-badge-cancelled { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
-    .detail-badge-expired { background-color: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
-    .detail-type-single { background-color: #EDE9FE; color: #5B21B6; }
-    .detail-type-recurring { background-color: #FCE7F3; color: #9D174D; }
-</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-booking-detail.css">
 
 <div class="flex flex-col h-full bg-gray-50">
     <c:choose>
@@ -288,13 +219,6 @@
                        class="flex-1 text-center py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
                         ← Quay lại
                     </a>
-                    <c:if test="${d.bookingStatus == 'PENDING' && d.paymentStatus == 'UNPAID'}">
-                        <button type="button" id="detailPayBtn"
-                                class="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors"
-                                onclick="retryPaymentDetail(${d.bookingId}, this)">
-                            Thanh toán
-                        </button>
-                    </c:if>
                     <c:if test="${(d.bookingStatus == 'PENDING' || d.bookingStatus == 'CONFIRMED') && d.paymentStatus == 'UNPAID'}">
                         <form method="post" action="${pageContext.request.contextPath}/my-bookings"
                               class="flex-1"
@@ -347,38 +271,5 @@
             return false;
         }
         return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
-    }
-
-    function retryPaymentDetail(bookingId, btnEl) {
-        if (btnEl.disabled) return;
-        btnEl.disabled = true;
-        var origText = btnEl.innerHTML;
-        btnEl.innerHTML = 'Đang xử lý...';
-
-        fetch('${pageContext.request.contextPath}/api/payment/retry', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ bookingId: bookingId })
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(json) {
-            if (json.success && json.data && json.data.paymentUrl) {
-                window.location.href = json.data.paymentUrl;
-            } else {
-                var msg = (json.error && json.error.message) || 'Không thể tạo link thanh toán.';
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ icon: 'error', title: 'Lỗi', text: msg });
-                } else { alert(msg); }
-                btnEl.disabled = false;
-                btnEl.innerHTML = origText;
-            }
-        })
-        .catch(function() {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Lỗi kết nối. Vui lòng thử lại.' });
-            } else { alert('Lỗi kết nối.'); }
-            btnEl.disabled = false;
-            btnEl.innerHTML = origText;
-        });
     }
 </script>
