@@ -165,7 +165,7 @@ public class AccountManagementServiceImpl implements AccountManagementService {
 
         Account account = opt.get();
 
-        // 🚫 Không cho xóa ADMIN
+        // Không cho xóa ADMIN
         if ("ADMIN".equalsIgnoreCase(account.getRole())) {
             return false;
         }
