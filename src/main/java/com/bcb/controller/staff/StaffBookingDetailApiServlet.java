@@ -116,7 +116,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 FROM BookingSlot bs
                 JOIN Court c     ON bs.court_id = c.court_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
-                WHERE bs.booking_id = ? AND bs.slot_status <> 'CANCELLED'
+                WHERE bs.booking_id = ?
                 ORDER BY c.court_name, ts.start_time
             """;
 
@@ -268,16 +268,19 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
     }
 
     private String deriveSessionStatus(List<SlotRow> session) {
+        boolean allCancelled = true;
         boolean allCheckout = true;
         boolean allNoShow = true;
         boolean anyCheckedIn = false;
 
         for (SlotRow s : session) {
+            if (!"CANCELLED".equals(s.slotStatus)) allCancelled = false;
             if (!"CHECK_OUT".equals(s.slotStatus)) allCheckout = false;
             if (!"NO_SHOW".equals(s.slotStatus)) allNoShow = false;
             if ("CHECKED_IN".equals(s.slotStatus)) anyCheckedIn = true;
         }
 
+        if (allCancelled) return "CANCELLED";
         if (allNoShow) return "NO_SHOW";
         if (allCheckout) return "COMPLETED";
         if (anyCheckedIn) return "CHECKED_IN";

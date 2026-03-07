@@ -231,14 +231,19 @@
         // Progress: count finished (COMPLETED or NO_SHOW)
         var finishedCount = 0;
         var noShowCount = 0;
+        var cancelledCount = 0;
         sessions.forEach(function (s) {
             if (s.sessionStatus === 'COMPLETED' || s.sessionStatus === 'NO_SHOW') finishedCount++;
             if (s.sessionStatus === 'NO_SHOW') noShowCount++;
+            if (s.sessionStatus === 'CANCELLED') cancelledCount++;
         });
 
         var progressText = finishedCount + '/' + sessions.length + ' ho\u00e0n th\u00e0nh';
         if (noShowCount > 0) {
             progressText += ' (' + noShowCount + ' vắng)';
+        }
+        if (cancelledCount > 0) {
+            progressText += ' (' + cancelledCount + ' hủy)';
         }
         sessionProgress.textContent = progressText;
 
@@ -260,6 +265,8 @@
                 idxEl.innerHTML = '<i class="bi bi-play-fill"></i>';
             } else if (s.sessionStatus === 'NO_SHOW') {
                 idxEl.innerHTML = '<i class="bi bi-person-x-fill"></i>';
+            } else if (s.sessionStatus === 'CANCELLED') {
+                idxEl.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
             } else {
                 idxEl.textContent = i + 1;
             }
@@ -359,6 +366,15 @@
             if (hasReleasableSlot(session)) {
                 appendReleaseButton(container, idx);
             }
+            return;
+        }
+
+        // CANCELLED
+        if (session.sessionStatus === 'CANCELLED') {
+            var cLabel = document.createElement('span');
+            cLabel.className = 'sbd-session-status sbd-ss-label-cancelled';
+            cLabel.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>\u0110\u00e3 h\u1ee7y';
+            container.appendChild(cLabel);
             return;
         }
 
@@ -909,7 +925,7 @@
     }
 
     function sessionStatusLabel(s) {
-        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Ho\u00e0n th\u00e0nh', NO_SHOW: 'Vắng mặt' };
+        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Ho\u00e0n th\u00e0nh', NO_SHOW: 'Vắng mặt', CANCELLED: '\u0110\u00e3 h\u1ee7y' };
         return m[s] || s;
     }
 
@@ -918,7 +934,8 @@
             PENDING: 'sbd-ss-label-pending',
             CHECKED_IN: 'sbd-ss-label-checked_in',
             COMPLETED: 'sbd-ss-label-completed',
-            NO_SHOW: 'sbd-ss-label-no_show'
+            NO_SHOW: 'sbd-ss-label-no_show',
+            CANCELLED: 'sbd-ss-label-cancelled'
         };
         return m[s] || 'sbd-ss-label-pending';
     }

@@ -468,6 +468,7 @@
 .sbd-ss-label-checked_in { background: #D1FAE5; color: #065F46; }
 .sbd-ss-label-completed  { background: #DBEAFE; color: #1E40AF; }
 .sbd-ss-label-waiting    { background: #FEF3C7; color: #92400E; }
+.sbd-ss-label-cancelled  { background: #FEE2E2; color: #991B1B; }
 
 .sbd-session-time-info {
     font-size: 0.6875rem;
@@ -612,6 +613,21 @@
 .sbd-ss-label-no_show {
     background: #FFEDD5;
     color: #C2410C;
+}
+
+/* Session row with CANCELLED status */
+.sbd-session.sbd-ss-cancelled {
+    background: #FEF2F2;
+    border-left: 3px solid #DC2626;
+}
+.sbd-session.sbd-ss-cancelled:hover {
+    background: #FEE2E2;
+}
+
+/* CANCELLED index badge */
+.sbd-session.sbd-ss-cancelled .sbd-session-idx {
+    background: #FEE2E2;
+    color: #B91C1C;
 }
 
 /* NO_SHOW action button */
