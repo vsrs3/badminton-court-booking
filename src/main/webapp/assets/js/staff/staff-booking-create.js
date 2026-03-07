@@ -107,6 +107,30 @@
         hideError();
     });
 
+    function switchToAccountMode(matched) {
+        customerType = 'ACCOUNT';
+        tabAccount.classList.add('active');
+        tabGuest.classList.remove('active');
+        formAccount.classList.remove('d-none');
+        formGuest.classList.add('d-none');
+
+        selectedAccountId.value = matched.accountId;
+        selName.textContent = matched.fullName || '�';
+        selPhone.textContent = matched.phone || '�';
+        selEmail.textContent = matched.email || '�';
+        selectedCustomer.classList.remove('d-none');
+
+        hideError();
+    }
+
+    function confirmGuestPhoneMatched(matched) {
+        var msg = 'So dien thoai nay da ton tai tai khoan CUSTOMER:\n' +
+            '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+            '- ' + (matched.phone || '') + '\n\n' +
+            'He thong se chuyen sang luong Khach co tai khoan. Tiep tuc?';
+        return window.confirm(msg);
+    }
+
     // ─── Customer search (ACCOUNT) ───
     customerSearch.addEventListener('input', function () {
         var q = this.value.trim();
@@ -300,9 +324,19 @@
             .then(function (res) { return res.json(); })
             .then(function (body) {
                 if (!body.success) {
-                    showError(body.message || 'Đặt sân thất bại');
+                    if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
+                        if (confirmGuestPhoneMatched(body.data)) {
+                            switchToAccountMode(body.data);
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
+                            btnSubmit.click();
+                            return;
+                        }
+                    }
+
+                    showError(body.message || 'Dat san that bai');
                     btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
+                    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
                     return;
                 }
 
@@ -384,3 +418,4 @@
     }
 
 })();
+

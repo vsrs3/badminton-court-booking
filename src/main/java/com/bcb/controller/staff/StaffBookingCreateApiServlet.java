@@ -57,6 +57,7 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
             String accountIdStr = extractString(body, "accountId");
             String guestName = extractString(body, "guestName");
             String guestPhone = extractString(body, "guestPhone");
+            guestPhone = normalizePhone(guestPhone);
 
             // Parse slots array
             List<int[]> slots = parseSlots(body); // [courtId, slotId]
@@ -113,7 +114,16 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
                 }
             }
 
-            // Validate slot groups (≥ 2 consecutive per court)
+            // GUEST phone already belongs to a CUSTOMER account:
+            // return structured response so frontend can switch to ACCOUNT flow.
+            if ("GUEST".equals(customerType)) {
+                CustomerAccount matchedAccount = findActiveCustomerByPhone(guestPhone);
+                if (matchedAccount != null) {
+                    sendGuestPhoneMatched(response, matchedAccount);
+                    return;
+                }
+            }
+            // Validate slot groups (>= 2 consecutive per court)
             if (!validateSlotGroups(slots)) {
                 sendError(response, 400, "Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân");
                 return;
@@ -457,9 +467,58 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
         return result;
     }
 
+    private String normalizePhone(String phone) {
+        if (phone == null) return null;
+        return phone.replaceAll("\\s+", "").trim();
+    }
+
+    private CustomerAccount findActiveCustomerByPhone(String phone) throws Exception {
+        if (phone == null || phone.isEmpty()) return null;
+
+        String sql = "SELECT TOP 1 account_id, full_name, phone, email " +
+                "FROM Account WHERE role = 'CUSTOMER' AND is_active = 1 AND phone = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                CustomerAccount out = new CustomerAccount();
+                out.accountId = rs.getInt("account_id");
+                out.fullName = rs.getString("full_name");
+                out.phone = rs.getString("phone");
+                out.email = rs.getString("email");
+                return out;
+            }
+        }
+    }
+
+    private void sendGuestPhoneMatched(HttpServletResponse response, CustomerAccount account) throws IOException {
+        response.setStatus(409);
+        response.getWriter().print(
+                "{\"success\":false," +
+                        "\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\"," +
+                        "\"message\":\"So dien thoai da ton tai tai khoan khach hang\"," +
+                        "\"data\":{" +
+                        "\"accountId\":" + account.accountId + "," +
+                        "\"fullName\":" + StaffAuthUtil.escapeJson(account.fullName) + "," +
+                        "\"phone\":" + StaffAuthUtil.escapeJson(account.phone) + "," +
+                        "\"email\":" + StaffAuthUtil.escapeJson(account.email) +
+                        "}}"
+        );
+    }
+
     private void sendError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.getWriter().print("{\"success\":false,\"message\":" + StaffAuthUtil.escapeJson(message) + "}");
+    }
+
+    private static class CustomerAccount {
+        int accountId;
+        String fullName;
+        String phone;
+        String email;
     }
 
     // Custom exception for slot conflicts
@@ -467,3 +526,4 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
         public SlotConflictException() { super("Slot conflict"); }
     }
 }
+
