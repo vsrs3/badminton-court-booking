@@ -148,6 +148,7 @@
 <script>
     window.ST_CTX = '${pageContext.request.contextPath}';
 </script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-create.js"></script>
 
 </body>
