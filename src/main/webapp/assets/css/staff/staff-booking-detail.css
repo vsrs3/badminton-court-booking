@@ -1,5 +1,5 @@
 /* ================================================================
-   STAFF BOOKING DETAIL — staff-booking-detail.css
+   STAFF BOOKING DETAIL - staff-booking-detail.css
    Prefix: sbd- (staff-booking-detail)
    Task 8 v2: Session-based checkin/checkout + Payment confirmation
    ================================================================ */
@@ -369,7 +369,7 @@
 }
 
 /* ================================================================
-   SESSION CARD — Phiên chơi
+   SESSION CARD - Phien choi
    ================================================================ */
 
 .sbd-session-progress {
@@ -622,6 +622,15 @@
 .sbd-btn-noshow:hover:not(:disabled) {
     background: #C2410C;
     box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);
+}
+
+.sbd-btn-release {
+    background: #0F766E;
+    color: white;
+}
+.sbd-btn-release:hover:not(:disabled) {
+    background: #0D9488;
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
 }
 
 /* Toast warning type (for no-show notifications) */

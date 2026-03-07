@@ -9,15 +9,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * REST API: GET /api/staff/booking/detail/{bookingId}
- *
- * Returns booking detail with slots grouped into "sessions" (phiên chơi).
- * A session = 2+ consecutive slots on the same court (no time gap).
  */
 @WebServlet(name = "StaffBookingDetailApiServlet", urlPatterns = {"/api/staff/booking/detail/*"})
 public class StaffBookingDetailApiServlet extends HttpServlet {
@@ -65,7 +66,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
     private String buildDetailJson(int bookingId, int staffFacilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
 
-            // ─── 1. Booking info ───
             String sqlBooking = """
                 SELECT b.booking_id, b.booking_date, b.booking_status, b.created_at, b.facility_id,
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
@@ -77,9 +77,13 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 WHERE b.booking_id = ?
             """;
 
-            StringBuilder json = new StringBuilder(2048);
-            String bookingDate, bookingStatus, createdAt;
-            String customerName, customerPhone, customerType;
+            StringBuilder json = new StringBuilder(4096);
+            String bookingDate;
+            String bookingStatus;
+            String createdAt;
+            String customerName;
+            String customerPhone;
+            String customerType;
 
             try (PreparedStatement ps = conn.prepareStatement(sqlBooking)) {
                 ps.setInt(1, bookingId);
@@ -105,15 +109,14 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
             json.append(",\"customerPhone\":").append(esc(customerPhone));
             json.append(",\"customerType\":\"").append(customerType).append("\"");
 
-            // ─── 2. Fetch all slots ordered for session grouping ───
             String sqlSlots = """
                 SELECT bs.booking_slot_id, bs.court_id, c.court_name,
                        bs.slot_id, ts.start_time, ts.end_time,
-                       bs.price, bs.slot_status, bs.checkin_time, bs.checkout_time
+                       bs.price, bs.slot_status, bs.is_released, bs.checkin_time, bs.checkout_time
                 FROM BookingSlot bs
                 JOIN Court c     ON bs.court_id = c.court_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
-                WHERE bs.booking_id = ?
+                WHERE bs.booking_id = ? AND bs.slot_status <> 'CANCELLED'
                 ORDER BY c.court_name, ts.start_time
             """;
 
@@ -131,6 +134,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                         s.endTime = rs.getTime("end_time");
                         s.price = rs.getBigDecimal("price");
                         s.slotStatus = rs.getString("slot_status");
+                        s.released = rs.getBoolean("is_released");
                         s.checkinTime = rs.getTimestamp("checkin_time");
                         s.checkoutTime = rs.getTimestamp("checkout_time");
                         allSlots.add(s);
@@ -138,7 +142,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 }
             }
 
-            // ─── 3. Group into sessions ───
             List<List<SlotRow>> sessions = groupIntoSessions(allSlots);
 
             json.append(",\"sessions\":[");
@@ -148,16 +151,10 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 SlotRow first = session.get(0);
                 SlotRow last = session.get(session.size() - 1);
 
-                // Session status: derive from slot statuses
                 String sessionStatus = deriveSessionStatus(session);
+                String checkinTimeStr = first.checkinTime != null ? tsToStr(first.checkinTime) : null;
+                String checkoutTimeStr = last.checkoutTime != null ? tsToStr(last.checkoutTime) : null;
 
-                // Checkin/checkout times from slots
-                String checkinTimeStr = null;
-                String checkoutTimeStr = null;
-                if (first.checkinTime != null) checkinTimeStr = tsToStr(first.checkinTime);
-                if (last.checkoutTime != null) checkoutTimeStr = tsToStr(last.checkoutTime);
-
-                // Total price
                 java.math.BigDecimal totalPrice = java.math.BigDecimal.ZERO;
                 for (SlotRow s : session) {
                     if (s.price != null) totalPrice = totalPrice.add(s.price);
@@ -174,7 +171,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 json.append(",\"checkinTime\":").append(esc(checkinTimeStr));
                 json.append(",\"checkoutTime\":").append(esc(checkoutTimeStr));
 
-                // Include slot IDs for reference
                 json.append(",\"bookingSlotIds\":[");
                 for (int j = 0; j < session.size(); j++) {
                     if (j > 0) json.append(",");
@@ -182,36 +178,67 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
                 }
                 json.append("]");
 
+                json.append(",\"bookingSlots\":[");
+                for (int j = 0; j < session.size(); j++) {
+                    if (j > 0) json.append(",");
+                    SlotRow slot = session.get(j);
+                    json.append("{\"bookingSlotId\":").append(slot.bookingSlotId);
+                    json.append(",\"courtId\":").append(slot.courtId);
+                    json.append(",\"slotId\":").append(slot.slotId);
+                    json.append(",\"startTime\":\"").append(fmtTime(slot.startTime)).append("\"");
+                    json.append(",\"endTime\":\"").append(fmtTime(slot.endTime)).append("\"");
+                    json.append(",\"slotStatus\":\"").append(slot.slotStatus).append("\"");
+                    json.append(",\"released\":").append(slot.released);
+                    json.append("}");
+                }
+                json.append("]");
+
                 json.append("}");
             }
             json.append("]");
 
-            // ─── 4. Invoice ───
+            json.append(",\"slots\":[");
+            for (int i = 0; i < allSlots.size(); i++) {
+                if (i > 0) json.append(",");
+                SlotRow slot = allSlots.get(i);
+                json.append("{\"bookingSlotId\":").append(slot.bookingSlotId);
+                json.append(",\"courtId\":").append(slot.courtId);
+                json.append(",\"slotId\":").append(slot.slotId);
+                json.append(",\"startTime\":\"").append(fmtTime(slot.startTime)).append("\"");
+                json.append(",\"endTime\":\"").append(fmtTime(slot.endTime)).append("\"");
+                json.append(",\"slotStatus\":\"").append(slot.slotStatus).append("\"");
+                json.append(",\"released\":").append(slot.released);
+                json.append("}");
+            }
+            json.append("]");
+
             json.append(",\"invoice\":");
             try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT total_amount, paid_amount, payment_status FROM Invoice WHERE booking_id = ?")) {
+                    "SELECT total_amount, paid_amount, payment_status, refund_due, refund_status FROM Invoice WHERE booking_id = ?")) {
                 ps.setInt(1, bookingId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         json.append("{\"totalAmount\":").append(rs.getBigDecimal("total_amount"));
                         json.append(",\"paidAmount\":").append(rs.getBigDecimal("paid_amount"));
-                        json.append(",\"paymentStatus\":\"").append(rs.getString("payment_status")).append("\"}");
+                        json.append(",\"paymentStatus\":\"").append(rs.getString("payment_status")).append("\"");
+                        json.append(",\"refundDue\":").append(rs.getBigDecimal("refund_due"));
+                        json.append(",\"refundStatus\":\"").append(rs.getString("refund_status")).append("\"}");
                     } else {
                         json.append("null");
                     }
                 }
             }
 
+            StaffBookingSnapshotTokenUtil.Snapshot snapshot =
+                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, staffFacilityId);
+            String etag = snapshot != null ? StaffBookingSnapshotTokenUtil.computeEtag(snapshot) : null;
+            json.append(",\"etag\":").append(esc(etag));
+
             json.append("}}");
             return json.toString();
         }
     }
 
-    /**
-     * Group slots into sessions.
-     * Session = consecutive slots (no time gap) on the same court.
-     * Slots must be pre-sorted by court_name, start_time.
-     */
     private List<List<SlotRow>> groupIntoSessions(List<SlotRow> slots) {
         List<List<SlotRow>> sessions = new ArrayList<>();
         if (slots.isEmpty()) return sessions;
@@ -223,7 +250,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
             SlotRow prev = slots.get(i - 1);
             SlotRow curr = slots.get(i);
 
-            // Same court AND start_time == prev.end_time → consecutive
             boolean sameCourt = (prev.courtId == curr.courtId);
             boolean consecutive = prev.endTime.equals(curr.startTime);
 
@@ -237,19 +263,10 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         }
         sessions.add(current);
 
-        // Sort sessions by start_time
         sessions.sort((a, b) -> a.get(0).startTime.compareTo(b.get(0).startTime));
-
         return sessions;
     }
 
-    /**
-     * Derive session status from slot statuses:
-     * - All NO_SHOW → "NO_SHOW"
-     * - All CHECK_OUT → "COMPLETED"
-     * - Any CHECKED_IN → "CHECKED_IN"
-     * - Otherwise → "PENDING" (waiting for check-in)
-     */
     private String deriveSessionStatus(List<SlotRow> session) {
         boolean allCheckout = true;
         boolean allNoShow = true;
@@ -280,7 +297,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         return StaffAuthUtil.escapeJson(val);
     }
 
-    // ─── Inner class for slot data ───
     private static class SlotRow {
         int bookingSlotId;
         int courtId;
@@ -290,7 +306,9 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         Time endTime;
         java.math.BigDecimal price;
         String slotStatus;
+        boolean released;
         Timestamp checkinTime;
         Timestamp checkoutTime;
     }
 }
+
