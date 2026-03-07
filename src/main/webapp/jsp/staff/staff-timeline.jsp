@@ -167,6 +167,7 @@
     window.ST_FACILITY_ID = '${sessionScope.facilityId}';
 </script>
 
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-timeline.js"></script>
 
 </body>

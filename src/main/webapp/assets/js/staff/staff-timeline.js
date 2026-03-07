@@ -1,4 +1,4 @@
-/**
+﻿/**
  * staff-timeline.js - proxy create mode + booking edit mode
  */
 (function () {
@@ -228,8 +228,9 @@
                 if (!body.success) throw new Error(body.message || 'L\u1ed7i');
                 var d = body.data;
                 if (d.bookingStatus !== 'CONFIRMED') {
-                    alert('Ch\u1ec9 c\u00f3 th\u1ec3 ch\u1ec9nh s\u1eeda booking \u1edf tr\u1ea1ng th\u00e1i CONFIRMED');
-                    window.location.href = CTX + '/staff/booking/detail/' + editBookingId;
+                    uiAlert('Chi co the chinh sua booking o trang thai CONFIRMED', 'Khong the chinh sua').then(function () {
+                        window.location.href = CTX + '/staff/booking/detail/' + editBookingId;
+                    });
                     return;
                 }
 
@@ -264,8 +265,9 @@
             })
             .catch(function (err) {
                 console.error('Edit context error:', err);
-                alert(err.message || 'Kh\u00f4ng th\u1ec3 m\u1edf d\u1eef li\u1ec7u ch\u1ec9nh s\u1eeda booking');
-                window.location.href = CTX + '/staff/timeline?date=' + encodeURIComponent(currentDate);
+                uiAlert(err.message || 'Khong the mo du lieu chinh sua booking', 'Loi').then(function () {
+                    window.location.href = CTX + '/staff/timeline?date=' + encodeURIComponent(currentDate);
+                });
             });
     }
 
@@ -549,7 +551,7 @@
 
     function goToCreatePage() {
         if (!validateSelection()) {
-            alert('Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân.');
+            uiAlert('Moi phien choi phai co it nhat 2 slot lien tiep tren cung 1 san.', 'Du lieu chua hop le');
             return;
         }
 
@@ -557,15 +559,15 @@
         window.location.href = CTX + '/staff/booking/create';
     }
 
-    function saveEditChanges() {
+    async function saveEditChanges() {
         if (!validateSelection()) {
-            alert('Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân.');
+            uiAlert('M\u1ed7i phi\u00ean ch\u01a1i ph\u1ea3i c\u00f3 \u00edt nh\u1ea5t 2 slot li\u00ean ti\u1ebfp tr\u00ean c\u00f9ng 1 s\u00e2n.', 'D\u1eef li\u1ec7u ch\u01b0a h\u1ee3p l\u1ec7');
             return;
         }
 
         var delta = buildEditDelta();
         if (delta.addSlots.length === 0 && delta.removeBookingSlotIds.length === 0) {
-            alert('Không có thay đổi để lưu.');
+            uiAlert('Kh\u00f4ng c\u00f3 thay \u0111\u1ed5i \u0111\u1ec3 l\u01b0u.', 'Th\u00f4ng b\u00e1o');
             return;
         }
 
@@ -576,61 +578,58 @@
 
         var reason = '';
         if (removeAllEditable) {
-            if (!confirm('Bạn sắp bỏ toàn bộ slot còn lại. Booking có thể chuyển sang CANCELLED.')) {
-                return;
-            }
-            if (!confirm('Xác nhận lần 2: bạn chắc chắn muốn hủy toàn bộ slot còn lại?')) {
-                return;
-            }
+            var firstConfirm = await uiConfirm('B\u1ea1n s\u1eafp b\u1ecf to\u00e0n b\u1ed9 slot c\u00f2n l\u1ea1i. Booking c\u00f3 th\u1ec3 chuy\u1ec3n sang CANCELLED.', 'X\u00e1c nh\u1eadn thay \u0111\u1ed5i l\u1edbn');
+            if (!firstConfirm) return;
 
-            reason = prompt('Nhập lý do hủy (bắt buộc):', '') || '';
-            if (!reason.trim()) {
-                alert('Vui lòng nhập lý do hủy.');
+            var secondConfirm = await uiConfirm('X\u00e1c nh\u1eadn l\u1ea7n 2: b\u1ea1n ch\u1eafc ch\u1eafn mu\u1ed1n h\u1ee7y to\u00e0n b\u1ed9 slot c\u00f2n l\u1ea1i?', 'X\u00e1c nh\u1eadn l\u1ea7n 2');
+            if (!secondConfirm) return;
+
+            reason = await uiPrompt('Nh\u1eadp l\u00fd do h\u1ee7y (b\u1eaft bu\u1ed9c):', '', 'L\u00fd do h\u1ee7y');
+            if (reason == null || !reason.trim()) {
+                uiAlert('Vui l\u00f2ng nh\u1eadp l\u00fd do h\u1ee7y.', 'Thi\u1ebfu th\u00f4ng tin');
                 return;
             }
         } else {
-            reason = prompt('Nhập ghi chú thay đổi (không bắt buộc):', '') || '';
+            reason = await uiPrompt('Nh\u1eadp ghi ch\u00fa thay \u0111\u1ed5i (kh\u00f4ng b\u1eaft bu\u1ed9c):', '', 'Ghi ch\u00fa thay \u0111\u1ed5i');
+            if (reason == null) return;
         }
 
         btnContinue.disabled = true;
-        btnContinue.innerHTML = '<span class="sbc-spinner"></span>Đang lưu...';
+        btnContinue.innerHTML = '<span class="sbc-spinner"></span>\u0110ang l\u01b0u...';
 
-        fetch(CTX + '/api/staff/booking/edit/save', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                bookingId: parseInt(editBookingId, 10),
-                etag: editEtag,
-                addSlots: delta.addSlots,
-                removeBookingSlotIds: delta.removeBookingSlotIds,
-                reason: reason.trim()
-            })
-        })
-            .then(function (res) {
-                return res.json().then(function (body) { return { ok: res.ok, body: body }; });
-            })
-            .then(function (resBody) {
-                if (!resBody.ok || !resBody.body.success) {
-                    if (resBody.body && resBody.body.data && resBody.body.data.currentEtag) {
-                        editEtag = resBody.body.data.currentEtag;
-                    }
-                    alert((resBody.body && resBody.body.message) || 'Lưu thay đổi thất bại');
-                    return;
-                }
-
-                alert('Lưu thay đổi thành công');
-                sessionStorage.setItem('staffBookingListDirty', '1');
-                window.location.href = CTX + '/staff/booking/detail/' + editBookingId;
-            })
-            .catch(function (err) {
-                console.error('Save edit error:', err);
-                alert('Lỗi kết nối. Vui lòng thử lại.');
-            })
-            .finally(function () {
-                btnContinue.disabled = false;
-                btnContinue.innerHTML = '<i class="bi bi-save me-1"></i>Lưu thay đổi';
+        try {
+            var res = await fetch(CTX + '/api/staff/booking/edit/save', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    bookingId: parseInt(editBookingId, 10),
+                    etag: editEtag,
+                    addSlots: delta.addSlots,
+                    removeBookingSlotIds: delta.removeBookingSlotIds,
+                    reason: (reason || '').trim()
+                })
             });
+
+            var body = await res.json();
+            if (!res.ok || !body.success) {
+                if (body && body.data && body.data.currentEtag) {
+                    editEtag = body.data.currentEtag;
+                }
+                await uiAlert((body && body.message) || 'L\u01b0u thay \u0111\u1ed5i th\u1ea5t b\u1ea1i', 'L\u01b0u th\u1ea5t b\u1ea1i');
+                return;
+            }
+
+            await uiAlert('L\u01b0u thay \u0111\u1ed5i th\u00e0nh c\u00f4ng', 'Th\u00e0nh c\u00f4ng');
+            sessionStorage.setItem('staffBookingListDirty', '1');
+            window.location.href = CTX + '/staff/booking/detail/' + editBookingId;
+        } catch (err) {
+            console.error('Save edit error:', err);
+            uiAlert('L\u1ed7i k\u1ebft n\u1ed1i. Vui l\u00f2ng th\u1eed l\u1ea1i.', 'L\u1ed7i');
+        } finally {
+            btnContinue.disabled = false;
+            btnContinue.innerHTML = '<i class="bi bi-save me-1"></i>L\u01b0u thay \u0111\u1ed5i';
+        }
     }
     function exitMode() {
         if (mode === MODE_EDIT && editBookingId) {
@@ -643,6 +642,34 @@
         editBookingId = null;
         editEtag = null;
         fetchTimeline(currentDate || todayStr());
+    }
+
+
+
+    function uiAlert(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
+            return window.StaffDialog.alert({ title: title || 'Thong bao', message: message || '' });
+        }
+        alert(message || '');
+        return Promise.resolve();
+    }
+
+    function uiConfirm(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
+            return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+        }
+        return Promise.resolve(confirm(message || ''));
+    }
+
+    function uiPrompt(message, defaultValue, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.prompt === 'function') {
+            return window.StaffDialog.prompt({
+                title: title || 'Nhap thong tin',
+                message: message || '',
+                defaultValue: defaultValue || ''
+            });
+        }
+        return Promise.resolve(prompt(message || '', defaultValue || ''));
     }
 
     function statusLabel(status) {

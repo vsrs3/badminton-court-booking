@@ -604,10 +604,11 @@
     // CHECK-IN / CHECK-OUT / NO-SHOW HANDLERS
     // ═══════════════════════════════════════════
 
-    function handleCheckin(sessionIndex) {
+    async function handleCheckin(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        if (!confirm('X\u00e1c nh\u1eadn CHECK-IN phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')')) return;
+        var confirmMsg = 'X\u00e1c nh\u1eadn CHECK-IN phi\u00ean ' + (sessionIndex + 1) + '?\n' +
+            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')';
+        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn check-in'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-checkin');
         if (btn) {
@@ -664,10 +665,11 @@
             });
     }
 
-    function handleCheckout(sessionIndex) {
+    async function handleCheckout(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        if (!confirm('X\u00e1c nh\u1eadn CHECK-OUT phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')')) return;
+        var confirmMsg = 'X\u00e1c nh\u1eadn CHECK-OUT phi\u00ean ' + (sessionIndex + 1) + '?\n' +
+            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')';
+        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn check-out'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn');
         if (btn) {
@@ -712,11 +714,12 @@
             });
     }
 
-    function handleNoShow(sessionIndex) {
+    async function handleNoShow(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        if (!confirm('\u0110\u00e1nh d\u1ea5u V\u1eaeNG M\u1eb6T phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')\n\n' +
-            'H\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c.')) return;
+        var confirmMsg = '\u0110\u00e1nh d\u1ea5u V\u1eaeNG M\u1eb6T phi\u00ean ' + (sessionIndex + 1) + '?\n' +
+            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')\n\n' +
+            'H\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c.';
+        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn no-show'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-noshow');
         if (btn) {
@@ -778,7 +781,7 @@
     // TOAST
     // ═══════════════════════════════════════════
 
-    function handleReleaseSession(sessionIndex) {
+    async function handleReleaseSession(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
         var bookingSlots = (session.bookingSlots || []).filter(function (slot) {
             return !slot.released && slot.slotStatus === 'NO_SHOW';
@@ -789,9 +792,11 @@
             return;
         }
 
-        if (!confirm('Gi\u1ea3i ph\u00f3ng to\u00e0n b\u1ed9 slot NO_SHOW c\u1ee7a phi\u00ean ' + (sessionIndex + 1) + '?')) return;
+        if (!(await uiConfirm('Gi\u1ea3i ph\u00f3ng to\u00e0n b\u1ed9 slot NO_SHOW c\u1ee7a phi\u00ean ' + (sessionIndex + 1) + '?', 'X\u00e1c nh\u1eadn gi\u1ea3i ph\u00f3ng'))) return;
 
-        var reason = prompt('Nh\u1eadp l\u00fd do gi\u1ea3i ph\u00f3ng slot NO_SHOW (kh\u00f4ng b\u1eaft bu\u1ed9c):', '') || '';
+        var reason = await uiPrompt('Nh\u1eadp l\u00fd do gi\u1ea3i ph\u00f3ng slot NO_SHOW (kh\u00f4ng b\u1eaft bu\u1ed9c):', '', 'L\u00fd do gi\u1ea3i ph\u00f3ng');
+        if (reason == null) return;
+        reason = reason || '';
         var idx = 0;
 
         function releaseNext() {
@@ -837,11 +842,12 @@
         releaseNext();
     }
 
-    function handleCancelRemaining() {
+    async function handleCancelRemaining() {
         if (!bookingData || bookingData.bookingStatus !== 'CONFIRMED') return;
-        if (!confirm('H\u1ee7y to\u00e0n b\u1ed9 c\u00e1c slot c\u00f2n l\u1ea1i c\u1ee7a booking n\u00e0y?')) return;
+        if (!(await uiConfirm('H\u1ee7y to\u00e0n b\u1ed9 c\u00e1c slot c\u00f2n l\u1ea1i c\u1ee7a booking n\u00e0y?', 'X\u00e1c nh\u1eadn h\u1ee7y ph\u1ea7n c\u00f2n l\u1ea1i'))) return;
 
-        var reason = prompt('Nh\u1eadp l\u00fd do h\u1ee7y (b\u1eaft bu\u1ed9c):', '');
+        var reason = await uiPrompt('Nh\u1eadp l\u00fd do h\u1ee7y (b\u1eaft bu\u1ed9c):', '', 'L\u00fd do h\u1ee7y');
+        if (reason == null) return;
         if (!reason || !reason.trim()) {
             showToast('Vui l\u00f2ng nh\u1eadp l\u00fd do h\u1ee7y', 'error');
             return;
@@ -877,6 +883,34 @@
                 console.error('Cancel remaining error:', err);
                 showToast(err.message || 'H\u1ee7y booking th\u1ea5t b\u1ea1i', 'error');
             });
+    }
+
+
+
+    function uiAlert(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
+            return window.StaffDialog.alert({ title: title || 'Thong bao', message: message || '' });
+        }
+        alert(message || '');
+        return Promise.resolve();
+    }
+
+    function uiConfirm(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
+            return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+        }
+        return Promise.resolve(confirm(message || ''));
+    }
+
+    function uiPrompt(message, defaultValue, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.prompt === 'function') {
+            return window.StaffDialog.prompt({
+                title: title || 'Nhap thong tin',
+                message: message || '',
+                defaultValue: defaultValue || ''
+            });
+        }
+        return Promise.resolve(prompt(message || '', defaultValue || ''));
     }
 
     function showToast(msg, type) {

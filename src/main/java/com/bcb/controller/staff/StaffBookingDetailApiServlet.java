@@ -148,24 +148,35 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
             for (int i = 0; i < sessions.size(); i++) {
                 if (i > 0) json.append(",");
                 List<SlotRow> session = sessions.get(i);
-                SlotRow first = session.get(0);
-                SlotRow last = session.get(session.size() - 1);
-
                 String sessionStatus = deriveSessionStatus(session);
+
+                List<SlotRow> activeSlots = new ArrayList<>();
+                for (SlotRow s : session) {
+                    if (!"CANCELLED".equals(s.slotStatus)) {
+                        activeSlots.add(s);
+                    }
+                }
+
+                List<SlotRow> displaySlots = activeSlots.isEmpty() ? session : activeSlots;
+                SlotRow first = displaySlots.get(0);
+                SlotRow last = displaySlots.get(displaySlots.size() - 1);
+
                 String checkinTimeStr = first.checkinTime != null ? tsToStr(first.checkinTime) : null;
                 String checkoutTimeStr = last.checkoutTime != null ? tsToStr(last.checkoutTime) : null;
 
                 java.math.BigDecimal totalPrice = java.math.BigDecimal.ZERO;
-                for (SlotRow s : session) {
+                for (SlotRow s : activeSlots) {
                     if (s.price != null) totalPrice = totalPrice.add(s.price);
                 }
+
+                int displaySlotCount = activeSlots.isEmpty() ? session.size() : activeSlots.size();
 
                 json.append("{\"sessionIndex\":").append(i);
                 json.append(",\"courtId\":").append(first.courtId);
                 json.append(",\"courtName\":").append(esc(first.courtName));
                 json.append(",\"startTime\":\"").append(fmtTime(first.startTime)).append("\"");
                 json.append(",\"endTime\":\"").append(fmtTime(last.endTime)).append("\"");
-                json.append(",\"slotCount\":").append(session.size());
+                json.append(",\"slotCount\":").append(displaySlotCount);
                 json.append(",\"totalPrice\":").append(totalPrice);
                 json.append(",\"sessionStatus\":\"").append(sessionStatus).append("\"");
                 json.append(",\"checkinTime\":").append(esc(checkinTimeStr));
