@@ -71,4 +71,39 @@ public class BookingRepositoryImpl implements BookingRepository {
         }
         return list;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String[] findBookingOwnershipInfo(int bookingId, int accountId) {
+        String sql = "SELECT b.booking_status, f.name AS facility_name "
+                + "FROM Booking b JOIN Facility f ON b.facility_id = f.facility_id "
+                + "WHERE b.booking_id = ? AND b.account_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setInt(2, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new String[]{rs.getString("booking_status"), rs.getString("facility_name")};
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find booking ownership info", e);
+        }
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void extendHold(int bookingId, java.time.LocalDateTime newHoldExpireAt) {
+        String sql = "UPDATE Booking SET hold_expired_at = ? WHERE booking_id = ? AND booking_status = 'PENDING'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, Timestamp.valueOf(newHoldExpireAt));
+            ps.setInt(2, bookingId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to extend hold for booking #" + bookingId, e);
+        }
+    }
 }

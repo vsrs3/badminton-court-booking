@@ -1052,14 +1052,15 @@ const contextPath = window.location.pathname.split('/')[1]
             });
         }
 
-        // ✅ NEW: History button requires login
+        // ✅ History button requires login — <a> tag, block if not logged in
         const historyBtn = document.getElementById('historyBtn');
         if (historyBtn) {
-            historyBtn.addEventListener('click', function() {
-                if (requireLogin('Lịch sử đặt sân')) {
-                    // Navigate to history page
-                    console.log('📅 Navigate to booking history');
+            historyBtn.addEventListener('click', function(e) {
+                if (!isUserLoggedIn()) {
+                    e.preventDefault();
+                    requireLogin('Lịch sử đặt sân');
                 }
+                // If logged in, let <a> navigate naturally to /my-bookings
             });
         }
     }
