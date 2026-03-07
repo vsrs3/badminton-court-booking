@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 
 /**
  * Entity representing an invoice for a booking.
+ * Updated to include voucher discount fields.
+ *
+ * @author AnhTN
  */
 public class Invoice {
     private Integer invoiceId;
@@ -14,6 +17,12 @@ public class Invoice {
     private Integer depositPercent;
     private String paymentStatus;
     private LocalDateTime createdAt;
+
+    /** Voucher applied to this invoice (nullable) */
+    private Integer voucherId;
+
+    /** Actual discount amount applied */
+    private BigDecimal discountAmount;
 
     public Invoice() {}
 
@@ -31,4 +40,8 @@ public class Invoice {
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Integer getVoucherId() { return voucherId; }
+    public void setVoucherId(Integer voucherId) { this.voucherId = voucherId; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
 }

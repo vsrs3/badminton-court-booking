@@ -402,6 +402,60 @@ CREATE TABLE BookingSkip (
 );
 GO
 
+-- Voucher
+CREATE TABLE Voucher (
+                         voucher_id INT IDENTITY(1,1) PRIMARY KEY,
+                         code NVARCHAR(50) COLLATE SQL_Latin1_General_CP1_CS_AS UNIQUE NOT NULL,  -- mã voucher (case-sensitive)
+                         name NVARCHAR(255) NOT NULL,
+                         description NVARCHAR(500) NULL,
+
+                         discount_type VARCHAR(20) NOT NULL
+                             CHECK (discount_type IN ('PERCENTAGE', 'FIXED_AMOUNT')),
+                         discount_value DECIMAL(10,2) NOT NULL,          -- 20.00 = 20% hoặc 50000 = 50k
+
+                         min_order_amount DECIMAL(12,2) DEFAULT 0,       -- đơn tối thiểu (tính trên tiền sân)
+                         max_discount_amount DECIMAL(12,2) NULL,         -- giới hạn giảm tối đa (chỉ dùng cho %)
+
+                         valid_from DATETIME NOT NULL,                   -- thời gian bắt đầu áp dụng
+                         valid_to DATETIME NOT NULL,                     -- thời gian kết thúc
+
+                         usage_limit INT NULL,                           -- tổng số lần dùng toàn hệ thống (NULL = vô hạn)
+                         per_user_limit INT DEFAULT 1,                   -- mỗi user dùng tối đa bao nhiêu lần
+
+                         applicable_booking_type VARCHAR(20) NOT NULL
+                                                        DEFAULT 'SINGLE'
+                             CHECK (applicable_booking_type IN ('SINGLE', 'RECURRING', 'BOTH')),
+
+                         is_active BIT DEFAULT 1,
+                         created_at DATETIME DEFAULT GETDATE(),
+                         updated_at DATETIME NULL
+);
+GO
+
+-- Index quan trọng
+CREATE UNIQUE INDEX UX_Voucher_Code ON Voucher(code);
+CREATE INDEX IX_Voucher_ValidPeriod ON Voucher(valid_from, valid_to);
+
+-- VoucherFacility không có thì áp dụng toàn bộ facility
+CREATE TABLE VoucherFacility (
+                                 voucher_id INT NOT NULL,
+                                 facility_id INT NOT NULL,
+                                 PRIMARY KEY (voucher_id, facility_id),
+                                 FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id) ON DELETE CASCADE,
+                                 FOREIGN KEY (facility_id) REFERENCES Facility(facility_id) ON DELETE CASCADE
+);
+GO
+
+-- VoucherAccount không có thì áp dụng toàn bộ user
+CREATE TABLE VoucherAccount (
+                                voucher_id INT NOT NULL,
+                                account_id INT NOT NULL,
+                                PRIMARY KEY (voucher_id, account_id),
+                                FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id) ON DELETE CASCADE,
+                                FOREIGN KEY (account_id) REFERENCES Account(account_id) ON DELETE CASCADE
+);
+GO
+
 -- Invoice
 CREATE TABLE Invoice (
                          invoice_id INT IDENTITY PRIMARY KEY,
@@ -417,8 +471,11 @@ CREATE TABLE Invoice (
                                                    DEFAULT 'UNPAID',
 
                          created_at DATETIME DEFAULT GETDATE(),
+                         voucher_id INT NULL, -- voucher applied (nếu có)
+                         discount_amount DECIMAL(12,2) DEFAULT 0.00, -- so tien giam gia
 
                          FOREIGN KEY (booking_id) REFERENCES Booking(booking_id),
+                         FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id),
                          CHECK (deposit_percent BETWEEN 0 AND 100)
 
 );
@@ -573,6 +630,26 @@ CREATE TABLE CustomerFavoriteFacility (
                                           UNIQUE (account_id, facility_id)
 );
 GO
+
+-- VoucherUsage luu thong tin dung voucher
+CREATE TABLE VoucherUsage (
+                              usage_id INT IDENTITY(1,1) PRIMARY KEY,
+                              voucher_id INT NOT NULL,
+                              account_id INT NULL,
+                              booking_id INT NOT NULL,
+                              invoice_id INT NOT NULL,
+                              discount_amount DECIMAL(12,2) NOT NULL,     -- số tiền thực tế đã giảm
+                              used_at DATETIME DEFAULT GETDATE(),
+
+                              FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id),
+                              FOREIGN KEY (account_id) REFERENCES Account(account_id),
+                              FOREIGN KEY (booking_id) REFERENCES Booking(booking_id),
+                              FOREIGN KEY (invoice_id) REFERENCES Invoice(invoice_id)
+);
+GO
+
+CREATE INDEX IX_VoucherUsage_Voucher ON VoucherUsage(voucher_id);
+CREATE INDEX IX_VoucherUsage_Account ON VoucherUsage(account_id);
 
 -- Insert sample facilities
 INSERT INTO Facility (name, province, district, ward, address, latitude, longitude, description, open_time, close_time, is_active)
