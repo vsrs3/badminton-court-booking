@@ -1,6 +1,14 @@
 package com.bcb.controller.customer;
 
+import com.bcb.dto.ReviewDTO;
 import com.bcb.model.Account;
+import com.bcb.model.Facility;
+import com.bcb.model.Review;
+import com.bcb.service.ReviewService;
+import com.bcb.service.FacilityService;
+import com.bcb.service.impl.FacilityServiceImpl;
+import com.bcb.service.impl.ReviewServiceImpl;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -15,6 +23,9 @@ import java.io.IOException;
  */
 @WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
 public class ProfileController extends HttpServlet {
+	
+	private final ReviewService reviewService = new ReviewServiceImpl();
+	private final FacilityService facilityService = new FacilityServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -41,8 +52,41 @@ public class ProfileController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + redirectUrl);
             return;
         }
+        
+        // Handle section = review
+        String section = request.getParameter("section");
+        
+        if ("review".equals(section) || "review-updation".equals(section)) {
+            String bookingIdParam = request.getParameter("bookingId");
+            if (bookingIdParam == null || bookingIdParam.isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/my-bookings");
+                return;
+            }
+            try {
+                Integer bookingId  = Integer.parseInt(bookingIdParam);
+                Integer facilityId = reviewService.getFacilityIdFromBooking(account.getAccountId(), bookingId);
+                Facility facility  = facilityService.findById(facilityId);
+
+                session.setAttribute("facilityReview", facility);
+                session.setAttribute("bookingId", bookingId);
+                
+                // load review cũ cho form edit
+                if ("review-updation".equals(section)) {
+                    ReviewDTO dto    = new ReviewDTO(bookingId, account.getAccountId());
+                    Review userReview = reviewService.viewReview(dto);
+                    session.setAttribute("userReview", userReview);
+                }
+
+            } catch (Exception e) {
+                session.setAttribute("errorMessage", "Lỗi: " + e.getMessage());
+                response.sendRedirect(request.getContextPath() + "/my-bookings");
+                return;
+            }
+        }
 
         // Show profile page
-        request.getRequestDispatcher("/jsp/customer/profile/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
     }
+    
+    
 }
