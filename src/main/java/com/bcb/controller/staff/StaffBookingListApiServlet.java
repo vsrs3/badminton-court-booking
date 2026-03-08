@@ -96,8 +96,16 @@ public class StaffBookingListApiServlet extends HttpServlet {
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
                        COALESCE(a.phone, g.phone) AS phone,
                        b.booking_date, b.booking_status, i.payment_status,
-                       (SELECT COUNT(DISTINCT bs2.court_id) FROM BookingSlot bs2 WHERE bs2.booking_id = b.booking_id) AS court_count,
-                       (SELECT TOP 1 c2.court_name FROM BookingSlot bs3 JOIN Court c2 ON bs3.court_id = c2.court_id WHERE bs3.booking_id = b.booking_id ORDER BY c2.court_name) AS first_court_name,
+                       (SELECT COUNT(DISTINCT bs2.court_id)
+                        FROM BookingSlot bs2
+                        WHERE bs2.booking_id = b.booking_id
+                          AND bs2.slot_status <> 'CANCELLED') AS court_count,
+                       (SELECT TOP 1 c2.court_name
+                        FROM BookingSlot bs3
+                        JOIN Court c2 ON bs3.court_id = c2.court_id
+                        WHERE bs3.booking_id = b.booking_id
+                          AND bs3.slot_status <> 'CANCELLED'
+                        ORDER BY c2.court_name) AS first_court_name,
                        CASE WHEN EXISTS (
                            SELECT 1 FROM BookingSlot bsn
                            WHERE bsn.booking_id = b.booking_id AND bsn.slot_status = 'NO_SHOW'
