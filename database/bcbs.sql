@@ -436,7 +436,7 @@ GO
 CREATE UNIQUE INDEX UX_Voucher_Code ON Voucher(code);
 CREATE INDEX IX_Voucher_ValidPeriod ON Voucher(valid_from, valid_to);
 
--- VoucherFacility không có thì áp dụng toàn bộ facility
+-- VoucherFacility nếu voucher_id không có record nào có thì áp dụng toàn bộ facility
 CREATE TABLE VoucherFacility (
                                  voucher_id INT NOT NULL,
                                  facility_id INT NOT NULL,
@@ -446,7 +446,7 @@ CREATE TABLE VoucherFacility (
 );
 GO
 
--- VoucherAccount không có thì áp dụng toàn bộ user
+-- VoucherAccount nếu voucher_id không có record nào thì áp dụng toàn bộ user
 CREATE TABLE VoucherAccount (
                                 voucher_id INT NOT NULL,
                                 account_id INT NOT NULL,

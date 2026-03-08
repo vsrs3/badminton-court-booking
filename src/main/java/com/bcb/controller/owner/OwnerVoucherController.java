@@ -290,11 +290,17 @@ public class OwnerVoucherController extends HttpServlet {
 
     /**
      * Parse facility IDs from form. Returns empty list if "all" is selected.
+     * MultiSelect.js submits hidden inputs with name "facilityIds[]" (with brackets).
      */
     private List<Integer> parseFacilityIds(HttpServletRequest req) {
         String facilityScope = req.getParameter("facilityScope");
         if ("specific".equals(facilityScope)) {
-            String[] ids = req.getParameterValues("facilityIds");
+            // MultiSelect.js renders: <input type="hidden" name="facilityIds[]" value="...">
+            String[] ids = req.getParameterValues("facilityIds[]");
+            if (ids == null) {
+                // fallback: plain <select multiple> without MultiSelect widget
+                ids = req.getParameterValues("facilityIds");
+            }
             if (ids != null) {
                 return Arrays.stream(ids)
                     .filter(s -> s != null && !s.isBlank())
