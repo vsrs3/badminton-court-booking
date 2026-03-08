@@ -8,6 +8,7 @@ import com.bcb.model.Voucher;
 
 import java.util.List;
 import java.util.Optional;
+import java.sql.Connection;
 
 /**
  * Repository interface for Voucher data access operations.
@@ -141,4 +142,45 @@ public interface VoucherRepository {
      * @return count
      */
     int countUsageByVoucherId(int voucherId);
+
+    /**
+     * Find a raw Voucher entity by its code (case-sensitive).
+     * Used by the apply-voucher flow to load full voucher data for validation.
+     *
+     * @param code Voucher code (case-sensitive)
+     * @return Optional Voucher
+     */
+    Optional<Voucher> findByCode(String code);
+
+    /**
+     * Count how many times a specific account has used a specific voucher.
+     * Used to enforce per_user_limit.
+     *
+     * @param voucherId Voucher ID
+     * @param accountId Account ID
+     * @return usage count for this account
+     */
+    int countUsageByVoucherAndAccount(int voucherId, int accountId);
+
+    /**
+     * Count total system-wide usage of a voucher.
+     * Used to enforce global usage_limit.
+     *
+     * @param voucherId Voucher ID
+     * @return total usage count
+     */
+    int countTotalUsageByVoucher(int voucherId);
+
+    /**
+     * Insert a VoucherUsage record (called inside the booking transaction).
+     *
+     * @param conn        Active JDBC connection (part of transaction)
+     * @param voucherId   Voucher ID
+     * @param accountId   Account ID (nullable)
+     * @param bookingId   Booking ID
+     * @param invoiceId   Invoice ID
+     * @param discountAmt Actual discount amount applied
+     */
+    void insertVoucherUsage(Connection conn, int voucherId, Integer accountId,
+                            int bookingId, int invoiceId, java.math.BigDecimal discountAmt);
 }

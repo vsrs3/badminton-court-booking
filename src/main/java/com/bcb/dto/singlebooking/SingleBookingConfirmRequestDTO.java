@@ -13,6 +13,8 @@ public class SingleBookingConfirmRequestDTO {
     private String bookingDate;
     private Integer depositPercent;
     private List<SingleBookingSelectionItemDTO> selections;
+    /** Mã voucher customer đã áp dụng ở preview (null nếu không dùng). */
+    private String voucherCode;
 
     public SingleBookingConfirmRequestDTO() {}
 
@@ -27,4 +29,7 @@ public class SingleBookingConfirmRequestDTO {
 
     public List<SingleBookingSelectionItemDTO> getSelections() { return selections; }
     public void setSelections(List<SingleBookingSelectionItemDTO> selections) { this.selections = selections; }
+
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
 }

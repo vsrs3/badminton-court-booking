@@ -471,6 +471,69 @@ public class VoucherRepositoryImpl implements VoucherRepository {
         return 0;
     }
 
+    @Override
+    public Optional<Voucher> findByCode(String code) {
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT * FROM Voucher WHERE code = ? COLLATE SQL_Latin1_General_CP1_CS_AS")) {
+            ps.setString(1, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return Optional.of(mapToEntity(rs));
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find voucher by code", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public int countUsageByVoucherAndAccount(int voucherId, int accountId) {
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT COUNT(*) FROM VoucherUsage WHERE voucher_id=? AND account_id=?")) {
+            ps.setInt(1, voucherId);
+            ps.setInt(2, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to count usage by account", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public int countTotalUsageByVoucher(int voucherId) {
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT COUNT(*) FROM VoucherUsage WHERE voucher_id=?")) {
+            ps.setInt(1, voucherId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to count total usage", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public void insertVoucherUsage(Connection conn, int voucherId, Integer accountId,
+                                   int bookingId, int invoiceId, java.math.BigDecimal discountAmt) {
+        String sql = "INSERT INTO VoucherUsage (voucher_id, account_id, booking_id, invoice_id, discount_amount) "
+                   + "VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, voucherId);
+            if (accountId != null) ps.setInt(2, accountId); else ps.setNull(2, Types.INTEGER);
+            ps.setInt(3, bookingId);
+            ps.setInt(4, invoiceId);
+            ps.setBigDecimal(5, discountAmt);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to insert VoucherUsage", e);
+        }
+    }
+
     // =====================================================================
     // MAPPERS
     // =====================================================================
