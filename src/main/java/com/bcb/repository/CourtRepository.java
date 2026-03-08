@@ -45,4 +45,14 @@ public interface CourtRepository {
 
 
     List<CourtViewDTO> findByFacilityForView(int facilityId);
+
+    /**
+     * Find all active court names at a facility that start with the given prefix.
+     * Used to detect the max numeric suffix when bulk-creating courts.
+     *
+     * @param facilityId facility to search within
+     * @param prefix     name prefix to match (case-insensitive)
+     * @return list of matching court names
+     */
+    List<String> findNamesByPrefix(int facilityId, String prefix);
 }

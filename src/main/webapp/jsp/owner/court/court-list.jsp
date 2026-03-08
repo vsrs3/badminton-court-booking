@@ -33,16 +33,12 @@
         <%--  ADD --%>
         <div class="card mb-4">
             <div class="card-body">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-end gap-3">
-
-                    <div class="d-flex align-items-end">
-                        <button class="btn btn-accent"
-                                data-bs-toggle="modal"
-                                data-bs-target="#courtModal">
-                            <i class="bi bi-plus-circle me-1"></i> Thêm sân mới
-                        </button>
-                    </div>
-
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-accent"
+                            data-bs-toggle="modal"
+                            data-bs-target="#courtModal">
+                        <i class="bi bi-plus-circle me-1"></i> Thêm sân mới
+                    </button>
                 </div>
             </div>
         </div>
@@ -51,8 +47,8 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0 d-flex align-items-center">
-                    Courts
-                    <small class="text-muted ms-2">(${requestScope.totalRecords} total)</small>
+                    Danh sách sân
+                    <small class="text-muted ms-2">(${requestScope.totalRecords} sân)</small>
                 </h5>
             </div>
 
