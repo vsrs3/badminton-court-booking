@@ -20,3 +20,4 @@ public class StaffBookingEditStatusCountDto {
         this.count = count;
     }
 }
+

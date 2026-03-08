@@ -81,3 +81,4 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
         return String.format("%,.0f", amount) + "d";
     }
 }
+

@@ -62,3 +62,4 @@ public class PaymentCheckServlet extends HttpServlet {
         resp.getWriter().flush();
     }
 }
+

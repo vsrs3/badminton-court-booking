@@ -60,3 +60,4 @@ public class StaffTimelineDataDto {
         this.disabledCells = disabledCells;
     }
 }
+

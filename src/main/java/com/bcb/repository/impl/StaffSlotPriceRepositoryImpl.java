@@ -107,3 +107,4 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
         return rules;
     }
 }
+

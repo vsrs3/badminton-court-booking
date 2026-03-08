@@ -1,6 +1,6 @@
 package com.bcb.service.impl;
 
-import com.bcb.controller.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil;
 import com.bcb.dto.staff.StaffBookingCreateOutcomeDto;
 import com.bcb.dto.staff.StaffBookingCreateSlotDto;
 import com.bcb.dto.staff.StaffCustomerAccountDto;
@@ -323,3 +323,4 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         }
     }
 }
+

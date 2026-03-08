@@ -114,3 +114,4 @@ public class StaffBookingDetailSessionDto {
         this.bookingSlots = bookingSlots;
     }
 }
+

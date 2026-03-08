@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffSlotPriceDataDto;
 import com.bcb.dto.staff.StaffSlotPriceItemDto;
 import com.bcb.service.impl.StaffSlotPriceServiceImpl;
@@ -79,3 +80,6 @@ public class StaffSlotPriceApiServlet extends HttpServlet {
         return json.toString();
     }
 }
+
+
+

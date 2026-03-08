@@ -7,3 +7,4 @@ public interface StaffCheckinService {
 
     String doNoShow(int bookingId, int sessionIndex, int facilityId) throws Exception;
 }
+

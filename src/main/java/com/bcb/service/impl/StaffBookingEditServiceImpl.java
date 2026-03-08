@@ -1,7 +1,7 @@
 package com.bcb.service.impl;
 
-import com.bcb.controller.staff.StaffAuthUtil;
-import com.bcb.controller.staff.StaffBookingSnapshotTokenUtil;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffBookingSnapshotTokenUtil;
 import com.bcb.dto.staff.StaffBookingEditExistingSlotDto;
 import com.bcb.dto.staff.StaffBookingEditOutcomeDto;
 import com.bcb.dto.staff.StaffBookingEditSessionCellDto;
@@ -668,3 +668,4 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
+

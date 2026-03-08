@@ -1,6 +1,6 @@
 package com.bcb.service.impl;
 
-import com.bcb.controller.staff.StaffBookingSnapshotTokenUtil;
+import com.bcb.utils.staff.StaffBookingSnapshotTokenUtil;
 import com.bcb.dto.staff.StaffBookingDetailDataDto;
 import com.bcb.dto.staff.StaffBookingDetailHeaderDto;
 import com.bcb.dto.staff.StaffBookingDetailSessionDto;
@@ -144,3 +144,4 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         return "PENDING";
     }
 }
+

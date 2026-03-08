@@ -80,3 +80,4 @@ public interface AccountManagementRepository {
      */
     boolean isPhoneExistsForOther(String phone, Integer excludeAccountId);
 }
+

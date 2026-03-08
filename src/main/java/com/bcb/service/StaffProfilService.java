@@ -35,3 +35,4 @@ public interface StaffProfilService {
 	 */
 	boolean resetPassword(Integer accountId, String passwordHash);
 }
+

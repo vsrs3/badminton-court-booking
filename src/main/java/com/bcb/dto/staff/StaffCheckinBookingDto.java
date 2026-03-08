@@ -31,3 +31,4 @@ public class StaffCheckinBookingDto {
         this.facilityId = facilityId;
     }
 }
+

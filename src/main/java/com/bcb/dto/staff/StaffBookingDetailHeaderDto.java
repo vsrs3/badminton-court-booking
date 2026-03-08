@@ -74,3 +74,4 @@ public class StaffBookingDetailHeaderDto {
         this.customerType = customerType;
     }
 }
+

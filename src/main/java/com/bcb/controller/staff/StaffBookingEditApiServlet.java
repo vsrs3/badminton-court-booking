@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffBookingEditOutcomeDto;
 import com.bcb.service.impl.StaffBookingEditServiceImpl;
 import com.bcb.service.staff.StaffBookingEditService;
@@ -67,3 +68,6 @@ public class StaffBookingEditApiServlet extends HttpServlet {
         return sb.toString();
     }
 }
+
+
+

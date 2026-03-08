@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.service.impl.StaffCheckinServiceImpl;
 import com.bcb.service.staff.StaffCheckinService;
 import jakarta.servlet.ServletException;
@@ -102,3 +103,6 @@ public class StaffCheckinApiServlet extends HttpServlet {
         }
     }
 }
+
+
+

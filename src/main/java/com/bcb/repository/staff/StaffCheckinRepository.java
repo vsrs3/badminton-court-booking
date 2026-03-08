@@ -24,3 +24,4 @@ public interface StaffCheckinRepository {
 
     void updateBookingStatus(Connection conn, int bookingId, String status) throws Exception;
 }
+

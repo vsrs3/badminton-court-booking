@@ -14,3 +14,4 @@ public interface StaffConfirmPaymentRepository {
 
     void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal paidAmount) throws Exception;
 }
+

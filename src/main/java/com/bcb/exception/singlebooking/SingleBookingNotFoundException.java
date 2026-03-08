@@ -19,3 +19,4 @@ public class SingleBookingNotFoundException extends RuntimeException {
         return code;
     }
 }
+

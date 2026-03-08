@@ -103,3 +103,4 @@ public class StaffBookingDetailSlotDto {
         this.checkoutTime = checkoutTime;
     }
 }
+

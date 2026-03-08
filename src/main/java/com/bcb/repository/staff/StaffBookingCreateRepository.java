@@ -35,3 +35,4 @@ public interface StaffBookingCreateRepository {
 
     void insertInvoice(Connection conn, int bookingId, BigDecimal totalAmount) throws Exception;
 }
+

@@ -41,3 +41,4 @@ public class StaffPriceRuleDto {
         this.price = price;
     }
 }
+

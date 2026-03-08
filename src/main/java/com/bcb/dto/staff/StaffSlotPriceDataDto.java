@@ -23,3 +23,4 @@ public class StaffSlotPriceDataDto {
         this.prices = prices;
     }
 }
+

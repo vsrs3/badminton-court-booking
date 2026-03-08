@@ -104,3 +104,4 @@ public class StaffBookingDetailDataDto {
         this.etag = etag;
     }
 }
+

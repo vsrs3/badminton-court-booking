@@ -29,3 +29,4 @@ public class StaffTimelineFacilityDto {
         this.closeTime = closeTime;
     }
 }
+

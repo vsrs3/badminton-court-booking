@@ -29,3 +29,4 @@ public class StaffTimelineDisabledCellDto {
         this.reason = reason;
     }
 }
+

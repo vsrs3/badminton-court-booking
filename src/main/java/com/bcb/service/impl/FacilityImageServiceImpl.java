@@ -117,3 +117,4 @@ public class FacilityImageServiceImpl implements FacilityImageService {
         imageRepository.update(currentThumbnail);
     }
 }
+

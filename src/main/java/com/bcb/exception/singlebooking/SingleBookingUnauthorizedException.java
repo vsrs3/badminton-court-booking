@@ -19,3 +19,4 @@ public class SingleBookingUnauthorizedException extends RuntimeException {
         return code;
     }
 }
+

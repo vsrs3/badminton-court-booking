@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffTimelineBookedCellDto;
 import com.bcb.dto.staff.StaffTimelineCourtDto;
 import com.bcb.dto.staff.StaffTimelineDataDto;
@@ -117,3 +118,6 @@ public class StaffTimelineApiServlet extends HttpServlet {
         return json.toString();
     }
 }
+
+
+

@@ -31,3 +31,4 @@ public class StaffTimeSlotDto {
         this.endTime = endTime;
     }
 }
+

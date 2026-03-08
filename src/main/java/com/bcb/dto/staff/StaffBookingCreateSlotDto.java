@@ -28,3 +28,4 @@ public class StaffBookingCreateSlotDto {
         this.slotId = slotId;
     }
 }
+

@@ -40,3 +40,4 @@ public class StaffCheckinSessionSlotRowDto {
         this.endTime = endTime;
     }
 }
+

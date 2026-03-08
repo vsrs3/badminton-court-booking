@@ -50,3 +50,4 @@ public class StaffBookingListDataDto {
         this.bookings = bookings;
     }
 }
+

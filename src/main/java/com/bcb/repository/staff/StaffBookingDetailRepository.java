@@ -14,3 +14,4 @@ public interface StaffBookingDetailRepository {
 
     StaffBookingDetailInvoiceDto findInvoice(Connection conn, int bookingId) throws Exception;
 }
+

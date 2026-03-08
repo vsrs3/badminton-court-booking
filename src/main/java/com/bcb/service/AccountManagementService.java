@@ -40,3 +40,4 @@ public interface AccountManagementService {
 
     boolean deleteAccount(Integer accountId);
 }
+

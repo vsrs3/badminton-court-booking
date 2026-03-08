@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffCustomerSearchItemDto;
 import com.bcb.service.impl.StaffCustomerSearchServiceImpl;
 import com.bcb.service.staff.StaffCustomerSearchService;
@@ -74,3 +75,6 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
         return json.toString();
     }
 }
+
+
+

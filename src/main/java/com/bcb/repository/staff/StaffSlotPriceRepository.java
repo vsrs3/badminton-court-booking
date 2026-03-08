@@ -16,3 +16,4 @@ public interface StaffSlotPriceRepository {
 
     List<StaffPriceRuleDto> findPriceRules(int facilityId, String dayType) throws Exception;
 }
+

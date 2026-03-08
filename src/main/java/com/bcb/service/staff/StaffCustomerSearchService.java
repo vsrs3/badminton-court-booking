@@ -7,3 +7,4 @@ import java.util.List;
 public interface StaffCustomerSearchService {
     List<StaffCustomerSearchItemDto> searchCustomers(String keyword) throws Exception;
 }
+

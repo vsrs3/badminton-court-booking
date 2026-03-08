@@ -17,3 +17,4 @@ public interface CourtScheduleExceptionRepository {
      */
     List<CourtScheduleException> findActiveByFacilityAndDate(int facilityId, LocalDate date);
 }
+

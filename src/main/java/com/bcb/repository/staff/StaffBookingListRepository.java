@@ -10,3 +10,4 @@ public interface StaffBookingListRepository {
 
     List<StaffBookingListItemDto> findBookings(StaffBookingListSearchCriteriaDto criteria, int offset, int size) throws Exception;
 }
+

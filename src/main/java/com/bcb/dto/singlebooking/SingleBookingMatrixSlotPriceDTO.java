@@ -24,3 +24,4 @@ public class SingleBookingMatrixSlotPriceDTO {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
 }
+

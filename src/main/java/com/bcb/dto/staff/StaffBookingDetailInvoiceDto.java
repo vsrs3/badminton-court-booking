@@ -49,3 +49,4 @@ public class StaffBookingDetailInvoiceDto {
         this.refundStatus = refundStatus;
     }
 }
+

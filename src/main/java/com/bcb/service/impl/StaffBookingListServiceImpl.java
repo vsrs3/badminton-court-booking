@@ -33,3 +33,4 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
         return data;
     }
 }
+

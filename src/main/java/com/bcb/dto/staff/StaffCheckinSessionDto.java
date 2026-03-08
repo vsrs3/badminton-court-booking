@@ -33,3 +33,4 @@ public class StaffCheckinSessionDto {
         this.endTime = endTime;
     }
 }
+

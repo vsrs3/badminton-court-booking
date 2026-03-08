@@ -20,3 +20,4 @@ public class StaffFacilityHoursDto {
         this.closeTime = closeTime;
     }
 }
+

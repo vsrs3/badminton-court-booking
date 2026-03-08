@@ -47,3 +47,4 @@ public class StaffBookingListSearchCriteriaDto {
         this.likePattern = likePattern;
     }
 }
+

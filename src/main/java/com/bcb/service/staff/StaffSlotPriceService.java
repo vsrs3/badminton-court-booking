@@ -7,3 +7,4 @@ import java.time.LocalDate;
 public interface StaffSlotPriceService {
     StaffSlotPriceDataDto getSlotPrices(int facilityId, LocalDate bookingDate) throws Exception;
 }
+

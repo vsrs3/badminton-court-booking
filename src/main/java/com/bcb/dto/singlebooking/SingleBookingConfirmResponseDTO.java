@@ -51,3 +51,4 @@ public class SingleBookingConfirmResponseDTO {
     public String getTransactionCode() { return transactionCode; }
     public void setTransactionCode(String transactionCode) { this.transactionCode = transactionCode; }
 }
+

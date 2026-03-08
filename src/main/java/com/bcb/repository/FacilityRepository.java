@@ -86,3 +86,4 @@ public interface FacilityRepository {
 
     Double getAverageRating(Integer facilityId);
 }
+

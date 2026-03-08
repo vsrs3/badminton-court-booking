@@ -21,3 +21,4 @@ public interface StaffTimelineRepository {
     List<StaffTimelineDisabledCellDto> findDisabledCells(int facilityId, LocalDate bookingDate,
                                                          String openTime, String closeTime) throws Exception;
 }
+

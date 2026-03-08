@@ -31,3 +31,4 @@ public class StaffSlotPriceItemDto {
         this.price = price;
     }
 }
+

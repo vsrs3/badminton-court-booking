@@ -20,3 +20,4 @@ public class CourtTypeServiceImpl implements CourtTypeService {
         return courtTypeRepository.findAll();
     }
 }
+

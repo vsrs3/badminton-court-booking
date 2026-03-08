@@ -33,3 +33,4 @@ public class BookingSlotDetailDTO {
     public String getSlotStatus() { return slotStatus; }
     public void setSlotStatus(String slotStatus) { this.slotStatus = slotStatus; }
 }
+

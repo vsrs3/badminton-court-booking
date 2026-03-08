@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffBookingDetailDataDto;
 import com.bcb.dto.staff.StaffBookingDetailInvoiceDto;
 import com.bcb.dto.staff.StaffBookingDetailSessionDto;
@@ -146,3 +147,6 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         return StaffAuthUtil.escapeJson(val);
     }
 }
+
+
+

@@ -1,6 +1,7 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.dto.staff.StaffConfirmPaymentResultDto;
 import com.bcb.service.impl.StaffConfirmPaymentServiceImpl;
 import com.bcb.service.staff.StaffConfirmPaymentService;
@@ -160,3 +161,6 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         }
     }
 }
+
+
+
