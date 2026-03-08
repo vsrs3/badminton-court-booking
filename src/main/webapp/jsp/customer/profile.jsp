@@ -2,6 +2,7 @@
 
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ page isErrorPage="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <!DOCTYPE html>
@@ -11,14 +12,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Badminton Profile</title>
 
+<!-- Tail Wind -->
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Bootrap Icon -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
 <!-- Custom CSS -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/components.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-profile-page.css">
+
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap">
 
 </head>
@@ -47,7 +51,7 @@
 
 			<div
 				class="w-full lg:w-96 flex-shrink-0 border-r border-gray-brand overflow-y-auto">
-				<%@ include file="sidebar.jsp"%>
+				<%@ include file="/jsp/customer/layout/sidebar.jsp"%>
 			</div>
 
 			<div
@@ -60,29 +64,44 @@
 				    switch (section) {
 				        case "history":
 				%>
-				            <%@ include file="customer_history.jsp" %>
+				            <%@ include file="/jsp/customer/profile/customer_history.jsp" %>
 				<%
 			            break;
 				        case "booking-detail":
 				%>
-				            <%@ include file="customer_booking_detail.jsp" %>
+				            <%@ include file="/jsp/customer/profile/customer_booking_detail.jsp" %>
 				<%
 		            	break;
 				        case "settings":
 				%>
-				            <%@ include file="customer_settings.jsp" %>
+				            <%@ include file="/jsp/customer/profile/customer_settings.jsp" %>
 				<%
 			            break;
 				        case "profile-info":
 				%>
-				            <%@ include file="customer_view.jsp" %>
+				            <%@ include file="/jsp/customer/profile/customer_view.jsp" %>
 				<%
 			            break;
 				        case "change-password":
 				%>
-				            <%@ include file="change_password.jsp" %>
+				            <%@ include file="/jsp/customer/profile/change_password.jsp" %>
 				<%
 			            break;
+				        case "review":
+	        	%>
+				            <%@ include file="/jsp/customer/review/review-creation.jsp" %>
+	            <%
+			            break;
+				        case "review-detail":
+	        	%>
+				            <%@ include file="/jsp/customer/review/review-detail.jsp" %>
+	            <%
+	            		break;
+				        case "review-updation":
+	        	%>
+				            <%@ include file="/jsp/customer/review/review-updation.jsp" %>
+	            <%
+				        break;
 				        default:
 				%>
 				            <div class="p-6">Phần không tồn tại</div>
@@ -104,7 +123,7 @@
 	    if (!contentPanel) return; // Không tìm thấy panel → dừng toàn bộ script
 
 	    // Danh sách URL sẽ navigate bình thường, KHÔNG intercept
-	    const EXTERNAL_PATHS = ['/home', '/auth', '/login', '/register', '/review-locations'];
+	    const EXTERNAL_PATHS = ['/home', '/auth', '/login', '/register'];
 
 	    function isExternalLink(href) {
 	        return EXTERNAL_PATHS.some(path => href.includes(path));

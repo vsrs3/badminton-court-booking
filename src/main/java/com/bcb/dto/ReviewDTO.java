@@ -5,13 +5,13 @@ public class ReviewDTO {
 	private Integer bookingId, facilityId, accountId, rating;
 	private String comment;
 	
-	//list location review
+	// list location review
 	public ReviewDTO(Integer facilityId) {
 		super();
 		this.facilityId = facilityId;
 	}
 	
-	//view, create and edit review
+	// edit review
 	public ReviewDTO(Integer bookingId, Integer accountId, Integer rating,
 			String comment) {
 		super();
@@ -20,11 +20,29 @@ public class ReviewDTO {
 		this.rating = rating;
 		this.comment = comment;
 	}
+	
+	// create review
+	public ReviewDTO(Integer bookingId, Integer facilityId, Integer accountId, Integer rating, String comment) {
+		super();
+		this.bookingId = bookingId;
+		this.facilityId = facilityId;
+		this.accountId = accountId;
+		this.rating = rating;
+		this.comment = comment;
+	}
+
+	// view review
+	public ReviewDTO(Integer bookingId, Integer accountId) {
+		super();
+		this.bookingId = bookingId;
+		this.accountId = accountId;
+	}
 
 	public Integer getBookingId() {
 		return bookingId;
 	}
 
+	
 	public void setBookingId(Integer bookingId) {
 		this.bookingId = bookingId;
 	}

@@ -4,6 +4,8 @@ import com.bcb.dto.mybooking.MyBookingDetailDTO;
 import com.bcb.dto.mybooking.MyBookingListDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.model.Account;
+import com.bcb.service.ReviewService;
+import com.bcb.service.impl.ReviewServiceImpl;
 import com.bcb.service.mybooking.MyBookingService;
 import com.bcb.service.mybooking.impl.MyBookingServiceImpl;
 import jakarta.servlet.ServletException;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Servlet for customer "My Bookings" feature.
@@ -29,6 +32,7 @@ import java.util.List;
 public class MyBookingsServlet extends HttpServlet {
 
     private final MyBookingService bookingService = new MyBookingServiceImpl();
+    private final ReviewService reviewService = new ReviewServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -80,6 +84,14 @@ public class MyBookingsServlet extends HttpServlet {
         try {
             List<MyBookingListDTO> bookings = bookingService.getMyBookings(
                     account.getAccountId(), status, dateFrom, dateTo);
+            
+            // Set isReviewed trong MyBookingDTO
+            // true -> bảng Review tồn tại booking_id
+            // false -> bảng Review không tồn tại booking_id
+            Set<Integer> reviewedIds = reviewService.getReviewedBookingIds(account.getAccountId());
+            for (MyBookingListDTO booking : bookings) {
+                booking.setReviewed(reviewedIds.contains(booking.getBookingId()));
+            } //
 
             request.setAttribute("bookings", bookings);
             request.setAttribute("selectedStatus", status != null ? status : "all");
@@ -93,7 +105,7 @@ public class MyBookingsServlet extends HttpServlet {
             request.setAttribute("section", "history");
         }
 
-        request.getRequestDispatcher("/jsp/customer/profile/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
     }
 
     /**
@@ -126,7 +138,7 @@ public class MyBookingsServlet extends HttpServlet {
             request.setAttribute("section", "history");
         }
 
-        request.getRequestDispatcher("/jsp/customer/profile/profile.jsp").forward(request, response);
+        request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
     }
 
     /**

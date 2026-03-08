@@ -19,6 +19,8 @@ public class MyBookingListDTO {
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
     private LocalDateTime createdAt;
     private String thumbnailPath;       // facility image
+    
+    private boolean reviewed;  			//check customer review or not
 
     public MyBookingListDTO() {}
 
@@ -54,4 +56,9 @@ public class MyBookingListDTO {
 
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
+
+	public boolean isReviewed() { return reviewed; }
+	public void setReviewed(boolean reviewed) { this.reviewed = reviewed; }
+    
+    
 }
