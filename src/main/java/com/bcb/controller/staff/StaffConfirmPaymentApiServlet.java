@@ -1,7 +1,9 @@
 package com.bcb.controller.staff;
 
 import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
-import com.bcb.utils.DBContext;
+import com.bcb.dto.staff.StaffConfirmPaymentResultDto;
+import com.bcb.service.impl.StaffConfirmPaymentServiceImpl;
+import com.bcb.service.staff.StaffConfirmPaymentService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -11,9 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 /**
  * REST API for staff to confirm full payment before check-in/check-out.
@@ -23,6 +22,8 @@ import java.sql.ResultSet;
  */
 @WebServlet(name = "StaffConfirmPaymentApiServlet", urlPatterns = {"/api/staff/payment/confirm"})
 public class StaffConfirmPaymentApiServlet extends HttpServlet {
+
+    private final StaffConfirmPaymentService staffConfirmPaymentService = new StaffConfirmPaymentServiceImpl();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -66,8 +67,9 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         }
 
         try {
-            String result = doConfirmPayment(bookingId, amount, method, auth.facilityId, staffId);
-            response.getWriter().print(result);
+            StaffConfirmPaymentResultDto result = staffConfirmPaymentService.confirmPayment(
+                    bookingId, amount, method, auth.facilityId, staffId);
+            response.getWriter().print(buildResponseJson(result));
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatus(500);
@@ -75,99 +77,13 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         }
     }
 
-    private String doConfirmPayment(int bookingId, BigDecimal amount, String method,
-                                    int facilityId, int staffId) throws Exception {
-        try (Connection conn = DBContext.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                // 1) Validate booking belongs to staff facility
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT facility_id FROM Booking WHERE booking_id = ?")) {
-                    ps.setInt(1, bookingId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Khong tim thay booking\"}";
-                        }
-                        if (rs.getInt("facility_id") != facilityId) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Booking khong thuoc co so cua ban\"}";
-                        }
-                    }
-                }
-
-                // 2) Lock and read invoice
-                int invoiceId;
-                BigDecimal totalAmount;
-                BigDecimal paidAmount;
-                String paymentStatus;
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT invoice_id, total_amount, paid_amount, payment_status " +
-                                "FROM Invoice WITH (UPDLOCK, ROWLOCK) WHERE booking_id = ?")) {
-                    ps.setInt(1, bookingId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Khong tim thay hoa don cho booking nay\"}";
-                        }
-                        invoiceId = rs.getInt("invoice_id");
-                        totalAmount = rs.getBigDecimal("total_amount");
-                        paidAmount = rs.getBigDecimal("paid_amount");
-                        paymentStatus = rs.getString("payment_status");
-                    }
-                }
-
-                // 3) Already paid => reject (no insert)
-                if ("PAID".equals(paymentStatus)) {
-                    conn.rollback();
-                    return "{\"success\":false,\"message\":\"Booking da duoc thanh toan day du\"}";
-                }
-
-                // 4) Validate amount must be exactly remaining
-                BigDecimal newPaidAmount = paidAmount.add(amount);
-                if (newPaidAmount.compareTo(totalAmount) != 0) {
-                    BigDecimal remaining = totalAmount.subtract(paidAmount);
-                    conn.rollback();
-                    return "{\"success\":false,\"message\":\"So tien khong hop le. Can thu them dung "
-                            + formatMoney(remaining) + " de du tong tien.\"}";
-                }
-
-                // 5) Insert manual payment log
-                String paymentType = amount.compareTo(totalAmount) == 0 ? "FULL" : "REMAINING";
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO Payment (invoice_id, paid_amount, payment_time, payment_type, method, payment_status, staff_confirm_id, confirm_time) " +
-                                "VALUES (?, ?, GETDATE(), ?, ?, 'SUCCESS', ?, GETDATE())")) {
-                    ps.setInt(1, invoiceId);
-                    ps.setBigDecimal(2, amount);
-                    ps.setString(3, paymentType);
-                    ps.setString(4, method);
-                    ps.setInt(5, staffId);
-                    ps.executeUpdate();
-                }
-
-                // 6) Update invoice
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE Invoice SET paid_amount = ?, payment_status = 'PAID' WHERE booking_id = ?")) {
-                    ps.setBigDecimal(1, totalAmount);
-                    ps.setInt(2, bookingId);
-                    ps.executeUpdate();
-                }
-
-                conn.commit();
-                return "{\"success\":true,\"message\":\"Xac nhan thanh toan thanh cong\"," +
-                        "\"data\":{\"paidAmount\":" + totalAmount + ",\"paymentStatus\":\"PAID\",\"method\":\"" + method + "\"}}";
-            } catch (Exception e) {
-                conn.rollback();
-                throw e;
-            } finally {
-                conn.setAutoCommit(true);
-            }
+    private String buildResponseJson(StaffConfirmPaymentResultDto result) {
+        if (!result.isSuccess()) {
+            return "{\"success\":false,\"message\":\"" + result.getMessage() + "\"}";
         }
-    }
-
-    private String formatMoney(BigDecimal amount) {
-        if (amount == null) return "0d";
-        return String.format("%,.0f", amount) + "d";
+        return "{\"success\":true,\"message\":\"" + result.getMessage() + "\"," +
+                "\"data\":{\"paidAmount\":" + result.getPaidAmount() +
+                ",\"paymentStatus\":\"" + result.getPaymentStatus() + "\",\"method\":\"" + result.getMethod() + "\"}}";
     }
 
     private String readBody(HttpServletRequest request) throws IOException {
@@ -244,4 +160,3 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         }
     }
 }
-
