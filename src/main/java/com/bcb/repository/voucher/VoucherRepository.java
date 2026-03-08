@@ -83,6 +83,24 @@ public interface VoucherRepository {
     int softDelete(int voucherId);
 
     /**
+     * Hard delete voucher permanently from database.
+     * Only safe to call when hasUsageHistory() returns false.
+     *
+     * @param voucherId Voucher ID
+     * @return rows affected
+     */
+    int hardDelete(int voucherId);
+
+    /**
+     * Check whether a voucher has any usage history in VoucherUsage or Invoice tables.
+     * Used to decide soft-delete vs hard-delete.
+     *
+     * @param voucherId Voucher ID
+     * @return true if at least one usage record exists
+     */
+    boolean hasUsageHistory(int voucherId);
+
+    /**
      * Get list of facility IDs linked to a voucher.
      *
      * @param voucherId Voucher ID

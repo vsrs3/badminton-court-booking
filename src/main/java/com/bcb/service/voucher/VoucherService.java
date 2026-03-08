@@ -66,12 +66,15 @@ public interface VoucherService {
     void updateVoucher(Voucher voucher, List<Integer> facilityIds) throws BusinessException;
 
     /**
-     * Soft delete a voucher (set is_active = false).
+     * Delete a voucher.
+     * - If the voucher has usage history (VoucherUsage / Invoice), performs soft-delete (is_active = 0).
+     * - If no usage history exists, performs hard-delete (permanently removed).
      *
      * @param voucherId Voucher ID
+     * @return "SOFT" if soft-deleted, "HARD" if permanently deleted
      * @throws BusinessException if not found
      */
-    void deleteVoucher(int voucherId) throws BusinessException;
+    String deleteVoucher(int voucherId) throws BusinessException;
 
     /**
      * Get dashboard statistics for owner voucher dashboard.

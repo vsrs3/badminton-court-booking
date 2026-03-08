@@ -43,6 +43,12 @@ public class VoucherDTO {
     /** Total discount amount given */
     private BigDecimal totalDiscountGiven;
 
+    /**
+     * True if this voucher has any record in VoucherUsage or Invoice.
+     * Determines soft-delete vs hard-delete on the frontend.
+     */
+    private boolean hasHistory;
+
     public VoucherDTO() {}
 
     // ===== GETTERS & SETTERS =====
@@ -106,4 +112,7 @@ public class VoucherDTO {
 
     public BigDecimal getTotalDiscountGiven() { return totalDiscountGiven; }
     public void setTotalDiscountGiven(BigDecimal totalDiscountGiven) { this.totalDiscountGiven = totalDiscountGiven; }
+
+    public boolean isHasHistory() { return hasHistory; }
+    public void setHasHistory(boolean hasHistory) { this.hasHistory = hasHistory; }
 }

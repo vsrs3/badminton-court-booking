@@ -25,7 +25,12 @@ public class VoucherRepositoryImpl implements VoucherRepository {
     private static final String BASE_SELECT =
         "SELECT v.*, " +
         "  (SELECT COUNT(*) FROM VoucherUsage vu WHERE vu.voucher_id = v.voucher_id) AS usage_count, " +
-        "  (SELECT ISNULL(SUM(vu2.discount_amount),0) FROM VoucherUsage vu2 WHERE vu2.voucher_id = v.voucher_id) AS total_discount " +
+        "  (SELECT ISNULL(SUM(vu2.discount_amount),0) FROM VoucherUsage vu2 WHERE vu2.voucher_id = v.voucher_id) AS total_discount, " +
+        "  (CASE WHEN EXISTS (" +
+        "       SELECT 1 FROM VoucherUsage vu3 WHERE vu3.voucher_id = v.voucher_id" +
+        "       UNION ALL" +
+        "       SELECT 1 FROM Invoice i WHERE i.voucher_id = v.voucher_id" +
+        "   ) THEN 1 ELSE 0 END) AS has_history " +
         "FROM Voucher v ";
 
     // =====================================================================
@@ -259,6 +264,39 @@ public class VoucherRepositoryImpl implements VoucherRepository {
         }
     }
 
+    @Override
+    public int hardDelete(int voucherId) {
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "DELETE FROM Voucher WHERE voucher_id=?")) {
+            ps.setInt(1, voucherId);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to hard delete voucher", e);
+        }
+    }
+
+    @Override
+    public boolean hasUsageHistory(int voucherId) {
+        // Check both VoucherUsage and Invoice tables
+        String sql =
+            "SELECT 1 WHERE EXISTS (" +
+            "  SELECT 1 FROM VoucherUsage WHERE voucher_id = ?" +
+            "  UNION ALL" +
+            "  SELECT 1 FROM Invoice WHERE voucher_id = ?" +
+            ")";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, voucherId);
+            ps.setInt(2, voucherId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to check usage history for voucher", e);
+        }
+    }
+
     // =====================================================================
     // FACILITY LINKS
     // =====================================================================
@@ -486,6 +524,7 @@ public class VoucherRepositoryImpl implements VoucherRepository {
         if (ua != null) dto.setUpdatedAt(ua.toLocalDateTime());
         dto.setUsageCount(rs.getInt("usage_count"));
         dto.setTotalDiscountGiven(rs.getBigDecimal("total_discount"));
+        dto.setHasHistory(rs.getInt("has_history") == 1);
         dto.setStatus(computeStatus(dto));
         return dto;
     }

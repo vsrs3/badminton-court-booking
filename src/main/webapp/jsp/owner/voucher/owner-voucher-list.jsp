@@ -108,29 +108,60 @@
 
     </div><%-- end .content-area --%>
 
-    <%-- ===== DELETE MODAL – must be inside body, before footer --%>
-    <div class="modal fade" id="deleteModal" tabindex="-1">
+    <%-- ===== DELETE MODAL – two-state: SOFT (has history) / HARD (no history) ===== --%>
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold">Xác nhận xóa</h5>
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="deleteModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Xác nhận xóa voucher
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    Bạn có chắc muốn xóa voucher <strong id="deleteVoucherCode"></strong>?
-                    Voucher sẽ bị vô hiệu hóa và không thể sử dụng nữa.
+                <div class="modal-body pt-3">
+                    <%-- SOFT DELETE warning (voucher has usage history) --%>
+                    <div id="deleteWarningSoft" class="d-none">
+                        <div class="alert alert-warning d-flex gap-2 mb-3" role="alert">
+                            <i class="bi bi-shield-exclamation flex-shrink-0 fs-5"></i>
+                            <div>
+                                Voucher <strong id="deleteVoucherCodeSoft"></strong> đã có lịch sử sử dụng.<br>
+                                Voucher sẽ bị <strong>vô hiệu hóa</strong> — khách hàng không thể dùng tiếp,
+                                nhưng toàn bộ dữ liệu lịch sử vẫn được <strong>giữ nguyên</strong>.
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-0">Bạn có thể kích hoạt lại voucher này bất cứ lúc nào.</p>
+                    </div>
+                    <%-- HARD DELETE warning (voucher never used) --%>
+                    <div id="deleteWarningHard" class="d-none">
+                        <div class="alert alert-danger d-flex gap-2 mb-3" role="alert">
+                            <i class="bi bi-trash3-fill flex-shrink-0 fs-5"></i>
+                            <div>
+                                Voucher <strong id="deleteVoucherCodeHard"></strong> chưa có lịch sử sử dụng.<br>
+                                Hành động này sẽ <strong>xóa vĩnh viễn</strong> voucher khỏi hệ thống.
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                            <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>
+                            <span class="fw-semibold text-danger">Không thể khôi phục sau khi xóa!</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">Hủy</button>
-                    <button class="btn btn-danger rounded-3" id="confirmDeleteBtn">
-                        <i class="bi bi-trash me-1"></i> Xóa
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Hủy
+                    </button>
+                    <button class="btn rounded-3 px-4" id="confirmDeleteBtn">
+                        <%-- spinner shown while request is in-flight, hidden by default --%>
+                        <span class="spinner-border spinner-border-sm me-1 d-none" id="confirmDeleteSpinner"></span>
+                        <i class="bi me-1" id="confirmDeleteIcon"></i>
+                        <span id="confirmDeleteText">Xóa</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <%-- ===== JAVASCRIPT – must be inside body, before footer --%>
+    <%-- ===== JAVASCRIPT ===== --%>
     <script>
     (function () {
         'use strict';
@@ -194,7 +225,7 @@
                     + '<td class="px-4 text-end"><div class="btn-group btn-group-sm">'
                     + '<a class="btn btn-outline-secondary" href="' + CTX + '/owner/vouchers/detail?id=' + v.voucherId + '" title="Chi tiết"><i class="bi bi-eye"></i></a>'
                     + '<a class="btn btn-outline-warning" href="' + CTX + '/owner/vouchers/edit?id=' + v.voucherId + '" title="Sửa"><i class="bi bi-pencil"></i></a>'
-                    + '<button class="btn btn-outline-danger" onclick="confirmDelete(' + v.voucherId + ',\'' + escapeHtml(v.code) + '\')" title="Xóa"><i class="bi bi-trash"></i></button>'
+                    + '<button class="btn btn-outline-danger" onclick="confirmDeleteVoucher(' + v.voucherId + ',\'' + escapeHtml(v.code) + '\',' + (v.hasHistory ? 'true' : 'false') + ')" title="Xóa"><i class="bi bi-trash"></i></button>'
                     + '</div></td></tr>';
             }).join('');
 
@@ -278,22 +309,91 @@
             loadVouchers(1);
         };
 
-        window.confirmDelete = function(id, code) {
+        window.confirmDeleteVoucher = function(id, code, hasHistory) {
             deleteId = id;
-            document.getElementById('deleteVoucherCode').textContent = code;
-            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+
+            var softEl    = document.getElementById('deleteWarningSoft');
+            var hardEl    = document.getElementById('deleteWarningHard');
+            var btnEl     = document.getElementById('confirmDeleteBtn');
+            var iconEl    = document.getElementById('confirmDeleteIcon');
+            var textEl    = document.getElementById('confirmDeleteText');
+            var spinnerEl = document.getElementById('confirmDeleteSpinner');
+
+            // Reset spinner state from any previous call
+            spinnerEl.classList.add('d-none');
+            btnEl.disabled = false;
+
+            if (hasHistory) {
+                document.getElementById('deleteVoucherCodeSoft').textContent = code;
+                softEl.classList.remove('d-none');
+                hardEl.classList.add('d-none');
+                btnEl.className    = 'btn btn-warning rounded-3 px-4 fw-semibold';
+                iconEl.className   = 'bi bi-slash-circle me-1';
+                textEl.textContent = 'Vô hiệu hóa';
+            } else {
+                document.getElementById('deleteVoucherCodeHard').textContent = code;
+                hardEl.classList.remove('d-none');
+                softEl.classList.add('d-none');
+                btnEl.className    = 'btn btn-danger rounded-3 px-4 fw-semibold';
+                iconEl.className   = 'bi bi-trash3 me-1';
+                textEl.textContent = 'Xóa vĩnh viễn';
+            }
+
+            // getOrCreateInstance reuses an existing BS Modal instance safely
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteModal')).show();
         };
 
         document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
             if (!deleteId) return;
+
+            var btn       = this;
+            var iconEl    = document.getElementById('confirmDeleteIcon');
+            var spinnerEl = document.getElementById('confirmDeleteSpinner');
+
+            // Show spinner, hide icon, disable button
+            btn.disabled = true;
+            spinnerEl.classList.remove('d-none');
+            iconEl.classList.add('d-none');
+
             fetch(API + '/' + deleteId, { method: 'DELETE' })
                 .then(function(r) { return r.json(); })
-                .then(function() {
-                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                .then(function(data) {
+                    // Hide modal first, then reload table and show toast
+                    var modalEl  = document.getElementById('deleteModal');
+                    var instance = bootstrap.Modal.getInstance(modalEl);
+                    if (instance) instance.hide();
+                    showDeleteToast(data.deleteType, data.message);
                     loadVouchers(currentPage);
                 })
-                .catch(function() { alert('Xóa thất bại!'); });
+                .catch(function() {
+                    alert('Xóa thất bại! Vui lòng thử lại.');
+                })
+                .finally(function() {
+                    // Always restore button state
+                    btn.disabled = false;
+                    spinnerEl.classList.add('d-none');
+                    iconEl.classList.remove('d-none');
+                    deleteId = null;
+                });
         });
+
+        function showDeleteToast(deleteType, message) {
+            var isSoft  = deleteType === 'SOFT';
+            var toastId = 'deleteResultToast';
+            var existing = document.getElementById(toastId);
+            if (existing) existing.remove();
+
+            var html = '<div id="' + toastId + '" class="toast align-items-center border-0 text-white '
+                     + (isSoft ? 'bg-warning' : 'bg-success')
+                     + '" role="alert" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;min-width:320px;">'
+                     + '<div class="d-flex"><div class="toast-body fw-semibold">'
+                     + '<i class="bi ' + (isSoft ? 'bi-slash-circle' : 'bi-check-circle-fill') + ' me-2"></i>'
+                     + message
+                     + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>';
+            document.body.insertAdjacentHTML('beforeend', html);
+            var toastEl = new bootstrap.Toast(document.getElementById(toastId), { delay: 4000 });
+            toastEl.show();
+        }
 
         document.getElementById('searchInput').addEventListener('input', function() {
             clearTimeout(searchTimer);

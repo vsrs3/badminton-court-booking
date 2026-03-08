@@ -92,8 +92,15 @@ public class OwnerVoucherApiController extends HttpServlet {
         try {
             if (path != null && path.matches("/\\d+")) {
                 int id = Integer.parseInt(path.substring(1));
-                voucherService.deleteVoucher(id);
-                resp.getWriter().write(gson.toJson(Map.of("success", true, "message", "Đã xóa voucher.")));
+                String deleteType = voucherService.deleteVoucher(id);
+                String message = "SOFT".equals(deleteType)
+                    ? "Voucher đã được vô hiệu hóa (vẫn giữ lịch sử sử dụng)."
+                    : "Voucher đã được xóa vĩnh viễn.";
+                resp.getWriter().write(gson.toJson(Map.of(
+                    "success",    true,
+                    "deleteType", deleteType,
+                    "message",    message
+                )));
             } else {
                 sendError(resp, 400, "ID không hợp lệ.");
             }

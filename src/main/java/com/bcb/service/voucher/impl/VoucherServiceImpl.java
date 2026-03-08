@@ -95,11 +95,19 @@ public class VoucherServiceImpl implements VoucherService {
     }
 
     @Override
-    public void deleteVoucher(int voucherId) throws BusinessException {
+    public String deleteVoucher(int voucherId) throws BusinessException {
         voucherRepo.findById(voucherId)
             .orElseThrow(() -> new BusinessException("VOUCHER_NOT_FOUND",
                 "Không tìm thấy voucher với ID: " + voucherId));
-        voucherRepo.softDelete(voucherId);
+        if (voucherRepo.hasUsageHistory(voucherId)) {
+            // Voucher đã từng sử dụng → chỉ được xóa mềm để giữ lịch sử
+            voucherRepo.softDelete(voucherId);
+            return "SOFT";
+        } else {
+            // Chưa từng sử dụng → xóa vĩnh viễn
+            voucherRepo.hardDelete(voucherId);
+            return "HARD";
+        }
     }
 
     @Override
