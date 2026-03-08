@@ -551,7 +551,7 @@
 
     function goToCreatePage() {
         if (!validateSelection()) {
-            uiAlert('Moi phien choi phai co it nhat 2 slot lien tiep tren cung 1 san.', 'Du lieu chua hop le');
+            uiAlert('Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân.', 'Dữ liệu chưa hợp lệ');
             return;
         }
 
