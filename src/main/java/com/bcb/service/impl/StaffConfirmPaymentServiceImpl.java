@@ -1,7 +1,7 @@
 package com.bcb.service.impl;
 
-import com.bcb.dto.staff.StaffConfirmPaymentInvoiceDto;
-import com.bcb.dto.staff.StaffConfirmPaymentResultDto;
+import com.bcb.dto.staff.StaffConfirmPaymentInvoiceDTO;
+import com.bcb.dto.staff.StaffConfirmPaymentResultDTO;
 import com.bcb.repository.impl.StaffConfirmPaymentRepositoryImpl;
 import com.bcb.repository.staff.StaffConfirmPaymentRepository;
 import com.bcb.service.staff.StaffConfirmPaymentService;
@@ -15,7 +15,7 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
     private final StaffConfirmPaymentRepository repository = new StaffConfirmPaymentRepositoryImpl();
 
     @Override
-    public StaffConfirmPaymentResultDto confirmPayment(int bookingId, BigDecimal amount, String method,
+    public StaffConfirmPaymentResultDTO confirmPayment(int bookingId, BigDecimal amount, String method,
                                                        int facilityId, int staffId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
@@ -30,7 +30,7 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
                     return fail("Booking khong thuoc co so cua ban");
                 }
 
-                StaffConfirmPaymentInvoiceDto invoice = repository.findInvoiceForUpdate(conn, bookingId);
+                StaffConfirmPaymentInvoiceDTO invoice = repository.findInvoiceForUpdate(conn, bookingId);
                 if (invoice == null) {
                     conn.rollback();
                     return fail("Khong tim thay hoa don cho booking nay");
@@ -53,7 +53,7 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
                 repository.updateInvoiceAsPaid(conn, bookingId, invoice.getTotalAmount());
 
                 conn.commit();
-                StaffConfirmPaymentResultDto result = new StaffConfirmPaymentResultDto();
+                StaffConfirmPaymentResultDTO result = new StaffConfirmPaymentResultDTO();
                 result.setSuccess(true);
                 result.setMessage("Xac nhan thanh toan thanh cong");
                 result.setPaidAmount(invoice.getTotalAmount());
@@ -69,8 +69,8 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
         }
     }
 
-    private StaffConfirmPaymentResultDto fail(String message) {
-        StaffConfirmPaymentResultDto result = new StaffConfirmPaymentResultDto();
+    private StaffConfirmPaymentResultDTO fail(String message) {
+        StaffConfirmPaymentResultDTO result = new StaffConfirmPaymentResultDTO();
         result.setSuccess(false);
         result.setMessage(message);
         return result;

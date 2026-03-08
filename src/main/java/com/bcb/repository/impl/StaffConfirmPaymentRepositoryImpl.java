@@ -1,6 +1,6 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffConfirmPaymentInvoiceDto;
+import com.bcb.dto.staff.StaffConfirmPaymentInvoiceDTO;
 import com.bcb.repository.staff.StaffConfirmPaymentRepository;
 
 import java.math.BigDecimal;
@@ -25,7 +25,7 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
     }
 
     @Override
-    public StaffConfirmPaymentInvoiceDto findInvoiceForUpdate(Connection conn, int bookingId) throws Exception {
+    public StaffConfirmPaymentInvoiceDTO findInvoiceForUpdate(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT invoice_id, total_amount, paid_amount, payment_status " +
                 "FROM Invoice WITH (UPDLOCK, ROWLOCK) WHERE booking_id = ?";
 
@@ -36,7 +36,7 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
                     return null;
                 }
 
-                StaffConfirmPaymentInvoiceDto invoice = new StaffConfirmPaymentInvoiceDto();
+                StaffConfirmPaymentInvoiceDTO invoice = new StaffConfirmPaymentInvoiceDTO();
                 invoice.setInvoiceId(rs.getInt("invoice_id"));
                 invoice.setTotalAmount(rs.getBigDecimal("total_amount"));
                 invoice.setPaidAmount(rs.getBigDecimal("paid_amount"));

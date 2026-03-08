@@ -1,16 +1,15 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
-import com.bcb.dto.staff.StaffBookingDetailDataDto;
-import com.bcb.dto.staff.StaffBookingDetailInvoiceDto;
-import com.bcb.dto.staff.StaffBookingDetailSessionDto;
-import com.bcb.dto.staff.StaffBookingDetailSlotDto;
+import com.bcb.dto.staff.StaffBookingDetailDataDTO;
+import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailSessionDTO;
+import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.service.impl.StaffBookingDetailServiceImpl;
 import com.bcb.service.staff.StaffBookingDetailService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -20,7 +19,7 @@ import java.io.IOException;
  * REST API: GET /api/staff/booking/detail/{bookingId}
  */
 @WebServlet(name = "StaffBookingDetailApiServlet", urlPatterns = {"/api/staff/booking/detail/*"})
-public class StaffBookingDetailApiServlet extends HttpServlet {
+public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingDetailService staffBookingDetailService = new StaffBookingDetailServiceImpl();
 
@@ -35,8 +34,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
 
         String pathInfo = request.getPathInfo();
         if (pathInfo == null || pathInfo.equals("/")) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Thiếu booking ID\"}");
+            writeError(response, 400, "Thiếu booking ID");
             return;
         }
 
@@ -44,27 +42,24 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         try {
             bookingId = Integer.parseInt(pathInfo.substring(1));
         } catch (NumberFormatException e) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Booking ID không hợp lệ\"}");
+            writeError(response, 400, "Booking ID không hợp lệ");
             return;
         }
 
         try {
-            StaffBookingDetailDataDto data = staffBookingDetailService.getBookingDetail(bookingId, auth.facilityId);
+            StaffBookingDetailDataDTO data = staffBookingDetailService.getBookingDetail(bookingId, auth.facilityId);
             if (data == null) {
-                response.setStatus(404);
-                response.getWriter().print("{\"success\":false,\"message\":\"Không tìm thấy booking\"}");
+                writeError(response, 404, "Không tìm thấy booking");
             } else {
-                response.getWriter().print(buildDetailJson(data));
+                writeJson(response, buildDetailJson(data));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 
-    private String buildDetailJson(StaffBookingDetailDataDto data) {
+    private String buildDetailJson(StaffBookingDetailDataDTO data) {
         StringBuilder json = new StringBuilder(4096);
         json.append("{\"success\":true,\"data\":{");
         json.append("\"bookingId\":").append(data.getBookingId());
@@ -78,7 +73,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         json.append(",\"sessions\":[");
         for (int i = 0; i < data.getSessions().size(); i++) {
             if (i > 0) json.append(",");
-            StaffBookingDetailSessionDto session = data.getSessions().get(i);
+            StaffBookingDetailSessionDTO session = data.getSessions().get(i);
 
             json.append("{\"sessionIndex\":").append(session.getSessionIndex());
             json.append(",\"courtId\":").append(session.getCourtId());
@@ -116,7 +111,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         json.append("]");
 
         json.append(",\"invoice\":");
-        StaffBookingDetailInvoiceDto invoice = data.getInvoice();
+        StaffBookingDetailInvoiceDTO invoice = data.getInvoice();
         if (invoice != null) {
             json.append("{\"totalAmount\":").append(invoice.getTotalAmount());
             json.append(",\"paidAmount\":").append(invoice.getPaidAmount());
@@ -132,7 +127,7 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         return json.toString();
     }
 
-    private void appendSlotJson(StringBuilder json, StaffBookingDetailSlotDto slot) {
+    private void appendSlotJson(StringBuilder json, StaffBookingDetailSlotDTO slot) {
         json.append("{\"bookingSlotId\":").append(slot.getBookingSlotId());
         json.append(",\"courtId\":").append(slot.getCourtId());
         json.append(",\"slotId\":").append(slot.getSlotId());
@@ -147,6 +142,3 @@ public class StaffBookingDetailApiServlet extends HttpServlet {
         return StaffAuthUtil.escapeJson(val);
     }
 }
-
-
-

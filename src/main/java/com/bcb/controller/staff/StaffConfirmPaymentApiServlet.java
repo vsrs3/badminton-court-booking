@@ -1,28 +1,23 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
-import com.bcb.dto.staff.StaffConfirmPaymentResultDto;
+import com.bcb.dto.staff.StaffConfirmPaymentResultDTO;
 import com.bcb.service.impl.StaffConfirmPaymentServiceImpl;
 import com.bcb.service.staff.StaffConfirmPaymentService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 
 /**
  * REST API for staff to confirm full payment before check-in/check-out.
- *
- * POST /api/staff/payment/confirm
- * Body: {"bookingId": 9, "amount": 110000, "method":"CASH"}
  */
 @WebServlet(name = "StaffConfirmPaymentApiServlet", urlPatterns = {"/api/staff/payment/confirm"})
-public class StaffConfirmPaymentApiServlet extends HttpServlet {
+public class StaffConfirmPaymentApiServlet extends BaseStaffApiServlet {
 
     private final StaffConfirmPaymentService staffConfirmPaymentService = new StaffConfirmPaymentServiceImpl();
 
@@ -35,65 +30,51 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         AuthResult auth = StaffAuthUtil.validateStaff(request, response);
         if (!auth.valid) return;
 
-        String body = readBody(request);
+        String body = readRequestBody(request);
         int bookingId = extractInt(body, "bookingId");
         BigDecimal amount = extractDecimal(body, "amount");
         String method = extractString(body, "method");
 
         if (bookingId <= 0) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Thieu bookingId\"}");
+            writeError(response, 400, "Thieu bookingId");
             return;
         }
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"So tien phai lon hon 0\"}");
+            writeError(response, 400, "So tien phai lon hon 0");
             return;
         }
 
         if (method == null || method.trim().isEmpty()) method = "CASH";
         method = method.trim().toUpperCase();
         if (!"CASH".equals(method) && !"BANK_TRANSFER".equals(method) && !"VNPAY".equals(method)) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Phuong thuc thanh toan khong hop le\"}");
+            writeError(response, 400, "Phuong thuc thanh toan khong hop le");
             return;
         }
 
         Integer staffId = (Integer) request.getSession().getAttribute("staffId");
         if (staffId == null || staffId <= 0) {
-            response.setStatus(403);
-            response.getWriter().print("{\"success\":false,\"message\":\"Khong xac dinh duoc staff\"}");
+            writeError(response, 403, "Khong xac dinh duoc staff");
             return;
         }
 
         try {
-            StaffConfirmPaymentResultDto result = staffConfirmPaymentService.confirmPayment(
+            StaffConfirmPaymentResultDTO result = staffConfirmPaymentService.confirmPayment(
                     bookingId, amount, method, auth.facilityId, staffId);
-            response.getWriter().print(buildResponseJson(result));
+            writeJson(response, buildResponseJson(result));
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Loi he thong\"}");
+            writeError(response, 500, "Loi he thong");
         }
     }
 
-    private String buildResponseJson(StaffConfirmPaymentResultDto result) {
+    private String buildResponseJson(StaffConfirmPaymentResultDTO result) {
         if (!result.isSuccess()) {
             return "{\"success\":false,\"message\":\"" + result.getMessage() + "\"}";
         }
         return "{\"success\":true,\"message\":\"" + result.getMessage() + "\"," +
                 "\"data\":{\"paidAmount\":" + result.getPaidAmount() +
                 ",\"paymentStatus\":\"" + result.getPaymentStatus() + "\",\"method\":\"" + result.getMethod() + "\"}}";
-    }
-
-    private String readBody(HttpServletRequest request) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-        }
-        return sb.toString();
     }
 
     private int extractInt(String json, String key) {
@@ -161,6 +142,3 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         }
     }
 }
-
-
-

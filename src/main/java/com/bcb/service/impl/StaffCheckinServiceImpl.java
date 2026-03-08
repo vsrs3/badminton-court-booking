@@ -1,8 +1,8 @@
 package com.bcb.service.impl;
 
-import com.bcb.dto.staff.StaffCheckinBookingDto;
-import com.bcb.dto.staff.StaffCheckinSessionDto;
-import com.bcb.dto.staff.StaffCheckinSessionSlotRowDto;
+import com.bcb.dto.staff.StaffCheckinBookingDTO;
+import com.bcb.dto.staff.StaffCheckinSessionDTO;
+import com.bcb.dto.staff.StaffCheckinSessionSlotRowDTO;
 import com.bcb.repository.impl.StaffCheckinRepositoryImpl;
 import com.bcb.repository.staff.StaffCheckinRepository;
 import com.bcb.service.staff.StaffCheckinService;
@@ -31,13 +31,13 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                     return valResult;
                 }
 
-                List<StaffCheckinSessionDto> sessions = buildSessionsWithTime(conn, bookingId);
+                List<StaffCheckinSessionDTO> sessions = buildSessionsWithTime(conn, bookingId);
                 if (sessionIndex >= sessions.size()) {
                     conn.rollback();
                     return "{\"success\":false,\"message\":\"Session index không hợp lệ\"}";
                 }
 
-                StaffCheckinSessionDto target = sessions.get(sessionIndex);
+                StaffCheckinSessionDTO target = sessions.get(sessionIndex);
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if ("CHECKED_IN".equals(targetStatus) || "COMPLETED".equals(targetStatus)) {
@@ -53,7 +53,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 int autoNoShowCount = 0;
 
                 for (int i = 0; i < sessionIndex; i++) {
-                    StaffCheckinSessionDto prev = sessions.get(i);
+                    StaffCheckinSessionDTO prev = sessions.get(i);
                     String prevStatus = getSessionStatus(conn, prev.getSlotIds());
 
                     if ("PENDING".equals(prevStatus)) {
@@ -103,13 +103,13 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                     return valResult;
                 }
 
-                List<StaffCheckinSessionDto> sessions = buildSessionsWithTime(conn, bookingId);
+                List<StaffCheckinSessionDTO> sessions = buildSessionsWithTime(conn, bookingId);
                 if (sessionIndex >= sessions.size()) {
                     conn.rollback();
                     return "{\"success\":false,\"message\":\"Session index không hợp lệ\"}";
                 }
 
-                StaffCheckinSessionDto target = sessions.get(sessionIndex);
+                StaffCheckinSessionDTO target = sessions.get(sessionIndex);
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if ("PENDING".equals(targetStatus)) {
@@ -159,13 +159,13 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                     return valResult;
                 }
 
-                List<StaffCheckinSessionDto> sessions = buildSessionsWithTime(conn, bookingId);
+                List<StaffCheckinSessionDTO> sessions = buildSessionsWithTime(conn, bookingId);
                 if (sessionIndex >= sessions.size()) {
                     conn.rollback();
                     return "{\"success\":false,\"message\":\"Session index không hợp lệ\"}";
                 }
 
-                StaffCheckinSessionDto target = sessions.get(sessionIndex);
+                StaffCheckinSessionDTO target = sessions.get(sessionIndex);
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if (!"PENDING".equals(targetStatus)) {
@@ -201,7 +201,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         }
     }
 
-    private boolean checkAllSessionsFinished(Connection conn, List<StaffCheckinSessionDto> sessions,
+    private boolean checkAllSessionsFinished(Connection conn, List<StaffCheckinSessionDTO> sessions,
                                              int justFinishedIndex, String justFinishedAs) throws Exception {
         for (int i = 0; i < sessions.size(); i++) {
             String status;
@@ -236,7 +236,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     }
 
     private String validateBookingBase(Connection conn, int bookingId, int facilityId) throws Exception {
-        StaffCheckinBookingDto booking = repository.findBooking(conn, bookingId);
+        StaffCheckinBookingDTO booking = repository.findBooking(conn, bookingId);
         if (booking == null) return "{\"success\":false,\"message\":\"Không tìm thấy booking\"}";
 
         if (booking.getFacilityId() != facilityId)
@@ -251,28 +251,28 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         return null;
     }
 
-    private List<StaffCheckinSessionDto> buildSessionsWithTime(Connection conn, int bookingId) throws Exception {
-        List<StaffCheckinSessionSlotRowDto> rows = repository.findSessionSlotRows(conn, bookingId);
+    private List<StaffCheckinSessionDTO> buildSessionsWithTime(Connection conn, int bookingId) throws Exception {
+        List<StaffCheckinSessionSlotRowDTO> rows = repository.findSessionSlotRows(conn, bookingId);
 
         if (rows.isEmpty()) return new ArrayList<>();
 
-        List<StaffCheckinSessionDto> sessions = new ArrayList<>();
+        List<StaffCheckinSessionDTO> sessions = new ArrayList<>();
 
-        StaffCheckinSessionDto current = new StaffCheckinSessionDto();
+        StaffCheckinSessionDTO current = new StaffCheckinSessionDTO();
         current.getSlotIds().add(rows.get(0).getBookingSlotId());
         current.setStartTime(rows.get(0).getStartTime());
         current.setEndTime(rows.get(0).getEndTime());
 
         for (int i = 1; i < rows.size(); i++) {
-            StaffCheckinSessionSlotRowDto prev = rows.get(i - 1);
-            StaffCheckinSessionSlotRowDto curr = rows.get(i);
+            StaffCheckinSessionSlotRowDTO prev = rows.get(i - 1);
+            StaffCheckinSessionSlotRowDTO curr = rows.get(i);
 
             if (prev.getCourtId() == curr.getCourtId() && prev.getEndTime().equals(curr.getStartTime())) {
                 current.getSlotIds().add(curr.getBookingSlotId());
                 current.setEndTime(curr.getEndTime());
             } else {
                 sessions.add(current);
-                current = new StaffCheckinSessionDto();
+                current = new StaffCheckinSessionDTO();
                 current.getSlotIds().add(curr.getBookingSlotId());
                 current.setStartTime(curr.getStartTime());
                 current.setEndTime(curr.getEndTime());

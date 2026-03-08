@@ -1,28 +1,20 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
-import com.bcb.dto.staff.StaffBookingListDataDto;
-import com.bcb.dto.staff.StaffBookingListItemDto;
+import com.bcb.dto.staff.StaffBookingListDataDTO;
+import com.bcb.dto.staff.StaffBookingListItemDTO;
 import com.bcb.service.impl.StaffBookingListServiceImpl;
 import com.bcb.service.staff.StaffBookingListService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-/**
- * REST API: GET /api/staff/booking/list?search=...&page=...&size=...
- * Search by: customer_name, phone, booking_id
- * Data scope: Booking.facility_id = staff's facility
- *
- * Updated: thêm hasNoShow flag — true nếu booking có ít nhất 1 slot NO_SHOW
- */
 @WebServlet(name = "StaffBookingListApiServlet", urlPatterns = {"/api/staff/booking/list"})
-public class StaffBookingListApiServlet extends HttpServlet {
+public class StaffBookingListApiServlet extends BaseStaffApiServlet {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 50;
@@ -53,16 +45,15 @@ public class StaffBookingListApiServlet extends HttpServlet {
         }
 
         try {
-            StaffBookingListDataDto data = staffBookingListService.getBookingList(auth.facilityId, search, page, size);
-            response.getWriter().print(buildListJson(data));
+            StaffBookingListDataDTO data = staffBookingListService.getBookingList(auth.facilityId, search, page, size);
+            writeJson(response, buildListJson(data));
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 
-    private String buildListJson(StaffBookingListDataDto data) {
+    private String buildListJson(StaffBookingListDataDTO data) {
         StringBuilder json = new StringBuilder(1024);
         json.append("{\"success\":true,\"data\":{");
         json.append("\"page\":").append(data.getPage());
@@ -72,7 +63,7 @@ public class StaffBookingListApiServlet extends HttpServlet {
         json.append(",\"bookings\":[");
 
         boolean first = true;
-        for (StaffBookingListItemDto booking : data.getBookings()) {
+        for (StaffBookingListItemDTO booking : data.getBookings()) {
             if (!first) json.append(",");
             first = false;
 
@@ -91,6 +82,3 @@ public class StaffBookingListApiServlet extends HttpServlet {
         return json.toString();
     }
 }
-
-
-

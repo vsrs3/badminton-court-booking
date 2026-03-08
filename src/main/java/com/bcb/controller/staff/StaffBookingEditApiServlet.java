@@ -1,17 +1,15 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
-import com.bcb.dto.staff.StaffBookingEditOutcomeDto;
+import com.bcb.dto.staff.StaffBookingEditOutcomeDTO;
 import com.bcb.service.impl.StaffBookingEditServiceImpl;
 import com.bcb.service.staff.StaffBookingEditService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 
 /**
@@ -23,7 +21,7 @@ import java.io.IOException;
         "/api/staff/booking/release-slot",
         "/api/staff/booking/cancel"
 })
-public class StaffBookingEditApiServlet extends HttpServlet {
+public class StaffBookingEditApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingEditService staffBookingEditService = new StaffBookingEditServiceImpl();
 
@@ -38,36 +36,19 @@ public class StaffBookingEditApiServlet extends HttpServlet {
 
         Integer staffId = (Integer) request.getSession().getAttribute("staffId");
         if (staffId == null) {
-            response.setStatus(403);
-            response.getWriter().print("{\"success\":false,\"message\":\"Staff chưa được gán\"}");
+            writeError(response, 403, "Staff chưa được gán");
             return;
         }
 
-        String body = readBody(request);
+        String body = readRequestBody(request);
         String path = request.getServletPath();
 
         try {
-            StaffBookingEditOutcomeDto result = staffBookingEditService.process(path, auth.facilityId, staffId, body);
-            response.setStatus(result.getStatus());
-            response.getWriter().print(result.getJson());
+            StaffBookingEditOutcomeDTO result = staffBookingEditService.process(path, auth.facilityId, staffId, body);
+            writeJson(response, result.getStatus(), result.getJson());
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
-    }
-
-    private String readBody(HttpServletRequest request) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-        }
-        return sb.toString();
     }
 }
-
-
-

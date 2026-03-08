@@ -1,7 +1,7 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffBookingCreateSlotDto;
-import com.bcb.dto.staff.StaffCustomerAccountDto;
+import com.bcb.dto.staff.StaffBookingCreateSlotDTO;
+import com.bcb.dto.staff.StaffCustomerAccountDTO;
 import com.bcb.repository.staff.StaffBookingCreateRepository;
 import com.bcb.utils.DBContext;
 
@@ -19,7 +19,7 @@ import java.util.Map;
 public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepository {
 
     @Override
-    public StaffCustomerAccountDto findActiveCustomerByPhone(String phone) throws Exception {
+    public StaffCustomerAccountDTO findActiveCustomerByPhone(String phone) throws Exception {
         String sql = "SELECT TOP 1 account_id, full_name, phone, email " +
                 "FROM Account WHERE role = 'CUSTOMER' AND is_active = 1 AND phone = ?";
 
@@ -29,7 +29,7 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
-                StaffCustomerAccountDto out = new StaffCustomerAccountDto();
+                StaffCustomerAccountDTO out = new StaffCustomerAccountDTO();
                 out.setAccountId(rs.getInt("account_id"));
                 out.setFullName(rs.getString("full_name"));
                 out.setPhone(rs.getString("phone"));
@@ -150,7 +150,7 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
     }
 
     @Override
-    public int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDto slot, BigDecimal price) throws Exception {
+    public int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception {
         String sql = "INSERT INTO BookingSlot (booking_id, court_id, slot_id, price) VALUES (?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, bookingId);
@@ -166,7 +166,7 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
     }
 
     @Override
-    public void insertCourtSlotBooking(Connection conn, StaffBookingCreateSlotDto slot,
+    public void insertCourtSlotBooking(Connection conn, StaffBookingCreateSlotDTO slot,
                                        java.time.LocalDate bookingDate, int bookingSlotId) throws Exception {
         String sql = "INSERT INTO CourtSlotBooking (court_id, booking_date, slot_id, booking_slot_id) VALUES (?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

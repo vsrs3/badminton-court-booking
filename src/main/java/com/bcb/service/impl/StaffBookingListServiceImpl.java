@@ -1,7 +1,7 @@
 package com.bcb.service.impl;
 
-import com.bcb.dto.staff.StaffBookingListDataDto;
-import com.bcb.dto.staff.StaffBookingListSearchCriteriaDto;
+import com.bcb.dto.staff.StaffBookingListDataDTO;
+import com.bcb.dto.staff.StaffBookingListSearchCriteriaDTO;
 import com.bcb.repository.impl.StaffBookingListRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingListRepository;
 import com.bcb.service.staff.StaffBookingListService;
@@ -11,8 +11,8 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
     private final StaffBookingListRepository repository = new StaffBookingListRepositoryImpl();
 
     @Override
-    public StaffBookingListDataDto getBookingList(int facilityId, String search, int page, int size) throws Exception {
-        StaffBookingListSearchCriteriaDto criteria = new StaffBookingListSearchCriteriaDto();
+    public StaffBookingListDataDTO getBookingList(int facilityId, String search, int page, int size) throws Exception {
+        StaffBookingListSearchCriteriaDTO criteria = new StaffBookingListSearchCriteriaDTO();
         criteria.setFacilityId(facilityId);
         criteria.setSearch(search);
         criteria.setHasSearch(search != null);
@@ -24,7 +24,7 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
         int normalizedPage = Math.min(page, totalPages);
         int offset = (normalizedPage - 1) * size;
 
-        StaffBookingListDataDto data = new StaffBookingListDataDto();
+        StaffBookingListDataDTO data = new StaffBookingListDataDTO();
         data.setPage(normalizedPage);
         data.setSize(size);
         data.setTotalRows(totalRows);

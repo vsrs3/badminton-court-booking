@@ -1,9 +1,9 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffBookingEditExistingSlotDto;
-import com.bcb.dto.staff.StaffBookingEditSessionCellDto;
-import com.bcb.dto.staff.StaffBookingEditSlotStateDto;
-import com.bcb.dto.staff.StaffBookingEditStatusCountDto;
+import com.bcb.dto.staff.StaffBookingEditExistingSlotDTO;
+import com.bcb.dto.staff.StaffBookingEditSessionCellDTO;
+import com.bcb.dto.staff.StaffBookingEditSlotStateDTO;
+import com.bcb.dto.staff.StaffBookingEditStatusCountDTO;
 import com.bcb.repository.staff.StaffBookingEditRepository;
 
 import java.math.BigDecimal;
@@ -33,15 +33,15 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
-    public List<StaffBookingEditSessionCellDto> findSessionCellsByBookingId(Connection conn, int bookingId) throws Exception {
+    public List<StaffBookingEditSessionCellDTO> findSessionCellsByBookingId(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT bs.booking_slot_id, bs.court_id, bs.slot_id, bs.slot_status, ts.start_time, ts.end_time " +
                 "FROM BookingSlot bs JOIN TimeSlot ts ON bs.slot_id = ts.slot_id WHERE bs.booking_id = ?";
-        List<StaffBookingEditSessionCellDto> cells = new ArrayList<>();
+        List<StaffBookingEditSessionCellDTO> cells = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffBookingEditSessionCellDto c = new StaffBookingEditSessionCellDto();
+                    StaffBookingEditSessionCellDTO c = new StaffBookingEditSessionCellDTO();
                     c.setBookingSlotId(rs.getInt("booking_slot_id"));
                     c.setCourtId(rs.getInt("court_id"));
                     c.setSlotId(rs.getInt("slot_id"));
@@ -56,13 +56,13 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
-    public StaffBookingEditSessionCellDto findSessionCellBySlotId(Connection conn, int courtId, int slotId) throws Exception {
+    public StaffBookingEditSessionCellDTO findSessionCellBySlotId(Connection conn, int courtId, int slotId) throws Exception {
         String sql = "SELECT ts.start_time, ts.end_time FROM TimeSlot ts WHERE ts.slot_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, slotId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-                StaffBookingEditSessionCellDto c = new StaffBookingEditSessionCellDto();
+                StaffBookingEditSessionCellDTO c = new StaffBookingEditSessionCellDTO();
                 c.setCourtId(courtId);
                 c.setSlotId(slotId);
                 c.setStart(rs.getTime("start_time").toLocalTime());
@@ -91,7 +91,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
-    public StaffBookingEditExistingSlotDto findExistingSlot(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
+    public StaffBookingEditExistingSlotDTO findExistingSlot(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
         String sql = "SELECT booking_slot_id, slot_status FROM BookingSlot WHERE booking_id = ? AND court_id = ? AND slot_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
@@ -99,7 +99,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
             ps.setInt(3, slotId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-                StaffBookingEditExistingSlotDto out = new StaffBookingEditExistingSlotDto();
+                StaffBookingEditExistingSlotDTO out = new StaffBookingEditExistingSlotDTO();
                 out.setBookingSlotId(rs.getInt("booking_slot_id"));
                 out.setSlotStatus(rs.getString("slot_status"));
                 return out;
@@ -210,14 +210,14 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
-    public List<StaffBookingEditStatusCountDto> findSlotStatusCounts(Connection conn, int bookingId) throws Exception {
+    public List<StaffBookingEditStatusCountDTO> findSlotStatusCounts(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT slot_status, COUNT(*) AS cnt FROM BookingSlot WHERE booking_id = ? GROUP BY slot_status";
-        List<StaffBookingEditStatusCountDto> out = new ArrayList<>();
+        List<StaffBookingEditStatusCountDTO> out = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffBookingEditStatusCountDto row = new StaffBookingEditStatusCountDto();
+                    StaffBookingEditStatusCountDTO row = new StaffBookingEditStatusCountDTO();
                     row.setSlotStatus(rs.getString("slot_status"));
                     row.setCount(rs.getInt("cnt"));
                     out.add(row);
@@ -248,14 +248,14 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
-    public StaffBookingEditSlotStateDto findSlotState(Connection conn, int bookingId, int bookingSlotId) throws Exception {
+    public StaffBookingEditSlotStateDTO findSlotState(Connection conn, int bookingId, int bookingSlotId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT slot_status, is_released FROM BookingSlot WHERE booking_id = ? AND booking_slot_id = ?")) {
             ps.setInt(1, bookingId);
             ps.setInt(2, bookingSlotId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
-                StaffBookingEditSlotStateDto s = new StaffBookingEditSlotStateDto();
+                StaffBookingEditSlotStateDTO s = new StaffBookingEditSlotStateDTO();
                 s.setSlotStatus(rs.getString("slot_status"));
                 s.setReleased(rs.getBoolean("is_released"));
                 return s;

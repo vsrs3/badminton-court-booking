@@ -1,36 +1,25 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import com.bcb.service.impl.StaffCheckinServiceImpl;
 import com.bcb.service.staff.StaffCheckinService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 
 /**
  * REST API for staff check-in / check-out / no-show per SESSION (phiên chơi).
- *
- * POST /api/staff/checkin
- *   Body: {"bookingId": 7, "sessionIndex": 0}
- *
- * POST /api/staff/checkout
- *   Body: {"bookingId": 7, "sessionIndex": 0}
- *
- * POST /api/staff/noshow
- *   Body: {"bookingId": 7, "sessionIndex": 0}
  */
 @WebServlet(name = "StaffCheckinApiServlet", urlPatterns = {
         "/api/staff/checkin",
         "/api/staff/checkout",
         "/api/staff/noshow"
 })
-public class StaffCheckinApiServlet extends HttpServlet {
+public class StaffCheckinApiServlet extends BaseStaffApiServlet {
 
     private final StaffCheckinService staffCheckinService = new StaffCheckinServiceImpl();
 
@@ -47,13 +36,12 @@ public class StaffCheckinApiServlet extends HttpServlet {
         boolean isCheckin = path.contains("/checkin");
         boolean isCheckout = path.contains("/checkout");
 
-        String body = readBody(request);
+        String body = readRequestBody(request);
         int bookingId = extractInt(body, "bookingId");
         int sessionIndex = extractInt(body, "sessionIndex");
 
         if (bookingId <= 0 || sessionIndex < 0) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Thiếu bookingId hoặc sessionIndex\"}");
+            writeError(response, 400, "Thiếu bookingId hoặc sessionIndex");
             return;
         }
 
@@ -66,21 +54,11 @@ public class StaffCheckinApiServlet extends HttpServlet {
             } else {
                 result = staffCheckinService.doNoShow(bookingId, sessionIndex, auth.facilityId);
             }
-            response.getWriter().print(result);
+            writeJson(response, result);
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
-    }
-
-    private String readBody(HttpServletRequest request) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-        }
-        return sb.toString();
     }
 
     private int extractInt(String json, String key) {
@@ -103,6 +81,3 @@ public class StaffCheckinApiServlet extends HttpServlet {
         }
     }
 }
-
-
-

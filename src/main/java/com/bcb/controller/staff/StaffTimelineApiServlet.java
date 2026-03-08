@@ -1,17 +1,16 @@
 package com.bcb.controller.staff;
 
-import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
-import com.bcb.dto.staff.StaffTimelineBookedCellDto;
-import com.bcb.dto.staff.StaffTimelineCourtDto;
-import com.bcb.dto.staff.StaffTimelineDataDto;
-import com.bcb.dto.staff.StaffTimelineDisabledCellDto;
-import com.bcb.dto.staff.StaffTimelineSlotDto;
+import com.bcb.dto.staff.StaffTimelineBookedCellDTO;
+import com.bcb.dto.staff.StaffTimelineCourtDTO;
+import com.bcb.dto.staff.StaffTimelineDataDTO;
+import com.bcb.dto.staff.StaffTimelineDisabledCellDTO;
+import com.bcb.dto.staff.StaffTimelineSlotDTO;
 import com.bcb.service.impl.StaffTimelineServiceImpl;
 import com.bcb.service.staff.StaffTimelineService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -19,15 +18,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
-/**
- * REST API: GET /api/staff/timeline?date=yyyy-MM-dd
- * Returns JSON for the staff timeline grid.
- *
- * Performance: Only returns BOOKED and DISABLED cells.
- * AVAILABLE cells are implied (frontend treats missing keys as available).
- */
 @WebServlet(name = "StaffTimelineApiServlet", urlPatterns = {"/api/staff/timeline"})
-public class StaffTimelineApiServlet extends HttpServlet {
+public class StaffTimelineApiServlet extends BaseStaffApiServlet {
 
     private final StaffTimelineService staffTimelineService = new StaffTimelineServiceImpl();
 
@@ -47,22 +39,20 @@ public class StaffTimelineApiServlet extends HttpServlet {
                     ? LocalDate.parse(dateParam)
                     : LocalDate.now();
         } catch (DateTimeParseException e) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Ngày không hợp lệ\"}");
+            writeError(response, 400, "Ngày không hợp lệ");
             return;
         }
 
         try {
-            StaffTimelineDataDto data = staffTimelineService.getTimeline(auth.facilityId, bookingDate);
-            response.getWriter().print(buildTimelineJson(data));
+            StaffTimelineDataDTO data = staffTimelineService.getTimeline(auth.facilityId, bookingDate);
+            writeJson(response, buildTimelineJson(data));
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 
-    private String buildTimelineJson(StaffTimelineDataDto data) {
+    private String buildTimelineJson(StaffTimelineDataDTO data) {
         StringBuilder json = new StringBuilder(2048);
         json.append("{\"success\":true,\"data\":{");
 
@@ -72,7 +62,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
         json.append(",\"courts\":[");
         for (int i = 0; i < data.getCourts().size(); i++) {
             if (i > 0) json.append(",");
-            StaffTimelineCourtDto court = data.getCourts().get(i);
+            StaffTimelineCourtDTO court = data.getCourts().get(i);
             json.append("{\"courtId\":").append(court.getCourtId());
             json.append(",\"courtName\":").append(StaffAuthUtil.escapeJson(court.getCourtName())).append("}");
         }
@@ -81,7 +71,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
         json.append(",\"slots\":[");
         for (int i = 0; i < data.getSlots().size(); i++) {
             if (i > 0) json.append(",");
-            StaffTimelineSlotDto slot = data.getSlots().get(i);
+            StaffTimelineSlotDTO slot = data.getSlots().get(i);
             json.append("{\"slotId\":").append(slot.getSlotId());
             json.append(",\"startTime\":\"").append(slot.getStartTime()).append("\"");
             json.append(",\"endTime\":\"").append(slot.getEndTime()).append("\"}");
@@ -91,7 +81,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
         json.append(",\"cells\":[");
         boolean first = true;
 
-        for (StaffTimelineBookedCellDto booked : data.getBookedCells()) {
+        for (StaffTimelineBookedCellDTO booked : data.getBookedCells()) {
             if (!first) json.append(",");
             first = false;
             json.append("{\"courtId\":").append(booked.getCourtId());
@@ -104,7 +94,7 @@ public class StaffTimelineApiServlet extends HttpServlet {
             json.append("}");
         }
 
-        for (StaffTimelineDisabledCellDto disabled : data.getDisabledCells()) {
+        for (StaffTimelineDisabledCellDTO disabled : data.getDisabledCells()) {
             if (!first) json.append(",");
             first = false;
             json.append("{\"courtId\":").append(disabled.getCourtId());
@@ -118,6 +108,3 @@ public class StaffTimelineApiServlet extends HttpServlet {
         return json.toString();
     }
 }
-
-
-

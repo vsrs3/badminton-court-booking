@@ -1,10 +1,10 @@
 package com.bcb.service.impl;
 
 import com.bcb.utils.staff.StaffBookingSnapshotTokenUtil;
-import com.bcb.dto.staff.StaffBookingDetailDataDto;
-import com.bcb.dto.staff.StaffBookingDetailHeaderDto;
-import com.bcb.dto.staff.StaffBookingDetailSessionDto;
-import com.bcb.dto.staff.StaffBookingDetailSlotDto;
+import com.bcb.dto.staff.StaffBookingDetailDataDTO;
+import com.bcb.dto.staff.StaffBookingDetailHeaderDTO;
+import com.bcb.dto.staff.StaffBookingDetailSessionDTO;
+import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.repository.impl.StaffBookingDetailRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingDetailRepository;
 import com.bcb.service.staff.StaffBookingDetailService;
@@ -20,17 +20,17 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
     private final StaffBookingDetailRepository repository = new StaffBookingDetailRepositoryImpl();
 
     @Override
-    public StaffBookingDetailDataDto getBookingDetail(int bookingId, int staffFacilityId) throws Exception {
+    public StaffBookingDetailDataDTO getBookingDetail(int bookingId, int staffFacilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
-            StaffBookingDetailHeaderDto header = repository.findBookingHeader(conn, bookingId);
+            StaffBookingDetailHeaderDTO header = repository.findBookingHeader(conn, bookingId);
             if (header == null || header.getFacilityId() != staffFacilityId) {
                 return null;
             }
 
-            List<StaffBookingDetailSlotDto> allSlots = repository.findBookingSlots(conn, bookingId);
-            List<List<StaffBookingDetailSlotDto>> grouped = groupIntoSessions(allSlots);
+            List<StaffBookingDetailSlotDTO> allSlots = repository.findBookingSlots(conn, bookingId);
+            List<List<StaffBookingDetailSlotDTO>> grouped = groupIntoSessions(allSlots);
 
-            StaffBookingDetailDataDto data = new StaffBookingDetailDataDto();
+            StaffBookingDetailDataDTO data = new StaffBookingDetailDataDTO();
             data.setBookingId(header.getBookingId());
             data.setBookingDate(header.getBookingDate());
             data.setBookingStatus(header.getBookingStatus());
@@ -41,7 +41,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             data.setSlots(allSlots);
             data.setInvoice(repository.findInvoice(conn, bookingId));
 
-            List<StaffBookingDetailSessionDto> sessions = new ArrayList<>();
+            List<StaffBookingDetailSessionDTO> sessions = new ArrayList<>();
             for (int i = 0; i < grouped.size(); i++) {
                 sessions.add(buildSessionDto(i, grouped.get(i)));
             }
@@ -54,28 +54,28 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         }
     }
 
-    private StaffBookingDetailSessionDto buildSessionDto(int index, List<StaffBookingDetailSlotDto> session) {
+    private StaffBookingDetailSessionDTO buildSessionDto(int index, List<StaffBookingDetailSlotDTO> session) {
         String sessionStatus = deriveSessionStatus(session);
 
-        List<StaffBookingDetailSlotDto> activeSlots = new ArrayList<>();
-        for (StaffBookingDetailSlotDto slot : session) {
+        List<StaffBookingDetailSlotDTO> activeSlots = new ArrayList<>();
+        for (StaffBookingDetailSlotDTO slot : session) {
             if (!"CANCELLED".equals(slot.getSlotStatus())) {
                 activeSlots.add(slot);
             }
         }
 
-        List<StaffBookingDetailSlotDto> displaySlots = activeSlots.isEmpty() ? session : activeSlots;
-        StaffBookingDetailSlotDto first = displaySlots.get(0);
-        StaffBookingDetailSlotDto last = displaySlots.get(displaySlots.size() - 1);
+        List<StaffBookingDetailSlotDTO> displaySlots = activeSlots.isEmpty() ? session : activeSlots;
+        StaffBookingDetailSlotDTO first = displaySlots.get(0);
+        StaffBookingDetailSlotDTO last = displaySlots.get(displaySlots.size() - 1);
 
         BigDecimal totalPrice = BigDecimal.ZERO;
-        for (StaffBookingDetailSlotDto slot : activeSlots) {
+        for (StaffBookingDetailSlotDTO slot : activeSlots) {
             if (slot.getPrice() != null) totalPrice = totalPrice.add(slot.getPrice());
         }
 
         int displaySlotCount = activeSlots.isEmpty() ? session.size() : activeSlots.size();
 
-        StaffBookingDetailSessionDto dto = new StaffBookingDetailSessionDto();
+        StaffBookingDetailSessionDTO dto = new StaffBookingDetailSessionDTO();
         dto.setSessionIndex(index);
         dto.setCourtId(first.getCourtId());
         dto.setCourtName(first.getCourtName());
@@ -88,7 +88,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         dto.setCheckoutTime(last.getCheckoutTime());
 
         List<Integer> ids = new ArrayList<>();
-        for (StaffBookingDetailSlotDto slot : session) {
+        for (StaffBookingDetailSlotDTO slot : session) {
             ids.add(slot.getBookingSlotId());
         }
         dto.setBookingSlotIds(ids);
@@ -96,16 +96,16 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         return dto;
     }
 
-    private List<List<StaffBookingDetailSlotDto>> groupIntoSessions(List<StaffBookingDetailSlotDto> slots) {
-        List<List<StaffBookingDetailSlotDto>> sessions = new ArrayList<>();
+    private List<List<StaffBookingDetailSlotDTO>> groupIntoSessions(List<StaffBookingDetailSlotDTO> slots) {
+        List<List<StaffBookingDetailSlotDTO>> sessions = new ArrayList<>();
         if (slots.isEmpty()) return sessions;
 
-        List<StaffBookingDetailSlotDto> current = new ArrayList<>();
+        List<StaffBookingDetailSlotDTO> current = new ArrayList<>();
         current.add(slots.get(0));
 
         for (int i = 1; i < slots.size(); i++) {
-            StaffBookingDetailSlotDto prev = slots.get(i - 1);
-            StaffBookingDetailSlotDto curr = slots.get(i);
+            StaffBookingDetailSlotDTO prev = slots.get(i - 1);
+            StaffBookingDetailSlotDTO curr = slots.get(i);
 
             boolean sameCourt = prev.getCourtId() == curr.getCourtId();
             boolean consecutive = prev.getEndTime().equals(curr.getStartTime());
@@ -124,13 +124,13 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         return sessions;
     }
 
-    private String deriveSessionStatus(List<StaffBookingDetailSlotDto> session) {
+    private String deriveSessionStatus(List<StaffBookingDetailSlotDTO> session) {
         boolean allCancelled = true;
         boolean allCheckout = true;
         boolean allNoShow = true;
         boolean anyCheckedIn = false;
 
-        for (StaffBookingDetailSlotDto slot : session) {
+        for (StaffBookingDetailSlotDTO slot : session) {
             if (!"CANCELLED".equals(slot.getSlotStatus())) allCancelled = false;
             if (!"CHECK_OUT".equals(slot.getSlotStatus())) allCheckout = false;
             if (!"NO_SHOW".equals(slot.getSlotStatus())) allNoShow = false;

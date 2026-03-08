@@ -2,11 +2,11 @@ package com.bcb.service.impl;
 
 import com.bcb.utils.staff.StaffAuthUtil;
 import com.bcb.utils.staff.StaffBookingSnapshotTokenUtil;
-import com.bcb.dto.staff.StaffBookingEditExistingSlotDto;
-import com.bcb.dto.staff.StaffBookingEditOutcomeDto;
-import com.bcb.dto.staff.StaffBookingEditSessionCellDto;
-import com.bcb.dto.staff.StaffBookingEditSlotStateDto;
-import com.bcb.dto.staff.StaffBookingEditStatusCountDto;
+import com.bcb.dto.staff.StaffBookingEditExistingSlotDTO;
+import com.bcb.dto.staff.StaffBookingEditOutcomeDTO;
+import com.bcb.dto.staff.StaffBookingEditSessionCellDTO;
+import com.bcb.dto.staff.StaffBookingEditSlotStateDTO;
+import com.bcb.dto.staff.StaffBookingEditStatusCountDTO;
 import com.bcb.repository.impl.StaffBookingEditRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingEditRepository;
 import com.bcb.service.staff.StaffBookingEditService;
@@ -31,7 +31,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
     private final StaffBookingEditRepository repository = new StaffBookingEditRepositoryImpl();
 
     @Override
-    public StaffBookingEditOutcomeDto process(String servletPath, int facilityId, int staffId, String body) throws Exception {
+    public StaffBookingEditOutcomeDTO process(String servletPath, int facilityId, int staffId, String body) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             String json;
             if (servletPath.endsWith("/edit/preview")) {
@@ -168,7 +168,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             StaffBookingSnapshotTokenUtil.Snapshot before = assertReleaseSnapshot(conn, bookingId, facilityId, etag);
             String beforeEtag = StaffBookingSnapshotTokenUtil.computeEtag(before);
 
-            StaffBookingEditSlotStateDto slot = repository.findSlotState(conn, bookingId, bookingSlotId);
+            StaffBookingEditSlotStateDTO slot = repository.findSlotState(conn, bookingId, bookingSlotId);
             if (slot == null) {
                 throw new ApiException(404, "Không tìm thấy slot trong booking");
             }
@@ -336,10 +336,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private void validateSessionRuleAfterEdit(Connection conn, int bookingId,
                                               Set<Integer> removeSlotIds, List<SlotPair> addSlots) throws Exception {
-        List<StaffBookingEditSessionCellDto> cells = new ArrayList<>();
+        List<StaffBookingEditSessionCellDTO> cells = new ArrayList<>();
 
-        List<StaffBookingEditSessionCellDto> existing = repository.findSessionCellsByBookingId(conn, bookingId);
-        for (StaffBookingEditSessionCellDto row : existing) {
+        List<StaffBookingEditSessionCellDTO> existing = repository.findSessionCellsByBookingId(conn, bookingId);
+        for (StaffBookingEditSessionCellDTO row : existing) {
             String status = row.getSlotStatus();
             int bookingSlotId = row.getBookingSlotId();
             if ("CANCELLED".equals(status)) continue;
@@ -348,25 +348,25 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
 
         for (SlotPair add : addSlots) {
-            StaffBookingEditSessionCellDto c = repository.findSessionCellBySlotId(conn, add.courtId, add.slotId);
+            StaffBookingEditSessionCellDTO c = repository.findSessionCellBySlotId(conn, add.courtId, add.slotId);
             if (c == null) {
                 throw new ApiException(400, "Slot thêm mới không hợp lệ");
             }
             cells.add(c);
         }
 
-        Map<Integer, List<StaffBookingEditSessionCellDto>> byCourt = new HashMap<>();
-        for (StaffBookingEditSessionCellDto c : cells) {
+        Map<Integer, List<StaffBookingEditSessionCellDTO>> byCourt = new HashMap<>();
+        for (StaffBookingEditSessionCellDTO c : cells) {
             byCourt.computeIfAbsent(c.getCourtId(), k -> new ArrayList<>()).add(c);
         }
 
-        for (Map.Entry<Integer, List<StaffBookingEditSessionCellDto>> entry : byCourt.entrySet()) {
-            List<StaffBookingEditSessionCellDto> list = entry.getValue();
-            list.sort(Comparator.comparing(StaffBookingEditSessionCellDto::getStart));
+        for (Map.Entry<Integer, List<StaffBookingEditSessionCellDTO>> entry : byCourt.entrySet()) {
+            List<StaffBookingEditSessionCellDTO> list = entry.getValue();
+            list.sort(Comparator.comparing(StaffBookingEditSessionCellDTO::getStart));
             int len = 1;
             for (int i = 1; i < list.size(); i++) {
-                StaffBookingEditSessionCellDto prev = list.get(i - 1);
-                StaffBookingEditSessionCellDto cur = list.get(i);
+                StaffBookingEditSessionCellDTO prev = list.get(i - 1);
+                StaffBookingEditSessionCellDTO cur = list.get(i);
                 if (prev.getEnd().equals(cur.getStart())) {
                     len++;
                 } else {
@@ -389,7 +389,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
         LocalTime now = LocalTime.now();
         for (SlotPair slot : addSlots) {
-            StaffBookingEditSessionCellDto cell = repository.findSessionCellBySlotId(conn, slot.courtId, slot.slotId);
+            StaffBookingEditSessionCellDTO cell = repository.findSessionCellBySlotId(conn, slot.courtId, slot.slotId);
             if (cell == null) {
                 throw new ApiException(400, "Slot khong ton tai");
             }
@@ -409,7 +409,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private void upsertPendingSlot(Connection conn, int bookingId, int facilityId,
                                    LocalDate bookingDate, SlotPair slot) throws Exception {
-        StaffBookingEditExistingSlotDto existing = repository.findExistingSlot(conn, bookingId, slot.courtId, slot.slotId);
+        StaffBookingEditExistingSlotDTO existing = repository.findExistingSlot(conn, bookingId, slot.courtId, slot.slotId);
 
         BigDecimal price = repository.lookupCurrentPrice(conn, facilityId, bookingDate, slot.courtId, slot.slotId);
         if (price == null) {
@@ -463,7 +463,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         int activeCount = 0;
         int playedCount = 0;
 
-        for (StaffBookingEditStatusCountDto row : repository.findSlotStatusCounts(conn, bookingId)) {
+        for (StaffBookingEditStatusCountDTO row : repository.findSlotStatusCounts(conn, bookingId)) {
             String status = row.getSlotStatus();
             int cnt = row.getCount();
             if (!"CANCELLED".equals(status)) {
@@ -615,8 +615,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         return v.isEmpty() ? null : v;
     }
 
-    private StaffBookingEditOutcomeDto out(int status, String json) {
-        StaffBookingEditOutcomeDto result = new StaffBookingEditOutcomeDto();
+    private StaffBookingEditOutcomeDTO out(int status, String json) {
+        StaffBookingEditOutcomeDTO result = new StaffBookingEditOutcomeDTO();
         result.setStatus(status);
         result.setJson(json);
         return result;

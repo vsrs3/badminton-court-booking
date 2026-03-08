@@ -1,6 +1,6 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffCustomerSearchItemDto;
+import com.bcb.dto.staff.StaffCustomerSearchItemDTO;
 import com.bcb.repository.staff.StaffCustomerSearchRepository;
 import com.bcb.utils.DBContext;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public class StaffCustomerSearchRepositoryImpl implements StaffCustomerSearchRepository {
 
     @Override
-    public List<StaffCustomerSearchItemDto> searchActiveCustomers(String keyword, int limit) throws Exception {
+    public List<StaffCustomerSearchItemDTO> searchActiveCustomers(String keyword, int limit) throws Exception {
         String sql = "SELECT TOP " + limit + " account_id, full_name, phone, email " +
                 "FROM Account " +
                 "WHERE role = 'CUSTOMER' AND is_active = 1 " +
@@ -21,7 +21,7 @@ public class StaffCustomerSearchRepositoryImpl implements StaffCustomerSearchRep
                 "ORDER BY full_name";
 
         String pattern = "%" + keyword + "%";
-        List<StaffCustomerSearchItemDto> customers = new ArrayList<>();
+        List<StaffCustomerSearchItemDTO> customers = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -29,7 +29,7 @@ public class StaffCustomerSearchRepositoryImpl implements StaffCustomerSearchRep
             ps.setString(2, pattern);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffCustomerSearchItemDto item = new StaffCustomerSearchItemDto();
+                    StaffCustomerSearchItemDTO item = new StaffCustomerSearchItemDTO();
                     item.setAccountId(rs.getInt("account_id"));
                     item.setFullName(rs.getString("full_name"));
                     item.setPhone(rs.getString("phone"));

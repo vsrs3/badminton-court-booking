@@ -1,13 +1,13 @@
 package com.bcb.repository.staff;
 
-import com.bcb.dto.staff.StaffBookingListItemDto;
-import com.bcb.dto.staff.StaffBookingListSearchCriteriaDto;
+import com.bcb.dto.staff.StaffBookingListItemDTO;
+import com.bcb.dto.staff.StaffBookingListSearchCriteriaDTO;
 
 import java.util.List;
 
 public interface StaffBookingListRepository {
-    int countBookings(StaffBookingListSearchCriteriaDto criteria) throws Exception;
+    int countBookings(StaffBookingListSearchCriteriaDTO criteria) throws Exception;
 
-    List<StaffBookingListItemDto> findBookings(StaffBookingListSearchCriteriaDto criteria, int offset, int size) throws Exception;
+    List<StaffBookingListItemDTO> findBookings(StaffBookingListSearchCriteriaDTO criteria, int offset, int size) throws Exception;
 }
 

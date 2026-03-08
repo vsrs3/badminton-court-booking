@@ -1,8 +1,8 @@
 package com.bcb.service.staff;
 
-import com.bcb.dto.staff.StaffBookingCreateOutcomeDto;
+import com.bcb.dto.staff.StaffBookingCreateOutcomeDTO;
 
 public interface StaffBookingCreateService {
-    StaffBookingCreateOutcomeDto createBooking(String body, int facilityId, Integer staffId) throws Exception;
+    StaffBookingCreateOutcomeDTO createBooking(String body, int facilityId, Integer staffId) throws Exception;
 }
 

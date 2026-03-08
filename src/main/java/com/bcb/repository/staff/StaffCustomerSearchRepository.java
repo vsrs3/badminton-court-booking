@@ -1,10 +1,10 @@
 package com.bcb.repository.staff;
 
-import com.bcb.dto.staff.StaffCustomerSearchItemDto;
+import com.bcb.dto.staff.StaffCustomerSearchItemDTO;
 
 import java.util.List;
 
 public interface StaffCustomerSearchRepository {
-    List<StaffCustomerSearchItemDto> searchActiveCustomers(String keyword, int limit) throws Exception;
+    List<StaffCustomerSearchItemDTO> searchActiveCustomers(String keyword, int limit) throws Exception;
 }
 

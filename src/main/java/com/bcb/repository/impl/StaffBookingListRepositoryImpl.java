@@ -1,7 +1,7 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffBookingListItemDto;
-import com.bcb.dto.staff.StaffBookingListSearchCriteriaDto;
+import com.bcb.dto.staff.StaffBookingListItemDTO;
+import com.bcb.dto.staff.StaffBookingListSearchCriteriaDTO;
 import com.bcb.repository.staff.StaffBookingListRepository;
 import com.bcb.utils.DBContext;
 
@@ -14,7 +14,7 @@ import java.util.List;
 public class StaffBookingListRepositoryImpl implements StaffBookingListRepository {
 
     @Override
-    public int countBookings(StaffBookingListSearchCriteriaDto criteria) throws Exception {
+    public int countBookings(StaffBookingListSearchCriteriaDTO criteria) throws Exception {
         String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
         String whereSearch = buildWhereSearch(criteria);
@@ -30,7 +30,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
     }
 
     @Override
-    public List<StaffBookingListItemDto> findBookings(StaffBookingListSearchCriteriaDto criteria, int offset, int size)
+    public List<StaffBookingListItemDTO> findBookings(StaffBookingListSearchCriteriaDTO criteria, int offset, int size)
             throws Exception {
         String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
@@ -58,7 +58,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                 """ + fromJoin + " LEFT JOIN Invoice i ON b.booking_id = i.booking_id " + whereBase + whereSearch +
                 " ORDER BY b.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
-        List<StaffBookingListItemDto> results = new ArrayList<>();
+        List<StaffBookingListItemDTO> results = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = bindSearchParams(ps, criteria, 1);
@@ -72,7 +72,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                             ? "Nhiều sân (" + courtCount + ")"
                             : rs.getString("first_court_name");
 
-                    StaffBookingListItemDto item = new StaffBookingListItemDto();
+                    StaffBookingListItemDTO item = new StaffBookingListItemDTO();
                     item.setBookingId(rs.getInt("booking_id"));
                     item.setCustomerName(rs.getString("customer_name"));
                     item.setPhone(rs.getString("phone"));
@@ -89,7 +89,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
         return results;
     }
 
-    private String buildWhereSearch(StaffBookingListSearchCriteriaDto criteria) {
+    private String buildWhereSearch(StaffBookingListSearchCriteriaDTO criteria) {
         if (!criteria.isHasSearch()) {
             return "";
         }
@@ -99,7 +99,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
         return " AND (a.full_name LIKE ? OR g.guest_name LIKE ? OR a.phone LIKE ? OR g.phone LIKE ?)";
     }
 
-    private int bindSearchParams(PreparedStatement ps, StaffBookingListSearchCriteriaDto criteria, int startIdx)
+    private int bindSearchParams(PreparedStatement ps, StaffBookingListSearchCriteriaDTO criteria, int startIdx)
             throws Exception {
         int idx = startIdx;
         ps.setInt(idx++, criteria.getFacilityId());

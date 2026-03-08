@@ -1,18 +1,18 @@
 package com.bcb.repository.staff;
 
-import com.bcb.dto.staff.StaffCheckinBookingDto;
-import com.bcb.dto.staff.StaffCheckinSessionSlotRowDto;
+import com.bcb.dto.staff.StaffCheckinBookingDTO;
+import com.bcb.dto.staff.StaffCheckinSessionSlotRowDTO;
 
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.List;
 
 public interface StaffCheckinRepository {
-    StaffCheckinBookingDto findBooking(Connection conn, int bookingId) throws Exception;
+    StaffCheckinBookingDTO findBooking(Connection conn, int bookingId) throws Exception;
 
     String findInvoicePaymentStatus(Connection conn, int bookingId) throws Exception;
 
-    List<StaffCheckinSessionSlotRowDto> findSessionSlotRows(Connection conn, int bookingId) throws Exception;
+    List<StaffCheckinSessionSlotRowDTO> findSessionSlotRows(Connection conn, int bookingId) throws Exception;
 
     List<String> findSlotStatuses(Connection conn, List<Integer> slotIds) throws Exception;
 

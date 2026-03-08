@@ -1,16 +1,15 @@
 package com.bcb.repository.staff;
 
-import com.bcb.dto.staff.StaffBookingCreateSlotDto;
-import com.bcb.dto.staff.StaffCustomerAccountDto;
+import com.bcb.dto.staff.StaffBookingCreateSlotDTO;
+import com.bcb.dto.staff.StaffCustomerAccountDTO;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Map;
 
 public interface StaffBookingCreateRepository {
-    StaffCustomerAccountDto findActiveCustomerByPhone(String phone) throws Exception;
+    StaffCustomerAccountDTO findActiveCustomerByPhone(String phone) throws Exception;
 
     Integer insertGuest(Connection conn, String guestName, String guestPhone) throws Exception;
 
@@ -28,9 +27,9 @@ public interface StaffBookingCreateRepository {
 
     Map<Integer, Integer> loadSlotOrder(Connection conn) throws Exception;
 
-    int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDto slot, BigDecimal price) throws Exception;
+    int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception;
 
-    void insertCourtSlotBooking(Connection conn, StaffBookingCreateSlotDto slot,
+    void insertCourtSlotBooking(Connection conn, StaffBookingCreateSlotDTO slot,
                                 java.time.LocalDate bookingDate, int bookingSlotId) throws Exception;
 
     void insertInvoice(Connection conn, int bookingId, BigDecimal totalAmount) throws Exception;

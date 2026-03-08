@@ -1,8 +1,8 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffBookingDetailHeaderDto;
-import com.bcb.dto.staff.StaffBookingDetailInvoiceDto;
-import com.bcb.dto.staff.StaffBookingDetailSlotDto;
+import com.bcb.dto.staff.StaffBookingDetailHeaderDTO;
+import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.repository.staff.StaffBookingDetailRepository;
 
 import java.sql.Connection;
@@ -16,7 +16,7 @@ import java.util.List;
 public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepository {
 
     @Override
-    public StaffBookingDetailHeaderDto findBookingHeader(Connection conn, int bookingId) throws Exception {
+    public StaffBookingDetailHeaderDTO findBookingHeader(Connection conn, int bookingId) throws Exception {
         String sql = """
                 SELECT b.booking_id, b.booking_date, b.booking_status, b.created_at, b.facility_id,
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
@@ -33,7 +33,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) return null;
 
-                StaffBookingDetailHeaderDto header = new StaffBookingDetailHeaderDto();
+                StaffBookingDetailHeaderDTO header = new StaffBookingDetailHeaderDTO();
                 header.setBookingId(rs.getInt("booking_id"));
                 header.setBookingDate(rs.getString("booking_date"));
                 header.setBookingStatus(rs.getString("booking_status"));
@@ -48,7 +48,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
     }
 
     @Override
-    public List<StaffBookingDetailSlotDto> findBookingSlots(Connection conn, int bookingId) throws Exception {
+    public List<StaffBookingDetailSlotDTO> findBookingSlots(Connection conn, int bookingId) throws Exception {
         String sql = """
                 SELECT bs.booking_slot_id, bs.court_id, c.court_name,
                        bs.slot_id, ts.start_time, ts.end_time,
@@ -60,12 +60,12 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                 ORDER BY c.court_name, ts.start_time
                 """;
 
-        List<StaffBookingDetailSlotDto> slots = new ArrayList<>();
+        List<StaffBookingDetailSlotDTO> slots = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffBookingDetailSlotDto slot = new StaffBookingDetailSlotDto();
+                    StaffBookingDetailSlotDTO slot = new StaffBookingDetailSlotDTO();
                     slot.setBookingSlotId(rs.getInt("booking_slot_id"));
                     slot.setCourtId(rs.getInt("court_id"));
                     slot.setCourtName(rs.getString("court_name"));
@@ -85,7 +85,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
     }
 
     @Override
-    public StaffBookingDetailInvoiceDto findInvoice(Connection conn, int bookingId) throws Exception {
+    public StaffBookingDetailInvoiceDTO findInvoice(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT total_amount, paid_amount, payment_status, refund_due, refund_status FROM Invoice WHERE booking_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
@@ -93,7 +93,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                 if (!rs.next()) {
                     return null;
                 }
-                StaffBookingDetailInvoiceDto invoice = new StaffBookingDetailInvoiceDto();
+                StaffBookingDetailInvoiceDTO invoice = new StaffBookingDetailInvoiceDTO();
                 invoice.setTotalAmount(rs.getBigDecimal("total_amount"));
                 invoice.setPaidAmount(rs.getBigDecimal("paid_amount"));
                 invoice.setPaymentStatus(rs.getString("payment_status"));

@@ -1,8 +1,8 @@
 package com.bcb.service.staff;
 
-import com.bcb.dto.staff.StaffBookingListDataDto;
+import com.bcb.dto.staff.StaffBookingListDataDTO;
 
 public interface StaffBookingListService {
-    StaffBookingListDataDto getBookingList(int facilityId, String search, int page, int size) throws Exception;
+    StaffBookingListDataDTO getBookingList(int facilityId, String search, int page, int size) throws Exception;
 }
 

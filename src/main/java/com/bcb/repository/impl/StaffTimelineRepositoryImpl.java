@@ -1,10 +1,10 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffTimelineBookedCellDto;
-import com.bcb.dto.staff.StaffTimelineCourtDto;
-import com.bcb.dto.staff.StaffTimelineDisabledCellDto;
-import com.bcb.dto.staff.StaffTimelineFacilityDto;
-import com.bcb.dto.staff.StaffTimelineSlotDto;
+import com.bcb.dto.staff.StaffTimelineBookedCellDTO;
+import com.bcb.dto.staff.StaffTimelineCourtDTO;
+import com.bcb.dto.staff.StaffTimelineDisabledCellDTO;
+import com.bcb.dto.staff.StaffTimelineFacilityDTO;
+import com.bcb.dto.staff.StaffTimelineSlotDTO;
 import com.bcb.repository.staff.StaffTimelineRepository;
 import com.bcb.utils.DBContext;
 
@@ -20,8 +20,8 @@ import java.util.List;
 public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
 
     @Override
-    public StaffTimelineFacilityDto findFacilityInfo(int facilityId) throws Exception {
-        StaffTimelineFacilityDto facility = new StaffTimelineFacilityDto();
+    public StaffTimelineFacilityDTO findFacilityInfo(int facilityId) throws Exception {
+        StaffTimelineFacilityDTO facility = new StaffTimelineFacilityDTO();
         String sql = "SELECT name, open_time, close_time FROM Facility WHERE facility_id = ?";
 
         try (Connection conn = DBContext.getConnection();
@@ -42,16 +42,16 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
     }
 
     @Override
-    public List<StaffTimelineCourtDto> findActiveCourts(int facilityId) throws Exception {
+    public List<StaffTimelineCourtDTO> findActiveCourts(int facilityId) throws Exception {
         String sql = "SELECT court_id, court_name FROM Court WHERE facility_id = ? AND is_active = 1 ORDER BY court_name";
-        List<StaffTimelineCourtDto> courts = new ArrayList<>();
+        List<StaffTimelineCourtDTO> courts = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, facilityId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffTimelineCourtDto court = new StaffTimelineCourtDto();
+                    StaffTimelineCourtDTO court = new StaffTimelineCourtDTO();
                     court.setCourtId(rs.getInt("court_id"));
                     court.setCourtName(rs.getString("court_name"));
                     courts.add(court);
@@ -63,10 +63,10 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
     }
 
     @Override
-    public List<StaffTimelineSlotDto> findSlotsWithinHours(String openTime, String closeTime) throws Exception {
+    public List<StaffTimelineSlotDTO> findSlotsWithinHours(String openTime, String closeTime) throws Exception {
         String sql = "SELECT slot_id, start_time, end_time FROM TimeSlot " +
                 "WHERE start_time >= CAST(? AS TIME) AND end_time <= CAST(? AS TIME) ORDER BY start_time";
-        List<StaffTimelineSlotDto> slots = new ArrayList<>();
+        List<StaffTimelineSlotDTO> slots = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -74,7 +74,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
             ps.setString(2, closeTime);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffTimelineSlotDto slot = new StaffTimelineSlotDto();
+                    StaffTimelineSlotDTO slot = new StaffTimelineSlotDTO();
                     slot.setSlotId(rs.getInt("slot_id"));
                     slot.setStartTime(rs.getTime("start_time").toLocalTime().toString().substring(0, 5));
                     slot.setEndTime(rs.getTime("end_time").toLocalTime().toString().substring(0, 5));
@@ -87,7 +87,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
     }
 
     @Override
-    public List<StaffTimelineBookedCellDto> findBookedCells(int facilityId, LocalDate bookingDate) throws Exception {
+    public List<StaffTimelineBookedCellDTO> findBookedCells(int facilityId, LocalDate bookingDate) throws Exception {
         String sql = """
                 SELECT csb.court_id, csb.slot_id, b.booking_id, b.booking_status,
                        bs.slot_status,
@@ -102,7 +102,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
                   AND b.booking_status NOT IN ('EXPIRED', 'CANCELLED')
                 """;
 
-        List<StaffTimelineBookedCellDto> cells = new ArrayList<>();
+        List<StaffTimelineBookedCellDTO> cells = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -110,7 +110,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
             ps.setDate(2, Date.valueOf(bookingDate));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffTimelineBookedCellDto cell = new StaffTimelineBookedCellDto();
+                    StaffTimelineBookedCellDTO cell = new StaffTimelineBookedCellDTO();
                     cell.setCourtId(rs.getInt("court_id"));
                     cell.setSlotId(rs.getInt("slot_id"));
                     cell.setBookingId(rs.getInt("booking_id"));
@@ -126,8 +126,8 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
     }
 
     @Override
-    public List<StaffTimelineDisabledCellDto> findDisabledCells(int facilityId, LocalDate bookingDate,
-                                                                 String openTime, String closeTime) throws Exception {
+    public List<StaffTimelineDisabledCellDTO> findDisabledCells(int facilityId, LocalDate bookingDate,
+                                                                String openTime, String closeTime) throws Exception {
         String sql = """
                 SELECT cse.court_id, ts.slot_id, cse.reason
                 FROM CourtScheduleException cse
@@ -139,7 +139,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
                   AND ts.end_time   <= COALESCE(cse.end_time,   CAST(? AS TIME))
                 """;
 
-        List<StaffTimelineDisabledCellDto> cells = new ArrayList<>();
+        List<StaffTimelineDisabledCellDTO> cells = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -151,7 +151,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
             ps.setString(6, closeTime);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffTimelineDisabledCellDto cell = new StaffTimelineDisabledCellDto();
+                    StaffTimelineDisabledCellDTO cell = new StaffTimelineDisabledCellDTO();
                     cell.setCourtId(rs.getInt("court_id"));
                     cell.setSlotId(rs.getInt("slot_id"));
                     String reason = rs.getString("reason");

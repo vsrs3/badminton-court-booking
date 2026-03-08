@@ -1,8 +1,8 @@
 package com.bcb.service.staff;
 
-import com.bcb.dto.staff.StaffBookingEditOutcomeDto;
+import com.bcb.dto.staff.StaffBookingEditOutcomeDTO;
 
 public interface StaffBookingEditService {
-    StaffBookingEditOutcomeDto process(String servletPath, int facilityId, int staffId, String body) throws Exception;
+    StaffBookingEditOutcomeDTO process(String servletPath, int facilityId, int staffId, String body) throws Exception;
 }
 

@@ -1,9 +1,9 @@
 package com.bcb.repository.impl;
 
-import com.bcb.dto.staff.StaffFacilityHoursDto;
-import com.bcb.dto.staff.StaffPriceRuleDto;
-import com.bcb.dto.staff.StaffSlotPriceCourtDto;
-import com.bcb.dto.staff.StaffTimeSlotDto;
+import com.bcb.dto.staff.StaffFacilityHoursDTO;
+import com.bcb.dto.staff.StaffPriceRuleDTO;
+import com.bcb.dto.staff.StaffSlotPriceCourtDTO;
+import com.bcb.dto.staff.StaffTimeSlotDTO;
 import com.bcb.repository.staff.StaffSlotPriceRepository;
 import com.bcb.utils.DBContext;
 
@@ -17,16 +17,16 @@ import java.util.List;
 public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
 
     @Override
-    public List<StaffSlotPriceCourtDto> findActiveCourts(int facilityId) throws Exception {
+    public List<StaffSlotPriceCourtDTO> findActiveCourts(int facilityId) throws Exception {
         String sql = "SELECT court_id, court_type_id FROM Court WHERE facility_id = ? AND is_active = 1";
-        List<StaffSlotPriceCourtDto> courts = new ArrayList<>();
+        List<StaffSlotPriceCourtDTO> courts = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, facilityId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffSlotPriceCourtDto court = new StaffSlotPriceCourtDto();
+                    StaffSlotPriceCourtDTO court = new StaffSlotPriceCourtDTO();
                     court.setCourtId(rs.getInt("court_id"));
                     court.setCourtTypeId(rs.getInt("court_type_id"));
                     courts.add(court);
@@ -38,9 +38,9 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
     }
 
     @Override
-    public StaffFacilityHoursDto findFacilityHours(int facilityId) throws Exception {
+    public StaffFacilityHoursDTO findFacilityHours(int facilityId) throws Exception {
         String sql = "SELECT open_time, close_time FROM Facility WHERE facility_id = ?";
-        StaffFacilityHoursDto hours = new StaffFacilityHoursDto();
+        StaffFacilityHoursDTO hours = new StaffFacilityHoursDTO();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -59,10 +59,10 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
     }
 
     @Override
-    public List<StaffTimeSlotDto> findTimeSlotsWithinHours(String openTime, String closeTime) throws Exception {
+    public List<StaffTimeSlotDTO> findTimeSlotsWithinHours(String openTime, String closeTime) throws Exception {
         String sql = "SELECT slot_id, start_time, end_time FROM TimeSlot " +
                 "WHERE start_time >= CAST(? AS TIME) AND end_time <= CAST(? AS TIME) ORDER BY start_time";
-        List<StaffTimeSlotDto> slots = new ArrayList<>();
+        List<StaffTimeSlotDTO> slots = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -70,7 +70,7 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
             ps.setString(2, closeTime);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffTimeSlotDto slot = new StaffTimeSlotDto();
+                    StaffTimeSlotDTO slot = new StaffTimeSlotDTO();
                     slot.setSlotId(rs.getInt("slot_id"));
                     slot.setStartTime(rs.getTime("start_time").toLocalTime());
                     slot.setEndTime(rs.getTime("end_time").toLocalTime());
@@ -83,10 +83,10 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
     }
 
     @Override
-    public List<StaffPriceRuleDto> findPriceRules(int facilityId, String dayType) throws Exception {
+    public List<StaffPriceRuleDTO> findPriceRules(int facilityId, String dayType) throws Exception {
         String sql = "SELECT court_type_id, start_time, end_time, price FROM FacilityPriceRule " +
                 "WHERE facility_id = ? AND day_type = ? ORDER BY court_type_id, start_time";
-        List<StaffPriceRuleDto> rules = new ArrayList<>();
+        List<StaffPriceRuleDTO> rules = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -94,7 +94,7 @@ public class StaffSlotPriceRepositoryImpl implements StaffSlotPriceRepository {
             ps.setString(2, dayType);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffPriceRuleDto rule = new StaffPriceRuleDto();
+                    StaffPriceRuleDTO rule = new StaffPriceRuleDTO();
                     rule.setCourtTypeId(rs.getInt("court_type_id"));
                     rule.setStartTime(rs.getTime("start_time").toLocalTime());
                     rule.setEndTime(rs.getTime("end_time").toLocalTime());

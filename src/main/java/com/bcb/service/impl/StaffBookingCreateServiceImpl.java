@@ -1,9 +1,9 @@
 package com.bcb.service.impl;
 
 import com.bcb.utils.staff.StaffAuthUtil;
-import com.bcb.dto.staff.StaffBookingCreateOutcomeDto;
-import com.bcb.dto.staff.StaffBookingCreateSlotDto;
-import com.bcb.dto.staff.StaffCustomerAccountDto;
+import com.bcb.dto.staff.StaffBookingCreateOutcomeDTO;
+import com.bcb.dto.staff.StaffBookingCreateSlotDTO;
+import com.bcb.dto.staff.StaffCustomerAccountDTO;
 import com.bcb.repository.impl.StaffBookingCreateRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingCreateRepository;
 import com.bcb.service.staff.StaffBookingCreateService;
@@ -26,7 +26,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     private final StaffBookingCreateRepository repository = new StaffBookingCreateRepositoryImpl();
 
     @Override
-    public StaffBookingCreateOutcomeDto createBooking(String body, int facilityId, Integer staffId) throws Exception {
+    public StaffBookingCreateOutcomeDTO createBooking(String body, int facilityId, Integer staffId) throws Exception {
         if (staffId == null) {
             return out(403, jsonError("Staff chưa được gán"));
         }
@@ -36,7 +36,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         String accountIdStr = extractString(body, "accountId");
         String guestName = extractString(body, "guestName");
         String guestPhone = normalizePhone(extractString(body, "guestPhone"));
-        List<StaffBookingCreateSlotDto> slots = parseSlots(body);
+        List<StaffBookingCreateSlotDTO> slots = parseSlots(body);
 
         if (dateStr == null || dateStr.isEmpty()) {
             return out(400, jsonError("Thiếu ngày đặt sân"));
@@ -81,7 +81,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         }
 
         if ("GUEST".equals(customerType)) {
-            StaffCustomerAccountDto matchedAccount = repository.findActiveCustomerByPhone(guestPhone);
+            StaffCustomerAccountDTO matchedAccount = repository.findActiveCustomerByPhone(guestPhone);
             if (matchedAccount != null) {
                 return out(409, guestPhoneMatchedJson(matchedAccount));
             }
@@ -108,7 +108,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
                                          Integer accountId, String guestName, String guestPhone,
-                                         int staffId, List<StaffBookingCreateSlotDto> slots) throws Exception {
+                                         int staffId, List<StaffBookingCreateSlotDTO> slots) throws Exception {
         DayOfWeek dow = bookingDate.getDayOfWeek();
         String dayType = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) ? "WEEKEND" : "WEEKDAY";
 
@@ -130,7 +130,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
-                for (StaffBookingCreateSlotDto slot : slots) {
+                for (StaffBookingCreateSlotDTO slot : slots) {
                     BigDecimal price = lookupPrice(slot, priceCache, courtTypeMap, slotTimeMap);
                     totalAmount = totalAmount.add(price);
 
@@ -155,7 +155,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         }
     }
 
-    private BigDecimal lookupPrice(StaffBookingCreateSlotDto slot, Map<String, BigDecimal> priceCache,
+    private BigDecimal lookupPrice(StaffBookingCreateSlotDTO slot, Map<String, BigDecimal> priceCache,
                                    Map<Integer, Integer> courtTypeMap, Map<Integer, LocalTime[]> slotTimeMap) {
         Integer courtTypeId = courtTypeMap.get(slot.getCourtId());
         LocalTime[] times = slotTimeMap.get(slot.getSlotId());
@@ -176,7 +176,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return BigDecimal.ZERO;
     }
 
-    private boolean hasExpiredSlotForToday(LocalDate bookingDate, List<StaffBookingCreateSlotDto> slots) throws Exception {
+    private boolean hasExpiredSlotForToday(LocalDate bookingDate, List<StaffBookingCreateSlotDTO> slots) throws Exception {
         if (!LocalDate.now().equals(bookingDate) || slots == null || slots.isEmpty()) {
             return false;
         }
@@ -184,7 +184,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         LocalTime now = LocalTime.now();
         try (Connection conn = DBContext.getConnection()) {
             Map<Integer, LocalTime[]> slotTimeMap = repository.loadSlotTimes(conn);
-            for (StaffBookingCreateSlotDto slot : slots) {
+            for (StaffBookingCreateSlotDTO slot : slots) {
                 LocalTime[] times = slotTimeMap.get(slot.getSlotId());
                 if (times == null) continue;
                 if (now.compareTo(times[1]) >= 0) return true;
@@ -194,9 +194,9 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return false;
     }
 
-    private boolean validateSlotGroups(List<StaffBookingCreateSlotDto> slots) throws Exception {
+    private boolean validateSlotGroups(List<StaffBookingCreateSlotDTO> slots) throws Exception {
         Map<Integer, List<Integer>> groups = new HashMap<>();
-        for (StaffBookingCreateSlotDto slot : slots) {
+        for (StaffBookingCreateSlotDTO slot : slots) {
             groups.computeIfAbsent(slot.getCourtId(), k -> new ArrayList<>()).add(slot.getSlotId());
         }
 
@@ -231,8 +231,8 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return true;
     }
 
-    private List<StaffBookingCreateSlotDto> parseSlots(String json) {
-        List<StaffBookingCreateSlotDto> result = new ArrayList<>();
+    private List<StaffBookingCreateSlotDTO> parseSlots(String json) {
+        List<StaffBookingCreateSlotDTO> result = new ArrayList<>();
         String slotsKey = "\"slots\"";
         int idx = json.indexOf(slotsKey);
         if (idx < 0) return result;
@@ -256,7 +256,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
             if (courtIdStr != null && slotIdStr != null) {
                 try {
-                    result.add(new StaffBookingCreateSlotDto(Integer.parseInt(courtIdStr), Integer.parseInt(slotIdStr)));
+                    result.add(new StaffBookingCreateSlotDTO(Integer.parseInt(courtIdStr), Integer.parseInt(slotIdStr)));
                 } catch (NumberFormatException ignored) {
                 }
             }
@@ -297,7 +297,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return phone.replaceAll("\\s+", "").trim();
     }
 
-    private String guestPhoneMatchedJson(StaffCustomerAccountDto account) {
+    private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
         return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"So dien thoai da ton tai tai khoan khach hang\",\"data\":{" +
                 "\"accountId\":" + account.getAccountId() + "," +
                 "\"fullName\":" + StaffAuthUtil.escapeJson(account.getFullName()) + "," +
@@ -310,8 +310,8 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return "{\"success\":false,\"message\":" + StaffAuthUtil.escapeJson(message) + "}";
     }
 
-    private StaffBookingCreateOutcomeDto out(int status, String json) {
-        StaffBookingCreateOutcomeDto outcome = new StaffBookingCreateOutcomeDto();
+    private StaffBookingCreateOutcomeDTO out(int status, String json) {
+        StaffBookingCreateOutcomeDTO outcome = new StaffBookingCreateOutcomeDTO();
         outcome.setStatus(status);
         outcome.setJson(json);
         return outcome;

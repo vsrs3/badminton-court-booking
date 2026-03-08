@@ -1,6 +1,6 @@
 package com.bcb.service.impl;
 
-import com.bcb.dto.staff.StaffCustomerSearchItemDto;
+import com.bcb.dto.staff.StaffCustomerSearchItemDTO;
 import com.bcb.repository.impl.StaffCustomerSearchRepositoryImpl;
 import com.bcb.repository.staff.StaffCustomerSearchRepository;
 import com.bcb.service.staff.StaffCustomerSearchService;
@@ -13,7 +13,7 @@ public class StaffCustomerSearchServiceImpl implements StaffCustomerSearchServic
     private final StaffCustomerSearchRepository repository = new StaffCustomerSearchRepositoryImpl();
 
     @Override
-    public List<StaffCustomerSearchItemDto> searchCustomers(String keyword) throws Exception {
+    public List<StaffCustomerSearchItemDTO> searchCustomers(String keyword) throws Exception {
         return repository.searchActiveCustomers(keyword, DEFAULT_LIMIT);
     }
 }
