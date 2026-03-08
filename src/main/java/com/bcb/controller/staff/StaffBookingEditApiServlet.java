@@ -149,6 +149,7 @@ public class StaffBookingEditApiServlet extends HttpServlet {
             }
 
             LocalDate bookingDate = LocalDate.parse(before.bookingDate);
+            ensureAddSlotsNotExpired(conn, bookingDate, addSlots);
             for (SlotPair slot : addSlots) {
                 upsertPendingSlot(conn, bookingId, facilityId, bookingDate, slot);
             }
@@ -449,6 +450,22 @@ public class StaffBookingEditApiServlet extends HttpServlet {
         }
     }
 
+    private void ensureAddSlotsNotExpired(Connection conn, LocalDate bookingDate, List<SlotPair> addSlots)
+            throws ApiException, SQLException {
+        if (!LocalDate.now().equals(bookingDate) || addSlots == null || addSlots.isEmpty()) {
+            return;
+        }
+        LocalTime now = LocalTime.now();
+        for (SlotPair slot : addSlots) {
+            SessionCell cell = loadSessionCell(conn, slot.courtId, slot.slotId);
+            if (cell == null) {
+                throw new ApiException(400, "Slot khong ton tai");
+            }
+            if (now.compareTo(cell.end) >= 0) {
+                throw new ApiException(400, "Da qua gio ket thuc cua mot hoac nhieu slot. Vui long chon slot khac.");
+            }
+        }
+    }
     private void cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
                 "UPDATE BookingSlot SET slot_status = 'CANCELLED', is_released = 1 " +

@@ -1,7 +1,3 @@
-/**
- * staff-booking-create.js — Task 9c: Booking proxy create page
- * Fix: phone validation 10 digits + real-time feedback
- */
 (function () {
     'use strict';
 
@@ -310,7 +306,7 @@
 
         // Disable button
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Dang tao booking...';
+        btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Đang tạo booking...';
 
         try {
             var res = await fetch(CTX + '/api/staff/booking/create', {

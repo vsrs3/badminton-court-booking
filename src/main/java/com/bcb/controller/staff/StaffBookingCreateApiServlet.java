@@ -128,6 +128,11 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
                 sendError(response, 400, "Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân");
                 return;
             }
+            if (hasExpiredSlotForToday(bookingDate, slots)) {
+                sendError(response, 400, "Đã quá giờ kết thúc của một hoặc nhiều slot. Vui long chon slot khac.");
+                return;
+            }
+
 
             // Get staffId from session
             Integer staffId = (Integer) request.getSession().getAttribute("staffId");
@@ -350,6 +355,30 @@ public class StaffBookingCreateApiServlet extends HttpServlet {
     }
 
     // ─── Validate: each court group ≥ 2 consecutive ───
+    private boolean hasExpiredSlotForToday(LocalDate bookingDate, List<int[]> slots) throws SQLException {
+        if (!LocalDate.now().equals(bookingDate)) {
+            return false;
+        }
+        if (slots == null || slots.isEmpty()) {
+            return false;
+        }
+
+        LocalTime now = LocalTime.now();
+        try (Connection conn = DBContext.getConnection()) {
+            Map<Integer, LocalTime[]> slotTimeMap = loadSlotTimes(conn);
+            for (int[] pair : slots) {
+                int slotId = pair[1];
+                LocalTime[] times = slotTimeMap.get(slotId);
+                if (times == null) {
+                    continue;
+                }
+                if (now.compareTo(times[1]) >= 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     private boolean validateSlotGroups(List<int[]> slots) throws Exception {
         // Group by courtId
         Map<Integer, List<Integer>> groups = new HashMap<>();
