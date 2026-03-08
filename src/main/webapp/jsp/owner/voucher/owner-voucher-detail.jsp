@@ -91,11 +91,23 @@
                             </tr>
                             <tr>
                                 <td class="text-muted small fw-semibold ps-0">Bắt đầu</td>
-                                <td class="fw-medium">${v.validFrom}</td>
+                                <td>
+                                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold small"
+                                          style="background:#D1FAE5;color:#065F46;">
+                                        <i class="bi bi-calendar-check"></i>
+                                        ${v.validFromFormatted}
+                                    </span>
+                                </td>
                             </tr>
                             <tr>
                                 <td class="text-muted small fw-semibold ps-0">Kết thúc</td>
-                                <td class="fw-medium">${v.validTo}</td>
+                                <td>
+                                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-2 fw-semibold small"
+                                          style="background:#FEE2E2;color:#991B1B;">
+                                        <i class="bi bi-calendar-x"></i>
+                                        ${v.validToFormatted}
+                                    </span>
+                                </td>
                             </tr>
                             <tr>
                                 <td class="text-muted small fw-semibold ps-0">Giới hạn dùng</td>

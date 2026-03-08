@@ -2,6 +2,7 @@ package com.bcb.dto.voucher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -115,4 +116,16 @@ public class VoucherDTO {
 
     public boolean isHasHistory() { return hasHistory; }
     public void setHasHistory(boolean hasHistory) { this.hasHistory = hasHistory; }
+
+    /** Returns validFrom formatted as "dd/MM/yyyy HH:mm" for display in JSP. */
+    public String getValidFromFormatted() {
+        if (validFrom == null) return "";
+        return validFrom.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    /** Returns validTo formatted as "dd/MM/yyyy HH:mm" for display in JSP. */
+    public String getValidToFormatted() {
+        if (validTo == null) return "";
+        return validTo.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
 }
