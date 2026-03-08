@@ -48,6 +48,10 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                     conn.rollback();
                     return "{\"success\":false,\"message\":\"Phiên này đã được đánh dấu vắng mặt\"}";
                 }
+                if ("CANCELLED".equals(targetStatus)) {
+                    conn.rollback();
+                    return "{\"success\":false,\"message\":\"Phi\u00ean n\u00e0y \u0111\u00e3 b\u1ecb h\u1ee7y\"}";
+                }
 
                 LocalTime now = LocalTime.now();
                 int autoNoShowCount = 0;
@@ -123,6 +127,10 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 if ("NO_SHOW".equals(targetStatus)) {
                     conn.rollback();
                     return "{\"success\":false,\"message\":\"Phiên đã được đánh dấu vắng mặt\"}";
+                }
+                if ("CANCELLED".equals(targetStatus)) {
+                    conn.rollback();
+                    return "{\"success\":false,\"message\":\"Phi\u00ean \u0111\u00e3 b\u1ecb h\u1ee7y\"}";
                 }
 
                 Timestamp nowTs = new Timestamp(System.currentTimeMillis());
@@ -210,7 +218,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             } else {
                 status = getSessionStatus(conn, sessions.get(i).getSlotIds());
             }
-            if (!"COMPLETED".equals(status) && !"NO_SHOW".equals(status)) {
+            if (!"COMPLETED".equals(status) && !"NO_SHOW".equals(status) && !"CANCELLED".equals(status)) {
                 return false;
             }
         }
@@ -291,14 +299,17 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
 
         boolean allCheckout = true;
         boolean allNoShow = true;
+        boolean allCancelled = true;
         boolean anyCheckedIn = false;
 
         for (String s : statuses) {
             if (!"CHECK_OUT".equals(s)) allCheckout = false;
             if (!"NO_SHOW".equals(s)) allNoShow = false;
+            if (!"CANCELLED".equals(s)) allCancelled = false;
             if ("CHECKED_IN".equals(s)) anyCheckedIn = true;
         }
 
+        if (allCancelled) return "CANCELLED";
         if (allNoShow) return "NO_SHOW";
         if (allCheckout) return "COMPLETED";
         if (anyCheckedIn) return "CHECKED_IN";
@@ -313,9 +324,12 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 return "Hoàn thành";
             case "NO_SHOW":
                 return "Vắng mặt";
+            case "CANCELLED":
+                return "\u0110\u00e3 h\u1ee7y";
             default:
                 return status;
         }
     }
 }
+
 

@@ -229,10 +229,6 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             StaffBookingSnapshotTokenUtil.Snapshot before = assertConfirmedSnapshot(conn, bookingId, facilityId, etag);
             String beforeEtag = StaffBookingSnapshotTokenUtil.computeEtag(before);
 
-            if (repository.existsSlotStatus(conn, bookingId, "CHECKED_IN")) {
-                throw new ApiException(400, "Không thể hủy khi có phiên đang CHECKED_IN");
-            }
-
             List<Integer> pendingSlotIds = repository.findPendingSlotIds(conn, bookingId);
             if (pendingSlotIds.isEmpty()) {
                 throw new ApiException(400, "Không còn slot PENDING để hủy");
@@ -460,24 +456,25 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
     }
 
     private String recomputeBookingStatus(Connection conn, int bookingId) throws Exception {
-        int activeCount = 0;
-        int playedCount = 0;
+        int activeCount = 0;   // slots still in progress
+        int finishedCount = 0; // slots already ended by play/no-show
 
         for (StaffBookingEditStatusCountDTO row : repository.findSlotStatusCounts(conn, bookingId)) {
             String status = row.getSlotStatus();
             int cnt = row.getCount();
-            if (!"CANCELLED".equals(status)) {
+
+            if ("PENDING".equals(status) || "CHECKED_IN".equals(status)) {
                 activeCount += cnt;
             }
             if ("CHECK_OUT".equals(status) || "NO_SHOW".equals(status)) {
-                playedCount += cnt;
+                finishedCount += cnt;
             }
         }
 
-        if (activeCount == 0) {
-            return playedCount > 0 ? "COMPLETED" : "CANCELLED";
+        if (activeCount > 0) {
+            return "CONFIRMED";
         }
-        return "CONFIRMED";
+        return finishedCount > 0 ? "COMPLETED" : "CANCELLED";
     }
 
     private void insertAuditLog(Connection conn, int bookingId, int staffId,
@@ -668,4 +665,3 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
-
