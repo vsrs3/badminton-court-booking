@@ -91,44 +91,20 @@ public interface FacilityService {
 
     int createFacilityWithImages(Facility facility, Part thumbnailPart, Collection<Part> galleryParts) throws BusinessException;
 
-    //VUONGPD
     /**
-     * Get facilities with pagination for infinite scroll
-     *
-     * @param page Page number (0-based)
-     * @param pageSize Number of items per page
-     * @param userLat User's latitude (optional, for distance calculation)
-     * @param userLng User's longitude (optional, for distance calculation)
-     * @param accountId User account ID (optional, for favorites)
-     * @return List of FacilityDTO
+     * Get facilities with pagination for home/infinite scroll.
      */
     List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng,
-                                    Integer accountId, String keyword, String province, String district);
+                                    Integer accountId, String keyword, String province, String district,
+                                    boolean favoritesOnly);
 
-    /**
-     * Get total number of active facilities
-     *
-     * @return Total count
-     */
     int getTotalCount();
 
-    /**
-     * Get total number of active facilities after applying optional search filters.
-     *
-     * @param keyword Search text for facility name/address/province/district (optional)
-     * @param province Province filter (optional)
-     * @param district District filter (optional)
-     * @return Total count after filtering
-     */
-    int getTotalCount(String keyword, String province, String district);
+    int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly);
 
-    /**
-     * Get facility by ID
-     *
-     * @param facilityId Facility ID
-     * @param accountId User account ID (optional, for favorite status)
-     * @return FacilityDTO or null if not found
-     */
     FacilityDTO getFacilityById(Integer facilityId, Integer accountId);
 
+    boolean addFavorite(Integer accountId, Integer facilityId);
+
+    boolean removeFavorite(Integer accountId, Integer facilityId);
 }

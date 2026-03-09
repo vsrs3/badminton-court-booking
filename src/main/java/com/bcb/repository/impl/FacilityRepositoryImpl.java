@@ -265,11 +265,11 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 //    vuongdq
     @Override
     public List<Facility> findAllWithPagination(int offset, int limit) {
-        return findForHome(offset, limit, null, null, null);
+        return findForHome(offset, limit, null, null, null, null);
     }
 
     @Override
-    public List<Facility> findForHome(int offset, int limit, String keyword, String province, String district) {
+    public List<Facility> findForHome(int offset, int limit, String keyword, String province, String district, Integer favoriteAccountId) {
         List<Facility> facilities = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
@@ -311,6 +311,12 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             params.add(province.trim());
         }
 
+        if (favoriteAccountId != null) {
+            sql.append(" AND EXISTS (")
+                    .append("SELECT 1 FROM CustomerFavoriteFacility cff ")
+                    .append("WHERE cff.facility_id = f.facility_id AND cff.account_id = ?)");
+            params.add(favoriteAccountId);
+        }
         if (district != null && !district.trim().isEmpty()) {
             sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
             params.add(district.trim());
@@ -386,13 +392,13 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public int getTotalCount() {
-        return countForHome(null, null, null);
+        return countForHome(null, null, null, null);
     }
 
     @Override
-    public int countForHome(String keyword, String province, String district) {
+    public int countForHome(String keyword, String province, String district, Integer favoriteAccountId) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Facility f WHERE f.is_active = 1");
-        List<String> params = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
 
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (")
@@ -413,6 +419,12 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             params.add(province.trim());
         }
 
+        if (favoriteAccountId != null) {
+            sql.append(" AND EXISTS (")
+                    .append("SELECT 1 FROM CustomerFavoriteFacility cff ")
+                    .append("WHERE cff.facility_id = f.facility_id AND cff.account_id = ?)");
+            params.add(favoriteAccountId);
+        }
         if (district != null && !district.trim().isEmpty()) {
             sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
             params.add(district.trim());
@@ -421,8 +433,13 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            for (int i = 0; i < params.size(); i++) {
-                ps.setString(i + 1, params.get(i));
+            int idx = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
+                }
             }
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -495,4 +512,83 @@ public class FacilityRepositoryImpl implements FacilityRepository {
     }
 
 
+
+    @Override
+    public boolean addFavorite(int accountId, int facilityId) {
+        String sql = "INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (?, ?)";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // Duplicate favorite (UNIQUE constraint) => treat as already favorited
+            if (e.getErrorCode() == 2627 || e.getErrorCode() == 2601) {
+                return true;
+            }
+            throw new RuntimeException("Error adding favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean removeFavorite(int accountId, int facilityId) {
+        String sql = "DELETE FROM CustomerFavoriteFacility WHERE account_id = ? AND facility_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error removing favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean isFavorite(int accountId, int facilityId) {
+        String sql = "SELECT 1 FROM CustomerFavoriteFacility WHERE account_id = ? AND facility_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<Integer> getFavoriteFacilityIds(int accountId) {
+        String sql = "SELECT facility_id FROM CustomerFavoriteFacility WHERE account_id = ?";
+        List<Integer> ids = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("facility_id"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching favorites: " + e.getMessage(), e);
+        }
+
+        return ids;
+    }
 }
+
+
+
+
+
+

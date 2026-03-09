@@ -14,8 +14,8 @@ import com.bcb.service.FacilityImageService;
 import com.bcb.service.FacilityService;
 import com.bcb.service.UploadService;
 import com.bcb.validation.FacilityValidator;
-import jakarta.servlet.http.Part;
 import com.bcb.utils.DBContext;
+import jakarta.servlet.http.Part;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -338,7 +338,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 //    ============= VUONGPD =============
 @Override
-public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district) {
+public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
     try {
         System.out.println("=== START getFacilities ===");
 
@@ -348,11 +348,15 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
 
         // Get facilities from repository
         System.out.println("📦 Fetching facilities from repository...");
-        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district);
+        Integer favoriteAccountId = favoritesOnly ? accountId : null;
+        if (favoritesOnly && favoriteAccountId == null) {
+            return new ArrayList<>();
+        }
+        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
         System.out.println("✅ Loaded " + facilities.size() + " facilities");
 
         // Get total count
-        int totalCount = facilityRepository.countForHome(keyword, province, district);
+        int totalCount = facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
         System.out.println("📊 Total active facilities in DB: " + totalCount);
 
         // Step 2: Get favorites
@@ -406,8 +410,12 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
     }
 
     @Override
-    public int getTotalCount(String keyword, String province, String district) {
-        return facilityRepository.countForHome(keyword, province, district);
+    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly) {
+        Integer favoriteAccountId = favoritesOnly ? accountId : null;
+        if (favoritesOnly && favoriteAccountId == null) {
+            return 0;
+        }
+        return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
     }
 
     @Override
@@ -584,59 +592,32 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         return "Liên hệ";
     }
 
+    @Override
+    public boolean addFavorite(Integer accountId, Integer facilityId) {
+        return facilityRepository.addFavorite(accountId, facilityId);
+    }
+
+    @Override
+    public boolean removeFavorite(Integer accountId, Integer facilityId) {
+        return facilityRepository.removeFavorite(accountId, facilityId);
+    }
+
     /**
-     * Get favorite facility IDs for a user
      */
     private Set<Integer> getFavoriteFacilityIds(Integer accountId) {
-        Set<Integer> favoriteIds = new HashSet<>();
-
-        String sql = """
-            SELECT facility_id 
-            FROM CustomerFavoriteFacility 
-            WHERE account_id = ?
-        """;
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, accountId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    favoriteIds.add(rs.getInt("facility_id"));
-                }
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error fetching favorites: " + e.getMessage());
-        }
-
-        return favoriteIds;
+        return new HashSet<>(facilityRepository.getFavoriteFacilityIds(accountId));
     }
 
     /**
      * Check if a facility is favorite for a user
      */
     private boolean isFavorite(Integer accountId, Integer facilityId) {
-        String sql = """
-            SELECT 1 FROM CustomerFavoriteFacility 
-            WHERE account_id = ? AND facility_id = ?
-        """;
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, accountId);
-            ps.setInt(2, facilityId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error checking favorite: " + e.getMessage());
-        }
-
-        return false;
+        return facilityRepository.isFavorite(accountId, facilityId);
     }
 }
+
+
+
+
+
+

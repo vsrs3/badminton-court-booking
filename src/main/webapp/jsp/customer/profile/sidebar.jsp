@@ -63,13 +63,13 @@
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
         </a>
-        <div class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
+        <a href="profile?section=favorites" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="heart" class="w-5 h-5 text-emerald-700"></i>
                 <span class="text-sm font-medium text-gray-700">Danh sách yêu thích</span>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
-        </div>
+        </a>
         <div class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="crown" class="w-5 h-5 text-emerald-700"></i>

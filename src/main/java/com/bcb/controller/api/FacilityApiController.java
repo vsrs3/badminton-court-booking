@@ -1,6 +1,7 @@
 package com.bcb.controller.api;
 
 import com.bcb.dto.FacilityDTO;
+import com.bcb.model.Account;
 import com.bcb.service.FacilityService;
 import com.bcb.service.impl.FacilityServiceImpl;
 import com.google.gson.Gson;
@@ -39,7 +40,6 @@ public class FacilityApiController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Set response type to JSON
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
@@ -47,17 +47,88 @@ public class FacilityApiController extends HttpServlet {
 
         try {
             if (pathInfo == null || pathInfo.equals("/")) {
-                // GET /api/facilities - Get all facilities with pagination
+                // GET /api/facilities
                 handleGetFacilities(request, response);
-            } else {
-                // GET /api/facilities/{id} - Get facility by ID
-                String[] pathParts = pathInfo.split("/");
-                if (pathParts.length == 2) {
-                    handleGetFacilityById(request, response, pathParts[1]);
-                } else {
-                    sendErrorResponse(response, 404, "Endpoint not found");
-                }
+                return;
             }
+
+            // GET /api/facilities/{id}
+            String[] pathParts = pathInfo.split("/");
+            if (pathParts.length == 2) {
+                handleGetFacilityById(request, response, pathParts[1]);
+            } else {
+                sendErrorResponse(response, 404, "Endpoint not found");
+            }
+        } catch (Exception e) {
+            sendErrorResponse(response, 500, "Internal server error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String pathInfo = request.getPathInfo();
+        String[] pathParts = pathInfo == null ? new String[0] : pathInfo.split("/");
+
+        try {
+            // POST /api/facilities/favorites/{facilityId}
+            if (pathParts.length == 3 && "favorites".equals(pathParts[1])) {
+                Integer accountId = getSessionAccountId(request);
+                if (accountId == null) {
+                    sendErrorResponse(response, 401, "Unauthorized");
+                    return;
+                }
+
+                int facilityId = Integer.parseInt(pathParts[2]);
+                boolean ok = facilityService.addFavorite(accountId, facilityId);
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("success", ok);
+                data.put("data", Map.of("facilityId", facilityId, "isFavorite", true));
+                response.getWriter().write(gson.toJson(data));
+                return;
+            }
+
+            sendErrorResponse(response, 404, "Endpoint not found");
+        } catch (NumberFormatException e) {
+            sendErrorResponse(response, 400, "Invalid facility ID");
+        } catch (Exception e) {
+            sendErrorResponse(response, 500, "Internal server error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String pathInfo = request.getPathInfo();
+        String[] pathParts = pathInfo == null ? new String[0] : pathInfo.split("/");
+
+        try {
+            // DELETE /api/facilities/favorites/{facilityId}
+            if (pathParts.length == 3 && "favorites".equals(pathParts[1])) {
+                Integer accountId = getSessionAccountId(request);
+                if (accountId == null) {
+                    sendErrorResponse(response, 401, "Unauthorized");
+                    return;
+                }
+
+                int facilityId = Integer.parseInt(pathParts[2]);
+                boolean ok = facilityService.removeFavorite(accountId, facilityId);
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("success", ok);
+                data.put("data", Map.of("facilityId", facilityId, "isFavorite", false));
+                response.getWriter().write(gson.toJson(data));
+                return;
+            }
+
+            sendErrorResponse(response, 404, "Endpoint not found");
+        } catch (NumberFormatException e) {
+            sendErrorResponse(response, 400, "Invalid facility ID");
         } catch (Exception e) {
             sendErrorResponse(response, 500, "Internal server error: " + e.getMessage());
         }
@@ -65,48 +136,43 @@ public class FacilityApiController extends HttpServlet {
 
     /**
      * Handle GET /api/facilities
-     * Query params:
-     * - page: page number (default: 0)
-     * - pageSize: items per page (default: 12)
-     * - userLat: user latitude (optional)
-     * - userLng: user longitude (optional)
      */
     private void handleGetFacilities(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        // Get pagination parameters
         int page = getIntParameter(request, "page", 0);
         int pageSize = getIntParameter(request, "pageSize", 12);
 
-        // Get user location (optional)
         Double userLat = getDoubleParameter(request, "userLat");
         Double userLng = getDoubleParameter(request, "userLng");
 
-        // Search filters
         String keyword = trimToNull(request.getParameter("q"));
         String province = trimToNull(request.getParameter("province"));
         String district = trimToNull(request.getParameter("district"));
+        boolean favoritesOnly = "true".equalsIgnoreCase(request.getParameter("favoritesOnly"));
 
-        // Get user account ID from session (if logged in)
-        HttpSession session = request.getSession(false);
-        Integer accountId = null;
-        if (session != null && session.getAttribute("accountId") != null) {
-            accountId = (Integer) session.getAttribute("accountId");
+        Integer accountId = getSessionAccountId(request);
+        if (favoritesOnly && accountId == null) {
+            sendErrorResponse(response, 401, "Unauthorized");
+            return;
         }
 
-        // Get facilities
-        List<FacilityDTO> facilities = facilityService.getFacilities(page, pageSize, userLat, userLng, accountId, keyword, province, district);
-        int totalCount = facilityService.getTotalCount(keyword, province, district);
+        List<FacilityDTO> facilities = facilityService.getFacilities(
+                page,
+                pageSize,
+                userLat,
+                userLng,
+                accountId,
+                keyword,
+                province,
+                district,
+                favoritesOnly
+        );
+        int totalCount = facilityService.getTotalCount(keyword, province, district, accountId, favoritesOnly);
 
-        // ✅ Calculate hasMore
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
         boolean hasMore = (page + 1) < totalPages;
 
-        System.out.println("📄 Pagination: page=" + page + ", pageSize=" + pageSize +
-                ", totalCount=" + totalCount + ", totalPages=" + totalPages +
-                ", hasMore=" + hasMore);
-
-        // Build response
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("success", true);
         responseData.put("data", facilities);
@@ -118,7 +184,6 @@ public class FacilityApiController extends HttpServlet {
                 "hasMore", hasMore
         ));
 
-        // Send response
         response.getWriter().write(gson.toJson(responseData));
     }
 
@@ -130,22 +195,14 @@ public class FacilityApiController extends HttpServlet {
 
         try {
             Integer facilityId = Integer.parseInt(id);
+            Integer accountId = getSessionAccountId(request);
 
-            // Get user account ID from session (if logged in)
-            HttpSession session = request.getSession(false);
-            Integer accountId = null;
-            if (session != null && session.getAttribute("accountId") != null) {
-                accountId = (Integer) session.getAttribute("accountId");
-            }
-
-            // Get facility
             FacilityDTO facility = facilityService.getFacilityById(facilityId, accountId);
 
             if (facility != null) {
                 Map<String, Object> responseData = new HashMap<>();
                 responseData.put("success", true);
                 responseData.put("data", facility);
-
                 response.getWriter().write(gson.toJson(responseData));
             } else {
                 sendErrorResponse(response, 404, "Facility not found");
@@ -156,9 +213,24 @@ public class FacilityApiController extends HttpServlet {
         }
     }
 
-    /**
-     * Send error response
-     */
+    private Integer getSessionAccountId(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        if (session.getAttribute("accountId") != null) {
+            return (Integer) session.getAttribute("accountId");
+        }
+
+        Object accountObj = session.getAttribute("account");
+        if (accountObj instanceof Account) {
+            return ((Account) accountObj).getAccountId();
+        }
+
+        return null;
+    }
+
     private void sendErrorResponse(HttpServletResponse response, int statusCode, String message)
             throws IOException {
 
@@ -171,9 +243,6 @@ public class FacilityApiController extends HttpServlet {
         response.getWriter().write(gson.toJson(errorResponse));
     }
 
-    /**
-     * Get integer parameter with default value
-     */
     private int getIntParameter(HttpServletRequest request, String paramName, int defaultValue) {
         String paramValue = request.getParameter(paramName);
         if (paramValue != null && !paramValue.isEmpty()) {
@@ -186,9 +255,6 @@ public class FacilityApiController extends HttpServlet {
         return defaultValue;
     }
 
-    /**
-     * Get double parameter (nullable)
-     */
     private Double getDoubleParameter(HttpServletRequest request, String paramName) {
         String paramValue = request.getParameter(paramName);
         if (paramValue != null && !paramValue.isEmpty()) {
@@ -209,3 +275,5 @@ public class FacilityApiController extends HttpServlet {
         return trimmed.isEmpty() ? null : trimmed;
     }
 }
+
+

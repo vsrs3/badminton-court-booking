@@ -215,6 +215,10 @@ const contextPath = window.location.pathname.split('/')[1]
                 params.append("district", AppState.filters.district);
             }
 
+            if (AppState.isShowingFavorites) {
+                params.append("favoritesOnly", "true");
+            }
+
 
             // ✅ IMPORTANT: Add user location if available
             if (AppState.userLocation) {
@@ -538,8 +542,15 @@ const contextPath = window.location.pathname.split('/')[1]
 
         // Reset favorites when changing tabs
         if (tabName !== TABS.HOME) {
+            const wasShowingFavorites = AppState.isShowingFavorites;
             AppState.isShowingFavorites = false;
             updateFavoriteButton();
+
+            if (wasShowingFavorites) {
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
+            }
         }
 
         // Initialize map if switching to map tab
@@ -563,32 +574,76 @@ const contextPath = window.location.pathname.split('/')[1]
     // FAVORITES
     // ============================================
 
-    function toggleFavorite(courtId) {
-        const court = AppState.courts.find(c => c.id === courtId);
-        if (court) {
-            court.isFavorite = !court.isFavorite;
-            applyFiltersAndSearch();
+    async function toggleFavorite(courtId) {
+        if (!requireLogin('Yeu thich')) {
+            return;
+        }
 
-            // Update detail panel if open
-            if (AppState.selectedCourt && AppState.selectedCourt.id === courtId) {
-                AppState.selectedCourt = court;
-                updateDetailFavoriteButton();
+        const court = AppState.courts.find(c => String(c.id) === String(courtId));
+        if (!court) return;
+
+        const nextFavoriteState = !court.isFavorite;
+        const previousFavoriteState = court.isFavorite;
+
+        // Optimistic UI update
+        court.isFavorite = nextFavoriteState;
+        applyFiltersAndSearch();
+
+        if (AppState.selectedCourt && String(AppState.selectedCourt.id) === String(courtId)) {
+            AppState.selectedCourt = court;
+            updateDetailFavoriteButton();
+        }
+
+        const currentContextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+        const favoriteUrl = `/${currentContextPath}/api/facilities/favorites/${encodeURIComponent(courtId)}`;
+
+        try {
+            const response = await fetch(favoriteUrl, {
+                method: nextFavoriteState ? 'POST' : 'DELETE'
+            });
+
+            if (response.status === 401) {
+                court.isFavorite = previousFavoriteState;
+                applyFiltersAndSearch();
+                showAuthModal();
+                return;
             }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Favorite update failed');
+            }
+
+            // If showing favorites-only list, removing one should refresh DB list immediately
+            if (AppState.isShowingFavorites && !nextFavoriteState) {
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
+            }
+        } catch (error) {
+            console.error('Favorite API error:', error);
+            court.isFavorite = previousFavoriteState;
+            applyFiltersAndSearch();
+            showToast('Khong the cap nhat yeu thich');
         }
     }
 
     function toggleFavoriteFilter() {
-        const favoriteCount = AppState.courts.filter(c => c.isFavorite).length;
-
-        if (favoriteCount === 0) {
-            showToast("Chưa có sân yêu thích");
+        if (!AppState.isShowingFavorites && !requireLogin('Danh sach yeu thich')) {
             return;
         }
 
         AppState.isShowingFavorites = !AppState.isShowingFavorites;
         updateFavoriteButton();
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
+
 
     function updateFavoriteButton() {
         const favoriteBtn = document.getElementById('favoriteBtn');
@@ -948,7 +1003,9 @@ const contextPath = window.location.pathname.split('/')[1]
             showAllBtn.addEventListener('click', function() {
                 AppState.isShowingFavorites = false;
                 updateFavoriteButton();
-                applyFiltersAndSearch();
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
             });
         }
 
@@ -1102,4 +1159,7 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
 
