@@ -14,4 +14,10 @@ public interface InventoryService {
     List<Inventory> getWithPagination(int limit, int offset, String keyword);
 
     int countInventory(String keyword);
+
+    List<Inventory> getActiveNotAssignedToFacility(int facilityId, String keyword);
+
+    List<Inventory> getActiveNotAssignedToFacilityWithPagination(int facilityId, int limit, int offset, String keyword);
+
+    int countActiveNotAssignedToFacility(int facilityId, String keyword);
 }

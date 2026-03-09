@@ -137,12 +137,12 @@ public class InventoryRepositoryImpl implements InventoryRepository {
 
         String sql = """
                 UPDATE Inventory
-                SET name=?,
-                    brand=?,
-                    description=?,
-                    rental_price=?,
-                    is_active=?
-                WHERE inventory_id=?
+                SET name = ?,
+                    brand = ?,
+                    description = ?,
+                    rental_price = ?,
+                    is_active = ?
+                WHERE inventory_id = ?
                 """;
 
         try (Connection conn = DBContext.getConnection();
@@ -165,27 +165,27 @@ public class InventoryRepositoryImpl implements InventoryRepository {
     @Override
     public void delete(int id) {
         String deleteRacketRentalLog = """
-        DELETE rrl
-        FROM RacketRentalLog rrl
-        INNER JOIN FacilityInventory fi
-            ON rrl.facility_inventory_id = fi.facility_inventory_id
-        WHERE fi.inventory_id = ?
-        """;
+                DELETE rrl
+                FROM RacketRentalLog rrl
+                INNER JOIN FacilityInventory fi
+                    ON rrl.facility_inventory_id = fi.facility_inventory_id
+                WHERE fi.inventory_id = ?
+                """;
 
         String deleteRacketRental = """
-        DELETE FROM RacketRental
-        WHERE inventory_id = ?
-        """;
+                DELETE FROM RacketRental
+                WHERE inventory_id = ?
+                """;
 
         String deleteFacilityInventory = """
-        DELETE FROM FacilityInventory
-        WHERE inventory_id = ?
-        """;
+                DELETE FROM FacilityInventory
+                WHERE inventory_id = ?
+                """;
 
         String deleteInventory = """
-        DELETE FROM Inventory
-        WHERE inventory_id = ?
-        """;
+                DELETE FROM Inventory
+                WHERE inventory_id = ?
+                """;
 
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
@@ -217,14 +217,6 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             e.printStackTrace();
         }
     }
-
-    /**
-     * Các method dưới đây vẫn còn trong interface cũ,
-     * nhưng nếu DB đã bỏ facility_id thì chúng không còn dùng được nữa.
-     * Giữ lại để project không lỗi compile.
-     * Sau này nên xóa hẳn khỏi interface/service/controller.
-     */
-
 
     private Inventory mapRow(ResultSet rs) throws SQLException {
 
@@ -304,6 +296,173 @@ public class InventoryRepositoryImpl implements InventoryRepository {
             } else {
                 ps.setString(1, keyword);
                 ps.setString(2, "%" + keyword + "%");
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    @Override
+    public List<Inventory> findActiveNotAssignedToFacility(int facilityId, String keyword) {
+
+        List<Inventory> list = new ArrayList<>();
+
+        String sql = """
+                SELECT i.inventory_id,
+                       i.name,
+                       i.brand,
+                       i.description,
+                       i.rental_price,
+                       i.is_active
+                FROM Inventory i
+                WHERE i.is_active = 1
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM FacilityInventory fi
+                      WHERE fi.inventory_id = i.inventory_id
+                        AND fi.facility_id = ?
+                  )
+                  AND (
+                      ? IS NULL
+                      OR i.name LIKE ?
+                      OR i.brand LIKE ?
+                  )
+                ORDER BY i.inventory_id ASC
+                """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, facilityId);
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(2, Types.VARCHAR);
+                ps.setNull(3, Types.VARCHAR);
+                ps.setNull(4, Types.VARCHAR);
+            } else {
+                String searchValue = "%" + keyword.trim() + "%";
+                ps.setString(2, keyword.trim());
+                ps.setString(3, searchValue);
+                ps.setString(4, searchValue);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<Inventory> findActiveNotAssignedToFacilityWithPagination(int facilityId, int limit, int offset, String keyword) {
+
+        List<Inventory> list = new ArrayList<>();
+
+        String sql = """
+            SELECT i.inventory_id,
+                   i.name,
+                   i.brand,
+                   i.description,
+                   i.rental_price,
+                   i.is_active
+            FROM Inventory i
+            WHERE i.is_active = 1
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM FacilityInventory fi
+                  WHERE fi.inventory_id = i.inventory_id
+                    AND fi.facility_id = ?
+              )
+              AND (
+                  ? IS NULL
+                  OR i.name LIKE ?
+                  OR i.brand LIKE ?
+              )
+            ORDER BY i.inventory_id ASC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, facilityId);
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(2, Types.VARCHAR);
+                ps.setNull(3, Types.VARCHAR);
+                ps.setNull(4, Types.VARCHAR);
+            } else {
+                String searchValue = "%" + keyword.trim() + "%";
+                ps.setString(2, keyword.trim());
+                ps.setString(3, searchValue);
+                ps.setString(4, searchValue);
+            }
+
+            ps.setInt(5, offset);
+            ps.setInt(6, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    @Override
+    public int countActiveNotAssignedToFacility(int facilityId, String keyword) {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM Inventory i
+            WHERE i.is_active = 1
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM FacilityInventory fi
+                  WHERE fi.inventory_id = i.inventory_id
+                    AND fi.facility_id = ?
+              )
+              AND (
+                  ? IS NULL
+                  OR i.name LIKE ?
+                  OR i.brand LIKE ?
+              )
+            """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, facilityId);
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(2, Types.VARCHAR);
+                ps.setNull(3, Types.VARCHAR);
+                ps.setNull(4, Types.VARCHAR);
+            } else {
+                String searchValue = "%" + keyword.trim() + "%";
+                ps.setString(2, keyword.trim());
+                ps.setString(3, searchValue);
+                ps.setString(4, searchValue);
             }
 
             try (ResultSet rs = ps.executeQuery()) {

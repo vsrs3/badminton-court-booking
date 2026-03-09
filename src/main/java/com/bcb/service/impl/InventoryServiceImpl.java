@@ -50,4 +50,19 @@ public class InventoryServiceImpl implements InventoryService {
     public int countInventory(String keyword) {
         return repository.countInventory(keyword);
     }
+
+    @Override
+    public List<Inventory> getActiveNotAssignedToFacility(int facilityId, String keyword) {
+        return repository.findActiveNotAssignedToFacility(facilityId, keyword);
+    }
+
+    @Override
+    public List<Inventory> getActiveNotAssignedToFacilityWithPagination(int facilityId, int limit, int offset, String keyword) {
+        return repository.findActiveNotAssignedToFacilityWithPagination(facilityId, limit, offset, keyword);
+    }
+
+    @Override
+    public int countActiveNotAssignedToFacility(int facilityId, String keyword) {
+        return repository.countActiveNotAssignedToFacility(facilityId, keyword);
+    }
 }
