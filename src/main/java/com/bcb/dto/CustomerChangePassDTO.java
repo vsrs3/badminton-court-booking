@@ -35,3 +35,4 @@ public class CustomerChangePassDTO {
         this.confirmNewPass = confirmNewPass;
     }
 }
+

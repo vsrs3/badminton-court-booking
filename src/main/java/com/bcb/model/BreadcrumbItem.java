@@ -34,3 +34,4 @@ public class BreadcrumbItem {
 
     public boolean isActive() { return url == null; }
 }
+

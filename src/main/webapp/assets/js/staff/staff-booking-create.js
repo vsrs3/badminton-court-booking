@@ -1,7 +1,3 @@
-/**
- * staff-booking-create.js — Task 9c: Booking proxy create page
- * Fix: phone validation 10 digits + real-time feedback
- */
 (function () {
     'use strict';
 
@@ -106,6 +102,30 @@
         formAccount.classList.add('d-none');
         hideError();
     });
+
+    function switchToAccountMode(matched) {
+        customerType = 'ACCOUNT';
+        tabAccount.classList.add('active');
+        tabGuest.classList.remove('active');
+        formAccount.classList.remove('d-none');
+        formGuest.classList.add('d-none');
+
+        selectedAccountId.value = matched.accountId;
+        selName.textContent = matched.fullName || '�';
+        selPhone.textContent = matched.phone || '�';
+        selEmail.textContent = matched.email || '�';
+        selectedCustomer.classList.remove('d-none');
+
+        hideError();
+    }
+
+    function confirmGuestPhoneMatched(matched) {
+        var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
+            '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+            '- ' + (matched.phone || '') + '\n\n' +
+            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục?';
+        return uiConfirm(msg, 'Trùng số điện thoại');
+    }
 
     // ─── Customer search (ACCOUNT) ───
     customerSearch.addEventListener('input', function () {
@@ -243,7 +263,7 @@
     }
 
     // ─── Submit ───
-    btnSubmit.addEventListener('click', function () {
+    btnSubmit.addEventListener('click', async function () {
         hideError();
 
         // Validate customer
@@ -264,7 +284,7 @@
                 return;
             }
             if (!isValidPhone(guestPhoneInput.value)) {
-                showError('Số điện thoại phải đúng 10 chữ số và bắt đầu bằng 0');
+                showError('Số điện thoại phải dùng 10 chữ số và bắt đầu bằng 0');
                 guestPhoneInput.focus();
                 return;
             }
@@ -288,37 +308,58 @@
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Đang tạo booking...';
 
-        fetch(CTX + '/api/staff/booking/create', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(reqBody)
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (body) {
-                if (!body.success) {
-                    showError(body.message || 'Đặt sân thất bại');
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
-                    return;
+        try {
+            var res = await fetch(CTX + '/api/staff/booking/create', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(reqBody)
+            });
+            var body = await res.json();
+
+            if (!body.success) {
+                if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
+                    var confirmed = await confirmGuestPhoneMatched(body.data);
+                    if (confirmed) {
+                        switchToAccountMode(body.data);
+                        resetSubmitButton();
+                        btnSubmit.click();
+                        return;
+                    }
                 }
 
-                // Success → clear sessionStorage → redirect to detail
-                sessionStorage.removeItem('staffBookingSlots');
-                window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
-            })
-            .catch(function (err) {
-                console.error('Create error:', err);
-                showError('Lỗi kết nối. Vui lòng thử lại.');
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
-            });
+                showError(body.message || 'Đặt sân thất bại');
+                resetSubmitButton();
+                return;
+            }
+
+            // Success -> clear sessionStorage -> redirect to detail
+            sessionStorage.removeItem('staffBookingSlots');
+            window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
+        } catch (err) {
+            console.error('Create error:', err);
+            showError('Lỗi kết nối. Vui lòng thử lại');
+            resetSubmitButton();
+        }
     });
 
+
     // ─── Helpers ───
+    function resetSubmitButton() {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
+    }
+
+    function uiConfirm(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
+            return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+        }
+        return Promise.resolve(window.confirm(message || ''));
+    }
+
     function showError(msg) {
         formError.textContent = msg;
         formError.classList.remove('d-none');
@@ -384,3 +425,4 @@
     }
 
 })();
+

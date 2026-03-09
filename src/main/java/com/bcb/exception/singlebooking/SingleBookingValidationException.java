@@ -35,3 +35,4 @@ public class SingleBookingValidationException extends RuntimeException {
         return details;
     }
 }
+

@@ -33,3 +33,4 @@ public class SingleBookingConfirmRequestDTO {
     public String getVoucherCode() { return voucherCode; }
     public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
 }
+

@@ -10,3 +10,4 @@ public interface FacilityImageService {
     FacilityImage getImageById(int imageId) throws BusinessException;
     void update(FacilityImage currentThumbnail);
 }
+

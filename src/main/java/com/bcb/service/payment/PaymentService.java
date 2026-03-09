@@ -66,3 +66,4 @@ public interface PaymentService {
      */
     PaymentCreateResult retryPaymentForBooking(int bookingId, int accountId, HttpServletRequest httpReq);
 }
+

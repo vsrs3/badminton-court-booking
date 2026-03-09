@@ -44,3 +44,4 @@ public interface BookingRepository {
      */
     void extendHold(int bookingId, java.time.LocalDateTime newHoldExpireAt);
 }
+

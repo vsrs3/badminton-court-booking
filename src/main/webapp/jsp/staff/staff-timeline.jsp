@@ -1,5 +1,3 @@
-<%-- staff-timeline.jsp — Task 9a: Booking proxy mode --%>
-
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
@@ -167,6 +165,7 @@
     window.ST_FACILITY_ID = '${sessionScope.facilityId}';
 </script>
 
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-timeline.js"></script>
 
 </body>

@@ -31,3 +31,4 @@ public interface CourtService {
                                    int courtTypeId, String description)
             throws ValidationException, BusinessException;
 }
+

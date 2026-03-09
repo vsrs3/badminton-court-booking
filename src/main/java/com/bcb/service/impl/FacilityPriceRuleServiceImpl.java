@@ -239,3 +239,4 @@ public class FacilityPriceRuleServiceImpl implements FacilityPriceRuleService {
         return time.format(TIME_FORMATTER);
     }
 }
+

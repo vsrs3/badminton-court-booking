@@ -94,3 +94,4 @@ public class Payment {
     public LocalDateTime getConfirmTime() { return confirmTime; }
     public void setConfirmTime(LocalDateTime confirmTime) { this.confirmTime = confirmTime; }
 }
+

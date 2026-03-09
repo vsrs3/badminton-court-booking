@@ -15,3 +15,4 @@ public interface SingleBookingPreviewService {
      */
     SingleBookingPreviewResponseDTO preview(SingleBookingPreviewRequestDTO request);
 }
+

@@ -207,3 +207,4 @@ public class SingleBookingPreviewServiceImpl implements SingleBookingPreviewServ
         return price;
     }
 }
+

@@ -35,3 +35,4 @@ public interface CourtSlotBookingRepository {
      */
     void deleteByBookingSlotIds(Connection conn, List<Integer> bookingSlotIds);
 }
+

@@ -45,6 +45,7 @@ const contextPath = window.location.pathname.split('/')[1]
     const PAGE_SIZE = 12;
     let isLoading = false;
     let hasMore = true;
+    let inFlightRequestController = null;
 
     // ============================================
     // AUTH MODAL FUNCTIONS
@@ -185,7 +186,7 @@ const contextPath = window.location.pathname.split('/')[1]
     async function loadFacilitiesFromAPI(page = 0) {
         console.log('Loading facilities from API, page:', page);
 
-        if (isLoading) {
+        if (isLoading && page > 0) {
             console.log('Already loading, skipping...');
             return;
         }
@@ -204,6 +205,21 @@ const contextPath = window.location.pathname.split('/')[1]
                 page: page,
                 pageSize: PAGE_SIZE
             });
+            const trimmedQuery = AppState.searchQuery.trim();
+            if (trimmedQuery) {
+                params.append("q", trimmedQuery);
+            }
+            if (AppState.filters.province) {
+                params.append("province", AppState.filters.province);
+            }
+            if (AppState.filters.district) {
+                params.append("district", AppState.filters.district);
+            }
+
+            if (AppState.isShowingFavorites) {
+                params.append("favoritesOnly", "true");
+            }
+
 
             // ✅ IMPORTANT: Add user location if available
             if (AppState.userLocation) {
@@ -220,7 +236,20 @@ const contextPath = window.location.pathname.split('/')[1]
 
             console.log('Fetching from:', apiUrl);
 
-            const response = await fetch(apiUrl);
+            if (page === 0 && inFlightRequestController) {
+                inFlightRequestController.abort();
+            }
+
+            const requestController = new AbortController();
+            inFlightRequestController = requestController;
+
+            const response = await fetch(apiUrl, {
+                signal: requestController.signal
+            });
+
+            if (requestController !== inFlightRequestController) {
+                return;
+            }
 
             console.log('Response status:', response.status);
 
@@ -259,9 +288,16 @@ const contextPath = window.location.pathname.split('/')[1]
             }
 
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
             console.error('Error loading facilities:', error);
+            inFlightRequestController = null;
             showToast('Lỗi kết nối. Vui lòng thử lại');
         } finally {
+            if (inFlightRequestController && inFlightRequestController.signal.aborted) {
+                inFlightRequestController = null;
+            }
             isLoading = false;
         }
     }
@@ -306,26 +342,9 @@ const contextPath = window.location.pathname.split('/')[1]
         console.log('Applying filters and search...');
         let courts = [...AppState.courts];
 
-        // 1. Search filter
-        if (AppState.searchQuery.trim()) {
-            const query = AppState.searchQuery.toLowerCase().trim();
-            courts = courts.filter(c =>
-                c.name.toLowerCase().includes(query) ||
-                c.location.toLowerCase().includes(query)
-            );
-        }
+        // Search/province/district are filtered on API side (database).
 
-        // 2. Province filter
-        if (AppState.filters.province) {
-            courts = courts.filter(c => c.province === AppState.filters.province);
-        }
-
-        // 3. District filter
-        if (AppState.filters.district) {
-            courts = courts.filter(c => c.district === AppState.filters.district);
-        }
-
-        // 4. Distance filter
+        // 1. Distance filter
         if (AppState.filters.maxDistance !== null && AppState.userLocation) {
             courts = courts.filter(c => {
                 // Parse distance string back to number
@@ -544,8 +563,15 @@ const contextPath = window.location.pathname.split('/')[1]
 
         // Reset favorites when changing tabs
         if (tabName !== TABS.HOME) {
+            const wasShowingFavorites = AppState.isShowingFavorites;
             AppState.isShowingFavorites = false;
             updateFavoriteButton();
+
+            if (wasShowingFavorites) {
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
+            }
         }
 
         // Initialize map if switching to map tab
@@ -553,13 +579,6 @@ const contextPath = window.location.pathname.split('/')[1]
             setTimeout(() => {
                 if (window.initMap) {
                     window.initMap();
-
-                    // Update markers with current courts data
-                    if (window.COURTS_DATA && window.COURTS_DATA.length > 0) {
-                        if (window.updateMapMarkers) {
-                            window.updateMapMarkers(window.COURTS_DATA);
-                        }
-                    }
                 }
             }, 100);
         }
@@ -569,32 +588,76 @@ const contextPath = window.location.pathname.split('/')[1]
     // FAVORITES
     // ============================================
 
-    function toggleFavorite(courtId) {
-        const court = AppState.courts.find(c => c.id === courtId);
-        if (court) {
-            court.isFavorite = !court.isFavorite;
-            applyFiltersAndSearch();
+    async function toggleFavorite(courtId) {
+        if (!requireLogin('Yeu thich')) {
+            return;
+        }
 
-            // Update detail panel if open
-            if (AppState.selectedCourt && AppState.selectedCourt.id === courtId) {
-                AppState.selectedCourt = court;
-                updateDetailFavoriteButton();
+        const court = AppState.courts.find(c => String(c.id) === String(courtId));
+        if (!court) return;
+
+        const nextFavoriteState = !court.isFavorite;
+        const previousFavoriteState = court.isFavorite;
+
+        // Optimistic UI update
+        court.isFavorite = nextFavoriteState;
+        applyFiltersAndSearch();
+
+        if (AppState.selectedCourt && String(AppState.selectedCourt.id) === String(courtId)) {
+            AppState.selectedCourt = court;
+            updateDetailFavoriteButton();
+        }
+
+        const currentContextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+        const favoriteUrl = `/${currentContextPath}/api/facilities/favorites/${encodeURIComponent(courtId)}`;
+
+        try {
+            const response = await fetch(favoriteUrl, {
+                method: nextFavoriteState ? 'POST' : 'DELETE'
+            });
+
+            if (response.status === 401) {
+                court.isFavorite = previousFavoriteState;
+                applyFiltersAndSearch();
+                showAuthModal();
+                return;
             }
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Favorite update failed');
+            }
+
+            // If showing favorites-only list, removing one should refresh DB list immediately
+            if (AppState.isShowingFavorites && !nextFavoriteState) {
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
+            }
+        } catch (error) {
+            console.error('Favorite API error:', error);
+            court.isFavorite = previousFavoriteState;
+            applyFiltersAndSearch();
+            showToast('Khong the cap nhat yeu thich');
         }
     }
 
     function toggleFavoriteFilter() {
-        const favoriteCount = AppState.courts.filter(c => c.isFavorite).length;
-
-        if (favoriteCount === 0) {
-            showToast("Chưa có sân yêu thích");
+        if (!AppState.isShowingFavorites && !requireLogin('Danh sach yeu thich')) {
             return;
         }
 
         AppState.isShowingFavorites = !AppState.isShowingFavorites;
         updateFavoriteButton();
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
+
 
     function updateFavoriteButton() {
         const favoriteBtn = document.getElementById('favoriteBtn');
@@ -611,32 +674,287 @@ const contextPath = window.location.pathname.split('/')[1]
     // COURT DETAIL MODAL
     // ============================================
 
-    function openCourtDetail(courtId) {
+    async function openCourtDetail(courtId) {
         const court = AppState.courts.find(c => c.id === courtId);
         if (!court) return;
 
-        AppState.selectedCourt = court;
+        AppState.selectedCourt = { ...court };
 
-        // Populate detail panel
-        document.getElementById('detailBannerImg').src =
-            contextPath + '/' + court.imageUrl;
-        document.getElementById('detailBannerImg').alt = court.name;
-        document.getElementById('detailRating').textContent = `★ ${court.rating.toFixed(1)} (0 đánh giá)`;
-        document.getElementById('detailTitle').textContent = court.name;
-        document.getElementById('detailLocation').textContent = court.location;
-        document.getElementById('detailOpenTime').textContent = court.openTime;
-        document.getElementById('detailNameInOverview').textContent = court.name;
-
-        // Logo
-        const logoImg = document.getElementById('detailLogoImg');
-        const firstLetter = court.name.charAt(0);
-        logoImg.src = `https://placehold.co/100x100/orange/white?text=${firstLetter}`;
-        logoImg.alt = 'logo';
-
-        // Update favorite button
+        renderBaseCourtDetail(court);
+        renderDetailLoadingState();
+        switchDetailTab('info');
         updateDetailFavoriteButton();
+        showCourtDetailPanel();
 
-        // Show panel
+        await loadCourtDetail(court.id);
+    }
+
+    function renderBaseCourtDetail(court) {
+        const bannerImg = document.getElementById('detailBannerImg');
+        if (bannerImg) {
+            bannerImg.src = resolveAssetUrl(court.imageUrl);
+            bannerImg.alt = court.name || '';
+        }
+
+        const rating = Number(court.rating || 0);
+        const detailRating = document.getElementById('detailRating');
+        if (detailRating) {
+            detailRating.textContent = `${"\u2605"} ${rating.toFixed(1)} (0 \u0111\u00e1nh gi\u00e1)`;
+        }
+
+        setText('detailTitle', court.name || '');
+        setText('detailLocation', court.location || '');
+        setText('detailOpenTime', court.openTime || '');
+
+        const logoImg = document.getElementById('detailLogoImg');
+        if (logoImg) {
+            const firstLetter = (court.name || 'B').charAt(0).toUpperCase();
+            logoImg.src = `https://placehold.co/100x100/orange/white?text=${firstLetter}`;
+            logoImg.alt = 'logo';
+        }
+    }
+
+    function renderDetailLoadingState() {
+        setText('detailOverview', '\u0111ang t\u1ea3i...');
+        setHtml('detailPricingContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setHtml('detailImagesContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setHtml('detailReviewsContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+    }
+
+    async function loadCourtDetail(courtId) {
+        try {
+            const detail = await fetchCourtDetail(courtId);
+            if (!AppState.selectedCourt || String(AppState.selectedCourt.id) !== String(courtId)) {
+                return;
+            }
+            applyCourtDetail(detail);
+        } catch (error) {
+            console.error('Error loading facility detail:', error);
+            setText('detailOverview', 'ch\u01b0a c\u00f3');
+            setHtml('detailPricingContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3</div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+        }
+    }
+
+    async function fetchCourtDetail(courtId) {
+        const response = await fetch(`${contextPath}/api/facilities/${encodeURIComponent(courtId)}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error(result.error || 'Invalid facility detail response');
+        }
+
+        return result.data;
+    }
+
+    function applyCourtDetail(detail) {
+        AppState.selectedCourt = { ...AppState.selectedCourt, ...detail };
+        const selected = AppState.selectedCourt;
+
+        const rating = Number(selected.rating || 0);
+        const reviewCount = Number(selected.reviewCount || 0);
+        setText('detailRating', `${"\u2605"} ${rating.toFixed(1)} (${reviewCount} \u0111\u00e1nh gi\u00e1)`);
+
+        setText('detailOverview', selected.description || 'ch\u01b0a c\u00f3');
+        renderDetailPricing(selected.priceRules || []);
+        renderDetailImages(selected.galleryImages || [], selected.name || 'Facility');
+        renderDetailReviews(selected.reviews || []);
+        updateDetailFavoriteButton();
+    }
+
+    function renderDetailPricing(priceRules) {
+        if (!priceRules.length) {
+            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>ch\u01b0a c\u00f3 b\u1ea3ng gi\u00e1</span></div>');
+            return;
+        }
+
+        const normalizedRules = priceRules.map(rule => ({
+            courtTypeName: rule.courtTypeName || 'ch\u01b0a c\u00f3',
+            dayType: rule.dayType || 'UNKNOWN',
+            dayTypeLabel: getDayTypeLabel(rule.dayType),
+            dayTypeBadgeClass: getDayTypeBadgeClass(rule.dayType),
+            timeRange: `${rule.startTime || '--:--'} - ${rule.endTime || '--:--'}`,
+            priceText: formatCurrencyVnd(rule.price)
+        }));
+
+        let rowsHtml = '';
+        let courtStart = 0;
+
+        while (courtStart < normalizedRules.length) {
+            const courtName = normalizedRules[courtStart].courtTypeName;
+            let courtEnd = courtStart;
+            while (courtEnd < normalizedRules.length && normalizedRules[courtEnd].courtTypeName === courtName) {
+                courtEnd++;
+            }
+            const courtSpan = courtEnd - courtStart;
+
+            let dayStart = courtStart;
+            while (dayStart < courtEnd) {
+                const dayType = normalizedRules[dayStart].dayType;
+                const dayLabel = normalizedRules[dayStart].dayTypeLabel;
+                const dayBadgeClass = normalizedRules[dayStart].dayTypeBadgeClass;
+
+                let dayEnd = dayStart;
+                while (dayEnd < courtEnd && normalizedRules[dayEnd].dayType === dayType) {
+                    dayEnd++;
+                }
+                const daySpan = dayEnd - dayStart;
+
+                for (let i = dayStart; i < dayEnd; i++) {
+                    const row = normalizedRules[i];
+                    rowsHtml += '<tr>';
+
+                    if (i === courtStart) {
+                        const rowSpanAttr = courtSpan > 1 ? ` rowspan="${courtSpan}"` : '';
+                        rowsHtml += `<td class="detail-cell-court-type detail-merged-cell"${rowSpanAttr}>${escapeHtml(courtName)}</td>`;
+                    }
+
+                    if (i === dayStart) {
+                        const rowSpanAttr = daySpan > 1 ? ` rowspan="${daySpan}"` : '';
+                        rowsHtml += `<td class="detail-merged-cell"${rowSpanAttr}><span class="detail-day-badge ${escapeHtml(dayBadgeClass)}">${escapeHtml(dayLabel)}</span></td>`;
+                    }
+
+                    rowsHtml += `<td class="detail-time-cell">${escapeHtml(row.timeRange)}</td>`;
+                    rowsHtml += `<td class="detail-price-cell">${escapeHtml(row.priceText)}</td>`;
+                    rowsHtml += '</tr>';
+                }
+
+                dayStart = dayEnd;
+            }
+
+            courtStart = courtEnd;
+        }
+
+        setHtml('detailPricingContent', `
+            <div class="detail-table-card">
+                <div class="detail-table-wrap">
+                    <table class="detail-data-table">
+                        <thead>
+                            <tr>
+                                <th>Lo\u1ea1i s\u00e2n</th>
+                                <th>Ng\u00e0y \u00e1p d\u1ee5ng</th>
+                                <th>Khung gi\u1edd</th>
+                                <th class="detail-price-header">Gi\u00e1 (VN\u0110/30 ph\u00fat)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        `);
+    }
+    function renderDetailImages(images, facilityName) {
+        if (!images.length) {
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            return;
+        }
+
+        const html = images.map((imagePath, index) => {
+            const src = resolveAssetUrl(imagePath);
+            const safeSrc = encodeURI(src).replace(/'/g, '%27');
+            const alt = escapeHtml(`${facilityName} image ${index + 1}`);
+            return `
+                <figure class="detail-gallery-item">
+                    <img class="detail-gallery-image" src="${safeSrc}" alt="${alt}" loading="lazy" />
+                </figure>
+            `;
+        }).join('');
+
+        setHtml('detailImagesContent', `<div class="detail-gallery-grid">${html}</div>`);
+    }
+
+    function renderDetailReviews(reviews) {
+        if (!reviews.length) {
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            return;
+        }
+
+        const html = reviews.map(review => {
+            const reviewer = escapeHtml(review.reviewerName || 'Ng\u01b0\u1eddi d\u00f9ng');
+            const rating = Number(review.rating || 0);
+            const comment = escapeHtml((review.comment || '').trim() || 'ch\u01b0a c\u00f3 comment n\u00e0o');
+            return `
+                <article class="detail-review-item">
+                    <div class="detail-review-head">
+                        <strong class="detail-review-author">${reviewer}</strong>
+                        <span class="detail-review-stars">${renderStars(rating)}</span>
+                    </div>
+                    <p class="detail-review-comment">${comment}</p>
+                </article>
+            `;
+        }).join('');
+
+        setHtml('detailReviewsContent', `<div class="detail-review-list">${html}</div>`);
+    }
+
+    function getDayTypeBadgeClass(dayType) {
+        if (dayType === 'WEEKDAY') return 'detail-day-badge-weekday';
+        if (dayType === 'WEEKEND') return 'detail-day-badge-weekend';
+        return 'detail-day-badge-default';
+    }
+
+    function renderStars(rating) {
+        let stars = '';
+        const safeRating = Math.max(0, Math.min(5, Math.round(rating)));
+        for (let i = 1; i <= 5; i++) {
+            stars += i <= safeRating ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
+        }
+        return stars;
+    }
+
+    function getDayTypeLabel(dayType) {
+        if (dayType === 'WEEKDAY') return 'Trong tu\u1ea7n';
+        if (dayType === 'WEEKEND') return 'Cu\u1ed1i tu\u1ea7n';
+        return dayType || 'ch\u01b0a c\u00f3';
+    }
+
+    function formatCurrencyVnd(value) {
+        const amount = Number(value || 0);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return 'ch\u01b0a c\u00f3';
+        }
+        return `${amount.toLocaleString('vi-VN')} \u20ab`;
+    }
+
+    function resolveAssetUrl(path) {
+        if (!path) return '';
+        if (/^https?:\/\//i.test(path) || path.startsWith('/') || path.startsWith('data:')) {
+            return path;
+        }
+        return `${contextPath}/${path}`;
+    }
+
+    function escapeHtml(input) {
+        return String(input)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function setText(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.textContent = value;
+        }
+    }
+
+    function setHtml(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            if (elementId === 'detailPricingContent' || elementId === 'detailImagesContent' || elementId === 'detailReviewsContent') {
+                el.classList.remove('detail-empty-state');
+            }
+            el.innerHTML = value;
+        }
+    }
+
+    function showCourtDetailPanel() {
         const backdrop = document.getElementById('courtDetailBackdrop');
         const panel = document.getElementById('courtDetailPanel');
 
@@ -672,7 +990,6 @@ const contextPath = window.location.pathname.split('/')[1]
             }
         }
     }
-
     // ============================================
     // FILTER PANEL
     // ============================================
@@ -701,7 +1018,9 @@ const contextPath = window.location.pathname.split('/')[1]
 
     function applyFilters() {
         closeFilterPanel();
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
 
     function resetFilters() {
@@ -720,7 +1039,9 @@ const contextPath = window.location.pathname.split('/')[1]
             btn.classList.remove('active');
         });
 
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
 
     function updateDistrictOptions() {
@@ -842,8 +1163,19 @@ const contextPath = window.location.pathname.split('/')[1]
     function attachEventListeners() {
         // Bottom Navigation
         document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function(e) {
                 const tab = this.dataset.tab;
+                const isProfileAnchor = tab === TABS.PROFILE && this.tagName.toLowerCase() === 'a';
+
+                if (isProfileAnchor) {
+                    e.preventDefault();
+
+                    if (isUserLoggedIn()) {
+                        window.location.href = this.getAttribute('href');
+                        return;
+                    }
+                }
+
                 if (tab) {
                     switchTab(tab);
                 }
@@ -855,8 +1187,9 @@ const contextPath = window.location.pathname.split('/')[1]
         if (searchInput) {
             searchInput.addEventListener('input', debounce(function(e) {
                 AppState.searchQuery = e.target.value;
-                console.log('🔍 Search query:', AppState.searchQuery); // ✅ DEBUG
-                applyFiltersAndSearch();
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
             }, 300));
 
             // ✅ Clear search button
@@ -864,7 +1197,9 @@ const contextPath = window.location.pathname.split('/')[1]
                 if (e.key === 'Escape') {
                     this.value = '';
                     AppState.searchQuery = '';
-                    applyFiltersAndSearch();
+                    currentPage = 0;
+                    hasMore = true;
+                    loadFacilitiesFromAPI(0);
                 }
             });
         }
@@ -947,7 +1282,9 @@ const contextPath = window.location.pathname.split('/')[1]
             showAllBtn.addEventListener('click', function() {
                 AppState.isShowingFavorites = false;
                 updateFavoriteButton();
-                applyFiltersAndSearch();
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
             });
         }
 
@@ -1101,3 +1438,24 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

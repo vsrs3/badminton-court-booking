@@ -22,3 +22,4 @@ public class SingleBookingMatrixTimeSlotDTO {
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
 }
+
