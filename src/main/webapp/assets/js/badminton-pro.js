@@ -1163,8 +1163,19 @@ const contextPath = window.location.pathname.split('/')[1]
     function attachEventListeners() {
         // Bottom Navigation
         document.querySelectorAll('.bottom-nav .nav-item, .bottom-nav .nav-center-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function(e) {
                 const tab = this.dataset.tab;
+                const isProfileAnchor = tab === TABS.PROFILE && this.tagName.toLowerCase() === 'a';
+
+                if (isProfileAnchor) {
+                    e.preventDefault();
+
+                    if (isUserLoggedIn()) {
+                        window.location.href = this.getAttribute('href');
+                        return;
+                    }
+                }
+
                 if (tab) {
                     switchTab(tab);
                 }
