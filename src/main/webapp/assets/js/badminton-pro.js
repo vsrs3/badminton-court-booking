@@ -579,13 +579,6 @@ const contextPath = window.location.pathname.split('/')[1]
             setTimeout(() => {
                 if (window.initMap) {
                     window.initMap();
-
-                    // Update markers with current courts data
-                    if (window.COURTS_DATA && window.COURTS_DATA.length > 0) {
-                        if (window.updateMapMarkers) {
-                            window.updateMapMarkers(window.COURTS_DATA);
-                        }
-                    }
                 }
             }, 100);
         }
