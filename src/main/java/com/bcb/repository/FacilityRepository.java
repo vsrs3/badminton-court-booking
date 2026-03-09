@@ -4,6 +4,8 @@ import com.bcb.model.Facility;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.bcb.model.Inventory;
+
 
 /**
  * Repository interface for Facility data access.
@@ -54,5 +56,7 @@ public interface FacilityRepository {
     boolean isFavorite(int accountId, int facilityId);
 
     List<Integer> getFavoriteFacilityIds(int accountId);
-}
+    List<Facility> findAllActive();
 
+
+}

@@ -44,7 +44,7 @@ public class AdminController extends HttpServlet {
                     // TODO: Facility management
                     response.sendRedirect(request.getContextPath() + "/admin/dashboard");
                     break;
-
+                
                 default:
                     response.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
