@@ -26,13 +26,13 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT b.booking_id, f.name AS facility_name, ")
            .append("       CONCAT(f.address, ', ', f.ward, ', ', f.district, ', ', f.province) AS full_address, ")
-           .append("       b.booking_date, b.booking_status, b.recurring_id, b.created_at, ")
-           .append("       i.total_amount, i.payment_status, ")
+           .append("       b.booking_date, b.booking_status, b.recurring_id, b.created_at, b.hold_expired_at, ")
+           .append("       i.total_amount, i.paid_amount, i.payment_status, ")
            .append("       fi.image_path AS thumbnail_path, ")
-           .append("       STRING_AGG(CONCAT(c.court_name, ': ', ")
-           .append("           FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm'), '-', ")
-           .append("           FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')), ', ') ")
-           .append("           WITHIN GROUP (ORDER BY ts.start_time, c.court_name) AS slot_details ")
+           .append("       STRING_AGG(CONCAT(c.court_name, '|', ")
+           .append("           FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm'), '|', ")
+           .append("           FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')), ';;') ")
+           .append("           WITHIN GROUP (ORDER BY c.court_name, ts.start_time) AS slot_raw ")
            .append("FROM Booking b ")
            .append("JOIN Facility f ON b.facility_id = f.facility_id ")
            .append("LEFT JOIN Invoice i ON b.booking_id = i.booking_id ")
@@ -60,8 +60,8 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
         }
 
         sql.append("GROUP BY b.booking_id, f.name, f.address, f.ward, f.district, f.province, ")
-           .append("         b.booking_date, b.booking_status, b.recurring_id, b.created_at, ")
-           .append("         i.total_amount, i.payment_status, fi.image_path ")
+           .append("         b.booking_date, b.booking_status, b.recurring_id, b.created_at, b.hold_expired_at, ")
+           .append("         i.total_amount, i.paid_amount, i.payment_status, fi.image_path ")
            .append("ORDER BY b.created_at DESC");
 
         List<MyBookingListDTO> list = new ArrayList<>();
@@ -80,7 +80,10 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
                     dto.setFullAddress(rs.getString("full_address"));
                     dto.setBookingDate(rs.getDate("booking_date").toLocalDate());
                     dto.setBookingStatus(rs.getString("booking_status"));
-                    dto.setSlotDetails(rs.getString("slot_details"));
+
+                    // slot_raw: "CourtA|08:00|08:30;;CourtA|08:30|09:00;;CourtB|09:00|09:30"
+                    // merge logic delegated to service layer
+                    dto.setSlotDetails(rs.getString("slot_raw"));
 
                     Integer recurringId = rs.getObject("recurring_id") != null
                             ? rs.getInt("recurring_id") : null;
@@ -89,12 +92,16 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
                     BigDecimal totalAmount = rs.getBigDecimal("total_amount");
                     dto.setTotalAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO);
 
+                    BigDecimal paidAmount = rs.getBigDecimal("paid_amount");
+                    dto.setPaidAmount(paidAmount != null ? paidAmount : BigDecimal.ZERO);
+
                     dto.setPaymentStatus(rs.getString("payment_status"));
 
                     Timestamp createdTs = rs.getTimestamp("created_at");
-                    if (createdTs != null) {
-                        dto.setCreatedAt(createdTs.toLocalDateTime());
-                    }
+                    if (createdTs != null) dto.setCreatedAt(createdTs.toLocalDateTime());
+
+                    Timestamp holdTs = rs.getTimestamp("hold_expired_at");
+                    if (holdTs != null) dto.setHoldExpiredAt(holdTs.toLocalDateTime());
 
                     dto.setThumbnailPath(rs.getString("thumbnail_path"));
 
