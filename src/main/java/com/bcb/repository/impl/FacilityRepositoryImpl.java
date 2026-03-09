@@ -9,7 +9,9 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -487,8 +489,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             SELECT AVG(CAST(r.rating AS FLOAT)) as avg_rating
             FROM Review r
             INNER JOIN Booking b ON r.booking_id = b.booking_id
-            INNER JOIN Court c ON b.court_id = c.court_id
-            WHERE c.facility_id = ?
+            WHERE b.facility_id = ?
         """;
 
         try (Connection conn = DBContext.getConnection();
@@ -510,9 +511,112 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
         return 0.0;
     }
+    @Override
+    public Map<Integer, String> findThumbnailPaths(List<Integer> facilityIds) {
+        Map<Integer, String> thumbnails = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return thumbnails;
+        }
+
+        String sql = "SELECT fi.facility_id, fi.image_path FROM FacilityImage fi " +
+                "WHERE fi.is_thumbnail = 1 AND fi.facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ")";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    thumbnails.put(rs.getInt("facility_id"), rs.getString("image_path"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching thumbnails: " + e.getMessage(), e);
+        }
+
+        return thumbnails;
+    }
+
+    @Override
+    public Map<Integer, Double> findAverageRatings(List<Integer> facilityIds) {
+        Map<Integer, Double> ratings = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return ratings;
+        }
+
+        String sql = "SELECT b.facility_id, AVG(CAST(r.rating AS FLOAT)) AS avg_rating " +
+                "FROM Review r " +
+                "INNER JOIN Booking b ON r.booking_id = b.booking_id " +
+                "WHERE b.facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ") " +
+                "GROUP BY b.facility_id";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    double avgRating = rs.getDouble("avg_rating");
+                    ratings.put(rs.getInt("facility_id"), rs.wasNull() ? 0.0 : avgRating);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching average ratings: " + e.getMessage());
+        }
+
+        return ratings;
+    }
 
 
+    @Override
+    public Map<Integer, String> findPriceRanges(List<Integer> facilityIds) {
+        Map<Integer, String> priceRanges = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return priceRanges;
+        }
 
+        String sql = "SELECT facility_id, MIN(price) AS min_price, MAX(price) AS max_price " +
+                "FROM FacilityPriceRule " +
+                "WHERE facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ") " +
+                "GROUP BY facility_id";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long minPrice = rs.getLong("min_price");
+                    long maxPrice = rs.getLong("max_price");
+                    if (minPrice > 0 && maxPrice > 0) {
+                        priceRanges.put(rs.getInt("facility_id"), String.format("%,d VND - %,d VND", minPrice, maxPrice));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching price ranges: " + e.getMessage(), e);
+        }
+
+        return priceRanges;
+    }
+
+    private String buildInPlaceholders(int size) {
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            if (i > 0) {
+                placeholders.append(',');
+            }
+            placeholders.append('?');
+        }
+        return placeholders.toString();
+    }
+
+    private void bindIntList(PreparedStatement ps, List<Integer> values, int startIndex) throws SQLException {
+        int idx = startIndex;
+        for (Integer value : values) {
+            ps.setInt(idx++, value);
+        }
+    }
     @Override
     public boolean addFavorite(int accountId, int facilityId) {
         String sql = "INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (?, ?)";
@@ -586,6 +690,17 @@ public class FacilityRepositoryImpl implements FacilityRepository {
         return ids;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

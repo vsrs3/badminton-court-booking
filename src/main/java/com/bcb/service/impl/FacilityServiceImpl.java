@@ -339,71 +339,44 @@ public class FacilityServiceImpl implements FacilityService {
 //    ============= VUONGPD =============
 @Override
 public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
-    try {
-        System.out.println("=== START getFacilities ===");
-
-        int offset = page * pageSize;
-
-        System.out.println("📍 getFacilities - page=" + page + ", pageSize=" + pageSize + ", offset=" + offset);
-
-        // Get facilities from repository
-        System.out.println("📦 Fetching facilities from repository...");
-        Integer favoriteAccountId = favoritesOnly ? accountId : null;
-        if (favoritesOnly && favoriteAccountId == null) {
-            return new ArrayList<>();
-        }
-        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
-        System.out.println("✅ Loaded " + facilities.size() + " facilities");
-
-        // Get total count
-        int totalCount = facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
-        System.out.println("📊 Total active facilities in DB: " + totalCount);
-
-        // Step 2: Get favorites
-        Set<Integer> favoriteFacilityIds = new HashSet<>();
-        if (accountId != null) {
-            System.out.println("👤 Fetching favorites for account: " + accountId);
-            favoriteFacilityIds = getFavoriteFacilityIds(accountId);
-        }
-
-        // Step 3: Convert to DTOs
-        List<FacilityDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < facilities.size(); i++) {
-            Facility facility = facilities.get(i);
-            System.out.println("🔄 Converting facility " + (i+1) + ": " + facility.getName());
-
-            try {
-                FacilityDTO dto = enrichEntityToDTO(facility, userLat, userLng);
-                dto.setIsFavorite(favoriteFacilityIds.contains(facility.getFacilityId()));
-                dtos.add(dto);
-                System.out.println("✅ Converted: " + dto.getName());
-            } catch (Exception e) {
-                System.err.println("❌ ERROR converting facility: " + facility.getName());
-                e.printStackTrace();
-                throw e; // Re-throw để thấy full stack trace
-            }
-        }
-
-        // Step 4: Sort
-        if (userLat != null && userLng != null) {
-            System.out.println("🔄 Sorting by distance...");
-            dtos.sort((a, b) -> {
-                Double distA = a.getDistanceValue() != null ? a.getDistanceValue() : Double.MAX_VALUE;
-                Double distB = b.getDistanceValue() != null ? b.getDistanceValue() : Double.MAX_VALUE;
-                return distA.compareTo(distB);
-            });
-        }
-
-        System.out.println("=== END getFacilities - Success: " + dtos.size() + " DTOs ===");
-        return dtos;
-
-    } catch (Exception e) {
-        System.err.println("❌❌❌ FATAL ERROR in getFacilities ❌❌❌");
-        e.printStackTrace();
-        throw new RuntimeException("Error in getFacilities: " + e.getMessage(), e);
+    Integer favoriteAccountId = favoritesOnly ? accountId : null;
+    if (favoritesOnly && favoriteAccountId == null) {
+        return new ArrayList<>();
     }
-}
 
+    int offset = page * pageSize;
+    List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
+
+    Set<Integer> favoriteFacilityIds = new HashSet<>();
+    if (accountId != null) {
+        favoriteFacilityIds = getFavoriteFacilityIds(accountId);
+    }
+
+    List<Integer> facilityIds = facilities.stream()
+            .map(Facility::getFacilityId)
+            .collect(Collectors.toList());
+
+    Map<Integer, Double> ratingMap = facilityRepository.findAverageRatings(facilityIds);
+    Map<Integer, String> priceRangeMap = facilityRepository.findPriceRanges(facilityIds);
+    Map<Integer, String> thumbnailMap = facilityRepository.findThumbnailPaths(facilityIds);
+
+    List<FacilityDTO> dtos = new ArrayList<>(facilities.size());
+    for (Facility facility : facilities) {
+        FacilityDTO dto = enrichEntityToDTO(facility, userLat, userLng, ratingMap, priceRangeMap, thumbnailMap);
+        dto.setIsFavorite(favoriteFacilityIds.contains(facility.getFacilityId()));
+        dtos.add(dto);
+    }
+
+    if (userLat != null && userLng != null) {
+        dtos.sort((a, b) -> {
+            Double distA = a.getDistanceValue() != null ? a.getDistanceValue() : Double.MAX_VALUE;
+            Double distB = b.getDistanceValue() != null ? b.getDistanceValue() : Double.MAX_VALUE;
+            return distA.compareTo(distB);
+        });
+    }
+
+    return dtos;
+}
     @Override
     public int getTotalCount() {
         return facilityRepository.getTotalCount();
@@ -441,68 +414,79 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
      * This is where business logic happens
      */
     private FacilityDTO enrichEntityToDTO(Facility facility, Double userLat, Double userLng) {
-        FacilityDTO dto = new FacilityDTO();
+    return enrichEntityToDTO(facility, userLat, userLng, null, null, null);
+}
 
-        // ✅ Map basic fields from entity
-        dto.setId(String.valueOf(facility.getFacilityId()));
-        dto.setName(facility.getName());
-        dto.setLocation(facility.getFullAddress());
-        dto.setProvince(facility.getProvince());
-        dto.setDistrict(facility.getDistrict());
+private FacilityDTO enrichEntityToDTO(Facility facility,
+                                      Double userLat,
+                                      Double userLng,
+                                      Map<Integer, Double> ratingMap,
+                                      Map<Integer, String> priceRangeMap,
+                                      Map<Integer, String> thumbnailMap) {
+    FacilityDTO dto = new FacilityDTO();
 
-        // ✅ Calculate distance (computed field)
-        if (userLat != null && userLng != null &&
-                facility.getLatitude() != null && facility.getLongitude() != null) {
+    dto.setId(String.valueOf(facility.getFacilityId()));
+    dto.setName(facility.getName());
+    dto.setLocation(facility.getFullAddress());
+    dto.setProvince(facility.getProvince());
+    dto.setDistrict(facility.getDistrict());
 
-            double distance = calculateDistance(
-                    userLat, userLng,
-                    facility.getLatitude().doubleValue(),
-                    facility.getLongitude().doubleValue()
-            );
+    if (userLat != null && userLng != null &&
+            facility.getLatitude() != null && facility.getLongitude() != null) {
 
-            dto.setDistance(formatDistance(distance));
-            dto.setDistanceValue(distance);
+        double distance = calculateDistance(
+                userLat, userLng,
+                facility.getLatitude().doubleValue(),
+                facility.getLongitude().doubleValue()
+        );
 
-            System.out.println("📏 " + facility.getName() + " -> " + distance + " km");
-        } else {
-            dto.setDistance("Đang tính...");
-            dto.setDistanceValue(Double.MAX_VALUE);
-        }
-
-        // ✅ Get rating (queried separately)
-        Double rating = facilityRepository.getAverageRating(facility.getFacilityId());
-        dto.setRating(rating != null ? rating : 0.0);
-
-        // ✅ Format open/close time
-        dto.setOpenTime(formatTimeRange(facility.getOpenTime(), facility.getCloseTime()));
-
-        // ✅ Get price range
-        dto.setPriceRange(getPriceRange(facility.getFacilityId()));
-
-        // ✅ Get thumbnail image (queried separately)
-        String imagePath = facilityRepository.findThumbnailPath(facility.getFacilityId());
-        if (imagePath != null && !imagePath.isEmpty()) {
-            dto.setImageUrl("uploads/" + imagePath);
-        } else {
-            // Fallback placeholder
-            dto.setImageUrl("https://placehold.co/800x450/064E3B/A3E635?text=" +
-                    facility.getName().substring(0, 1));
-        }
-
-        // Contact info (TODO: add to Facility or link to Owner)
-        dto.setHotline("");
-        dto.setWebsite("");
-        dto.setBookingLink("");
-
-        // Coordinates for map
-        if (facility.getLatitude() != null && facility.getLongitude() != null) {
-            dto.setLat(facility.getLatitude().doubleValue());
-            dto.setLng(facility.getLongitude().doubleValue());
-        }
-
-        return dto;
+        dto.setDistance(formatDistance(distance));
+        dto.setDistanceValue(distance);
+    } else {
+        dto.setDistance("Dang tinh...");
+        dto.setDistanceValue(Double.MAX_VALUE);
     }
 
+    Double rating = ratingMap != null
+            ? ratingMap.getOrDefault(facility.getFacilityId(), 0.0)
+            : facilityRepository.getAverageRating(facility.getFacilityId());
+    dto.setRating(rating != null ? rating : 0.0);
+
+    dto.setOpenTime(formatTimeRange(facility.getOpenTime(), facility.getCloseTime()));
+
+    String priceRange = priceRangeMap != null
+            ? priceRangeMap.get(facility.getFacilityId())
+            : getPriceRange(facility.getFacilityId());
+    dto.setPriceRange(priceRange != null && !priceRange.isEmpty() ? priceRange : "Lien he");
+
+    String imagePath = thumbnailMap != null
+            ? thumbnailMap.get(facility.getFacilityId())
+            : facilityRepository.findThumbnailPath(facility.getFacilityId());
+    if (imagePath != null && !imagePath.isEmpty()) {
+        dto.setImageUrl("uploads/" + imagePath);
+    } else {
+        dto.setImageUrl(buildFallbackImageUrl(facility));
+    }
+
+    dto.setHotline("");
+    dto.setWebsite("");
+    dto.setBookingLink("");
+
+    if (facility.getLatitude() != null && facility.getLongitude() != null) {
+        dto.setLat(facility.getLatitude().doubleValue());
+        dto.setLng(facility.getLongitude().doubleValue());
+    }
+
+    return dto;
+}
+
+private String buildFallbackImageUrl(Facility facility) {
+    String firstLetter = "B";
+    if (facility.getName() != null && !facility.getName().isEmpty()) {
+        firstLetter = facility.getName().substring(0, 1);
+    }
+    return "https://placehold.co/800x450/064E3B/A3E635?text=" + firstLetter;
+}
     /**
      * Calculate distance using Haversine formula
      */
@@ -615,6 +599,8 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         return facilityRepository.isFavorite(accountId, facilityId);
     }
 }
+
+
 
 
 

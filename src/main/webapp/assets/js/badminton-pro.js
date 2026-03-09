@@ -45,6 +45,7 @@ const contextPath = window.location.pathname.split('/')[1]
     const PAGE_SIZE = 12;
     let isLoading = false;
     let hasMore = true;
+    let inFlightRequestController = null;
 
     // ============================================
     // AUTH MODAL FUNCTIONS
@@ -235,7 +236,20 @@ const contextPath = window.location.pathname.split('/')[1]
 
             console.log('Fetching from:', apiUrl);
 
-            const response = await fetch(apiUrl);
+            if (page === 0 && inFlightRequestController) {
+                inFlightRequestController.abort();
+            }
+
+            const requestController = new AbortController();
+            inFlightRequestController = requestController;
+
+            const response = await fetch(apiUrl, {
+                signal: requestController.signal
+            });
+
+            if (requestController !== inFlightRequestController) {
+                return;
+            }
 
             console.log('Response status:', response.status);
 
@@ -274,9 +288,16 @@ const contextPath = window.location.pathname.split('/')[1]
             }
 
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
             console.error('Error loading facilities:', error);
+            inFlightRequestController = null;
             showToast('Lỗi kết nối. Vui lòng thử lại');
         } finally {
+            if (inFlightRequestController && inFlightRequestController.signal.aborted) {
+                inFlightRequestController = null;
+            }
             isLoading = false;
         }
     }
@@ -1159,6 +1180,13 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
+
+
 
 
 

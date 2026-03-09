@@ -2,6 +2,7 @@ package com.bcb.repository;
 
 import com.bcb.model.Facility;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -40,6 +41,12 @@ public interface FacilityRepository {
 
     Double getAverageRating(Integer facilityId);
 
+    Map<Integer, String> findThumbnailPaths(List<Integer> facilityIds);
+
+    Map<Integer, Double> findAverageRatings(List<Integer> facilityIds);
+
+    Map<Integer, String> findPriceRanges(List<Integer> facilityIds);
+
     boolean addFavorite(int accountId, int facilityId);
 
     boolean removeFavorite(int accountId, int facilityId);
@@ -48,3 +55,4 @@ public interface FacilityRepository {
 
     List<Integer> getFavoriteFacilityIds(int accountId);
 }
+
