@@ -22,3 +22,4 @@ public interface BookingSlotRepository {
      */
     List<Integer> findBookingSlotIdsByBookingId(Connection conn, int bookingId);
 }
+

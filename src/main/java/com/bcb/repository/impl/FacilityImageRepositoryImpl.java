@@ -178,3 +178,4 @@ public class FacilityImageRepositoryImpl implements FacilityImageRepository {
         return image;
     }
 }
+

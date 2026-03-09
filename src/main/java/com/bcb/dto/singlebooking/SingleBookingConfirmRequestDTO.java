@@ -28,3 +28,4 @@ public class SingleBookingConfirmRequestDTO {
     public List<SingleBookingSelectionItemDTO> getSelections() { return selections; }
     public void setSelections(List<SingleBookingSelectionItemDTO> selections) { this.selections = selections; }
 }
+

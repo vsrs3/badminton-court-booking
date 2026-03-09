@@ -82,3 +82,4 @@ public class EmailVerification {
         this.expireAt = expireAt;
     }
 }
+

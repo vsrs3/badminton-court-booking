@@ -1,5 +1,3 @@
-﻿<%-- staff-booking-detail.jsp — Task 8 v2 + Payment confirmation --%>
-
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
@@ -212,6 +210,14 @@
                 <small class="sbd-modal-input-hint" id="paymentInputHint">
                     Nhập đúng số tiền còn thiếu để hoàn tất thanh toán
                 </small>
+            </div>
+            <div class="sbd-modal-input-group">
+                <label class="sbd-modal-input-label" for="paymentMethodSelect">Phương thức thanh toán</label>
+                <select class="sbd-modal-input" id="paymentMethodSelect">
+                    <option value="CASH" selected>Tiền mặt (CASH)</option>
+                    <option value="BANK_TRANSFER">Chuyển khoản (BANK_TRANSFER)</option>
+                    <option value="VNPAY">VNPAY</option>
+                </select>
             </div>
             <div class="sbd-modal-error d-none" id="paymentModalError"></div>
         </div>

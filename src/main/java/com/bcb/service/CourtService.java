@@ -13,3 +13,4 @@ public interface CourtService {
     void deactivateCourt(int courtId) throws BusinessException;
     List<CourtViewDTO> getCourtsByFacilityDTO(int facilityId);
 }
+

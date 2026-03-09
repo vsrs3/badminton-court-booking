@@ -55,3 +55,4 @@ public class MyBookingListDTO {
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
 }
+

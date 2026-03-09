@@ -33,3 +33,4 @@ public interface InvoiceRepository {
      */
     void updatePaymentStatus(int invoiceId, String paymentStatus, java.math.BigDecimal paidAmount);
 }
+

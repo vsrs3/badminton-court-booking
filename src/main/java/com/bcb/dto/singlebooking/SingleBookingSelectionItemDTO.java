@@ -18,3 +18,4 @@ public class SingleBookingSelectionItemDTO {
     public Integer getSlotId() { return slotId; }
     public void setSlotId(Integer slotId) { this.slotId = slotId; }
 }
+

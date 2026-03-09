@@ -1,4 +1,4 @@
-package com.bcb.controller.staff;
+package com.bcb.utils.staff;
 
 import com.bcb.model.Account;
 import jakarta.servlet.http.HttpServletRequest;
@@ -90,3 +90,4 @@ public final class StaffAuthUtil {
                 + "\"";
     }
 }
+

@@ -10,3 +10,4 @@ public interface CustomerProfileService {
 
     public AccountResponse updatePassword (CustomerChangePassDTO dto, Integer cusId);
 }
+

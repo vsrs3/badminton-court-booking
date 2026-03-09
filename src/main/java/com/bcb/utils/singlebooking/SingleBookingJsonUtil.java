@@ -51,3 +51,4 @@ public final class SingleBookingJsonUtil {
         return fromJson(sb.toString(), clazz);
     }
 }
+

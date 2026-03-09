@@ -56,3 +56,4 @@ public class PaymentCreateResult {
     public Integer getBookingId() { return bookingId; }
     public void setBookingId(Integer bookingId) { this.bookingId = bookingId; }
 }
+

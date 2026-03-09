@@ -30,12 +30,12 @@
 
       <!-- Rating Badge -->
       <div class="detail-rating-badge">
-        <span id="detailRating">★ 0.0 (0 đánh giá)</span>
+        <span id="detailRating">&#9733; 0.0 (0 &#273;&#225;nh gi&#225;)</span>
       </div>
 
       <!-- Floating Book Button -->
       <button id="detailBookBtn" class="detail-book-btn">
-        Đặt lịch
+        &#272;&#7863;t l&#7883;ch
       </button>
     </div>
 
@@ -54,7 +54,7 @@
             </div>
             <div class="detail-badge">
               <div class="badge-dot"></div>
-              <span>Cầu lông</span>
+              <span>C&#7847;u l&#244;ng</span>
             </div>
           </div>
         </div>
@@ -70,18 +70,18 @@
           </div>
           <div class="info-item">
             <i class="bi bi-telephone-fill"></i>
-            <button class="detail-contact-btn">Liên hệ</button>
+            <button class="detail-contact-btn">Li&#234;n h&#7879;</button>
           </div>
         </div>
       </div>
 
       <!-- Tabs Navigation -->
       <div class="detail-tabs">
-        <button class="detail-tab active" data-detail-tab="info">Thông tin</button>
-        <button class="detail-tab" data-detail-tab="pricing">Bảng giá</button>
-        <button class="detail-tab" data-detail-tab="images">Hình ảnh</button>
-        <button class="detail-tab" data-detail-tab="terms">Điều khoản & quy định</button>
-        <button class="detail-tab" data-detail-tab="reviews">Đánh giá</button>
+        <button class="detail-tab active" data-detail-tab="info">Th&#244;ng tin</button>
+        <button class="detail-tab" data-detail-tab="pricing">B&#7843;ng gi&#225;</button>
+        <button class="detail-tab" data-detail-tab="images">H&#236;nh &#7843;nh</button>
+        <button class="detail-tab" data-detail-tab="terms">&#272;i&#7873;u kho&#7843;n &amp; quy &#273;&#7883;nh</button>
+        <button class="detail-tab" data-detail-tab="reviews">&#272;&#225;nh gi&#225;</button>
       </div>
 
       <!-- Tab Content -->
@@ -89,45 +89,24 @@
         <!-- Info Tab -->
         <div id="detailTabInfo" class="detail-tab-pane active">
           <div class="detail-section">
-            <h3 class="detail-section-title">
-              <i class="bi bi-globe2"></i> Website
-            </h3>
-            <p class="detail-section-text text-muted fst-italic">
-              Đang cập nhật...
-            </p>
-          </div>
-
-          <div class="detail-section mt-4 pt-4 border-top">
             <h3 class="detail-section-title text-warning">
-              <i class="bi bi-info-circle-fill"></i> Tổng quan
+              <i class="bi bi-info-circle-fill"></i> T&#7893;ng quan
             </h3>
             <div class="detail-overview">
-              <p id="detailOverview">
-                Chào mừng bạn đến với <strong class="text-success" id="detailNameInOverview"></strong>.
-                Chúng tôi tự hào cung cấp hệ thống sân tập đạt tiêu chuẩn quốc tế với đầy đủ tiện nghi,
-                hệ thống chiếu sáng chống chói và mặt thảm chất lượng cao giúp giảm chấn thương.
-                Môi trường tập luyện chuyên nghiệp, năng động phù hợp cho mọi lứa tuổi và trình độ.
-              </p>
+              <p id="detailOverview">ch&#432;a c&#243;</p>
             </div>
           </div>
         </div>
 
-        <!-- Other Tabs (Coming Soon) -->
         <div id="detailTabPricing" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Bảng giá sắp ra mắt...</p>
+          <div id="detailPricingContent">
+            <div class="detail-empty-state">ch&#432;a c&#243;</div>
           </div>
         </div>
 
         <div id="detailTabImages" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Hình ảnh sắp ra mắt...</p>
+          <div id="detailImagesContent">
+            <div class="detail-empty-state">ch&#432;a c&#243;</div>
           </div>
         </div>
 
@@ -136,16 +115,13 @@
             <div class="coming-soon-icon">
               <i class="bi bi-info-circle"></i>
             </div>
-            <p>Dữ liệu Điều khoản & quy định sắp ra mắt...</p>
+            <p>D&#7919; li&#7879;u &#272;i&#7873;u kho&#7843;n &amp; quy &#273;&#7883;nh s&#7855;p ra m&#7855;t...</p>
           </div>
         </div>
 
         <div id="detailTabReviews" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Đánh giá sắp ra mắt...</p>
+          <div id="detailReviewsContent">
+            <div class="detail-empty-state">ch&#432;a c&#243; comment n&#224;o</div>
           </div>
         </div>
       </div>

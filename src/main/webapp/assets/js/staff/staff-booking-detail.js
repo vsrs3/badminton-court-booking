@@ -31,6 +31,7 @@
     var paymentModalCancel  = document.getElementById('paymentModalCancel');
     var paymentModalConfirm = document.getElementById('paymentModalConfirm');
     var paymentAmountInput  = document.getElementById('paymentAmountInput');
+    var paymentMethodSelect = document.getElementById('paymentMethodSelect');
     var paymentModalError   = document.getElementById('paymentModalError');
     var paymentInputHint    = document.getElementById('paymentInputHint');
 
@@ -509,6 +510,7 @@
 
         paymentAmountInput.value = remaining;
         paymentAmountInput.max = remaining;
+        if (paymentMethodSelect) paymentMethodSelect.value = 'CASH';
         paymentInputHint.textContent = 'Nh\u1eadp \u0111\u00fang ' + formatMoney(remaining) + ' \u0111\u1ec3 ho\u00e0n t\u1ea5t thanh to\u00e1n';
 
         hideModalError();
@@ -555,6 +557,12 @@
             return;
         }
 
+        var method = paymentMethodSelect ? paymentMethodSelect.value : 'CASH';
+        if (['CASH','BANK_TRANSFER','VNPAY'].indexOf(method) === -1) {
+            showModalError('Phuong thuc thanh toan khong hop le.');
+            return;
+        }
+
         paymentModalConfirm.disabled = true;
         paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> \u0110ang x\u1eed l\u00fd...';
 
@@ -562,7 +570,7 @@
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ bookingId: parseInt(bookingId), amount: amount })
+            body: JSON.stringify({ bookingId: parseInt(bookingId), amount: amount, method: method })
         })
             .then(function (res) { return res.json(); })
             .then(function (body) {
@@ -980,5 +988,4 @@
     }
 
 })();
-
 

@@ -1,4 +1,4 @@
-package com.bcb.controller.staff;
+package com.bcb.utils.staff;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -197,3 +197,5 @@ public final class StaffBookingSnapshotTokenUtil {
         public String refundStatus;
     }
 }
+
+
