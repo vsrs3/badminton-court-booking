@@ -681,32 +681,287 @@ const contextPath = window.location.pathname.split('/')[1]
     // COURT DETAIL MODAL
     // ============================================
 
-    function openCourtDetail(courtId) {
+    async function openCourtDetail(courtId) {
         const court = AppState.courts.find(c => c.id === courtId);
         if (!court) return;
 
-        AppState.selectedCourt = court;
+        AppState.selectedCourt = { ...court };
 
-        // Populate detail panel
-        document.getElementById('detailBannerImg').src =
-            contextPath + '/' + court.imageUrl;
-        document.getElementById('detailBannerImg').alt = court.name;
-        document.getElementById('detailRating').textContent = `★ ${court.rating.toFixed(1)} (0 đánh giá)`;
-        document.getElementById('detailTitle').textContent = court.name;
-        document.getElementById('detailLocation').textContent = court.location;
-        document.getElementById('detailOpenTime').textContent = court.openTime;
-        document.getElementById('detailNameInOverview').textContent = court.name;
-
-        // Logo
-        const logoImg = document.getElementById('detailLogoImg');
-        const firstLetter = court.name.charAt(0);
-        logoImg.src = `https://placehold.co/100x100/orange/white?text=${firstLetter}`;
-        logoImg.alt = 'logo';
-
-        // Update favorite button
+        renderBaseCourtDetail(court);
+        renderDetailLoadingState();
+        switchDetailTab('info');
         updateDetailFavoriteButton();
+        showCourtDetailPanel();
 
-        // Show panel
+        await loadCourtDetail(court.id);
+    }
+
+    function renderBaseCourtDetail(court) {
+        const bannerImg = document.getElementById('detailBannerImg');
+        if (bannerImg) {
+            bannerImg.src = resolveAssetUrl(court.imageUrl);
+            bannerImg.alt = court.name || '';
+        }
+
+        const rating = Number(court.rating || 0);
+        const detailRating = document.getElementById('detailRating');
+        if (detailRating) {
+            detailRating.textContent = `${"\u2605"} ${rating.toFixed(1)} (0 \u0111\u00e1nh gi\u00e1)`;
+        }
+
+        setText('detailTitle', court.name || '');
+        setText('detailLocation', court.location || '');
+        setText('detailOpenTime', court.openTime || '');
+
+        const logoImg = document.getElementById('detailLogoImg');
+        if (logoImg) {
+            const firstLetter = (court.name || 'B').charAt(0).toUpperCase();
+            logoImg.src = `https://placehold.co/100x100/orange/white?text=${firstLetter}`;
+            logoImg.alt = 'logo';
+        }
+    }
+
+    function renderDetailLoadingState() {
+        setText('detailOverview', '\u0111ang t\u1ea3i...');
+        setHtml('detailPricingContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setHtml('detailImagesContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setHtml('detailReviewsContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+    }
+
+    async function loadCourtDetail(courtId) {
+        try {
+            const detail = await fetchCourtDetail(courtId);
+            if (!AppState.selectedCourt || String(AppState.selectedCourt.id) !== String(courtId)) {
+                return;
+            }
+            applyCourtDetail(detail);
+        } catch (error) {
+            console.error('Error loading facility detail:', error);
+            setText('detailOverview', 'ch\u01b0a c\u00f3');
+            setHtml('detailPricingContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3</div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+        }
+    }
+
+    async function fetchCourtDetail(courtId) {
+        const response = await fetch(`${contextPath}/api/facilities/${encodeURIComponent(courtId)}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error(result.error || 'Invalid facility detail response');
+        }
+
+        return result.data;
+    }
+
+    function applyCourtDetail(detail) {
+        AppState.selectedCourt = { ...AppState.selectedCourt, ...detail };
+        const selected = AppState.selectedCourt;
+
+        const rating = Number(selected.rating || 0);
+        const reviewCount = Number(selected.reviewCount || 0);
+        setText('detailRating', `${"\u2605"} ${rating.toFixed(1)} (${reviewCount} \u0111\u00e1nh gi\u00e1)`);
+
+        setText('detailOverview', selected.description || 'ch\u01b0a c\u00f3');
+        renderDetailPricing(selected.priceRules || []);
+        renderDetailImages(selected.galleryImages || [], selected.name || 'Facility');
+        renderDetailReviews(selected.reviews || []);
+        updateDetailFavoriteButton();
+    }
+
+    function renderDetailPricing(priceRules) {
+        if (!priceRules.length) {
+            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>ch\u01b0a c\u00f3 b\u1ea3ng gi\u00e1</span></div>');
+            return;
+        }
+
+        const normalizedRules = priceRules.map(rule => ({
+            courtTypeName: rule.courtTypeName || 'ch\u01b0a c\u00f3',
+            dayType: rule.dayType || 'UNKNOWN',
+            dayTypeLabel: getDayTypeLabel(rule.dayType),
+            dayTypeBadgeClass: getDayTypeBadgeClass(rule.dayType),
+            timeRange: `${rule.startTime || '--:--'} - ${rule.endTime || '--:--'}`,
+            priceText: formatCurrencyVnd(rule.price)
+        }));
+
+        let rowsHtml = '';
+        let courtStart = 0;
+
+        while (courtStart < normalizedRules.length) {
+            const courtName = normalizedRules[courtStart].courtTypeName;
+            let courtEnd = courtStart;
+            while (courtEnd < normalizedRules.length && normalizedRules[courtEnd].courtTypeName === courtName) {
+                courtEnd++;
+            }
+            const courtSpan = courtEnd - courtStart;
+
+            let dayStart = courtStart;
+            while (dayStart < courtEnd) {
+                const dayType = normalizedRules[dayStart].dayType;
+                const dayLabel = normalizedRules[dayStart].dayTypeLabel;
+                const dayBadgeClass = normalizedRules[dayStart].dayTypeBadgeClass;
+
+                let dayEnd = dayStart;
+                while (dayEnd < courtEnd && normalizedRules[dayEnd].dayType === dayType) {
+                    dayEnd++;
+                }
+                const daySpan = dayEnd - dayStart;
+
+                for (let i = dayStart; i < dayEnd; i++) {
+                    const row = normalizedRules[i];
+                    rowsHtml += '<tr>';
+
+                    if (i === courtStart) {
+                        const rowSpanAttr = courtSpan > 1 ? ` rowspan="${courtSpan}"` : '';
+                        rowsHtml += `<td class="detail-cell-court-type detail-merged-cell"${rowSpanAttr}>${escapeHtml(courtName)}</td>`;
+                    }
+
+                    if (i === dayStart) {
+                        const rowSpanAttr = daySpan > 1 ? ` rowspan="${daySpan}"` : '';
+                        rowsHtml += `<td class="detail-merged-cell"${rowSpanAttr}><span class="detail-day-badge ${escapeHtml(dayBadgeClass)}">${escapeHtml(dayLabel)}</span></td>`;
+                    }
+
+                    rowsHtml += `<td class="detail-time-cell">${escapeHtml(row.timeRange)}</td>`;
+                    rowsHtml += `<td class="detail-price-cell">${escapeHtml(row.priceText)}</td>`;
+                    rowsHtml += '</tr>';
+                }
+
+                dayStart = dayEnd;
+            }
+
+            courtStart = courtEnd;
+        }
+
+        setHtml('detailPricingContent', `
+            <div class="detail-table-card">
+                <div class="detail-table-wrap">
+                    <table class="detail-data-table">
+                        <thead>
+                            <tr>
+                                <th>Lo\u1ea1i s\u00e2n</th>
+                                <th>Ng\u00e0y \u00e1p d\u1ee5ng</th>
+                                <th>Khung gi\u1edd</th>
+                                <th class="detail-price-header">Gi\u00e1 (VN\u0110/30 ph\u00fat)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        `);
+    }
+    function renderDetailImages(images, facilityName) {
+        if (!images.length) {
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            return;
+        }
+
+        const html = images.map((imagePath, index) => {
+            const src = resolveAssetUrl(imagePath);
+            const safeSrc = encodeURI(src).replace(/'/g, '%27');
+            const alt = escapeHtml(`${facilityName} image ${index + 1}`);
+            return `
+                <figure class="detail-gallery-item">
+                    <img class="detail-gallery-image" src="${safeSrc}" alt="${alt}" loading="lazy" />
+                </figure>
+            `;
+        }).join('');
+
+        setHtml('detailImagesContent', `<div class="detail-gallery-grid">${html}</div>`);
+    }
+
+    function renderDetailReviews(reviews) {
+        if (!reviews.length) {
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            return;
+        }
+
+        const html = reviews.map(review => {
+            const reviewer = escapeHtml(review.reviewerName || 'Ng\u01b0\u1eddi d\u00f9ng');
+            const rating = Number(review.rating || 0);
+            const comment = escapeHtml((review.comment || '').trim() || 'ch\u01b0a c\u00f3 comment n\u00e0o');
+            return `
+                <article class="detail-review-item">
+                    <div class="detail-review-head">
+                        <strong class="detail-review-author">${reviewer}</strong>
+                        <span class="detail-review-stars">${renderStars(rating)}</span>
+                    </div>
+                    <p class="detail-review-comment">${comment}</p>
+                </article>
+            `;
+        }).join('');
+
+        setHtml('detailReviewsContent', `<div class="detail-review-list">${html}</div>`);
+    }
+
+    function getDayTypeBadgeClass(dayType) {
+        if (dayType === 'WEEKDAY') return 'detail-day-badge-weekday';
+        if (dayType === 'WEEKEND') return 'detail-day-badge-weekend';
+        return 'detail-day-badge-default';
+    }
+
+    function renderStars(rating) {
+        let stars = '';
+        const safeRating = Math.max(0, Math.min(5, Math.round(rating)));
+        for (let i = 1; i <= 5; i++) {
+            stars += i <= safeRating ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
+        }
+        return stars;
+    }
+
+    function getDayTypeLabel(dayType) {
+        if (dayType === 'WEEKDAY') return 'Trong tu\u1ea7n';
+        if (dayType === 'WEEKEND') return 'Cu\u1ed1i tu\u1ea7n';
+        return dayType || 'ch\u01b0a c\u00f3';
+    }
+
+    function formatCurrencyVnd(value) {
+        const amount = Number(value || 0);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return 'ch\u01b0a c\u00f3';
+        }
+        return `${amount.toLocaleString('vi-VN')} \u20ab`;
+    }
+
+    function resolveAssetUrl(path) {
+        if (!path) return '';
+        if (/^https?:\/\//i.test(path) || path.startsWith('/') || path.startsWith('data:')) {
+            return path;
+        }
+        return `${contextPath}/${path}`;
+    }
+
+    function escapeHtml(input) {
+        return String(input)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function setText(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.textContent = value;
+        }
+    }
+
+    function setHtml(elementId, value) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            if (elementId === 'detailPricingContent' || elementId === 'detailImagesContent' || elementId === 'detailReviewsContent') {
+                el.classList.remove('detail-empty-state');
+            }
+            el.innerHTML = value;
+        }
+    }
+
+    function showCourtDetailPanel() {
         const backdrop = document.getElementById('courtDetailBackdrop');
         const panel = document.getElementById('courtDetailPanel');
 
@@ -742,7 +997,6 @@ const contextPath = window.location.pathname.split('/')[1]
             }
         }
     }
-
     // ============================================
     // FILTER PANEL
     // ============================================
@@ -1180,6 +1434,16 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
+
+
+
+
+
 
 
 
