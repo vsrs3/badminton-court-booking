@@ -185,7 +185,7 @@ const contextPath = window.location.pathname.split('/')[1]
     async function loadFacilitiesFromAPI(page = 0) {
         console.log('Loading facilities from API, page:', page);
 
-        if (isLoading) {
+        if (isLoading && page > 0) {
             console.log('Already loading, skipping...');
             return;
         }
@@ -204,6 +204,17 @@ const contextPath = window.location.pathname.split('/')[1]
                 page: page,
                 pageSize: PAGE_SIZE
             });
+            const trimmedQuery = AppState.searchQuery.trim();
+            if (trimmedQuery) {
+                params.append("q", trimmedQuery);
+            }
+            if (AppState.filters.province) {
+                params.append("province", AppState.filters.province);
+            }
+            if (AppState.filters.district) {
+                params.append("district", AppState.filters.district);
+            }
+
 
             // ✅ IMPORTANT: Add user location if available
             if (AppState.userLocation) {
@@ -306,26 +317,9 @@ const contextPath = window.location.pathname.split('/')[1]
         console.log('Applying filters and search...');
         let courts = [...AppState.courts];
 
-        // 1. Search filter
-        if (AppState.searchQuery.trim()) {
-            const query = AppState.searchQuery.toLowerCase().trim();
-            courts = courts.filter(c =>
-                c.name.toLowerCase().includes(query) ||
-                c.location.toLowerCase().includes(query)
-            );
-        }
+        // Search/province/district are filtered on API side (database).
 
-        // 2. Province filter
-        if (AppState.filters.province) {
-            courts = courts.filter(c => c.province === AppState.filters.province);
-        }
-
-        // 3. District filter
-        if (AppState.filters.district) {
-            courts = courts.filter(c => c.district === AppState.filters.district);
-        }
-
-        // 4. Distance filter
+        // 1. Distance filter
         if (AppState.filters.maxDistance !== null && AppState.userLocation) {
             courts = courts.filter(c => {
                 // Parse distance string back to number
@@ -701,7 +695,9 @@ const contextPath = window.location.pathname.split('/')[1]
 
     function applyFilters() {
         closeFilterPanel();
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
 
     function resetFilters() {
@@ -720,7 +716,9 @@ const contextPath = window.location.pathname.split('/')[1]
             btn.classList.remove('active');
         });
 
-        applyFiltersAndSearch();
+        currentPage = 0;
+        hasMore = true;
+        loadFacilitiesFromAPI(0);
     }
 
     function updateDistrictOptions() {
@@ -855,8 +853,9 @@ const contextPath = window.location.pathname.split('/')[1]
         if (searchInput) {
             searchInput.addEventListener('input', debounce(function(e) {
                 AppState.searchQuery = e.target.value;
-                console.log('🔍 Search query:', AppState.searchQuery); // ✅ DEBUG
-                applyFiltersAndSearch();
+                currentPage = 0;
+                hasMore = true;
+                loadFacilitiesFromAPI(0);
             }, 300));
 
             // ✅ Clear search button
@@ -864,7 +863,9 @@ const contextPath = window.location.pathname.split('/')[1]
                 if (e.key === 'Escape') {
                     this.value = '';
                     AppState.searchQuery = '';
-                    applyFiltersAndSearch();
+                    currentPage = 0;
+                    hasMore = true;
+                    loadFacilitiesFromAPI(0);
                 }
             });
         }
@@ -1101,3 +1102,4 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+

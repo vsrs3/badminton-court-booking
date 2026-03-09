@@ -102,7 +102,8 @@ public interface FacilityService {
      * @param accountId User account ID (optional, for favorites)
      * @return List of FacilityDTO
      */
-    List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId);
+    List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng,
+                                    Integer accountId, String keyword, String province, String district);
 
     /**
      * Get total number of active facilities
@@ -110,6 +111,16 @@ public interface FacilityService {
      * @return Total count
      */
     int getTotalCount();
+
+    /**
+     * Get total number of active facilities after applying optional search filters.
+     *
+     * @param keyword Search text for facility name/address/province/district (optional)
+     * @param province Province filter (optional)
+     * @param district District filter (optional)
+     * @return Total count after filtering
+     */
+    int getTotalCount(String keyword, String province, String district);
 
     /**
      * Get facility by ID

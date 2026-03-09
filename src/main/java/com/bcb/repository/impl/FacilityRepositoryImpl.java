@@ -22,6 +22,7 @@ import java.util.Optional;
  * Returns PURE entities (no computed fields)
  */
 public class FacilityRepositoryImpl implements FacilityRepository {
+    private static final String HOME_SEARCH_COLLATION = "Latin1_General_100_CI_AI";
 
     @Override
     public List<Facility> findAll(int limit, int offset) {
@@ -264,43 +265,78 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 //    vuongdq
     @Override
     public List<Facility> findAllWithPagination(int offset, int limit) {
+        return findForHome(offset, limit, null, null, null);
+    }
+
+    @Override
+    public List<Facility> findForHome(int offset, int limit, String keyword, String province, String district) {
         List<Facility> facilities = new ArrayList<>();
 
-        // ✅ CLEANED: No thumbnail, no rating in main query
-        String sql = """
-            SELECT 
-            facility_id,
-            name,
-            province,
-            district,
-            ward,
-            address,
-            latitude,
-            longitude,
-            description,
-            open_time,
-            close_time,
-            is_active
-        FROM Facility
-        WHERE is_active = 1
-        ORDER BY facility_id ASC
-        OFFSET ? ROWS
-        FETCH NEXT ? ROWS ONLY
-    """;
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                facility_id,
+                name,
+                province,
+                district,
+                ward,
+                address,
+                latitude,
+                longitude,
+                description,
+                open_time,
+                close_time,
+                is_active
+            FROM Facility f
+            WHERE f.is_active = 1
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (")
+                    .append("f.name COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.address COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ?)");
+
+            String likeKeyword = "%" + keyword.trim() + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        if (province != null && !province.trim().isEmpty()) {
+            sql.append(" AND f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(province.trim());
+        }
+
+        if (district != null && !district.trim().isEmpty()) {
+            sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(district.trim());
+        }
+
+        sql.append(" ORDER BY f.facility_id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            ps.setInt(1, offset);
-            ps.setInt(2, limit);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Facility facility = mapResultSetToFacility(rs);
-                    facilities.add(facility);
+            int idx = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
                 }
             }
 
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    facilities.add(mapResultSetToFacility(rs));
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Error fetching facilities: " + e.getMessage(), e);
         }
@@ -350,16 +386,50 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public int getTotalCount() {
-        String sql = "SELECT COUNT(*) FROM Facility WHERE is_active = 1";
+        return countForHome(null, null, null);
+    }
+
+    @Override
+    public int countForHome(String keyword, String province, String district) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Facility f WHERE f.is_active = 1");
+        List<String> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (")
+                    .append("f.name COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.address COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ?)");
+
+            String likeKeyword = "%" + keyword.trim() + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        if (province != null && !province.trim().isEmpty()) {
+            sql.append(" AND f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(province.trim());
+        }
+
+        if (district != null && !district.trim().isEmpty()) {
+            sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(district.trim());
+        }
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            if (rs.next()) {
-                return rs.getInt(1);
+            for (int i = 0; i < params.size(); i++) {
+                ps.setString(i + 1, params.get(i));
             }
 
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Error counting facilities: " + e.getMessage(), e);
         }

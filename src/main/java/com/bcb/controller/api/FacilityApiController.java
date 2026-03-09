@@ -82,6 +82,11 @@ public class FacilityApiController extends HttpServlet {
         Double userLat = getDoubleParameter(request, "userLat");
         Double userLng = getDoubleParameter(request, "userLng");
 
+        // Search filters
+        String keyword = trimToNull(request.getParameter("q"));
+        String province = trimToNull(request.getParameter("province"));
+        String district = trimToNull(request.getParameter("district"));
+
         // Get user account ID from session (if logged in)
         HttpSession session = request.getSession(false);
         Integer accountId = null;
@@ -90,8 +95,8 @@ public class FacilityApiController extends HttpServlet {
         }
 
         // Get facilities
-        List<FacilityDTO> facilities = facilityService.getFacilities(page, pageSize, userLat, userLng, accountId);
-        int totalCount = facilityService.getTotalCount();
+        List<FacilityDTO> facilities = facilityService.getFacilities(page, pageSize, userLat, userLng, accountId, keyword, province, district);
+        int totalCount = facilityService.getTotalCount(keyword, province, district);
 
         // ✅ Calculate hasMore
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
@@ -194,5 +199,13 @@ public class FacilityApiController extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

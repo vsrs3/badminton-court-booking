@@ -47,6 +47,7 @@ public interface FacilityRepository {
      */
     int countByKeyword(String keyword);
     List<Facility> findAllWithPagination(int offset, int limit);
+    List<Facility> findForHome(int offset, int limit, String keyword, String province, String district);
 
     /**
      * Find facility by ID.
@@ -66,6 +67,7 @@ public interface FacilityRepository {
      */
     int insert(Facility facility);
     int getTotalCount();
+    int countForHome(String keyword, String province, String district);
 
     /**
      * Update existing facility.
@@ -86,4 +88,3 @@ public interface FacilityRepository {
 
     Double getAverageRating(Integer facilityId);
 }
-

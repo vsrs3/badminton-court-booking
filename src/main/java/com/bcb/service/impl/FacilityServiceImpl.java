@@ -338,7 +338,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 //    ============= VUONGPD =============
 @Override
-public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId) {
+public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district) {
     try {
         System.out.println("=== START getFacilities ===");
 
@@ -348,11 +348,11 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
 
         // Get facilities from repository
         System.out.println("📦 Fetching facilities from repository...");
-        List<Facility> facilities = facilityRepository.findAllWithPagination(offset, pageSize);
+        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district);
         System.out.println("✅ Loaded " + facilities.size() + " facilities");
 
         // Get total count
-        int totalCount = facilityRepository.getTotalCount();
+        int totalCount = facilityRepository.countForHome(keyword, province, district);
         System.out.println("📊 Total active facilities in DB: " + totalCount);
 
         // Step 2: Get favorites
@@ -403,6 +403,11 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
     @Override
     public int getTotalCount() {
         return facilityRepository.getTotalCount();
+    }
+
+    @Override
+    public int getTotalCount(String keyword, String province, String district) {
+        return facilityRepository.countForHome(keyword, province, district);
     }
 
     @Override
@@ -635,5 +640,3 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         return false;
     }
 }
-
-
