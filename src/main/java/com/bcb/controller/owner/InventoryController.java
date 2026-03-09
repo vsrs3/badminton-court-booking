@@ -1,11 +1,8 @@
 package com.bcb.controller.owner;
 
 import com.bcb.model.Inventory;
-import com.bcb.model.Facility;
 import com.bcb.service.InventoryService;
 import com.bcb.service.impl.InventoryServiceImpl;
-import com.bcb.repository.FacilityRepository;
-import com.bcb.repository.impl.FacilityRepositoryImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -19,7 +16,6 @@ import java.util.List;
 public class InventoryController extends HttpServlet {
 
     private final InventoryService service = new InventoryServiceImpl();
-    private final FacilityRepository facilityRepository = new FacilityRepositoryImpl();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -36,10 +32,7 @@ public class InventoryController extends HttpServlet {
 
             Inventory inventory = service.getById(id);
 
-            List<Facility> facilities = facilityRepository.findAllActive();
-
             req.setAttribute("inventory", inventory);
-            req.setAttribute("facilities", facilities);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
@@ -50,10 +43,6 @@ public class InventoryController extends HttpServlet {
            ADD
         ========================= */
         else if ("add".equals(action)) {
-
-            List<Facility> facilities = facilityRepository.findAllActive();
-
-            req.setAttribute("facilities", facilities);
 
             req.getRequestDispatcher("/jsp/owner/inventory/inventory-form.jsp")
                     .forward(req, resp);
@@ -85,12 +74,12 @@ public class InventoryController extends HttpServlet {
 
             try {
                 page = Integer.parseInt(req.getParameter("page"));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             int offset = (page - 1) * size;
 
-            List<Inventory> list =
-                    service.getWithPagination(size, offset, keyword);
+            List<Inventory> list = service.getWithPagination(size, offset, keyword);
 
             int total = service.countInventory(keyword);
 
@@ -98,7 +87,6 @@ public class InventoryController extends HttpServlet {
 
             req.setAttribute("inventories", list);
             req.setAttribute("keyword", keyword);
-
             req.setAttribute("currentPage", page);
             req.setAttribute("totalPages", totalPages);
 
@@ -118,32 +106,13 @@ public class InventoryController extends HttpServlet {
         inventory.setName(req.getParameter("name"));
         inventory.setBrand(req.getParameter("brand"));
         inventory.setDescription(req.getParameter("description"));
-
-        inventory.setRentalPrice(
-                new BigDecimal(req.getParameter("price"))
-        );
-
+        inventory.setRentalPrice(new BigDecimal(req.getParameter("price")));
         inventory.setActive(req.getParameter("active") != null);
 
-        String facilityIdParam = req.getParameter("facilityId");
-
-        if (facilityIdParam != null && !facilityIdParam.isEmpty()) {
-
-            inventory.setFacilityId(Integer.parseInt(facilityIdParam));
-
-        } else {
-
-            inventory.setFacilityId(null);
-        }
-
         if (idParam == null || idParam.isEmpty()) {
-
             service.create(inventory);
-
         } else {
-
             inventory.setInventoryId(Integer.parseInt(idParam));
-
             service.update(inventory);
         }
 

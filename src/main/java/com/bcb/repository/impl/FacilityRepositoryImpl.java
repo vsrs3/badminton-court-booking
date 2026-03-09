@@ -22,13 +22,27 @@ import java.util.Optional;
  * Returns PURE entities (no computed fields)
  */
 public class FacilityRepositoryImpl implements FacilityRepository {
-
     @Override
     public List<Facility> findAll(int limit, int offset) {
-        String sql = "SELECT f.* FROM Facility f " +
-                "WHERE f.is_active = 1 " +
-                "ORDER BY f.facility_id DESC " +
-                "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        String sql = """
+        SELECT 
+            facility_id,
+            name,
+            province,
+            district,
+            ward,
+            address,
+            latitude,
+            longitude,
+            description,
+            open_time,
+            close_time,
+            is_active
+        FROM Facility
+        WHERE is_active = 1
+        ORDER BY facility_id ASC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """;
 
         List<Facility> facilities = new ArrayList<>();
 

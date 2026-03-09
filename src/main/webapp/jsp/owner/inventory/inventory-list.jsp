@@ -6,229 +6,208 @@
 
 <div class="main-content">
 
-<%@ include file="../layout/header.jsp"%>
+    <%@ include file="../layout/header.jsp"%>
 
-<div class="content-area">
+    <div class="content-area">
 
-<div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
 
-<div>
-<h1 class="fw-black mb-1"
-style="font-size:1.75rem;color:var(--color-gray-900);">
+            <div>
+                <h1 class="fw-black mb-1"
+                    style="font-size:1.75rem;color:var(--color-gray-900);">
 
-Inventory Management
+                    Inventory Management
 
-</h1>
+                </h1>
 
-<p class="text-secondary mb-0">
-Manage rental equipment
-</p>
-</div>
+                <p class="text-secondary mb-0">
+                    Manage rental equipment
+                </p>
+            </div>
 
-<a href="${pageContext.request.contextPath}/owner/inventory?action=add"
-class="btn btn-success rounded-3 px-4">
+            <a href="${pageContext.request.contextPath}/owner/inventory?action=add"
+               class="btn btn-success rounded-3 px-4">
 
-<i class="bi bi-plus-circle"></i>
-Add Equipment
+                <i class="bi bi-plus-circle"></i>
+                Add Equipment
 
-</a>
+            </a>
 
-</div>
+        </div>
 
 
-<!-- SEARCH -->
+        <!-- SEARCH -->
 
-<div class="card border-0 rounded-4 mb-4"
-style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div class="card border-0 rounded-4 mb-4"
+             style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
-<div class="card-body">
+            <div class="card-body">
 
-<form method="get"
-action="${pageContext.request.contextPath}/owner/inventory"
-class="row g-3">
+                <form method="get"
+                      action="${pageContext.request.contextPath}/owner/inventory"
+                      class="row g-3">
 
-<div class="col-md-4">
+                    <div class="col-md-4">
 
-<input type="text"
-name="keyword"
-value="${keyword}"
-class="form-control rounded-3"
-placeholder="Search equipment...">
+                        <input type="text"
+                               name="keyword"
+                               value="${keyword}"
+                               class="form-control rounded-3"
+                               placeholder="Search equipment...">
 
-</div>
+                    </div>
 
-<div class="col-auto">
+                    <div class="col-auto">
 
-<button class="btn btn-outline-success rounded-3">
+                        <button class="btn btn-outline-success rounded-3">
 
-<i class="bi bi-search"></i>
-Search
+                            <i class="bi bi-search"></i>
+                            Search
 
-</button>
+                        </button>
 
-</div>
+                    </div>
 
-</form>
+                </form>
 
-</div>
+            </div>
 
-</div>
+        </div>
 
 
-<!-- TABLE -->
+        <!-- TABLE -->
 
-<div class="card border-0 rounded-4"
-style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div class="card border-0 rounded-4"
+             style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
-<div class="card-body">
+            <div class="card-body">
 
-<div class="table-responsive">
+                <div class="table-responsive">
 
-<table class="table align-middle">
+                    <table class="table align-middle">
 
-<thead class="table-light">
+                        <thead class="table-light">
 
-<tr>
-<th>ID</th>
-<th>Name</th>
-<th>Brand</th>
-<th>Price</th>
-<th>Status</th>
-<th>Facility</th>
-<th class="text-end">Action</th>
-</tr>
+                        <tr>
+                            <th>STT</th>
+                            <th>Name</th>
+                            <th>Brand</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
 
-</thead>
+                        </thead>
 
-<tbody>
+                        <tbody>
 
-<c:forEach items="${inventories}" var="i">
+                        <c:forEach items="${inventories}" var="i" varStatus="loop">
 
-<tr>
+                            <tr>
 
-<td>${i.inventoryId}</td>
+                                <td>${(currentPage - 1) * 10 + loop.count}</td>
 
-<td class="fw-semibold">${i.name}</td>
+                                <td class="fw-semibold">${i.name}</td>
 
-<td>${i.brand}</td>
+                                <td>${i.brand}</td>
 
-<td class="text-success fw-bold">
+                                <td class="text-success fw-bold">
+                                        ${i.rentalPrice}
+                                </td>
 
-${i.rentalPrice}
+                                <td>
 
-</td>
+                                    <c:choose>
 
-<td>
+                                        <c:when test="${i.active}">
+                                            <span class="badge bg-success">Active</span>
+                                        </c:when>
 
-<c:choose>
+                                        <c:otherwise>
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        </c:otherwise>
 
-<c:when test="${i.active}">
-<span class="badge bg-success">Active</span>
-</c:when>
+                                    </c:choose>
 
-<c:otherwise>
-<span class="badge bg-secondary">Inactive</span>
-</c:otherwise>
+                                </td>
 
-</c:choose>
+                                <td class="text-end">
 
-</td>
+                                    <a href="${pageContext.request.contextPath}/owner/inventory?action=edit&id=${i.inventoryId}"
+                                       class="btn btn-sm btn-outline-primary">
 
-<td>
+                                        <i class="bi bi-pencil"></i>
 
-<c:choose>
+                                    </a>
 
-<c:when test="${not empty i.facilityName}">
-${i.facilityName}
-</c:when>
+                                    <a href="${pageContext.request.contextPath}/owner/inventory?action=delete&id=${i.inventoryId}"
+                                       onclick="return confirm('Delete this item?')"
+                                       class="btn btn-sm btn-outline-danger">
 
-<c:otherwise>
-<span class="text-muted">
-Not assigned
-</span>
-</c:otherwise>
+                                        <i class="bi bi-trash"></i>
 
-</c:choose>
+                                    </a>
 
-</td>
+                                </td>
 
-<td class="text-end">
+                            </tr>
 
-<a href="${pageContext.request.contextPath}/owner/inventory?action=edit&id=${i.inventoryId}"
-class="btn btn-sm btn-outline-primary">
+                        </c:forEach>
 
-<i class="bi bi-pencil"></i>
+                        <c:if test="${empty inventories}">
 
-</a>
+                            <tr>
 
-<a href="${pageContext.request.contextPath}/owner/inventory?action=delete&id=${i.inventoryId}"
-onclick="return confirm('Delete this item?')"
-class="btn btn-sm btn-outline-danger">
+                                <td colspan="6"
+                                    class="text-center text-muted">
 
-<i class="bi bi-trash"></i>
+                                    No inventory found
 
-</a>
+                                </td>
 
-</td>
+                            </tr>
 
-</tr>
+                        </c:if>
 
-</c:forEach>
+                        </tbody>
 
-<c:if test="${empty inventories}">
+                    </table>
 
-<tr>
+                </div>
 
-<td colspan="7"
-class="text-center text-muted">
 
-No inventory found
+                <!-- PAGINATION -->
 
-</td>
+                <nav class="mt-4">
 
-</tr>
+                    <ul class="pagination justify-content-center">
 
-</c:if>
+                        <c:forEach begin="1" end="${totalPages}" var="p">
 
-</tbody>
+                            <li class="page-item ${p==currentPage?'active':''}">
 
-</table>
+                                <a class="page-link"
+                                   href="${pageContext.request.contextPath}/owner/inventory?page=${p}&keyword=${keyword}">
 
-</div>
+                                        ${p}
 
+                                </a>
 
-<!-- PAGINATION -->
+                            </li>
 
-<nav class="mt-4">
+                        </c:forEach>
 
-<ul class="pagination justify-content-center">
+                    </ul>
 
-<c:forEach begin="1" end="${totalPages}" var="p">
+                </nav>
 
-<li class="page-item ${p==currentPage?'active':''}">
 
-<a class="page-link"
-href="${pageContext.request.contextPath}/owner/inventory?page=${p}&keyword=${keyword}">
+            </div>
 
-${p}
+        </div>
 
-</a>
+    </div>
 
-</li>
-
-</c:forEach>
-
-</ul>
-
-</nav>
-
-
-</div>
-
-</div>
-
-</div>
-
-<%@ include file="../layout/footer.jsp"%>
+    <%@ include file="../layout/footer.jsp"%>
 
 </div>
