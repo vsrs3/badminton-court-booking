@@ -91,7 +91,6 @@ public class AuthServiceImpl implements AuthService {
 
         String verifyLink =
                 "http://localhost:8080/badminton_court_booking/verify-email?token=" + token;
-
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
         return token; // 🔥 QUAN TRỌNG
     }

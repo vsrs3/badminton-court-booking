@@ -1,3 +1,5 @@
+<!-- change_password.jsp -->
+
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <div class="flex flex-col h-full bg-white">
@@ -5,6 +7,7 @@
         <a href="profile?section=settings" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
             <i data-lucide="arrow-left" class="w-6 h-6"></i>
         </a>
+        
         <div class="flex items-center space-x-2">
             <i data-lucide="lock" class="w-6 h-6 text-emerald-700"></i>
             <h1 class="text-xl font-bold text-gray-800">Đổi mật khẩu</h1>

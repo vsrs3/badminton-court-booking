@@ -522,7 +522,7 @@ const contextPath = window.location.pathname.split('/')[1]
     function switchTab(tabName) {
         console.log('🔄 Switching to tab:', tabName);
 
-        // ✅ Check login requirement for certain tabs
+        // Check login requirement for certain tabs
         const loginRequiredTabs = [TABS.BOOKING, TABS.OFFER, TABS.PROFILE];
 
         if (loginRequiredTabs.includes(tabName)) {

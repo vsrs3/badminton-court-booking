@@ -157,6 +157,14 @@
 						style="padding:0.625rem 1.25rem;box-shadow:0 4px 14px rgba(6,78,59,0.2);">
 						<i class="bi bi-plus-circle"></i> Manage Locations
 					</a>
+					
+					
+					<a href="${pageContext.request.contextPath}/owner/inventory"
+       class="btn btn-outline-success d-flex align-items-center gap-2 fw-bold rounded-3"
+       style="padding:0.625rem 1.25rem;">
+        <i class="bi bi-box-seam"></i> Manage Inventory
+    </a>
+    
 					<a href="#"
 						class="btn btn-outline-secondary d-flex align-items-center gap-2 fw-bold rounded-3"
 						style="padding:0.625rem 1.25rem;">

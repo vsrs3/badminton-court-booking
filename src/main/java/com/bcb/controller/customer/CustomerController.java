@@ -1,4 +1,4 @@
-package com.bcb.controller;
+package com.bcb.controller.customer;
 
 import com.bcb.dto.CustomerChangePassDTO;
 import com.bcb.dto.CustomerProfileDTO;
@@ -33,9 +33,6 @@ public class CustomerController extends HttpServlet {
                 case "logout" -> {
                     logout(request, response);
                 }
-//                case "deleteAccount" -> {
-//                    deleteAccount(request, response);
-//                }
             }
         }
     }
@@ -130,25 +127,8 @@ public class CustomerController extends HttpServlet {
             System.out.println(e.getMessage());
         }
     }
-
-//    private void deleteAccount (HttpServletRequest request, HttpServletResponse response)
-//            throws ServletException, IOException {
-//        HttpSession session = request.getSession();
-//        Account account = (Account) session.getAttribute("account");
-//
-//        if(account != null) {
-//            Integer customerId = account.getAccountId();
-//            AccountResponse result = authService.deleteAccount(customerId);
-//
-//            if (result.isSuccess()) {
-//                session.setAttribute("successMessage", result.getMessage());
-//                response.sendRedirect(request.getContextPath() + "/home");
-//            } else {
-//                session.setAttribute("errorMessage", result.getMessage());
-//                response.sendRedirect(request.getContextPath() + "/profile?section=settings");
-//            }
-//        }
-//    }
+    
+    
 
 }
 
