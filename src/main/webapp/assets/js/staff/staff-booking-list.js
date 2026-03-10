@@ -1,6 +1,3 @@
-/**
- * staff-booking-list.js — Task 5: Search + paginated booking list
- */
 (function () {
     'use strict';
 

@@ -298,7 +298,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
     private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
-        return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"So dien thoai da ton tai tai khoan khach hang\",\"data\":{" +
+        return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"Số điện thoại đã tồn tại tài khoản khách hàng\",\"data\":{" +
                 "\"accountId\":" + account.getAccountId() + "," +
                 "\"fullName\":" + StaffAuthUtil.escapeJson(account.getFullName()) + "," +
                 "\"phone\":" + StaffAuthUtil.escapeJson(account.getPhone()) + "," +

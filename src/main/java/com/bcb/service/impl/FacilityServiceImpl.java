@@ -423,7 +423,7 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     /**
-     * ✅ NEW: Enrich pure Entity to DTO with computed fields
+     * Enrich pure Entity to DTO with computed fields
      * This is where business logic happens
      */
     private FacilityDTO enrichEntityToDTO(Facility facility, Double userLat, Double userLng) {
@@ -456,7 +456,7 @@ public class FacilityServiceImpl implements FacilityService {
             dto.setDistance(formatDistance(distance));
             dto.setDistanceValue(distance);
         } else {
-            dto.setDistance("Dang tinh...");
+            dto.setDistance("Đang tính...");
             dto.setDistanceValue(Double.MAX_VALUE);
         }
 
@@ -478,7 +478,7 @@ public class FacilityServiceImpl implements FacilityService {
         if (imagePath != null && !imagePath.isEmpty()) {
             dto.setImageUrl("uploads/" + imagePath);
         } else {
-            dto.setImageUrl(buildFallbackImageUrl(facility));
+            dto.setImageUrl("uploads/facility/default-facility.jpg");
         }
 
         dto.setHotline("");
@@ -493,13 +493,6 @@ public class FacilityServiceImpl implements FacilityService {
         return dto;
     }
 
-    private String buildFallbackImageUrl(Facility facility) {
-        String firstLetter = "B";
-        if (facility.getName() != null && !facility.getName().isEmpty()) {
-            firstLetter = facility.getName().substring(0, 1);
-        }
-        return "https://placehold.co/800x450/064E3B/A3E635?text=" + firstLetter;
-    }
     /**
      * Calculate distance using Haversine formula
      */
