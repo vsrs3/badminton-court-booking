@@ -27,17 +27,35 @@
 				</div>
 			</div>
 
+			<!-- SESSION MESSAGES -->
+			<c:if test="${not empty sessionScope.successMessage}">
+				<div class="review-notification success">
+					<i data-lucide="check-circle" class="icon-sm"></i>
+					<span>${sessionScope.successMessage}</span>
+				</div>
+				<c:remove var="successMessage" scope="session" />
+			</c:if>
+			<c:if test="${not empty sessionScope.errorMessage}">
+				<div class="review-notification error">
+					<i data-lucide="alert-circle" class="icon-sm"></i>
+					<span>${sessionScope.errorMessage}</span>
+				</div>
+				<c:remove var="errorMessage" scope="session" />
+			</c:if>
+
 			<!-- CONTAINER -->
 			<div class="review-container">
 
 				<!-- REVIEW VIEW CARD -->
 				<div class="review-card">
+					<span class="text-xs text-gray-400"># ${r.reviewId}</span>
 
 					<!-- Star Rating Display -->
 					<div class="review-section">
 						<span class="review-section-label"> <i data-lucide="star"
 							class="icon-xs"></i> Đánh giá của bạn
 						</span>
+						
 						<div class="stars-display">
 							<c:forEach begin="1" end="5" var="i">
 								<span
@@ -83,8 +101,9 @@
 
 					<!-- Created At -->
 					<div class="review-meta">
-						<i data-lucide="clock" class="icon-xs"></i> <span>Đã đánh
-							giá vào: <strong>${fn:substring(r.createdAt, 0, 10)}</strong>
+						<i data-lucide="clock" class="icon-xs"></i> 
+						<span style="color: gray">Đã đánh
+							giá vào: <strong style="color: gray">${fn:substring(r.createdAt, 8, 10)}/${fn:substring(r.createdAt, 5, 7)}/${fn:substring(r.createdAt, 0, 4)}</strong>
 						</span>
 					</div>
 
@@ -101,9 +120,9 @@
 							<input type="hidden" name="action" value="delete" /> 
 							<input type="hidden" name="bookingId" value="${r.bookingId}" />
 								
-							<button type="submit" class="btn-back-review">
+							<!-- <button type="submit" class="btn-back-review">
 								<i data-lucide="trash" class="icon-sm"></i> <span>Xóa đánh giá</span>
-							</button>
+							</button> -->
 						</form>
 					</div>
 

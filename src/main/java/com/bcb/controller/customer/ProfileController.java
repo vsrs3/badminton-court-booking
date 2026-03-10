@@ -1,9 +1,12 @@
 package com.bcb.controller.customer;
 
-import com.bcb.dto.ReviewDTO;
+import com.bcb.dto.review.ReviewDTO;
+import com.bcb.dto.review.ReviewUserListDTO;
 import com.bcb.model.Account;
 import com.bcb.model.Facility;
 import com.bcb.model.Review;
+import com.bcb.repository.ReviewRepository;
+import com.bcb.repository.impl.ReviewRepositoryImpl;
 import com.bcb.service.ReviewService;
 import com.bcb.service.FacilityService;
 import com.bcb.service.impl.FacilityServiceImpl;
@@ -17,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Controller for customer profile page
@@ -78,10 +82,26 @@ public class ProfileController extends HttpServlet {
                 }
 
             } catch (Exception e) {
-                session.setAttribute("errorMessage", "Lỗi: " + e.getMessage());
+                session.setAttribute("errorMessage", "Lỗi khi tải thông tin trong Profile Controller ");
                 response.sendRedirect(request.getContextPath() + "/my-bookings");
                 return;
             }
+        }
+        
+        if("review-list-user".equals(section)) {
+        	try {
+        		Integer accountId = account.getAccountId();
+            	ReviewUserListDTO dto = new ReviewUserListDTO(accountId, null, null, null);
+            	
+            	List<ReviewUserListDTO> listUserReview = reviewService.listUserReview(dto);
+            	session.setAttribute("listUserReview", listUserReview);
+        		
+        		
+        	} catch (Exception e) {
+        		session.setAttribute("errorMessage", "Lỗi khi tải thông tin trong Profile Controller ");
+                response.sendRedirect(request.getContextPath() + "/reviews");
+                return;
+			}
         }
 
         // Show profile page

@@ -3,8 +3,10 @@ package com.bcb.repository;
 import java.util.Optional;
 import java.util.Set;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
+import com.bcb.dto.review.ReviewUserListDTO;
 import com.bcb.model.Review;
 
 public interface ReviewRepository {
@@ -16,7 +18,7 @@ public interface ReviewRepository {
 	 * @param facilityId
 	 * @return
 	 */
-	boolean addReview (Integer bookingId, Integer facilityId,  Integer accountId, Integer rating, String comment);
+	boolean addReview (Integer bookingId,  Integer accountId, Integer rating, String comment);
 	
 	/**
 	 * View the review detail of customer
@@ -37,10 +39,20 @@ public interface ReviewRepository {
 	boolean editReview(Integer bookingId, Integer accountId, Integer rating, String comment);
 	
 	/**
-	 * View the review list of one location
-	 * @return
+	 * Get the review list of one location
+	 * @return List<Review>
 	 */
 	List<Review> listLocationReview (Integer facilityId);
+	
+	/**
+	 * Get the review list of one user
+	 * @param accountId
+	 * @param dateFrom
+	 * @param dateTo
+	 * @param rating
+	 * @return List<ReviewUserListDTO>
+	 */
+	List<ReviewUserListDTO> listUserReview (Integer accountId, LocalDate dateFrom, LocalDate dateTo, Integer rating);
 	
 	/**
 	 * Find all the booking id in the Review table of user 
@@ -50,7 +62,7 @@ public interface ReviewRepository {
 	Set<Integer> getReviewedBookingIds(Integer accountId);
 	
 	/**
-	 * Find facility in user booking 
+	 * Find facility in booking table
 	 * @param accountId
 	 * @param bookingId
 	 * @return facility id in booking table

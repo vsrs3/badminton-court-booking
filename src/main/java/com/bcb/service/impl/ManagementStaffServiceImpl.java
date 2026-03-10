@@ -1,10 +1,10 @@
 package com.bcb.service.impl;
 
-import com.bcb.service.StaffProfilService;
+import com.bcb.service.ManagementStaffService;
 import com.bcb.repository.StaffProfileRepository;
 import com.bcb.repository.impl.StaffProfileRepositoryImpl;
 
-public class StaffProfileServiceImpl implements StaffProfilService {
+public class ManagementStaffServiceImpl implements ManagementStaffService {
 	
 	// Repository instance for database operations
 	private final StaffProfileRepository profileRepo = new StaffProfileRepositoryImpl();

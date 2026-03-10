@@ -1,6 +1,6 @@
 package com.bcb.service;
 
-public interface StaffProfilService {
+public interface ManagementStaffService {
 	
 	/**
 	 * Update staff information (full name, email, phone number).

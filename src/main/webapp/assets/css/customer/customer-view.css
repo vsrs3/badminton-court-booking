@@ -1,8 +1,55 @@
 /* ============================================
    CUSTOMER PROFILE VIEW & CHANGE PASSWORD
    Synced với badminton-pro design system
-   + Đồng bộ tiêu đề / phông chữ / nút với customer-review.css
+   Font: Be Vietnam Pro (đồng bộ review-updation)
    ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
+
+/* ============================================
+   FONT BASE — áp dụng toàn bộ trang profile
+   ============================================ */
+
+.flex.flex-col.min-h-screen,
+.flex.flex-col.min-h-screen *:not(i):not(svg) {
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================
+   PROFILE HEADER — đồng bộ review-updation
+   ============================================ */
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+}
+
+.profile-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-page-title {
+    font-size: 1.125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #064E3B;
+    margin: 0;
+    line-height: 1;
+}
+
+.profile-title-icon {
+    color: #A3E635;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
 
 /* ============================================
    FORM INPUTS
@@ -112,25 +159,22 @@
 }
 
 /* ============================================
-   AVATAR SECTION — căn giữa hoàn toàn
-   Thứ tự: avatar → mô tả → nút chọn ảnh
+   AVATAR SECTION
    ============================================ */
 
-/* Wrapper chính: flex column, căn giữa theo chiều ngang */
 .avatar-section-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;                          /* khoảng cách đều giữa 3 phần tử */
+    gap: 14px;
     width: 100%;
     padding: 0.5rem 0;
 }
 
-/* Avatar tròn — 130px, viền xanh nhẹ */
 .avatar-preview {
     width: 130px;
     height: 130px;
-    border-radius: 50%;                 /* hình tròn hoàn hảo */
+    border-radius: 50%;
     overflow: hidden;
     border: 3px solid var(--color-green-200, #A7F3D0);
     background-color: var(--color-gray-50, #F9FAFB);
@@ -142,7 +186,7 @@
     flex-shrink: 0;
 }
 .avatar-preview:hover {
-    border-color: #A3E635;              /* lime khi hover */
+    border-color: #A3E635;
     box-shadow: 0 6px 18px rgba(6, 78, 59, 0.18);
 }
 .avatar-preview img {
@@ -151,7 +195,6 @@
     object-fit: cover;
 }
 
-/* Upload button — căn giữa, giữ style xanh đậm */
 .btn-upload {
     display: inline-flex;
     align-items: center;
@@ -160,6 +203,7 @@
     background-color: #064E3B;
     color: #ffffff;
     border-radius: var(--radius-lg, 0.75rem);
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.8125rem;
     font-weight: 900;
     font-style: normal;
@@ -171,13 +215,13 @@
     transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 .btn-upload:hover {
-    filter: brightness(1.1);
+    background-color: #A3E635;
+    color: #064E3B;
     box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
     transform: translateY(-1px);
 }
 .btn-upload:active { transform: scale(0.97); }
 
-/* Hint text — ngay dưới avatar, trên nút */
 .upload-hint {
     font-size: 0.6875rem;
     font-weight: 700;
@@ -190,14 +234,11 @@
     gap: 0.25rem;
     margin: 0;
 }
-
-/* Modifier: căn giữa text khi dùng trong avatar-section-wrapper */
 .upload-hint--center {
     justify-content: center;
     text-align: center;
 }
 
-/* Compat: giữ .avatar-upload-row nếu dùng ở nơi khác */
 .avatar-upload-row {
     display: flex;
     align-items: center;
@@ -248,20 +289,27 @@
     color: #ffffff;
     border: 2px solid #064E3B;
     border-radius: 1rem;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.8125rem;
     font-weight: 900;
     font-style: normal;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     cursor: pointer;
-    box-shadow: var(--shadow-md);
-    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    box-shadow: 0 2px 8px rgba(6, 78, 59, 0.2);
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.btn-save:hover  { background-color: #065F46; border-color: #065F46; }
-.btn-save:active { transform: scale(0.97); }
+.btn-save:hover {
+    background-color: #A3E635;
+    border-color: #A3E635;
+    color: #064E3B;
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+    transform: translateY(-1px);
+}
+.btn-save:active { transform: scale(0.97); box-shadow: none; }
 
-/* Hủy / Đặt lại — outlined xanh đậm */
+/* Khôi phục — outlined xanh đậm */
 .btn-cancel {
     flex: 1 1 calc(50% - 0.625rem);
     min-width: 140px;
@@ -274,17 +322,24 @@
     color: #064E3B;
     border: 2px solid #064E3B;
     border-radius: 1rem;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.8125rem;
     font-weight: 900;
     font-style: normal;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.btn-cancel:hover  { background-color: #064E3B; color: #ffffff; }
-.btn-cancel:active { transform: scale(0.97); }
+.btn-cancel:hover {
+    background-color: #064E3B;
+    color: #ffffff;
+    border-color: #064E3B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+}
+.btn-cancel:active { transform: scale(0.97); box-shadow: none; }
 
 /* ============================================
    SUCCESS / ERROR BANNERS
@@ -299,16 +354,26 @@
     font-size: 0.875rem;
     font-weight: 700;
     font-style: normal;
+    animation: notif-fade-in 0.3s ease both;
 }
 .notification.success {
     background-color: #ECFDF5;
     border: 1px solid #A7F3D0;
     color: #065F46;
 }
+.notification.success i,
+.notification.success svg { color: #16A34A; flex-shrink: 0; }
 .notification.error {
     background-color: #FEF2F2;
     border: 1px solid #FECACA;
     color: #991B1B;
+}
+.notification.error i,
+.notification.error svg { color: #DC2626; flex-shrink: 0; }
+
+@keyframes notif-fade-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================
@@ -408,6 +473,7 @@
     color: #064E3B;
     border: 1.5px solid #A3E635;
     border-radius: 9999px;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.8125rem;
     font-weight: 700;
     font-style: normal;
@@ -417,14 +483,12 @@
     white-space: nowrap;
     cursor: pointer;
 }
-
 .btn-back-home i,
 .btn-back-home svg {
     color: #064E3B;
     transition: transform 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
 }
-
 .btn-back-home:hover {
     background-color: #064E3B;
     border-color: #064E3B;
@@ -432,13 +496,11 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
 }
-
 .btn-back-home:hover i,
 .btn-back-home:hover svg {
     transform: translateX(-3px);
     color: #ffffff;
 }
-
 .btn-back-home:active {
     transform: scale(0.97);
     box-shadow: none;
