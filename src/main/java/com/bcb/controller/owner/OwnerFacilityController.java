@@ -306,9 +306,9 @@ public class OwnerFacilityController extends HttpServlet {
         request.setAttribute("closeTimeFormatted",
                 closeTimeError == null ? (closeTimeStr != null ? closeTimeStr : "") : "");
 
-        if (facility.getLatitude() == null || facility.getLongitude() == null) {
-            errors.add("Vui lòng chọn vị trí trên bản đồ");
-        }
+//        if (facility.getLatitude() == null || facility.getLongitude() == null) {
+//            errors.add("Vui lòng chọn vị trí trên bản đồ");
+//        }
 
         if (!errors.isEmpty()) {
             request.setAttribute("errors", errors);
