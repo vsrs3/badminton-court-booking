@@ -17,3 +17,4 @@ public interface TimeSlotRepository {
      */
     List<SingleBookingMatrixTimeSlotDTO> findByTimeRange(LocalTime openTime, LocalTime closeTime);
 }
+

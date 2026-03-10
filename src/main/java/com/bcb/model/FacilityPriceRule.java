@@ -74,3 +74,4 @@ public class FacilityPriceRule {
         this.price = price;
     }
 }
+

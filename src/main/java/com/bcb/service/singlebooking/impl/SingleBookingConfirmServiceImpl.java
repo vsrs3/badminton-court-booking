@@ -12,12 +12,16 @@ import com.bcb.repository.booking.*;
 import com.bcb.repository.booking.impl.*;
 import com.bcb.repository.FacilityPriceRuleRepository;
 import com.bcb.repository.impl.FacilityPriceRuleRepositoryImpl;
+import com.bcb.repository.voucher.VoucherRepository;
+import com.bcb.repository.voucher.impl.VoucherRepositoryImpl;
 import com.bcb.service.payment.PaymentService;
 import com.bcb.service.payment.impl.PaymentServiceImpl;
 import com.bcb.service.singlebooking.SingleBookingConfirmService;
+import com.bcb.service.singlebooking.VoucherApplyService;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.singlebooking.SingleBookingDayTypeUtil;
 import com.bcb.validation.singlebooking.SingleBookingSelectionValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.math.BigDecimal;
@@ -51,6 +55,8 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
     private final CourtSlotBookingRepository courtSlotBookingRepo;
     private final InvoiceRepository invoiceRepo;
     private final PaymentService paymentService;
+    private final VoucherApplyService voucherApplyService;
+    private final VoucherRepository voucherRepo;
 
     public SingleBookingConfirmServiceImpl() {
         this.facilityRepo = new FacilityRepositoryImpl();
@@ -62,6 +68,8 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
         this.courtSlotBookingRepo = new CourtSlotBookingRepositoryImpl();
         this.invoiceRepo = new InvoiceRepositoryImpl();
         this.paymentService = new PaymentServiceImpl();
+        this.voucherApplyService = new VoucherApplyServiceImpl();
+        this.voucherRepo = new VoucherRepositoryImpl();
     }
 
     /** {@inheritDoc} */
@@ -109,6 +117,22 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
 
         BigDecimal totalAmount = priceMap.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // --- Voucher validation (pre-transaction, read-only check) ---
+        VoucherApplyResponseDTO voucherResult = null;
+        if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+            VoucherApplyRequestDTO voucherReq = new VoucherApplyRequestDTO();
+            voucherReq.setVoucherCode(request.getVoucherCode().trim());
+            voucherReq.setFacilityId(request.getFacilityId());
+            voucherReq.setTotalAmount(totalAmount);
+            // Throws SingleBookingValidationException if invalid — aborts before any DB write
+            voucherResult = voucherApplyService.applyVoucher(accountId, voucherReq);
+        }
+
+        final BigDecimal discountAmount = voucherResult != null
+                ? voucherResult.getDiscountAmount() : BigDecimal.ZERO;
+        final BigDecimal finalAmount    = totalAmount.subtract(discountAmount).max(BigDecimal.ZERO);
+        final Integer    appliedVoucherId = voucherResult != null ? voucherResult.getVoucherId() : null;
+
         // --- Transaction ---
         Connection conn = null;
         try {
@@ -151,45 +175,73 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
                 }
             }
 
-            // 3. Create Invoice
+            // 3. Create Invoice (total = finalAmount after voucher discount)
             Invoice invoice = new Invoice();
             invoice.setBookingId(bookingId);
-            invoice.setTotalAmount(totalAmount);
+            invoice.setTotalAmount(finalAmount);
             invoice.setDepositPercent(request.getDepositPercent());
-            invoice.setPaymentStatus("UNPAID");
-            invoice.setPaidAmount(BigDecimal.ZERO);
+            invoice.setVoucherId(appliedVoucherId);
+            invoice.setDiscountAmount(discountAmount);
+
+            final boolean isFreeOrder = finalAmount.compareTo(BigDecimal.ZERO) == 0;
+
+            if (isFreeOrder) {
+                // Free order: voucher covers 100% → mark PAID immediately, skip payment gateway
+                invoice.setPaymentStatus("PAID");
+                invoice.setPaidAmount(BigDecimal.ZERO);   // paid 0 ₫ (fully covered by voucher)
+            } else {
+                invoice.setPaymentStatus("UNPAID");
+                invoice.setPaidAmount(BigDecimal.ZERO);
+            }
 
             int invoiceId = invoiceRepo.insertInvoice(conn, invoice);
 
-            // 4. Commit
+            // 4. For free orders: confirm Booking immediately (mirrors VNPay success flow)
+            if (isFreeOrder) {
+                bookingRepo.updateStatus(conn, bookingId, "CONFIRMED");
+            }
+
+            // 5. Insert VoucherUsage (inside same transaction — rolled back on failure)
+            if (appliedVoucherId != null) {
+                voucherRepo.insertVoucherUsage(conn, appliedVoucherId, accountId,
+                        bookingId, invoiceId, discountAmount);
+            }
+
+            // 6. Commit
             conn.commit();
 
-            // 5. Create VNPay payment (outside transaction — payment has its own txn)
-            BigDecimal paidAmount = totalAmount.multiply(BigDecimal.valueOf(request.getDepositPercent()))
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            // 7. Create VNPay payment — skip when order is free (paidAmount = 0)
+            BigDecimal paidAmount = isFreeOrder
+                    ? BigDecimal.ZERO
+                    : finalAmount.multiply(BigDecimal.valueOf(request.getDepositPercent()))
+                                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             String paymentType = request.getDepositPercent() >= 100 ? "FULL" : "DEPOSIT";
             String desc = "Thanh toan dat san #" + bookingId + " tai " + facility.getName();
 
-            PaymentCreateResult payResult = paymentService.createVNPayPayment(
-                    invoiceId, paidAmount.longValue(), paymentType, desc, httpReq);
-
-            // 6. Build response
+            // 8. Build response
             SingleBookingConfirmResponseDTO resp = new SingleBookingConfirmResponseDTO();
             resp.setBookingId(bookingId);
             resp.setInvoiceId(invoiceId);
-            resp.setHoldExpiredAt(holdExpiredAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+            // Free orders are already CONFIRMED — no hold needed
+            resp.setHoldExpiredAt(isFreeOrder ? null
+                    : holdExpiredAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
             resp.setTotalAmount(totalAmount);
+            resp.setDiscountAmount(discountAmount);
+            resp.setFinalAmount(finalAmount);
             resp.setPayAmount(paidAmount);
             resp.setDepositPercent(request.getDepositPercent());
 
-            if (payResult.isSuccess()) {
-                resp.setPaymentUrl(payResult.getPaymentUrl());
-                resp.setTransactionCode(payResult.getTransactionCode());
+            if (!isFreeOrder && paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+                // Normal path: create VNPay payment URL
+                PaymentCreateResult payResult = paymentService.createVNPayPayment(
+                        invoiceId, paidAmount.longValue(), paymentType, desc, httpReq);
+                if (payResult.isSuccess()) {
+                    resp.setPaymentUrl(payResult.getPaymentUrl());
+                    resp.setTransactionCode(payResult.getTransactionCode());
+                }
             }
-            // Keep stub as fallback
-            resp.setPaymentUrlStub("/payment/stub?invoiceId=" + invoiceId
-                    + "&amount=" + paidAmount + "&bookingId=" + bookingId);
+            // isFreeOrder → paymentUrl stays null → frontend redirects to booking-success directly
             return resp;
 
         } catch (SingleBookingConflictException e) {
@@ -253,3 +305,4 @@ public class SingleBookingConfirmServiceImpl implements SingleBookingConfirmServ
         }
     }
 }
+

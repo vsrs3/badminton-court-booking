@@ -54,3 +54,4 @@ public class CourtScheduleExceptionRepositoryImpl implements CourtScheduleExcept
         return list;
     }
 }
+

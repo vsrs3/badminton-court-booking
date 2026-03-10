@@ -51,3 +51,4 @@ public class SingleBookingMatrixResponseDTO {
     public List<SingleBookingMatrixSlotPriceDTO> getPrices() { return prices; }
     public void setPrices(List<SingleBookingMatrixSlotPriceDTO> prices) { this.prices = prices; }
 }
+

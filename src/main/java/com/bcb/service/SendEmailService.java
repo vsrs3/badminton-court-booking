@@ -28,3 +28,4 @@ public interface SendEmailService {
 	 */
 	void resetStaffPassword(String toEmail, String userName, String tempPassword, String loginLink)  throws MessagingException;
 }
+

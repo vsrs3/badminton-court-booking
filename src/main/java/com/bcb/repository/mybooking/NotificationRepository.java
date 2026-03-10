@@ -14,3 +14,4 @@ public interface NotificationRepository {
      */
     void insertNotification(Notification notification);
 }
+

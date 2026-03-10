@@ -22,3 +22,4 @@ public class SingleBookingMatrixCourtDTO {
     public Integer getCourtTypeId() { return courtTypeId; }
     public void setCourtTypeId(Integer courtTypeId) { this.courtTypeId = courtTypeId; }
 }
+

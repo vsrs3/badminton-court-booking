@@ -44,3 +44,4 @@ public interface MyBookingService {
      */
     void cancelBooking(int bookingId, int accountId) throws BusinessException;
 }
+

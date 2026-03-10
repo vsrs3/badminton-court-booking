@@ -44,3 +44,4 @@ public class MailUtil {
             );Transport.send(msg);
         } catch (Exception e) {
             throw new RuntimeException(e);}}}
+

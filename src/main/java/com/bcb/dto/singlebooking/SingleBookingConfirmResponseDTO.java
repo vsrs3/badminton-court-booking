@@ -17,8 +17,12 @@ public class SingleBookingConfirmResponseDTO {
     private BigDecimal payAmount;
     private Integer depositPercent;
     private String paymentUrlStub;
-    private String paymentUrl;          // real VNPay redirect URL
-    private String transactionCode;     // our internal txn ref for status checks
+    private String paymentUrl;
+    private String transactionCode;
+    /** Số tiền giảm giá từ voucher (0 nếu không có voucher). */
+    private BigDecimal discountAmount;
+    /** Tổng tiền sau khi trừ voucher. */
+    private BigDecimal finalAmount;
 
     public SingleBookingConfirmResponseDTO() {}
 
@@ -50,4 +54,11 @@ public class SingleBookingConfirmResponseDTO {
     /** @return internal transaction code for payment status checks */
     public String getTransactionCode() { return transactionCode; }
     public void setTransactionCode(String transactionCode) { this.transactionCode = transactionCode; }
+
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+
+    public BigDecimal getFinalAmount() { return finalAmount; }
+    public void setFinalAmount(BigDecimal finalAmount) { this.finalAmount = finalAmount; }
 }
+

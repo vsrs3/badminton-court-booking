@@ -139,6 +139,36 @@ public class CourtRepositoryImpl implements CourtRepository {
     }
 
     /**
+     * Find court names at a facility that start with the given prefix.
+     * @author AnhTN
+     */
+    @Override
+    public List<String> findNamesByPrefix(int facilityId, String prefix) {
+        String sql = "SELECT court_name FROM Court " +
+                "WHERE facility_id = ? AND is_active = 1 " +
+                "AND LOWER(court_name) LIKE LOWER(?)";
+
+        List<String> names = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, facilityId);
+            pstmt.setString(2, prefix + "%");
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    names.add(rs.getString("court_name"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find court names by prefix", e);
+        }
+
+        return names;
+    }
+
+    /**
      * Maps ResultSet row to a Court object.
      */
     private Court mapResultSetToCourt(ResultSet rs) throws SQLException {
@@ -185,3 +215,4 @@ public class CourtRepositoryImpl implements CourtRepository {
     }
 
 }
+

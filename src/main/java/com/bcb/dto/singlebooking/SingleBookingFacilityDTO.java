@@ -26,3 +26,4 @@ public class SingleBookingFacilityDTO {
     public String getCloseTime() { return closeTime; }
     public void setCloseTime(String closeTime) { this.closeTime = closeTime; }
 }
+

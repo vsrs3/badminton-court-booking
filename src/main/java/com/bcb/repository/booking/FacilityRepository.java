@@ -16,3 +16,4 @@ public interface FacilityRepository {
      */
     Optional<Facility> findActiveById(int facilityId);
 }
+

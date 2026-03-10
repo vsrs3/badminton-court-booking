@@ -23,3 +23,4 @@ public interface SingleBookingConfirmService {
                                                    SingleBookingConfirmRequestDTO request,
                                                    HttpServletRequest httpReq);
 }
+

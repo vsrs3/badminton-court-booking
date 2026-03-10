@@ -72,3 +72,4 @@ public class SingleBookingMatrixDataServlet extends HttpServlet {
         }
     }
 }
+

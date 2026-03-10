@@ -1,5 +1,5 @@
 /* ================================================================
-   STAFF BOOKING DETAIL — staff-booking-detail.css
+   STAFF BOOKING DETAIL - staff-booking-detail.css
    Prefix: sbd- (staff-booking-detail)
    Task 8 v2: Session-based checkin/checkout + Payment confirmation
    ================================================================ */
@@ -369,7 +369,7 @@
 }
 
 /* ================================================================
-   SESSION CARD — Phiên chơi
+   SESSION CARD - Phien choi
    ================================================================ */
 
 .sbd-session-progress {
@@ -468,6 +468,7 @@
 .sbd-ss-label-checked_in { background: #D1FAE5; color: #065F46; }
 .sbd-ss-label-completed  { background: #DBEAFE; color: #1E40AF; }
 .sbd-ss-label-waiting    { background: #FEF3C7; color: #92400E; }
+.sbd-ss-label-cancelled  { background: #FEE2E2; color: #991B1B; }
 
 .sbd-session-time-info {
     font-size: 0.6875rem;
@@ -614,6 +615,21 @@
     color: #C2410C;
 }
 
+/* Session row with CANCELLED status */
+.sbd-session.sbd-ss-cancelled {
+    background: #FEF2F2;
+    border-left: 3px solid #DC2626;
+}
+.sbd-session.sbd-ss-cancelled:hover {
+    background: #FEE2E2;
+}
+
+/* CANCELLED index badge */
+.sbd-session.sbd-ss-cancelled .sbd-session-idx {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
 /* NO_SHOW action button */
 .sbd-btn-noshow {
     background: #EA580C;
@@ -622,6 +638,15 @@
 .sbd-btn-noshow:hover:not(:disabled) {
     background: #C2410C;
     box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);
+}
+
+.sbd-btn-release {
+    background: #0F766E;
+    color: white;
+}
+.sbd-btn-release:hover:not(:disabled) {
+    background: #0D9488;
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
 }
 
 /* Toast warning type (for no-show notifications) */

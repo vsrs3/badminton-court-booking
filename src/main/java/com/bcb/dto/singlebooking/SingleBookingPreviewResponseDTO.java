@@ -45,3 +45,4 @@ public class SingleBookingPreviewResponseDTO {
     public List<SingleBookingRangeDTO> getRangesByCourt() { return rangesByCourt; }
     public void setRangesByCourt(List<SingleBookingRangeDTO> rangesByCourt) { this.rangesByCourt = rangesByCourt; }
 }
+

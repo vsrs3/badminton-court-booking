@@ -295,6 +295,32 @@ public class PaymentServiceImpl implements PaymentService {
             return result;
         }
 
+        // 4b. Double-payment guard: reuse existing PENDING payment if not expired yet.
+        // This covers the case where user opens 2 tabs and clicks Pay on both.
+        // Instead of creating 2 Payment rows, we return the existing VNPay URL.
+        Optional<Payment> existingPending = paymentRepo.findPendingByInvoiceId(invoice.getInvoiceId());
+        if (existingPending.isPresent()) {
+            Payment ep = existingPending.get();
+            if (ep.getExpireAt() != null && LocalDateTime.now().isBefore(ep.getExpireAt())) {
+                // Reuse existing payment URL — regenerate stateless VNPay URL from same txnCode
+                String clientIp = VNPayUtil.getClientIp(httpReq);
+                String paymentUrl = vnPayService.createPaymentUrl(
+                        ep.getTransactionCode(),
+                        ep.getPaidAmount().longValue(),
+                        "Thanh toan dat san #" + bookingId + " tai " + facilityName,
+                        clientIp,
+                        ep.getExpireAt());
+                result.setSuccess(true);
+                result.setPaymentId(ep.getPaymentId());
+                result.setTransactionCode(ep.getTransactionCode());
+                result.setPaymentUrl(paymentUrl);
+                result.setExpireAt(ep.getExpireAt().format(ISO));
+                result.setBookingId(bookingId);
+                return result;
+            }
+            // Expired pending → fall through to create new payment
+        }
+
         // 5. Calculate amount to pay
         BigDecimal totalAmount = invoice.getTotalAmount();
         BigDecimal paidAmount = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
@@ -387,3 +413,4 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 }
+

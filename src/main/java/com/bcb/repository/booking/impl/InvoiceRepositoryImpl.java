@@ -19,14 +19,21 @@ public class InvoiceRepositoryImpl implements InvoiceRepository {
     /** {@inheritDoc} */
     @Override
     public int insertInvoice(Connection conn, Invoice invoice) {
-        String sql = "INSERT INTO Invoice (booking_id, total_amount, paid_amount, deposit_percent, payment_status) "
-                   + "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Invoice (booking_id, total_amount, paid_amount, deposit_percent, payment_status, voucher_id, discount_amount) "
+                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, invoice.getBookingId());
             ps.setBigDecimal(2, invoice.getTotalAmount());
             ps.setBigDecimal(3, invoice.getPaidAmount());
             ps.setInt(4, invoice.getDepositPercent());
             ps.setString(5, invoice.getPaymentStatus());
+            if (invoice.getVoucherId() != null) {
+                ps.setInt(6, invoice.getVoucherId());
+            } else {
+                ps.setNull(6, java.sql.Types.INTEGER);
+            }
+            ps.setBigDecimal(7, invoice.getDiscountAmount() != null
+                    ? invoice.getDiscountAmount() : BigDecimal.ZERO);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -100,3 +107,4 @@ public class InvoiceRepositoryImpl implements InvoiceRepository {
         return inv;
     }
 }
+
