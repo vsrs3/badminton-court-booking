@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form[action*="update-info"]');
+    const form = document.getElementById('sd-edit-form');
     if (!form) return;
 
     const fullNameInput = form.querySelector('input[name="fullName"]');
