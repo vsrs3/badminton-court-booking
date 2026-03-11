@@ -1275,6 +1275,7 @@
 }
 
 .detail-tab-pane.active {
+    display: block;
 }
 
 /* Detail Section */

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BADMINTON PRO - Map Handler JavaScript
  * Handles: Leaflet map initialization, markers, popup interactions
  */
@@ -9,6 +9,7 @@
     let mapInstance = null;
     let markers = [];
     let userMarker = null;
+    let userLocation = null;
 
     async function initMap() {
         const mapContainer = document.getElementById('leafletMap');
@@ -108,7 +109,7 @@
         return window.MAP_COURTS_DATA || window.COURTS_DATA || [];
     }
 
-    function resolveAssetUrl(path) {
+        function resolveAssetUrl(path) {
         if (!path) {
             return '';
         }
@@ -118,7 +119,23 @@
         return `${getMapContextPath()}/${path}`;
     }
 
-    function fitMapToCourts(courts) {
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function formatDistance(distKm) {
+        if (distKm === null || !Number.isFinite(distKm)) return 'Dang tinh...';
+        return distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`;
+    }
+function fitMapToCourts(courts) {
         if (!mapInstance || !Array.isArray(courts) || courts.length === 0) {
             return;
         }
@@ -141,6 +158,10 @@
                 return;
             }
 
+            if (userLocation && court.lat && court.lng) {
+                const distKm = calculateDistance(userLocation.lat, userLocation.lng, court.lat, court.lng);
+                court.distance = formatDistance(distKm);
+            }
             const customIcon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `
@@ -175,6 +196,8 @@
             const rating = Number(court.rating || 0).toFixed(1);
             const distance = court.distance || '';
             const location = court.location || '';
+            const distanceText = distance ? "\uD83D\uDCCD" + distance : "";
+            const metaText = "\u2605 " + rating + distanceText;
 
             const marker = L.marker([court.lat, court.lng], {
                 icon: customIcon,
@@ -182,15 +205,13 @@
             }).addTo(mapInstance);
 
             const popupContent = `
-                <div style="padding: 12px; min-width: 200px;">
+                <div style="padding: 12px; min-width: 200px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
                     <img src="${imageUrl}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" alt="${safeName}" />
                     <h4 style="font-size: 13px; font-weight: 900; color: #111827; text-transform: uppercase; line-height: 1.3; margin: 0 0 6px 0; letter-spacing: -0.02em;">
                         ${safeName}
                     </h4>
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6B7280; margin-bottom: 4px;">
-                        <span style="color: #F97316;">? ${rating}</span>
-                        <span>�</span>
-                        <span>${distance}</span>
+                        <span style="color: #F97316;">${metaText}</span>
                     </div>
                     <div style="font-size: 11px; color: #6B7280; margin-bottom: 8px;">
                         <i class="bi bi-geo-alt-fill" style="color: #10B981;"></i> ${location}
@@ -233,6 +254,7 @@
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
+                userLocation = { lat: userLat, lng: userLng };
 
                 const userIcon = L.divIcon({
                     className: 'custom-div-icon',
@@ -256,6 +278,9 @@
                 }).addTo(mapInstance);
 
                 userMarker.bindPopup('<div style="padding: 8px; text-align: center;"><strong style="font-size: 12px; color: #3B82F6;">Vị trí của bạn</strong></div>');
+
+                // Update markers to show distance once user location is available
+                addCourtMarkers(getMapCourtsDataset());
             },
             (error) => {
                 console.error('Error getting user location for map:', error);

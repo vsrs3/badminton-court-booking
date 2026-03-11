@@ -2,9 +2,12 @@
  * BADMINTON PRO - Main Application JavaScript
  * Handles: Tabs, Search, Filters, Favorites, Court Details, API Integration
  */
-const contextPath = window.location.pathname.split('/')[1]
-    ? '/' + window.location.pathname.split('/')[1]
-    : '';
+function getContextPath() {
+    const seg = window.location.pathname.split("/")[1];
+    return seg ? "/" + seg : "/badminton_court_booking";
+}
+
+const contextPath = getContextPath();
 
 (function() {
     'use strict';
@@ -288,7 +291,7 @@ const contextPath = window.location.pathname.split('/')[1]
             }
 
             // Get context path dynamically
-            const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+            const contextPath = getContextPath().replace(/^\/+/, "");
             const apiUrl = `/${contextPath}/api/facilities?${params}`;
 
             console.log('Fetching from:', apiUrl);
@@ -751,9 +754,18 @@ const contextPath = window.location.pathname.split('/')[1]
     // COURT DETAIL MODAL
     // ============================================
 
+    function findCourtById(courtId) {
+        const idStr = String(courtId);
+        const fromState = AppState.courts.find(c => String(c.id) === idStr);
+        if (fromState) {
+            return fromState;
+        }
+        const fromMap = Array.isArray(window.MAP_COURTS_DATA) ? window.MAP_COURTS_DATA : [];
+        return fromMap.find(c => String(c.id) === idStr) || null;
+    }
+
     async function openCourtDetail(courtId) {
-        const court = AppState.courts.find(c => c.id === courtId);
-        if (!court) return;
+        const court = findCourtById(courtId) || { id: String(courtId) };
 
         AppState.selectedCourt = { ...court };
 
@@ -763,7 +775,8 @@ const contextPath = window.location.pathname.split('/')[1]
         updateDetailFavoriteButton();
         showCourtDetailPanel();
 
-        await loadCourtDetail(court.id);
+        const detailId = court.facilityId || court.id || courtId;
+        await loadCourtDetail(detailId);
     }
 
     function renderBaseCourtDetail(court) {
@@ -801,7 +814,11 @@ const contextPath = window.location.pathname.split('/')[1]
     async function loadCourtDetail(courtId) {
         try {
             const detail = await fetchCourtDetail(courtId);
-            if (!AppState.selectedCourt || String(AppState.selectedCourt.id) !== String(courtId)) {
+            if (!AppState.selectedCourt) {
+                return;
+            }
+            const selectedId = AppState.selectedCourt.facilityId || AppState.selectedCourt.id;
+            if (String(selectedId) !== String(courtId)) {
                 return;
             }
             applyCourtDetail(detail);
@@ -815,7 +832,8 @@ const contextPath = window.location.pathname.split('/')[1]
     }
 
     async function fetchCourtDetail(courtId) {
-        const response = await fetch(`${contextPath}/api/facilities/${encodeURIComponent(courtId)}`);
+        const basePath = getContextPath();
+        const response = await fetch(`${basePath}/api/facilities/${encodeURIComponent(courtId)}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -1479,7 +1497,7 @@ const contextPath = window.location.pathname.split('/')[1]
             authLoginBtn.addEventListener('click', function() {
                 closeAuthModal();
                 // ✅ Redirect to login page
-                const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+            const contextPath = getContextPath().replace(/^\/+/, "");
                 window.location.href = `/${contextPath}/auth/login`;
             });
         }
@@ -1548,6 +1566,11 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
 
 
 
