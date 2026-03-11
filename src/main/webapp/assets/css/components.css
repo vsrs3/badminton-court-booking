@@ -344,43 +344,19 @@
 
 .nav-item.active i {
     font-weight: 900;
+    color: var(--color-green-700);
+    animation: navIconPulse 2s ease-in-out infinite;
 }
 
 .nav-item.active .nav-text {
     opacity: 1;
 }
 
-.nav-indicator {
-    display: none;
-    width: 0.625rem;
-    height: 0.625rem;
-    background-color: var(--color-green-700);
-    border-radius: var(--radius-full);
-    margin-top: 0.375rem;
-    box-shadow: var(--shadow-md);
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-.nav-item.active .nav-indicator {
-    display: block;
-}
 
 .nav-item:hover {
     color: var(--color-gray-600);
 }
 
-.nav-center-indicator {
-    width: 0.625rem;
-    height: 0.625rem;
-    background-color: var(--color-green-700);
-    border-radius: var(--radius-full);
-    margin-top: 0.5rem;
-    box-shadow: var(--shadow-md);
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    opacity: 0;
-    transform: scale(0.8);
-    transition: opacity var(--transition-fast), transform var(--transition-fast);
-}
 
 /* Center Button */
 .nav-center {
@@ -416,9 +392,12 @@
     font-weight: 900;
 }
 
-.nav-center-btn.active + .nav-center-indicator {
-    opacity: 1;
-    transform: scale(1);
+.nav-center-btn.active {
+    animation: navCenterPulse 2s ease-in-out infinite;
+}
+
+.nav-center-btn.active i {
+    animation: navCenterIconPulse 2s ease-in-out infinite;
 }
 
 .nav-center-text {
@@ -436,6 +415,45 @@
 
 .nav-center-btn.active ~ .nav-center-text {
     color: var(--color-green-700);
+}
+
+@keyframes navIconPulse {
+    0% {
+        color: var(--color-green-700);
+    }
+    50% {
+        color: var(--color-gray-400);
+    }
+    100% {
+        color: var(--color-green-700);
+    }
+}
+
+@keyframes navCenterPulse {
+    0% {
+        background-color: var(--color-green-brand);
+        box-shadow: 0 15px 50px rgba(6, 78, 59, 0.4);
+    }
+    50% {
+        background-color: var(--color-gray-200);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    }
+    100% {
+        background-color: var(--color-green-brand);
+        box-shadow: 0 15px 50px rgba(6, 78, 59, 0.4);
+    }
+}
+
+@keyframes navCenterIconPulse {
+    0% {
+        color: var(--color-lime-brand);
+    }
+    50% {
+        color: var(--color-gray-400);
+    }
+    100% {
+        color: var(--color-lime-brand);
+    }
 }
 
 @media (max-width: 576px) {
@@ -2059,6 +2077,9 @@
         display: none !important;
     }
 }
+
+
+
 
 
 
