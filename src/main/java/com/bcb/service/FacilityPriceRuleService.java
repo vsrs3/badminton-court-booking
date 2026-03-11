@@ -29,3 +29,4 @@ public interface FacilityPriceRuleService {
      */
     void deletePriceRule(int priceId) throws BusinessException;
 }
+

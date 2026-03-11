@@ -1,26 +1,22 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
-import com.bcb.utils.DBContext;
+import com.bcb.dto.staff.StaffCustomerSearchItemDTO;
+import com.bcb.service.impl.StaffCustomerSearchServiceImpl;
+import com.bcb.service.staff.StaffCustomerSearchService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.util.List;
 
-/**
- * REST API: GET /api/staff/customer/search?q=...
- *
- * Searches for CUSTOMER accounts by phone or email (partial match).
- * Returns max 10 results.
- */
 @WebServlet(name = "StaffCustomerSearchApiServlet", urlPatterns = {"/api/staff/customer/search"})
-public class StaffCustomerSearchApiServlet extends HttpServlet {
+public class StaffCustomerSearchApiServlet extends BaseStaffApiServlet {
+
+    private final StaffCustomerSearchService staffCustomerSearchService = new StaffCustomerSearchServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -33,7 +29,7 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
 
         String q = request.getParameter("q");
         if (q == null || q.trim().isEmpty()) {
-            response.getWriter().print("{\"success\":true,\"data\":[]}");
+            writeJson(response, "{\"success\":true,\"data\":{\"customers\":[]}}");
             return;
         }
 
@@ -41,45 +37,31 @@ public class StaffCustomerSearchApiServlet extends HttpServlet {
 
         try {
             String json = searchCustomers(q);
-            response.getWriter().print(json);
+            writeJson(response, json);
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 
     private String searchCustomers(String q) throws Exception {
-        String sql = "SELECT TOP 10 account_id, full_name, phone, email " +
-                "FROM Account " +
-                "WHERE role = 'CUSTOMER' AND is_active = 1 " +
-                "AND (phone LIKE ? OR email LIKE ?) " +
-                "ORDER BY full_name";
-
-        String pattern = "%" + q + "%";
+        List<StaffCustomerSearchItemDTO> customers = staffCustomerSearchService.searchCustomers(q);
 
         StringBuilder json = new StringBuilder(512);
-        json.append("{\"success\":true,\"data\":[");
+        json.append("{\"success\":true,\"data\":{\"customers\":[");
 
         boolean first = true;
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, pattern);
-            ps.setString(2, pattern);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    if (!first) json.append(",");
-                    first = false;
-                    json.append("{\"accountId\":").append(rs.getInt("account_id"));
-                    json.append(",\"fullName\":").append(StaffAuthUtil.escapeJson(rs.getString("full_name")));
-                    json.append(",\"phone\":").append(StaffAuthUtil.escapeJson(rs.getString("phone")));
-                    json.append(",\"email\":").append(StaffAuthUtil.escapeJson(rs.getString("email")));
-                    json.append("}");
-                }
-            }
+        for (StaffCustomerSearchItemDTO customer : customers) {
+            if (!first) json.append(",");
+            first = false;
+            json.append("{\"accountId\":").append(customer.getAccountId());
+            json.append(",\"fullName\":").append(StaffAuthUtil.escapeJson(customer.getFullName()));
+            json.append(",\"phone\":").append(StaffAuthUtil.escapeJson(customer.getPhone()));
+            json.append(",\"email\":").append(StaffAuthUtil.escapeJson(customer.getEmail()));
+            json.append("}");
         }
 
-        json.append("]}");
+        json.append("]}}");
         return json.toString();
     }
 }

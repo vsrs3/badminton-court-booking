@@ -350,3 +350,34 @@
 @keyframes sbc-spin {
     to { transform: rotate(360deg); }
 }
+
+/* ================================================================
+   Phone validation styles
+   ================================================================ */
+
+/* Phone hint below input */
+.sbc-phone-hint {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.375rem;
+    padding-left: 0.25rem;
+}
+
+.sbc-hint-warn {
+    color: #DC2626;
+}
+
+.sbc-hint-ok {
+    color: #059669;
+}
+
+/* Input border states */
+.sbc-input.sbc-input-error {
+    border-color: #DC2626 !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+.sbc-input.sbc-input-valid {
+    border-color: #059669 !important;
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
+}

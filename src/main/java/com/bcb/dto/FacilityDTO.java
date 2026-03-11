@@ -1,5 +1,8 @@
 package com.bcb.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data Transfer Object for Facility
  * Used for API responses (matches frontend JSON structure)
@@ -27,6 +30,13 @@ public class FacilityDTO {
     // For filtering
     private String province;
     private String district;
+
+    // Detail data
+    private String description;
+    private Integer reviewCount;
+    private List<String> galleryImages = new ArrayList<>();
+    private List<FacilityPriceRuleDetailDTO> priceRules = new ArrayList<>();
+    private List<FacilityReviewDetailDTO> reviews = new ArrayList<>();
 
     // Constructors
     public FacilityDTO() {
@@ -167,5 +177,45 @@ public class FacilityDTO {
 
     public void setDistrict(String district) {
         this.district = district;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
+    }
+
+    public List<String> getGalleryImages() {
+        return galleryImages;
+    }
+
+    public void setGalleryImages(List<String> galleryImages) {
+        this.galleryImages = galleryImages;
+    }
+
+    public List<FacilityPriceRuleDetailDTO> getPriceRules() {
+        return priceRules;
+    }
+
+    public void setPriceRules(List<FacilityPriceRuleDetailDTO> priceRules) {
+        this.priceRules = priceRules;
+    }
+
+    public List<FacilityReviewDetailDTO> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<FacilityReviewDetailDTO> reviews) {
+        this.reviews = reviews;
     }
 }

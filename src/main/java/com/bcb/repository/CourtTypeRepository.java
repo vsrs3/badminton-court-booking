@@ -8,3 +8,4 @@ public interface CourtTypeRepository {
     List<CourtType> findAll();
     Optional<CourtType> findById(int courtTypeId);
 }
+

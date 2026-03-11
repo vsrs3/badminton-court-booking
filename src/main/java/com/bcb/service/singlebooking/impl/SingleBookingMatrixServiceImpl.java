@@ -119,15 +119,15 @@ public class SingleBookingMatrixServiceImpl implements SingleBookingMatrixServic
             List<Integer> disabledSlots = new ArrayList<>();
             for (SingleBookingMatrixTimeSlotDTO slot : slots) {
                 LocalTime slotStart = LocalTime.parse(slot.getStartTime(), TF);
+                LocalTime slotEnd = LocalTime.parse(slot.getEndTime(), TF);
 
                 // Past check for today
-                if (isToday && slotStart.isBefore(now)) {
+                if (isToday && slotEnd.isBefore(now)) {
                     disabledSlots.add(slot.getSlotId());
                     continue;
                 }
 
                 // Exception check
-                LocalTime slotEnd = LocalTime.parse(slot.getEndTime(), TF);
                 boolean isException = exceptions.stream().anyMatch(ex -> {
                     if (!ex.getCourtId().equals(court.getCourtId())) {
                         return false;
@@ -207,3 +207,4 @@ public class SingleBookingMatrixServiceImpl implements SingleBookingMatrixServic
         return prices;
     }
 }
+

@@ -16,3 +16,4 @@ public interface CourtRepository {
      */
     List<Court> findActiveByFacilityId(int facilityId);
 }
+

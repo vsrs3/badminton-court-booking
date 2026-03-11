@@ -44,3 +44,4 @@ public interface FacilityPriceRuleRepository {
      */
     void delete(int priceId);
 }
+

@@ -25,3 +25,4 @@ public class PasswordUtil {
         return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
     }
 }
+

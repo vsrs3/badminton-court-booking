@@ -9,3 +9,4 @@ public interface GoogleAuthService {
 
     Account handleGoogleLinking(String code, String verifiedEmail) throws Exception;
 }
+

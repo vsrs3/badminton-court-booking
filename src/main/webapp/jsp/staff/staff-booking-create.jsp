@@ -1,5 +1,3 @@
-<%-- staff-booking-create.jsp — Task 9c: Booking proxy create page --%>
-
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
@@ -103,21 +101,26 @@
                             <input type="hidden" id="selectedAccountId" value="">
                         </div>
 
-                        <%-- GUEST form --%>
-                        <div id="formGuest" class="d-none">
-                            <div class="mb-3">
-                                <label class="sbc-label">Họ tên <span class="text-danger">*</span></label>
-                                <input type="text" class="sbc-input" id="guestName" placeholder="Nhập họ tên">
+                            <%-- GUEST form --%>
+                            <div id="formGuest" class="d-none">
+                                <div class="mb-3">
+                                    <label class="sbc-label">Họ tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="sbc-input" id="guestName" placeholder="Nhập họ tên">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="sbc-label">Số điện thoại <span class="text-danger">*</span></label>
+                                    <input type="tel" class="sbc-input" id="guestPhone"
+                                           placeholder="Nhập SĐT (VD: 0912345678)"
+                                           maxlength="10"
+                                           pattern="0[0-9]{9}"
+                                           inputmode="numeric">
+                                    <div class="sbc-phone-hint d-none" id="phoneHint"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="sbc-label">Email <span style="color:#9CA3AF;">(tùy chọn)</span></label>
+                                    <input type="email" class="sbc-input" id="guestEmail" placeholder="Nhập email">
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="sbc-label">Số điện thoại <span class="text-danger">*</span></label>
-                                <input type="text" class="sbc-input" id="guestPhone" placeholder="Nhập SĐT">
-                            </div>
-                            <div class="mb-3">
-                                <label class="sbc-label">Email <span style="color:#9CA3AF;">(tùy chọn)</span></label>
-                                <input type="email" class="sbc-input" id="guestEmail" placeholder="Nhập email">
-                            </div>
-                        </div>
 
                         <%-- Error message --%>
                         <div class="sbc-error d-none" id="formError"></div>
@@ -143,6 +146,7 @@
 <script>
     window.ST_CTX = '${pageContext.request.contextPath}';
 </script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-create.js"></script>
 
 </body>

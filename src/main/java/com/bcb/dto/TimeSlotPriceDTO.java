@@ -63,3 +63,4 @@ public class TimeSlotPriceDTO {
         this.endTimeFormatted = endTimeFormatted;
     }
 }
+

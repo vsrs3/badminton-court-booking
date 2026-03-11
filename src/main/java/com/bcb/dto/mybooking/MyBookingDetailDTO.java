@@ -7,6 +7,8 @@ import java.util.List;
 
 /**
  * DTO for detailed booking view (View Booking Details).
+ *
+ * @author AnhTN
  */
 public class MyBookingDetailDTO {
     private int bookingId;
@@ -23,8 +25,11 @@ public class MyBookingDetailDTO {
     private LocalDateTime createdAt;
     private LocalDateTime holdExpiredAt;
 
-    // Slot details
+    // Slot details — raw individual slots (for price breakdown)
     private List<BookingSlotDetailDTO> slots;
+
+    // Merged slots — consecutive slots on the same court merged into one block (for display)
+    private List<MergedSlotDTO> mergedSlots;
 
     // Payment info
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
@@ -71,6 +76,9 @@ public class MyBookingDetailDTO {
     public List<BookingSlotDetailDTO> getSlots() { return slots; }
     public void setSlots(List<BookingSlotDetailDTO> slots) { this.slots = slots; }
 
+    public List<MergedSlotDTO> getMergedSlots() { return mergedSlots; }
+    public void setMergedSlots(List<MergedSlotDTO> mergedSlots) { this.mergedSlots = mergedSlots; }
+
     public String getPaymentStatus() { return paymentStatus; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 
@@ -89,3 +97,4 @@ public class MyBookingDetailDTO {
     public String getStaffName() { return staffName; }
     public void setStaffName(String staffName) { this.staffName = staffName; }
 }
+

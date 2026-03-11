@@ -38,3 +38,4 @@ public interface StaffProfileRepository {
 	 */
 	boolean resetPassword(Integer accountId, String passwordHash);
 }
+

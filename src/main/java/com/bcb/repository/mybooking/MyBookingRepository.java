@@ -60,3 +60,4 @@ public interface MyBookingRepository {
      */
     void cancelBooking(int bookingId);
 }
+

@@ -58,3 +58,4 @@ public class CourtTypeRepositoryImpl implements CourtTypeRepository {
         return courtType;
     }
 }
+

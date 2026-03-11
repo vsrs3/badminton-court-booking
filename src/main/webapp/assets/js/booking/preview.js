@@ -4,10 +4,9 @@
  * Chịu trách nhiệm:
  *  1. Đọc previewData từ sessionStorage (do booking.js lưu)
  *  2. Render thông tin preview (venue, courts, ranges, totals)
- *  3. Xử lý chọn phương thức thanh toán (FULL | DEPOSIT 30%)
- *  4. Xử lý nhập voucher
- *  5. POST /api/single-booking/confirm-and-pay
- *  6. Xử lý mọi trường hợp lỗi: 400, 401, 409, 500, double-submit, network
+ *  3. Xử lý chọn tỷ lệ thanh toán (FULL 100% | DEPOSIT 30%)
+ *  4. POST /api/single-booking/confirm-and-pay → redirect VNPay
+ *  5. Xử lý mọi trường hợp lỗi: 400, 401, 409, 500, double-submit, network
  *
  * Author: AnhTN
  */
@@ -42,7 +41,6 @@
     const bookingDate  = payload.date;
 
     /* ── Payment state ───────────────────────────────────────── */
-    let paymentMethod   = 'VNPAY';   // default
     let depositPercent  = 100;       // default full pay
     let isSubmitting    = false;
 
@@ -53,8 +51,6 @@
     const pvDuration     = document.getElementById('pvDuration');
     const pvCourtsWrap   = document.getElementById('pvCourtsWrap');
     const pvSubtotal     = document.getElementById('pvSubtotal');
-    const pvDiscount     = document.getElementById('pvDiscount');
-    const pvDiscountRow  = document.getElementById('pvDiscountRow');
     const pvDepositRow   = document.getElementById('pvDepositRow');
     const pvDepositAmt   = document.getElementById('pvDepositAmt');
     const pvTotal        = document.getElementById('pvTotal');
@@ -63,8 +59,6 @@
     const pvAlertClose   = document.getElementById('pvAlertClose');
     const pvConfirmBtn   = document.getElementById('pvConfirmBtn');
     const pvConfirmBarAmt= document.getElementById('pvConfirmBarAmt');
-    // const pvNoteInput    = document.getElementById('pvNoteInput');
-    // const pvVoucherInput = document.getElementById('pvVoucherInput');
     const pvLoadingOverlay = document.getElementById('pvLoadingOverlay');
 
     /* ── Alert helpers ────────────────────────────────────────── */
@@ -164,18 +158,14 @@
 
     function updateFinancials() {
         const subtotal  = Number(previewData.subtotal   || 0);
-        const discount  = Number(previewData.discount   || 0);
-        const totalAmt  = Number(previewData.totalAmount || subtotal - discount);
+        const totalAmt  = Number(previewData.totalAmount || subtotal);
 
         const payAmount = depositPercent === 100
             ? totalAmt
             : Math.ceil(totalAmt * depositPercent / 100);
 
         if (pvSubtotal)    pvSubtotal.textContent = formatVnd(subtotal);
-        if (pvDiscount)    pvDiscount.textContent  = discount > 0 ? '- ' + formatVnd(discount) : formatVnd(0);
-        if (pvDiscountRow) pvDiscountRow.style.display = discount > 0 ? '' : 'none';
-
-        if (pvTotal)      pvTotal.textContent = formatVnd(totalAmt);
+        if (pvTotal)       pvTotal.textContent = formatVnd(totalAmt);
 
         // Deposit row
         if (pvDepositRow) {
@@ -192,21 +182,9 @@
     }
 
     /* ══════════════════════════════════════════════════════════
-       PAYMENT METHOD & DEPOSIT RADIO BUTTONS
+       DEPOSIT RADIO BUTTONS
        ══════════════════════════════════════════════════════════ */
 
-    // Payment method (VNPAY / BANK_TRANSFER / CASH)
-    document.querySelectorAll('input[name="pvPaymentMethod"]').forEach(function (radio) {
-        radio.addEventListener('change', function () {
-            paymentMethod = this.value;
-            // highlight selected label
-            document.querySelectorAll('.pv-radio-label.method-opt').forEach(function (lbl) {
-                lbl.classList.remove('selected');
-            });
-            const lbl = this.closest('.pv-radio-label');
-            if (lbl) lbl.classList.add('selected');
-        });
-    });
 
     // Deposit options (100% / 30%)
     document.querySelectorAll('input[name="pvDeposit"]').forEach(function (radio) {
@@ -230,12 +208,6 @@
             if (lbl) lbl.classList.add('selected');
             depositPercent = parseInt(checked.value, 10);
         }
-        const checkedMethod = document.querySelector('input[name="pvPaymentMethod"]:checked');
-        if (checkedMethod) {
-            const lbl = checkedMethod.closest('.pv-radio-label');
-            if (lbl) lbl.classList.add('selected');
-            paymentMethod = checkedMethod.value;
-        }
     })();
 
     /* ══════════════════════════════════════════════════════════
@@ -255,17 +227,11 @@
         hideAlert();
         showLoading();
 
-        const voucherCode   = pvVoucherInput ? pvVoucherInput.value.trim() : '';
-        const customerNote  = pvNoteInput    ? pvNoteInput.value.trim()    : '';
-
         const body = {
             venueId:        venueId,
             date:           bookingDate,
             selections:     selections,
-            paymentMethod:  paymentMethod,
-            depositPercent: depositPercent,
-            customerNote:   customerNote || undefined,
-            voucherCode:    voucherCode  || undefined
+            depositPercent: depositPercent
         };
 
         fetch(CTX + '/api/single-booking/confirm-and-pay', {
@@ -302,7 +268,7 @@
             if (payUrl) {
                 window.location.href = payUrl;
             } else {
-                // Không có paymentUrl (e.g. CASH/BANK_TRANSFER) → redirect booking success
+                // Fallback nếu không có paymentUrl
                 window.location.href = CTX + '/?bookingSuccess=1&bookingId=' + (data.bookingId || '');
             }
         })

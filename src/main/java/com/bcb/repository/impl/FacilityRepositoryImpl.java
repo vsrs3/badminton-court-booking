@@ -9,7 +9,9 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -22,6 +24,7 @@ import java.util.Optional;
  * Returns PURE entities (no computed fields)
  */
 public class FacilityRepositoryImpl implements FacilityRepository {
+    private static final String HOME_SEARCH_COLLATION = "Latin1_General_100_CI_AI";
 
     @Override
     public List<Facility> findAll(int limit, int offset) {
@@ -264,43 +267,84 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 //    vuongdq
     @Override
     public List<Facility> findAllWithPagination(int offset, int limit) {
+        return findForHome(offset, limit, null, null, null, null);
+    }
+
+    @Override
+    public List<Facility> findForHome(int offset, int limit, String keyword, String province, String district, Integer favoriteAccountId) {
         List<Facility> facilities = new ArrayList<>();
 
-        // ✅ CLEANED: No thumbnail, no rating in main query
-        String sql = """
-            SELECT 
-            facility_id,
-            name,
-            province,
-            district,
-            ward,
-            address,
-            latitude,
-            longitude,
-            description,
-            open_time,
-            close_time,
-            is_active
-        FROM Facility
-        WHERE is_active = 1
-        ORDER BY facility_id ASC
-        OFFSET ? ROWS
-        FETCH NEXT ? ROWS ONLY
-    """;
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                facility_id,
+                name,
+                province,
+                district,
+                ward,
+                address,
+                latitude,
+                longitude,
+                description,
+                open_time,
+                close_time,
+                is_active
+            FROM Facility f
+            WHERE f.is_active = 1
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (")
+                    .append("f.name COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.address COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ?)");
+
+            String likeKeyword = "%" + keyword.trim() + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        if (province != null && !province.trim().isEmpty()) {
+            sql.append(" AND f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(province.trim());
+        }
+
+        if (favoriteAccountId != null) {
+            sql.append(" AND EXISTS (")
+                    .append("SELECT 1 FROM CustomerFavoriteFacility cff ")
+                    .append("WHERE cff.facility_id = f.facility_id AND cff.account_id = ?)");
+            params.add(favoriteAccountId);
+        }
+        if (district != null && !district.trim().isEmpty()) {
+            sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(district.trim());
+        }
+
+        sql.append(" ORDER BY f.facility_id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        params.add(offset);
+        params.add(limit);
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            ps.setInt(1, offset);
-            ps.setInt(2, limit);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Facility facility = mapResultSetToFacility(rs);
-                    facilities.add(facility);
+            int idx = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
                 }
             }
 
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    facilities.add(mapResultSetToFacility(rs));
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Error fetching facilities: " + e.getMessage(), e);
         }
@@ -350,16 +394,61 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
     @Override
     public int getTotalCount() {
-        String sql = "SELECT COUNT(*) FROM Facility WHERE is_active = 1";
+        return countForHome(null, null, null, null);
+    }
+
+    @Override
+    public int countForHome(String keyword, String province, String district, Integer favoriteAccountId) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM Facility f WHERE f.is_active = 1");
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (")
+                    .append("f.name COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.address COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ?)");
+
+            String likeKeyword = "%" + keyword.trim() + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        if (province != null && !province.trim().isEmpty()) {
+            sql.append(" AND f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(province.trim());
+        }
+
+        if (favoriteAccountId != null) {
+            sql.append(" AND EXISTS (")
+                    .append("SELECT 1 FROM CustomerFavoriteFacility cff ")
+                    .append("WHERE cff.facility_id = f.facility_id AND cff.account_id = ?)");
+            params.add(favoriteAccountId);
+        }
+        if (district != null && !district.trim().isEmpty()) {
+            sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(district.trim());
+        }
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            if (rs.next()) {
-                return rs.getInt(1);
+            int idx = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
+                }
             }
 
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Error counting facilities: " + e.getMessage(), e);
         }
@@ -400,8 +489,7 @@ public class FacilityRepositoryImpl implements FacilityRepository {
             SELECT AVG(CAST(r.rating AS FLOAT)) as avg_rating
             FROM Review r
             INNER JOIN Booking b ON r.booking_id = b.booking_id
-            INNER JOIN Court c ON b.court_id = c.court_id
-            WHERE c.facility_id = ?
+            WHERE b.facility_id = ?
         """;
 
         try (Connection conn = DBContext.getConnection();
@@ -423,6 +511,232 @@ public class FacilityRepositoryImpl implements FacilityRepository {
 
         return 0.0;
     }
+    @Override
+    public Map<Integer, String> findThumbnailPaths(List<Integer> facilityIds) {
+        Map<Integer, String> thumbnails = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return thumbnails;
+        }
+
+        String sql = "SELECT fi.facility_id, fi.image_path FROM FacilityImage fi " +
+                "WHERE fi.is_thumbnail = 1 AND fi.facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ")";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    thumbnails.put(rs.getInt("facility_id"), rs.getString("image_path"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching thumbnails: " + e.getMessage(), e);
+        }
+
+        return thumbnails;
+    }
+
+    @Override
+    public Map<Integer, Double> findAverageRatings(List<Integer> facilityIds) {
+        Map<Integer, Double> ratings = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return ratings;
+        }
+
+        String sql = "SELECT b.facility_id, AVG(CAST(r.rating AS FLOAT)) AS avg_rating " +
+                "FROM Review r " +
+                "INNER JOIN Booking b ON r.booking_id = b.booking_id " +
+                "WHERE b.facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ") " +
+                "GROUP BY b.facility_id";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    double avgRating = rs.getDouble("avg_rating");
+                    ratings.put(rs.getInt("facility_id"), rs.wasNull() ? 0.0 : avgRating);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching average ratings: " + e.getMessage());
+        }
+
+        return ratings;
+    }
 
 
+    @Override
+    public Map<Integer, String> findPriceRanges(List<Integer> facilityIds) {
+        Map<Integer, String> priceRanges = new HashMap<>();
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return priceRanges;
+        }
+
+        String sql = "SELECT facility_id, MIN(price) AS min_price, MAX(price) AS max_price " +
+                "FROM FacilityPriceRule " +
+                "WHERE facility_id IN (" + buildInPlaceholders(facilityIds.size()) + ") " +
+                "GROUP BY facility_id";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            bindIntList(ps, facilityIds, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long minPrice = rs.getLong("min_price");
+                    long maxPrice = rs.getLong("max_price");
+                    if (minPrice > 0 && maxPrice > 0) {
+                        priceRanges.put(rs.getInt("facility_id"), String.format("%,d VND - %,d VND", minPrice, maxPrice));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching price ranges: " + e.getMessage(), e);
+        }
+
+        return priceRanges;
+    }
+
+    private String buildInPlaceholders(int size) {
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < size; i++) {
+            if (i > 0) {
+                placeholders.append(',');
+            }
+            placeholders.append('?');
+        }
+        return placeholders.toString();
+    }
+
+    private void bindIntList(PreparedStatement ps, List<Integer> values, int startIndex) throws SQLException {
+        int idx = startIndex;
+        for (Integer value : values) {
+            ps.setInt(idx++, value);
+        }
+    }
+    @Override
+    public boolean addFavorite(int accountId, int facilityId) {
+        String sql = "INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (?, ?)";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            // Duplicate favorite (UNIQUE constraint) => treat as already favorited
+            if (e.getErrorCode() == 2627 || e.getErrorCode() == 2601) {
+                return true;
+            }
+            throw new RuntimeException("Error adding favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean removeFavorite(int accountId, int facilityId) {
+        String sql = "DELETE FROM CustomerFavoriteFacility WHERE account_id = ? AND facility_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error removing favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean isFavorite(int accountId, int facilityId) {
+        String sql = "SELECT 1 FROM CustomerFavoriteFacility WHERE account_id = ? AND facility_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            ps.setInt(2, facilityId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking favorite: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<Integer> getFavoriteFacilityIds(int accountId) {
+        String sql = "SELECT facility_id FROM CustomerFavoriteFacility WHERE account_id = ?";
+        List<Integer> ids = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("facility_id"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching favorites: " + e.getMessage(), e);
+        }
+
+        return ids;
+    }
+
+    @Override
+    public List<Facility> findAllActive() {
+
+        List<Facility> list = new ArrayList<>();
+
+        String sql = """
+        SELECT facility_id, name
+        FROM Facility
+        WHERE is_active = 1
+        ORDER BY name
+        """;
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Facility f = new Facility();
+
+                f.setFacilityId(rs.getInt("facility_id"));
+                f.setName(rs.getString("name"));
+
+                list.add(f);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
