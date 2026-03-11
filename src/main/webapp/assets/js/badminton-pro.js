@@ -79,9 +79,66 @@ const contextPath = window.location.pathname.split('/')[1]
         }
     }
 
+    const LOCATION_PROMPT_KEY = "locationPrompted";
+
+    function showLocationPermissionModal() {
+        const backdrop = document.getElementById("locationPermissionBackdrop");
+        const modal = document.getElementById("locationPermissionModal");
+
+        if (backdrop && modal) {
+            backdrop.classList.add("active");
+            modal.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+    }
+
+    function closeLocationPermissionModal() {
+        const backdrop = document.getElementById("locationPermissionBackdrop");
+        const modal = document.getElementById("locationPermissionModal");
+
+        if (backdrop && modal) {
+            backdrop.classList.remove("active");
+            modal.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+    }
+
+    function handleLocationPromptDecision(decision) {
+        sessionStorage.setItem(LOCATION_PROMPT_KEY, decision);
+        closeLocationPermissionModal();
+
+        if (decision === "granted") {
+            getUserLocation();
+            return;
+        }
+
+        AppState.userLocation = null;
+        updateDistanceFilterAvailability();
+        loadFacilitiesFromAPI(0);
+    }
+
+    function showLocationPromptIfNeeded() {
+        const status = sessionStorage.getItem(LOCATION_PROMPT_KEY);
+
+        if (!status) {
+            showLocationPermissionModal();
+            loadFacilitiesFromAPI(0);
+            return;
+        }
+
+        if (status === "granted") {
+            getUserLocation();
+            return;
+        }
+
+        AppState.userLocation = null;
+        updateDistanceFilterAvailability();
+        loadFacilitiesFromAPI(0);
+    }
+
     /**
      * Check if user is logged in
-     * ✅ CRITICAL FIX: Check window.IS_LOGGED_IN (set by JSP)
+     * Check window.IS_LOGGED_IN (set by JSP)
      */
     function isUserLoggedIn() {
         // Check global variable set by JSP
@@ -315,6 +372,7 @@ const contextPath = window.location.pathname.split('/')[1]
                         lng: position.coords.longitude
                     };
                     console.log('✅ User location obtained:', AppState.userLocation);
+                    updateDistanceFilterAvailability();
 
                     // ✅ Reload facilities with location to get distance calculation
                     loadFacilitiesFromAPI(0);
@@ -322,6 +380,8 @@ const contextPath = window.location.pathname.split('/')[1]
                 (error) => {
                     console.error("Error getting location:", error);
                     showToast("Không thể lấy vị trí của bạn");
+                    AppState.userLocation = null;
+                    updateDistanceFilterAvailability();
 
                     // Still load facilities without location
                     loadFacilitiesFromAPI(0);
@@ -329,8 +389,23 @@ const contextPath = window.location.pathname.split('/')[1]
             );
         } else {
             console.log("Geolocation not supported");
+            AppState.userLocation = null;
+            updateDistanceFilterAvailability();
             // Load without location
             loadFacilitiesFromAPI(0);
+        }
+    }
+
+    function updateDistanceFilterAvailability() {
+        const hasLocation = !!AppState.userLocation;
+        document.querySelectorAll(".filter-distance-btn").forEach(btn => {
+            btn.disabled = !hasLocation;
+            if (!hasLocation) {
+                btn.classList.remove("active");
+            }
+        });
+        if (!hasLocation) {
+            AppState.filters.maxDistance = null;
         }
     }
 
@@ -349,7 +424,8 @@ const contextPath = window.location.pathname.split('/')[1]
             courts = courts.filter(c => {
                 // Parse distance string back to number
                 const distStr = c.distance;
-                if (distStr === 'Đang tính...') return true;
+                if (!distStr) return true;
+                if (!distStr.endsWith('km') && !distStr.endsWith('m')) return true;
 
                 let distKm = 0;
                 if (distStr.endsWith('km')) {
@@ -412,6 +488,7 @@ const contextPath = window.location.pathname.split('/')[1]
 
         // Render cards
         grid.innerHTML = AppState.filteredCourts.map(court => {
+            const distanceBlock = court.distance ? `<span class="distance">(${court.distance})</span> ` : '';
             return templateHTML
                 .replace(/{courtId}/g, court.id)
                 .replace(/{imageUrl}/g, contextPath + '/' + court.imageUrl)
@@ -419,7 +496,7 @@ const contextPath = window.location.pathname.split('/')[1]
                 .replace(/{rating}/g, court.rating.toFixed(1))
                 .replace(/{favoriteClass}/g, court.isFavorite ? 'is-favorite' : '')
                 .replace(/{favoriteFill}/g, court.isFavorite ? '-fill' : '')
-                .replace(/{distance}/g, court.distance)
+                .replace(/{distanceBlock}/g, distanceBlock)
                 .replace(/{location}/g, court.location)
                 .replace(/{openTime}/g, court.openTime);
         }).join('');
@@ -1359,6 +1436,34 @@ const contextPath = window.location.pathname.split('/')[1]
         });
 
         // ✅ NEW: Auth Modal listeners
+        const locationPermissionBackdrop = document.getElementById("locationPermissionBackdrop");
+        if (locationPermissionBackdrop) {
+            locationPermissionBackdrop.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
+        const locationPermissionCloseBtn = document.getElementById("locationPermissionCloseBtn");
+        if (locationPermissionCloseBtn) {
+            locationPermissionCloseBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
+        const locationPermissionAllowBtn = document.getElementById("locationPermissionAllowBtn");
+        if (locationPermissionAllowBtn) {
+            locationPermissionAllowBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("granted");
+            });
+        }
+
+        const locationPermissionDenyBtn = document.getElementById("locationPermissionDenyBtn");
+        if (locationPermissionDenyBtn) {
+            locationPermissionDenyBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
         const authModalBackdrop = document.getElementById('authModalBackdrop');
         if (authModalBackdrop) {
             authModalBackdrop.addEventListener('click', closeAuthModal);
@@ -1409,11 +1514,16 @@ const contextPath = window.location.pathname.split('/')[1]
     function init() {
         console.log('Initializing BadmintonPro app...');
 
-        // Get user location FIRST (will trigger API load in callback)
-        getUserLocation();
-
         // Attach event listeners
         attachEventListeners();
+
+        updateDistanceFilterAvailability();
+
+        // Ask for location permission once per session
+        showLocationPromptIfNeeded();
+
+
+
 
         // Initialize infinite scroll
         initInfiniteScroll();
@@ -1438,6 +1548,15 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
+
+
+
+
 
 
 

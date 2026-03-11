@@ -34,7 +34,7 @@
           <div class="info-row">
             <i class="bi bi-geo-alt-fill text-lime"></i>
             <span class="info-text">
-                            <span class="distance">({distance})</span> {location}
+                            {distanceBlock}{location}
                         </span>
           </div>
           <div class="info-row">

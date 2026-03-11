@@ -456,8 +456,8 @@ public class FacilityServiceImpl implements FacilityService {
             dto.setDistance(formatDistance(distance));
             dto.setDistanceValue(distance);
         } else {
-            dto.setDistance("Đang tính...");
-            dto.setDistanceValue(Double.MAX_VALUE);
+            dto.setDistance(null);
+            dto.setDistanceValue(null);
         }
 
         Double rating = ratingMap != null
@@ -721,6 +721,11 @@ public class FacilityServiceImpl implements FacilityService {
         return facilityRepository.isFavorite(accountId, facilityId);
     }
 }
+
+
+
+
+
 
 
 
