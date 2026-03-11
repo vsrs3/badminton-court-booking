@@ -15,22 +15,38 @@
 
             <!-- HEADER -->
             <div class="review-header">
-                <a href="${pageContext.request.contextPath}/my-bookings">
+                <button onclick="history.back()">
                     <i data-lucide="arrow-left" class="icon-sm"></i>
                     <span>Quay lại </span>
-                </a>
+                </button>
                 <div class="review-title-group">
                     <h1 class="review-page-title">Chỉnh sửa đánh giá</h1>
                     <i data-lucide="pen" class="icon-md review-title-icon"></i>
                 </div>
             </div>
 
+            <!-- SESSION MESSAGES -->
+            <c:if test="${not empty sessionScope.successMessage}">
+                <div class="review-notification success">
+                    <i data-lucide="check-circle" class="icon-sm"></i>
+                    <span>${sessionScope.successMessage}</span>
+                </div>
+                <c:remove var="successMessage" scope="session" />
+            </c:if>
+            <c:if test="${not empty sessionScope.errorMessage}">
+                <div class="review-notification error">
+                    <i data-lucide="alert-circle" class="icon-sm"></i>
+                    <span>${sessionScope.errorMessage}</span>
+                </div>
+                <c:remove var="errorMessage" scope="session" />
+            </c:if>
+
             <!-- REVIEW CONTAINER -->
             <div class="review-container">
 
                 <!-- REVIEW FORM CARD -->
                 <div class="review-card">
-                    <form id="reviewUpdateForm" method="POST" action="${pageContext.request.contextPath}/reviews">
+                    <form id="reviewUpdateForm" method="POST" action="${pageContext.request.contextPath}/reviews" onsubmit="return validateReviewUpdate()">
 
                         <input type="hidden" name="action"    value="edit" />
                         <input type="hidden" name="bookingId" value="${r.bookingId}" />
@@ -66,12 +82,24 @@
                                 </span>
                                 <div class="textarea-wrap">
                                     <textarea id="reviewComment" name="comment"
-                                              class="review-textarea" maxlength="500"
-                                              placeholder="Chia sẻ trải nghiệm của bạn về sân (không vượt quá 500 kí tự)..."><c:out value="${r.comment}"/></textarea>
+                                              class="review-textarea"
+                                              placeholder="Chia sẻ trải nghiệm của bạn về sân (không vượt quá 500 kí tự)..."
+                                              oninput="
+                                                var len = this.value.length;
+                                                var el = document.getElementById('charCount');
+                                                if (el) {
+                                                    el.textContent = len;
+                                                    el.style.color = len > 500 ? '#EF4444' : (len > 450 ? '#F59E0B' : '#6B7280');
+                                                }
+                                                this.dataset.invalid = len > 500 ? 'true' : 'false';
+                                              "><c:out value="${r.comment}"/></textarea>
                                 </div>
-                                <p class="error-msg" id="commentError" style="display:none">
-                                    Nhận xét cần ít nhất 5 ký tự (hoặc để trống).
-                                </p>
+                                <div class="char-counter-row">
+                                    <p class="error-msg" id="commentError" style="display:none">
+                                        Nhận xét cần ít nhất 5 ký tự (hoặc để trống).
+                                    </p>
+                                    <span class="char-counter"><span id="charCount">0</span>/500</span>
+                                </div>
                             </div>
 
                         </div>
@@ -163,12 +191,21 @@
                 var errEl   = document.getElementById('commentError');
                 var val     = comment ? comment.value.trim() : '';
 
+                // Chặn nếu bộ đếm đang đỏ (> 500 ký tự)
+                if (comment && comment.dataset.invalid === 'true') {
+                    alert('Nhận xét không được vượt quá 500 ký tự. Hiện tại: ' + comment.value.length + ' ký tự.');
+                    comment.focus();
+                    return false;
+                }
+
+                // Kiểm tra tối thiểu 5 ký tự
                 if (val.length > 0 && val.length < 5) {
                     if (errEl) errEl.style.display = 'block';
                     return false;
                 }
                 if (errEl) errEl.style.display = 'none';
 
+                // Kiểm tra đã chọn sao
                 if (!rating) {
                     alert('Vui lòng chọn số sao trước khi lưu.');
                     return false;
@@ -182,3 +219,4 @@
         <div class="p-6 text-red-500 font-semibold">Không tìm thấy đánh giá để chỉnh sửa.</div>
     </c:otherwise>
 </c:choose>
+ 
