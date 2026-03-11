@@ -24,17 +24,21 @@
 
             <!-- Header with Back button -->
             <div class="bg-white p-5 border-b border-gray-100">
-                <div class="flex items-center space-x-3 mb-3">
-                    <a href="${pageContext.request.contextPath}/my-bookings"
-                       class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                        <i data-lucide="arrow-left" class="w-5 h-5 text-gray-600"></i>
-                    </a>
-                    <div>
-                        <h1 class="text-lg font-bold text-gray-800">Chi tiết đặt sân</h1>
-                        <span class="text-xs text-gray-400">Booking #${d.bookingId}</span>
+
+                <!-- Row 1: Title + Back button -->
+                <div class="detail-header">
+                    <div class="detail-title-group">
+                        <i data-lucide="calendar-check" class="detail-title-icon"></i>
+                        <h1 class="detail-page-title">Chi tiết đặt sân</h1>
                     </div>
+                    <a href="${pageContext.request.contextPath}/my-bookings" class="btn-back-home">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span>Quay Lại</span>
+                    </a>
                 </div>
-                <div class="flex items-center space-x-2">
+
+                <!-- Row 2: badges + booking id -->
+                <div class="flex items-center space-x-2 mt-3">
                     <span class="detail-badge ${d.bookingType == 'SINGLE' ? 'detail-type-single' : 'detail-type-recurring'}">
                         <c:choose>
                             <c:when test="${d.bookingType == 'SINGLE'}">Đặt lẻ</c:when>
@@ -58,7 +62,9 @@
                             <span class="detail-badge detail-badge-expired">Hủy do quá giờ</span>
                         </c:when>
                     </c:choose>
+                    <span class="text-xs text-gray-400">#${d.bookingId}</span>
                 </div>
+
             </div>
 
             <div class="flex-1 overflow-y-auto p-5 space-y-0">
@@ -345,7 +351,6 @@
                         </c:if>
                     </div>
                 </div>
-
             </div>
         </c:when>
         <c:otherwise>

@@ -4,8 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.bcb.dto.ReviewDTO;
 import com.bcb.dto.mybooking.MyBookingListDTO;
+import com.bcb.dto.review.ReviewDTO;
+import com.bcb.dto.review.ReviewUserListDTO;
 import com.bcb.model.Review;
 
 public interface ReviewService {
@@ -25,11 +26,18 @@ public interface ReviewService {
 	boolean editReview(ReviewDTO dto);
 	
 	/**
-	 * View review list location
+	 * View location review list 
 	 * @param dto
 	 * @return List<Review>
 	 */
 	List<Review> listLocationReview(Integer facilityId);
+	
+	/**
+	 * View list user review
+	 * @param dto
+	 * @return List<ReviewUserListDTO>
+	 */
+	List<ReviewUserListDTO> listUserReview (ReviewUserListDTO dto);
 	
 	/**
 	 * Add review customer
@@ -59,5 +67,5 @@ public interface ReviewService {
 	 * @param dto
 	 * @return boolean status
 	 */
-	boolean deleteReview(ReviewDTO dto);
+	//boolean deleteReview(ReviewDTO dto);
 }

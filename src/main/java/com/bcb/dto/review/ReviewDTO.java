@@ -1,17 +1,11 @@
-package com.bcb.dto;
+package com.bcb.dto.review;
 
 public class ReviewDTO {
 	
-	private Integer bookingId, facilityId, accountId, rating;
+	private Integer bookingId, accountId, rating;
 	private String comment;
 	
-	// list location review
-	public ReviewDTO(Integer facilityId) {
-		super();
-		this.facilityId = facilityId;
-	}
-	
-	// edit review
+	// edit, create review
 	public ReviewDTO(Integer bookingId, Integer accountId, Integer rating,
 			String comment) {
 		super();
@@ -21,17 +15,7 @@ public class ReviewDTO {
 		this.comment = comment;
 	}
 	
-	// create review
-	public ReviewDTO(Integer bookingId, Integer facilityId, Integer accountId, Integer rating, String comment) {
-		super();
-		this.bookingId = bookingId;
-		this.facilityId = facilityId;
-		this.accountId = accountId;
-		this.rating = rating;
-		this.comment = comment;
-	}
-
-	// view review
+	// view, list review
 	public ReviewDTO(Integer bookingId, Integer accountId) {
 		super();
 		this.bookingId = bookingId;
@@ -45,14 +29,6 @@ public class ReviewDTO {
 	
 	public void setBookingId(Integer bookingId) {
 		this.bookingId = bookingId;
-	}
-
-	public Integer getFacilityId() {
-		return facilityId;
-	}
-
-	public void setFacilityId(Integer facilityId) {
-		this.facilityId = facilityId;
 	}
 
 	public Integer getAccountId() {

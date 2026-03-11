@@ -42,7 +42,7 @@
 							String avatarPath = currentUser.getAvatarPath();
 							if (avatarPath != null && !avatarPath.isEmpty()) {
 							%>
-							<img src="${pageContext.request.contextPath}/<%= avatarPath %>"
+							<img src="${currentUser.getAvatarPath()}/${currentUser.getAvatarPath()}"
 								alt="Avatar">
 							<%
 							} else {
