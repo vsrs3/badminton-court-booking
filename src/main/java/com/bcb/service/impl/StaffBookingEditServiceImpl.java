@@ -445,13 +445,25 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             refundNote = "Manual refund pending" + (reason != null ? (": " + reason) : "");
         }
 
-        repository.updateInvoiceAfterRecalc(conn, bookingId, totalAmount, refundDue, refundStatus, refundNote);
+        String paymentStatus;
+        if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
+            paymentStatus = "PAID";
+        } else if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+            paymentStatus = "UNPAID";
+        } else if (paidAmount.compareTo(totalAmount) >= 0) {
+            paymentStatus = "PAID";
+        } else {
+            paymentStatus = "PARTIAL";
+        }
+
+        repository.updateInvoiceAfterRecalc(conn, bookingId, totalAmount, refundDue, refundStatus, refundNote, paymentStatus);
 
         InvoiceUpdateResult r = new InvoiceUpdateResult();
         r.totalAmount = totalAmount;
         r.paidAmount = paidAmount;
         r.refundDue = refundDue;
         r.refundStatus = refundStatus;
+        r.paymentStatus = paymentStatus;
         return r;
     }
 
@@ -628,7 +640,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         BigDecimal totalAmount;
         BigDecimal paidAmount;
         BigDecimal refundDue;
-        String refundStatus;
+        String refundStatus;        String paymentStatus;
     }
 
     private static class ApiException extends Exception {
@@ -665,3 +677,11 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
+
+
+
+
+
+
+
+

@@ -189,14 +189,14 @@
                     </h4>
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6B7280; margin-bottom: 4px;">
                         <span style="color: #F97316;">? ${rating}</span>
-                        <span>�</span>
+                        <span>�</span>
                         <span>${distance}</span>
                     </div>
                     <div style="font-size: 11px; color: #6B7280; margin-bottom: 8px;">
                         <i class="bi bi-geo-alt-fill" style="color: #10B981;"></i> ${location}
                     </div>
                     <button id="map-view-btn-${court.id}" style="width: 100%; background-color: #064E3B; color: white; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; border: none; cursor: pointer; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#065F46'" onmouseout="this.style.backgroundColor='#064E3B'">
-                        Xem chi ti?t
+                        Xem chi tiết
                     </button>
                 </div>
             `;
@@ -255,7 +255,7 @@
                     zIndexOffset: 1000
                 }).addTo(mapInstance);
 
-                userMarker.bindPopup('<div style="padding: 8px; text-align: center;"><strong style="font-size: 12px; color: #3B82F6;">V? tr� c?a b?n</strong></div>');
+                userMarker.bindPopup('<div style="padding: 8px; text-align: center;"><strong style="font-size: 12px; color: #3B82F6;">Vị trí của bạn</strong></div>');
             },
             (error) => {
                 console.error('Error getting user location for map:', error);
