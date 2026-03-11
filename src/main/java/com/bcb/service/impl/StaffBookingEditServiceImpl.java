@@ -123,7 +123,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 upsertPendingSlot(conn, bookingId, facilityId, bookingDate, slot);
             }
 
-            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -237,7 +237,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 cancelPendingSlot(conn, bookingId, bookingSlotId);
             }
 
-            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                 StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -430,19 +430,47 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 
-    private InvoiceUpdateResult recalcInvoice(Connection conn, int bookingId, String reason) throws Exception {
+    private InvoiceUpdateResult recalcInvoice(Connection conn, int bookingId, String reason,
+                                              StaffBookingSnapshotTokenUtil.Snapshot before,
+                                              StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
         BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId);
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
 
-        BigDecimal refundDue = paidAmount.subtract(totalAmount);
-        if (refundDue.compareTo(BigDecimal.ZERO) < 0) {
-            refundDue = BigDecimal.ZERO;
+        BigDecimal overpaid = paidAmount.subtract(totalAmount);
+        if (overpaid.compareTo(BigDecimal.ZERO) < 0) {
+            overpaid = BigDecimal.ZERO;
         }
-        String refundStatus = refundDue.compareTo(BigDecimal.ZERO) > 0 ? "PENDING_MANUAL" : "NONE";
 
+        BigDecimal refundDue = BigDecimal.ZERO;
+        String refundStatus = "NONE";
         String refundNote = null;
-        if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
-            refundNote = "Manual refund pending" + (reason != null ? (": " + reason) : "");
+
+        if (overpaid.compareTo(BigDecimal.ZERO) > 0) {
+            boolean eligible = true;
+
+            java.time.LocalDateTime createdAt = repository.findBookingCreatedAt(conn, bookingId);
+            if (createdAt == null || java.time.LocalDateTime.now().isAfter(createdAt.plusHours(24))) {
+                eligible = false;
+            }
+
+            if (eligible && hasIneligiblePlayStatus(before)) {
+                eligible = false;
+            }
+
+            if (eligible) {
+                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots);
+                refundDue = overpaid.min(eligibleDiff);
+                if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
+                    refundStatus = "PENDING_MANUAL";
+                    refundNote = buildRefundNote("Manual refund pending", reason);
+                } else {
+                    refundStatus = "NONE";
+                    refundNote = buildRefundNote("Refund not eligible", reason);
+                }
+            } else {
+                refundStatus = "NONE";
+                refundNote = buildRefundNote("Refund not eligible", reason);
+            }
         }
 
         String paymentStatus;
@@ -465,6 +493,107 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         r.refundStatus = refundStatus;
         r.paymentStatus = paymentStatus;
         return r;
+    }
+
+    private boolean hasIneligiblePlayStatus(StaffBookingSnapshotTokenUtil.Snapshot before) {
+        if (before == null || before.slots == null) return false;
+        for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : before.slots) {
+            String status = slot.slotStatus;
+            if ("CHECKED_IN".equals(status) || "CHECK_OUT".equals(status) || "NO_SHOW".equals(status)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private BigDecimal computeEligibleDiffAmount(Connection conn,
+                                                 StaffBookingSnapshotTokenUtil.Snapshot before,
+                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
+        if (before == null || afterSlots == null) return BigDecimal.ZERO;
+
+        java.time.LocalDate bookingDate;
+        try {
+            bookingDate = java.time.LocalDate.parse(before.bookingDate);
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
+
+        Map<Integer, String> beforeStatus = new HashMap<>();
+        Map<Integer, BigDecimal> beforePrice = new HashMap<>();
+        for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : before.slots) {
+            beforeStatus.put(slot.bookingSlotId, slot.slotStatus);
+            beforePrice.put(slot.bookingSlotId, parseMoney(slot.price));
+        }
+
+        Map<Integer, StaffBookingSnapshotTokenUtil.SlotSnapshot> afterMap = new HashMap<>();
+        for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : afterSlots.slots) {
+            afterMap.put(slot.bookingSlotId, slot);
+        }
+
+        List<StaffBookingEditSessionCellDTO> cells = repository.findSessionCellsByBookingId(conn, before.bookingId);
+        Map<Integer, java.time.LocalTime> sessionStartBySlotId = buildSessionStartBySlotId(cells, beforeStatus);
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime nowPlus24 = now.plusHours(24);
+
+        BigDecimal eligibleDiff = BigDecimal.ZERO;
+        for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : before.slots) {
+            String status = slot.slotStatus;
+            if ("CANCELLED".equals(status)) continue;
+
+            BigDecimal beforeAmt = beforePrice.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO);
+            StaffBookingSnapshotTokenUtil.SlotSnapshot after = afterMap.get(slot.bookingSlotId);
+            BigDecimal afterAmt = BigDecimal.ZERO;
+            if (after != null && !"CANCELLED".equals(after.slotStatus)) {
+                afterAmt = parseMoney(after.price);
+            }
+
+            BigDecimal delta = beforeAmt.subtract(afterAmt);
+            if (delta.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            java.time.LocalTime sessionStart = sessionStartBySlotId.get(slot.bookingSlotId);
+            if (sessionStart == null) continue;
+
+            java.time.LocalDateTime sessionStartAt = java.time.LocalDateTime.of(bookingDate, sessionStart);
+            if (!sessionStartAt.isAfter(nowPlus24)) {
+                continue;
+            }
+
+            eligibleDiff = eligibleDiff.add(delta);
+        }
+
+        return eligibleDiff;
+    }
+
+    private Map<Integer, java.time.LocalTime> buildSessionStartBySlotId(List<StaffBookingEditSessionCellDTO> cells,
+                                                                        Map<Integer, String> beforeStatus) {
+        Map<Integer, List<StaffBookingEditSessionCellDTO>> byCourt = new HashMap<>();
+        for (StaffBookingEditSessionCellDTO cell : cells) {
+            String status = beforeStatus.get(cell.getBookingSlotId());
+            if (status == null || "CANCELLED".equals(status)) continue;
+            byCourt.computeIfAbsent(cell.getCourtId(), k -> new ArrayList<>()).add(cell);
+        }
+
+        Map<Integer, java.time.LocalTime> sessionStartBySlot = new HashMap<>();
+        for (List<StaffBookingEditSessionCellDTO> list : byCourt.values()) {
+            list.sort(Comparator.comparing(StaffBookingEditSessionCellDTO::getStart));
+            java.time.LocalTime sessionStart = null;
+            java.time.LocalTime prevEnd = null;
+            for (StaffBookingEditSessionCellDTO cell : list) {
+                if (sessionStart == null || (prevEnd != null && !prevEnd.equals(cell.getStart()))) {
+                    sessionStart = cell.getStart();
+                }
+                sessionStartBySlot.put(cell.getBookingSlotId(), sessionStart);
+                prevEnd = cell.getEnd();
+            }
+        }
+
+        return sessionStartBySlot;
+    }
+
+    private String buildRefundNote(String prefix, String reason) {
+        if (reason == null || reason.isEmpty()) return prefix;
+        return prefix + ": " + reason;
     }
 
     private String recomputeBookingStatus(Connection conn, int bookingId) throws Exception {
