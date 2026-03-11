@@ -72,7 +72,7 @@
 				<i data-lucide="bell" class="w-5 h-5 text-yellow-400"></i> <span
 				class="sidebar-quick-label text-[10px] font-medium text-center mt-1">Thông
 					báo</span>
-			</a> <a href="${pageContext.request.contextPath}/profile?section=review-list-user" id="sidebarMapBtn" data-tab="map"
+			</a> <a href="${pageContext.request.contextPath}/reviews?action=user-list" id="sidebarMapBtn" data-tab="map"
 				class="sidebar-quick-btn flex flex-col items-center justify-center p-2 rounded-xl cursor-pointer">
 				<i data-lucide="star" class="w-5 h-5" style="color: #A3E635;"></i> <span
 				class="sidebar-quick-label text-[10px] font-medium text-center mt-1"> Đánh 

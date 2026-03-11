@@ -211,15 +211,6 @@ public class ReviewController extends HttpServlet {
 
 	
 	
-	/*
-	 * private void listLocationReview(HttpServletRequest request,
-	 * HttpServletResponse response) throws ServletException, IOException {
-	 * 
-	 * }
-	 */
-	
-	
-	
 	private void listUserReview(HttpServletRequest request, HttpServletResponse response)
 	        throws ServletException, IOException {
 
@@ -228,26 +219,24 @@ public class ReviewController extends HttpServlet {
 
 	    String dateFromStr = request.getParameter("dateFrom");
 	    String dateToStr   = request.getParameter("dateTo");
-	    String ratingStr   = request.getParameter("rating");
+	    String ratingParam = request.getParameter("rating");
 
 	    try {
-	        // Null parse — bỏ trống hoặc "all" đều trả về null
+	    	
+	        // Null parse 
 	        LocalDate dateFrom = (dateFromStr != null && !dateFromStr.isEmpty()) ? LocalDate.parse(dateFromStr) : null;
 	        LocalDate dateTo   = (dateToStr != null && !dateToStr.isEmpty()) ? LocalDate.parse(dateToStr) : null;
-	        Integer rating = (ratingStr != null && !ratingStr.isEmpty() && !"all".equals(ratingStr)) ? Integer.parseInt(ratingStr) : null;
-
 	        Integer accountId = user.getAccountId();
-	        ReviewUserListDTO dto = new ReviewUserListDTO(accountId, dateFrom, dateTo, rating);
+	        
+	        ReviewUserListDTO dto = new ReviewUserListDTO(accountId, dateFrom, dateTo);
 	        List<ReviewUserListDTO> list = reviewService.listUserReview(dto);
 
-	        // Set vào request thay vì session để tránh stale data
-	        request.setAttribute("listUserReview", list);
+	        session.setAttribute("listUserReview", list);
 	        request.setAttribute("dateFrom", dateFromStr);
 	        request.setAttribute("dateTo", dateToStr);
-	        request.setAttribute("selectedRating", ratingStr);
+	        request.setAttribute("selectedRating", ratingParam);
+	        
 	        request.setAttribute("section", "review-list-user");
-
-	        // Forward thay vì redirect — AJAX fetch mới lấy được HTML trả về
 	        request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
 
 	    } catch (Exception e) {

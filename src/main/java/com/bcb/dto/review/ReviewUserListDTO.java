@@ -23,7 +23,7 @@ public class ReviewUserListDTO {
     private String address;
    
     
-	public ReviewUserListDTO(Integer accountId, LocalDate dateFrom, LocalDate dateTo, Integer rating) {
+	public ReviewUserListDTO(Integer accountId, LocalDate dateFrom, LocalDate dateTo) {
 		super();
 		this.accountId = accountId;
 		this.dateFrom = dateFrom;

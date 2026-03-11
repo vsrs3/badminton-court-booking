@@ -15,10 +15,10 @@
 
             <!-- HEADER -->
             <div class="review-header">
-                <a href="${pageContext.request.contextPath}/my-bookings">
+                <button onclick="history.back()">
                     <i data-lucide="arrow-left" class="icon-sm"></i>
                     <span>Quay lại </span>
-                </a>
+                </button>
                 <div class="review-title-group">
                     <h1 class="review-page-title">Chỉnh sửa đánh giá</h1>
                     <i data-lucide="pen" class="icon-md review-title-icon"></i>

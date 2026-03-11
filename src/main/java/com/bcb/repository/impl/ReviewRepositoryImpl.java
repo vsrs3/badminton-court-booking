@@ -93,7 +93,7 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 	
 
 	@Override
-	public List<ReviewUserListDTO> listUserReview(Integer accountId, LocalDate dateFrom, LocalDate dateTo, Integer rating) {
+	public List<ReviewUserListDTO> listUserReview(Integer accountId, LocalDate dateFrom, LocalDate dateTo) {
 		
 		StringBuilder sql = new StringBuilder(
 		        "SELECT r.review_id, r.booking_id, r.rating, r.comment, r.created_at, " +
@@ -106,7 +106,6 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
 		    if (dateFrom != null) sql.append("AND CAST(r.created_at AS DATE) >= ? ");
 		    if (dateTo   != null) sql.append("AND CAST(r.created_at AS DATE) <= ? ");
-		    if (rating   != null) sql.append("AND r.rating = ? ");
 
 		    sql.append("ORDER BY r.created_at DESC");
 		
@@ -118,12 +117,11 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 		        ps.setInt(index++, accountId);
 		        if (dateFrom != null) ps.setDate(index++, Date.valueOf(dateFrom));
 		        if (dateTo   != null) ps.setDate(index++, Date.valueOf(dateTo));
-		        if (rating   != null) ps.setInt(index++, rating);
 
 		        ResultSet rs = ps.executeQuery();
 		        while (rs.next()) {
 		        	
-		            ReviewUserListDTO dto = new ReviewUserListDTO(accountId, dateFrom, dateTo, rating);
+		            ReviewUserListDTO dto = new ReviewUserListDTO(accountId, dateFrom, dateTo);
 		            dto.setBookingId(rs.getInt("booking_id"));
 		            dto.setRating(rs.getInt("rating"));
 		            dto.setComment(rs.getString("comment"));

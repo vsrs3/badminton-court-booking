@@ -31,7 +31,7 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #A3E635;
+    border-bottom: 2px solid #E5E7EB;
 }
 
 .review-title-group {
@@ -57,7 +57,7 @@
 }
 
 /* ── BACK BUTTON ────────────────────────────────────────────── */
-.review-header a {
+.review-header button {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -75,16 +75,16 @@
     white-space: nowrap;
     cursor: pointer;
 }
-.review-header a:hover {
+.review-header button:hover {
     background-color: #A3E635;
     border-color: #A3E635;
     color: #064E3B;
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
 }
-.review-header a:hover i,
-.review-header a:hover svg { color: #064E3B; transform: translateX(-3px); }
-.review-header a:active     { transform: scale(0.97); box-shadow: none; }
+.review-header button:hover i,
+.review-header button:hover svg { color: #064E3B; transform: translateX(-3px); }
+.review-header button:active     { transform: scale(0.97); box-shadow: none; }
 
 /* ── REVIEW CONTAINER ────────────────────────────────────────── */
 .review-container {

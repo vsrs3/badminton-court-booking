@@ -11,46 +11,48 @@
 
 <div class="flex flex-col h-full bg-white">
 
-    <!-- PHẦN TĨNH: không bị reload khi filter -->
 	<div class="p-6 pb-3">
 
-		<!-- Header -->
-		<div class="history-header mb-5">
-			
+		<!-- Row 1: Title + Back button -->
+		<div class="history-header mb-4">
 			<div class="review-title-group">
 				<i data-lucide="calendar-check" class="icon-md review-title-icon"></i>
 				<h1 class="review-page-title">Lịch sử đặt sân</h1>
 			</div>
-			
 			<a href="${pageContext.request.contextPath}/home"
 				class="btn-back-home"> <i data-lucide="arrow-left"
 				class="w-4 h-4"></i> <span>Quay Lại Trang Chủ</span>
 			</a>
 		</div>
 
-		<!-- Date filter form -->
+		<!-- Row 2: tất cả filter trên 1 hàng -->
 		<form id="dateFilterForm" method="get"
-			action="${pageContext.request.contextPath}/my-bookings" class="mb-4">
+			action="${pageContext.request.contextPath}/my-bookings">
+			<input type="hidden" name="status" id="hiddenStatus"
+				value="${selectedStatus}" />
 			<div class="history-filter-row">
 				<div class="history-date-group">
-					<label class="history-date-label">Từ ngày</label>
-                    <input type="date" name="dateFrom" value="${dateFrom}" class="history-date-input" />
+					<label class="history-date-label">Từ ngày</label> <input
+						type="date" name="dateFrom" value="${dateFrom}"
+						class="history-date-input" />
 				</div>
 				<div class="history-date-group">
-					<label class="history-date-label">Đến ngày</label>
-                    <input type="date" name="dateTo" value="${dateTo}" class="history-date-input" />
+					<label class="history-date-label">Đến ngày</label> <input
+						type="date" name="dateTo" value="${dateTo}"
+						class="history-date-input" />
 				</div>
-				<input type="hidden" name="status" id="hiddenStatus" value="${selectedStatus}" />
 				<button type="submit" class="btn-search">
 					<i data-lucide="search" class="w-4 h-4"></i> <span>Tìm kiếm</span>
 				</button>
 				<a href="${pageContext.request.contextPath}/my-bookings"
-					class="btn-clear-filter">Xóa bộ lọc</a>
+					class="btn-clear-filter"> Xóa bộ lọc </a>
 			</div>
 		</form>
 
 		<!-- Status filter tabs -->
-		<div class="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar" id="filter-tabs">
+		<div
+			class="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar mt-3"
+			id="filter-tabs">
 			<button data-status="all"
 				class="filter-btn ${(selectedStatus == 'all' || empty selectedStatus) ? 'active' : ''}"
 				onclick="filterByStatus(this, 'all')">Tất cả</button>
@@ -73,35 +75,41 @@
 		<div class="h-[1px] bg-gray-100 w-full"></div>
 	</div>
 
-    <!-- Session messages -->
+	<!-- Session messages -->
 	<c:if test="${not empty sessionScope.successMessage}">
-		<div class="mx-6 mb-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
-			<i data-lucide="check-circle" class="w-5 h-5 text-green-600 flex-shrink-0"></i>
-            <span class="text-sm text-green-800 font-medium">${sessionScope.successMessage}</span>
+		<div
+			class="mx-6 mb-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
+			<i data-lucide="check-circle"
+				class="w-5 h-5 text-green-600 flex-shrink-0"></i> <span
+				class="text-sm text-green-800 font-medium">${sessionScope.successMessage}</span>
 		</div>
 		<c:remove var="successMessage" scope="session" />
 	</c:if>
 	<c:if test="${not empty sessionScope.errorMessage}">
-		<div class="mx-6 mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-			<i data-lucide="alert-circle" class="w-5 h-5 text-red-600 flex-shrink-0"></i>
-            <span class="text-sm text-red-800 font-medium">${sessionScope.errorMessage}</span>
+		<div
+			class="mx-6 mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+			<i data-lucide="alert-circle"
+				class="w-5 h-5 text-red-600 flex-shrink-0"></i> <span
+				class="text-sm text-red-800 font-medium">${sessionScope.errorMessage}</span>
 		</div>
 		<c:remove var="errorMessage" scope="session" />
 	</c:if>
 
-    <!-- ── PHẦN ĐỘNG: chỉ phần này được reload khi filter ── -->
+	<!-- PHẦN ĐỘNG -->
 	<div id="booking-list-container" class="flex-1 overflow-y-auto">
 		<c:choose>
 			<c:when test="${not empty bookings}">
 				<div class="px-6 pb-6 space-y-3">
 					<div class="text-xs text-gray-400 font-medium pt-2 pb-1">
-						Tìm thấy <strong class="text-gray-600">${fn:length(bookings)}</strong> lịch đặt
+						Tìm thấy <strong class="text-gray-600">${fn:length(bookings)}</strong>
+						lịch đặt
 					</div>
 					<c:forEach var="booking" items="${bookings}">
 						<div class="booking-card rounded-xl bg-white p-4">
 							<div class="flex items-start justify-between mb-3">
 								<div class="flex items-center space-x-2">
-									<span class="badge ${booking.bookingType == 'SINGLE' ? 'type-single' : 'type-recurring'}">
+									<span
+										class="badge ${booking.bookingType == 'SINGLE' ? 'type-single' : 'type-recurring'}">
 										<c:choose>
 											<c:when test="${booking.bookingType == 'SINGLE'}">Đặt lẻ</c:when>
 											<c:otherwise>Đặt cố định</c:otherwise>
@@ -131,11 +139,13 @@
 							<div class="flex items-start space-x-3 mb-3">
 								<c:choose>
 									<c:when test="${not empty booking.thumbnailPath}">
-										<img src="${pageContext.request.contextPath}/uploads/${booking.thumbnailPath}"
+										<img
+											src="${pageContext.request.contextPath}/uploads/${booking.thumbnailPath}"
 											class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
 									</c:when>
 									<c:otherwise>
-										<div class="w-14 h-14 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 border border-green-100">
+										<div
+											class="w-14 h-14 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 border border-green-100">
 											<i data-lucide="map-pin" class="w-6 h-6 text-green-600"></i>
 										</div>
 									</c:otherwise>
@@ -149,9 +159,10 @@
 							<div class="bg-gray-50 rounded-lg p-3 mb-3 space-y-1.5">
 								<div class="flex items-center space-x-2">
 									<i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-									<span class="text-xs text-gray-600 font-medium">
-                                        <fmt:parseDate value="${booking.bookingDate}" pattern="yyyy-MM-dd" var="parsedDate" type="date" />
-                                        <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy" />
+									<span class="text-xs text-gray-600 font-medium"> <fmt:parseDate
+											value="${booking.bookingDate}" pattern="yyyy-MM-dd"
+											var="parsedDate" type="date" /> <fmt:formatDate
+											value="${parsedDate}" pattern="dd/MM/yyyy" />
 									</span>
 								</div>
 								<div class="flex items-start space-x-2">
@@ -162,51 +173,55 @@
 
 							<div class="flex items-center justify-between flex-wrap gap-2">
 								<div>
-									<span class="text-sm font-bold text-gray-800">
-                                        <fmt:formatNumber value="${booking.totalAmount}" type="number" groupingUsed="true" />đ
+									<span class="text-sm font-bold text-gray-800"> <fmt:formatNumber
+											value="${booking.totalAmount}" type="number"
+											groupingUsed="true" />đ
 									</span>
 									<c:if test="${not empty booking.paymentStatus}">
-										<span class="text-xs ml-1.5 ${booking.paymentStatus == 'PAID' ? 'pay-paid' : (booking.paymentStatus == 'PARTIAL' ? 'pay-partial' : 'pay-unpaid')}">
+										<span
+											class="text-xs ml-1.5 ${booking.paymentStatus == 'PAID' ? 'pay-paid' : (booking.paymentStatus == 'PARTIAL' ? 'pay-partial' : 'pay-unpaid')}">
 											• ${booking.paymentStatus == 'PAID' ? 'Đã thanh toán' : (booking.paymentStatus == 'PARTIAL' ? 'Đã cọc' : 'Chưa thanh toán')}
 										</span>
 									</c:if>
 								</div>
 								<div class="flex items-center space-x-2 flex-wrap gap-1">
-									<c:if test="${(booking.bookingStatus == 'PENDING' || booking.bookingStatus == 'CONFIRMED') && booking.paymentStatus == 'UNPAID'}">
+									<c:if
+										test="${(booking.bookingStatus == 'PENDING' || booking.bookingStatus == 'CONFIRMED') && booking.paymentStatus == 'UNPAID'}">
 										<form method="post"
 											action="${pageContext.request.contextPath}/my-bookings"
 											onsubmit="return confirmCancel(this, ${booking.bookingId})">
-											<input type="hidden" name="action" value="cancel" />
-                                            <input type="hidden" name="bookingId" value="${booking.bookingId}" />
+											<input type="hidden" name="action" value="cancel" /> <input
+												type="hidden" name="bookingId" value="${booking.bookingId}" />
 											<button type="submit" class="cancel-btn">Hủy</button>
 										</form>
 									</c:if>
-
 									<c:if test="${booking.bookingStatus == 'COMPLETED'}">
 										<c:choose>
 											<c:when test="${booking.reviewed}">
-												<a href="${pageContext.request.contextPath}/reviews?action=view&bookingId=${booking.bookingId}"
-													class="btn-review btn-review-view">
-                                                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> Xem đánh giá
+												<a
+													href="${pageContext.request.contextPath}/reviews?action=view&bookingId=${booking.bookingId}"
+													class="btn-review btn-review-view"> <i
+													data-lucide="eye" class="w-3.5 h-3.5"></i> Xem đánh giá
 												</a>
-												<a href="${pageContext.request.contextPath}/profile?section=review-updation&bookingId=${booking.bookingId}"
-													class="btn-review btn-review-edit">
-                                                    <i data-lucide="pen" class="w-3.5 h-3.5"></i> Sửa đánh giá
+												<a
+													href="${pageContext.request.contextPath}/profile?section=review-updation&bookingId=${booking.bookingId}"
+													class="btn-review btn-review-edit"> <i
+													data-lucide="pen" class="w-3.5 h-3.5"></i> Sửa đánh giá
 												</a>
 											</c:when>
 											<c:otherwise>
 												<a class="btn-review btn-review-write"
 													href="${pageContext.request.contextPath}/profile?section=review&bookingId=${booking.bookingId}">
-                                                    <i data-lucide="star" class="w-3.5 h-3.5"></i> Viết đánh giá
+													<i data-lucide="star" class="w-3.5 h-3.5"></i> Viết đánh
+													giá
 												</a>
 											</c:otherwise>
 										</c:choose>
 									</c:if>
-
-									<a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${booking.bookingId}"
-										class="btn-detail">
-                                        <span>Chi tiết</span>
-                                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+									<a
+										href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${booking.bookingId}"
+										class="btn-detail"> <span>Chi tiết</span> <i
+										data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
 									</a>
 								</div>
 							</div>
@@ -215,78 +230,52 @@
 				</div>
 			</c:when>
 			<c:otherwise>
-				<div class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50">
+				<div
+					class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50/50">
 					<i data-lucide="calendar-x" class="w-12 h-12 text-gray-300 mb-4"></i>
-					<p class="text-gray-500 font-semibold text-lg">Bạn chưa có lịch đặt</p>
+					<p class="text-gray-500 font-semibold text-lg">Bạn chưa có lịch
+						đặt</p>
 					<a href="${pageContext.request.contextPath}/home"
-					   class="btn-book-now">Đặt sân ngay</a>
+						class="btn-book-now">Đặt sân ngay</a>
 				</div>
 			</c:otherwise>
 		</c:choose>
 	</div>
-    <!-- ── KẾT THÚC PHẦN ĐỘNG ── -->
 
 </div>
 
 <script>
-    // Cập nhật active class ngay lập tức trên client — không chờ server
-    function filterByStatus(btn, status) {
-        // 1. Cập nhật active class ngay — filter bar không bị re-render
-        document.querySelectorAll('#filter-tabs .filter-btn').forEach(function(b) {
-            b.classList.remove('active');
-        });
-        btn.classList.add('active');
+	function filterByStatus(btn, status) {
+		document.querySelectorAll('#filter-tabs .filter-btn').forEach(function(b) { b.classList.remove('active'); });
+		btn.classList.add('active');
+		var hiddenStatus = document.getElementById('hiddenStatus');
+		if (hiddenStatus) hiddenStatus.value = status;
+		var params = new URLSearchParams(window.location.search);
+		params.set('status', status);
+		var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
+		var container = document.getElementById('booking-list-container');
+		if (window.loadContent && container) {
+			fetch(url).then(function(res) { return res.text(); }).then(function(html) {
+				var doc = new DOMParser().parseFromString(html, 'text/html');
+				var newList = doc.getElementById('booking-list-container');
+				if (newList) { container.innerHTML = newList.innerHTML; if (window.lucide) lucide.createIcons(); }
+			});
+		} else { window.location.href = url; }
+	}
 
-        // 2. Đồng bộ hidden input để date filter form cũng giữ đúng status
-        var hiddenStatus = document.getElementById('hiddenStatus');
-        if (hiddenStatus) hiddenStatus.value = status;
+	function confirmCancel(form, bookingId) {
+		return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
+	}
 
-        // 3. Chỉ reload phần booking list, không đụng đến header/filter bar
-        var params = new URLSearchParams(window.location.search);
-        params.set('status', status);
-        var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
-
-        var container = document.getElementById('booking-list-container');
-        if (window.loadContent && container) {
-            fetch(url)
-                .then(function(res) { return res.text(); })
-                .then(function(html) {
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(html, 'text/html');
-                    var newList = doc.getElementById('booking-list-container');
-                    if (newList) {
-                        container.innerHTML = newList.innerHTML;
-                        if (window.lucide) lucide.createIcons();
-                    }
-                });
-        } else {
-            window.location.href = url;
-        }
-    }
-
-    function confirmCancel(form, bookingId) {
-        return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
-    }
-
-    // Date filter form: chỉ reload booking list
-    document.getElementById('dateFilterForm').addEventListener('submit', function(e) {
-        var container = document.getElementById('booking-list-container');
-        if (!window.loadContent || !container) return; // fallback: submit bình thường
-
-        e.preventDefault();
-        var url = this.action + '?' + new URLSearchParams(new FormData(this)).toString();
-
-        fetch(url)
-            .then(function(res) { return res.text(); })
-            .then(function(html) {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                var newList = doc.getElementById('booking-list-container');
-                if (newList) {
-                    container.innerHTML = newList.innerHTML;
-                    if (window.lucide) lucide.createIcons();
-                }
-            });
-    });
+	document.getElementById('dateFilterForm').addEventListener('submit', function(e) {
+		var container = document.getElementById('booking-list-container');
+		if (!window.loadContent || !container) return;
+		e.preventDefault();
+		var url = this.action + '?' + new URLSearchParams(new FormData(this)).toString();
+		fetch(url).then(function(res) { return res.text(); }).then(function(html) {
+			var doc = new DOMParser().parseFromString(html, 'text/html');
+			var newList = doc.getElementById('booking-list-container');
+			if (newList) { container.innerHTML = newList.innerHTML; if (window.lucide) lucide.createIcons(); }
+		});
+	});
 </script>
- 

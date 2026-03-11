@@ -17,10 +17,10 @@
 
 			<!-- HEADER -->
 			<div class="review-header">
-				<a href="${pageContext.request.contextPath}/my-bookings"
+				<button onclick="history.back()"
 					class="btn-back-home"> <i data-lucide="arrow-left"
 					class="icon-sm"></i> <span>Quay Lại</span>
-				</a>
+				</button>
 				<div class="review-title-group">
 					<h1 class="review-page-title">Đánh giá của bạn</h1>
 					<i data-lucide="star" class="icon-md review-title-icon"></i>
@@ -48,7 +48,7 @@
 
 				<!-- REVIEW VIEW CARD -->
 				<div class="review-card">
-					<span class="text-xs text-gray-400"># ${r.reviewId}</span>
+					<%-- <span class="text-xs text-gray-400"># ${r.reviewId}</span> --%>
 
 					<!-- Star Rating Display -->
 					<div class="review-section">

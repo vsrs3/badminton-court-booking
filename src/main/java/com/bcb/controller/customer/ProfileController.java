@@ -87,23 +87,7 @@ public class ProfileController extends HttpServlet {
                 return;
             }
         }
-        
-        if("review-list-user".equals(section)) {
-        	try {
-        		Integer accountId = account.getAccountId();
-            	ReviewUserListDTO dto = new ReviewUserListDTO(accountId, null, null, null);
-            	
-            	List<ReviewUserListDTO> listUserReview = reviewService.listUserReview(dto);
-            	session.setAttribute("listUserReview", listUserReview);
-        		
-        		
-        	} catch (Exception e) {
-        		session.setAttribute("errorMessage", "Lỗi khi tải thông tin trong Profile Controller ");
-                response.sendRedirect(request.getContextPath() + "/reviews");
-                return;
-			}
-        }
-
+       
         // Show profile page
         request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
     }

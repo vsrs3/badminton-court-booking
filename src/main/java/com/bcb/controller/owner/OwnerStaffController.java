@@ -71,9 +71,8 @@ public class OwnerStaffController extends HttpServlet {
 			} else if (pathInfo.startsWith("/toggle/")) {
 				toggleStatus(request, response);
 
-			} else {
-				response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
+			
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -103,9 +102,8 @@ public class OwnerStaffController extends HttpServlet {
 			} else if (pathInfo.equals("/reset-password")) {
 				resetPassword(request, response);
 
-			} else {
-				response.sendError(HttpServletResponse.SC_NOT_FOUND);
-			}
+			} 
+			
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -132,7 +130,8 @@ public class OwnerStaffController extends HttpServlet {
 		if (pageParam != null) {
 			try {
 				page = Math.max(1, Integer.parseInt(pageParam));
-			} catch (NumberFormatException ignored) {
+			} 
+			catch (NumberFormatException ignored) {
 			}
 		}
 

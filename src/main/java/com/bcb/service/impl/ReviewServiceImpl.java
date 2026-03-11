@@ -50,7 +50,7 @@ public class ReviewServiceImpl implements ReviewService {
 			throw new DataAccessException("Account ID không thể null");
 		}
 		
-		return repoReview.listUserReview(dto.getAccountId(), dto.getDateFrom(), dto.getDateTo(), dto.getRating());
+		return repoReview.listUserReview(dto.getAccountId(), dto.getDateFrom(), dto.getDateTo());
 	}
 
 	

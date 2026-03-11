@@ -52,7 +52,7 @@ public interface ReviewRepository {
 	 * @param rating
 	 * @return List<ReviewUserListDTO>
 	 */
-	List<ReviewUserListDTO> listUserReview (Integer accountId, LocalDate dateFrom, LocalDate dateTo, Integer rating);
+	List<ReviewUserListDTO> listUserReview (Integer accountId, LocalDate dateFrom, LocalDate dateTo);
 	
 	/**
 	 * Find all the booking id in the Review table of user 

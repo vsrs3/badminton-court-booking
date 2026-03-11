@@ -5,7 +5,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
 
-/* ── FONT BASE ──────────────────────────────────────────────── */
 .booking-card,
 .history-header,
 .history-filter-row,
@@ -25,7 +24,7 @@
 }
 
 /* ============================================
-   BACK BUTTON — đồng bộ với review-updation
+   BACK BUTTON
    ============================================ */
 
 .btn-back-home {
@@ -59,7 +58,7 @@
 .btn-back-home:active     { transform: scale(0.97); box-shadow: none; }
 
 /* ============================================
-   BOOKING CARD  (mirrors .court-card)
+   BOOKING CARD
    ============================================ */
 
 .booking-card {
@@ -70,7 +69,6 @@
     padding: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .booking-card:hover {
     box-shadow: var(--shadow-xl);
     transform: translateY(-4px);
@@ -78,7 +76,7 @@
 }
 
 /* ============================================
-   STATUS BADGES  (pill system)
+   STATUS BADGES
    ============================================ */
 
 .badge {
@@ -92,44 +90,14 @@
     letter-spacing: 0.08em;
 }
 
-/* Booking type */
-.type-single {
-    background-color: #EDE9FE;
-    color: #5B21B6;
-    border: 1px solid #DDD6FE;
-}
-.type-recurring {
-    background-color: #FCE7F3;
-    color: #9D174D;
-    border: 1px solid #FBCFE8;
-}
+.type-single    { background-color: #EDE9FE; color: #5B21B6; border: 1px solid #DDD6FE; }
+.type-recurring { background-color: #FCE7F3; color: #9D174D; border: 1px solid #FBCFE8; }
 
-/* Status */
-.badge-pending {
-    background-color: #FEF3C7;
-    color: #92400E;
-    border: 1px solid #FCD34D;
-}
-.badge-confirmed {
-    background-color: #DBEAFE;
-    color: #1E40AF;
-    border: 1px solid #93C5FD;
-}
-.badge-completed {
-    background-color: #D1FAE5;
-    color: #065F46;
-    border: 1px solid #6EE7B7;
-}
-.badge-cancelled {
-    background-color: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
-}
-.badge-expired {
-    background-color: var(--color-gray-100);
-    color: var(--color-gray-500);
-    border: 1px solid var(--color-gray-300);
-}
+.badge-pending   { background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+.badge-confirmed { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+.badge-completed { background-color: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+.badge-cancelled { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.badge-expired   { background-color: var(--color-gray-100); color: var(--color-gray-500); border: 1px solid var(--color-gray-300); }
 
 /* ============================================
    PAYMENT STATUS TEXT
@@ -210,10 +178,7 @@
     cursor: pointer;
     transition: all var(--transition-fast);
 }
-.cancel-btn:hover {
-    background-color: #FCA5A5;
-    color: #7F1D1D;
-}
+.cancel-btn:hover { background-color: #FCA5A5; color: #7F1D1D; }
 
 .btn-review {
     display: inline-flex;
@@ -229,24 +194,10 @@
     cursor: pointer;
     transition: all var(--transition-fast);
 }
-.btn-review-write {
-    background-color: #FEF3C7;
-    color: #92400E;
-    border: 1px solid #FCD34D;
-}
-.btn-review-write:hover {
-    background-color: #FDE68A;
-    color: #78350F;
-}
-.btn-review-edit {
-    background-color: #DBEAFE;
-    color: #1E40AF;
-    border: 1px solid #93C5FD;
-}
-.btn-review-edit:hover {
-    background-color: #BFDBFE;
-    color: #1E3A8A;
-}
+.btn-review-write { background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+.btn-review-write:hover { background-color: #FDE68A; color: #78350F; }
+.btn-review-edit  { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+.btn-review-edit:hover  { background-color: #BFDBFE; color: #1E3A8A; }
 
 .btn-detail {
     display: inline-flex;
@@ -267,121 +218,49 @@
     cursor: pointer;
     transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.btn-detail:hover {
-    background-color: #065F46;
-    border-color: #065F46;
-    color: white;
-    transform: translateY(-1px);
-}
+.btn-detail:hover { background-color: #065F46; border-color: #065F46; color: white; transform: translateY(-1px); }
 .btn-detail:active { transform: scale(0.97); }
-
-.btn-detail i,
-.btn-detail svg {
-    width: 0.875rem;
-    height: 0.875rem;
-    flex-shrink: 0;
-}
+.btn-detail i, .btn-detail svg { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
 
 /* ============================================
    EMPTY STATE
    ============================================ */
 
 .history-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 6rem 2rem;
-    text-align: center;
-    flex: 1;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 6rem 2rem; text-align: center; flex: 1;
 }
 .history-empty-icon {
-    width: 5rem;
-    height: 5rem;
-    background-color: var(--color-gray-100);
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.25rem;
+    width: 5rem; height: 5rem; background-color: var(--color-gray-100);
+    border-radius: var(--radius-full); display: flex; align-items: center;
+    justify-content: center; margin-bottom: 1.25rem;
 }
-.history-empty-icon svg,
-.history-empty-icon i {
-    font-size: 2.25rem;
-    color: var(--color-gray-400);
-    opacity: 0.4;
-}
-.history-empty-title {
-    font-size: 1.125rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    font-style: italic;
-    letter-spacing: 0.05em;
-    color: var(--color-gray-400);
-    margin-bottom: 0.5rem;
-}
-.history-empty-text {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-gray-400);
-    opacity: 0.7;
-    margin-bottom: 2rem;
-}
+.history-empty-icon svg, .history-empty-icon i { font-size: 2.25rem; color: var(--color-gray-400); opacity: 0.4; }
+.history-empty-title { font-size: 1.125rem; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: 0.05em; color: var(--color-gray-400); margin-bottom: 0.5rem; }
+.history-empty-text  { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-400); opacity: 0.7; margin-bottom: 2rem; }
 
 .btn-history-cta {
-    background-color: var(--color-lime-brand);
-    color: var(--color-green-brand);
-    padding: 0.875rem 2.5rem;
-    border-radius: var(--radius-full);
+    background-color: var(--color-lime-brand); color: var(--color-green-brand);
+    padding: 0.875rem 2.5rem; border-radius: var(--radius-full);
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    box-shadow: var(--shadow-md);
-    transition: all var(--transition-fast);
+    font-size: 0.8125rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.1em; text-decoration: none; border: none; cursor: pointer;
+    box-shadow: var(--shadow-md); transition: all var(--transition-fast);
 }
-.btn-history-cta:hover {
-    filter: brightness(1.08);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
+.btn-history-cta:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 
-/* "Đặt sân ngay" — empty state CTA, đồng bộ btn-submit-review */
 .btn-book-now {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 2rem;
-    padding: 0.875rem 2.5rem;
-    background-color: #A3E635;
-    color: #064E3B;
-    border: 2px solid #A3E635;
-    border-radius: 9999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-top: 2rem; padding: 0.875rem 2.5rem; background-color: #A3E635;
+    color: #064E3B; border: 2px solid #A3E635; border-radius: 9999px;
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 900;
-    font-style: normal;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(163, 230, 53, 0.35);
-    transition: background-color 0.2s ease, border-color 0.2s ease,
-                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    font-size: 0.8125rem; font-weight: 900; font-style: normal;
+    text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(163, 230, 53, 0.35);
+    transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
-.btn-book-now:hover {
-    background-color: #064E3B;
-    border-color: #064E3B;
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(6, 78, 59, 0.25);
-}
+.btn-book-now:hover { background-color: #064E3B; border-color: #064E3B; color: #ffffff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(6, 78, 59, 0.28); }
 .btn-book-now:active { transform: scale(0.97); box-shadow: none; }
 
 /* ============================================
@@ -389,65 +268,31 @@
    ============================================ */
 
 .history-count {
-    font-size: 0.6875rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-gray-400);
-    padding: 0.5rem 0;
+    font-size: 0.6875rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--color-gray-400); padding: 0.5rem 0;
 }
-.history-count strong {
-    color: var(--color-green-brand);
-}
+.history-count strong { color: var(--color-green-brand); }
 
 /* ============================================
    BOOKING INFO BLOCK
    ============================================ */
 
 .booking-info-block {
-    background-color: var(--color-gray-50);
-    border-radius: var(--radius-lg);
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--color-gray-100);
+    background-color: var(--color-gray-50); border-radius: var(--radius-lg);
+    padding: 0.75rem 1rem; border: 1px solid var(--color-gray-100);
 }
 .booking-info-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-gray-600);
-    letter-spacing: 0.01em;
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; font-weight: 700; color: var(--color-gray-600); letter-spacing: 0.01em;
 }
-.booking-info-row + .booking-info-row {
-    margin-top: 0.5rem;
-}
-.booking-info-row i,
-.booking-info-row svg {
-    color: var(--color-gray-400);
-    flex-shrink: 0;
-    width: 0.875rem;
-    height: 0.875rem;
-}
+.booking-info-row + .booking-info-row { margin-top: 0.5rem; }
+.booking-info-row i, .booking-info-row svg { color: var(--color-gray-400); flex-shrink: 0; width: 0.875rem; height: 0.875rem; }
 
-/* ============================================
-   PRICE / AMOUNT
-   ============================================ */
-
-.booking-amount {
-    font-size: 0.9375rem;
-    font-weight: 900;
-    color: var(--color-gray-800);
-    letter-spacing: -0.01em;
-}
-
-/* ============================================
-   ANIMATION
-   ============================================ */
+.booking-amount { font-size: 0.9375rem; font-weight: 900; color: var(--color-gray-800); letter-spacing: -0.01em; }
 
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0);   }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================
@@ -455,167 +300,37 @@
    ============================================ */
 
 .notification {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    border-radius: 1rem;
-    font-size: 0.875rem;
-    font-weight: 700;
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 1rem 1.25rem; border-radius: 1rem; font-size: 0.875rem; font-weight: 700;
 }
-.notification.success {
-    background-color: #ECFDF5;
-    border: 1px solid #A7F3D0;
-    color: #065F46;
-}
-.notification.error {
-    background-color: #FEF2F2;
-    border: 1px solid #FECACA;
-    color: #991B1B;
-}
+.notification.success { background-color: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+.notification.error   { background-color: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
 
 /* ============================================
-   BOOKING CARD — INNER ELEMENTS
+   BOOKING CARD INNER ELEMENTS
    ============================================ */
 
-.booking-id-tag {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: var(--color-gray-400, #9CA3AF);
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
-}
+.booking-id-tag { font-size: 0.6875rem; font-weight: 700; color: var(--color-gray-400, #9CA3AF); letter-spacing: 0.05em; flex-shrink: 0; }
 
-.booking-thumbnail {
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 0.5rem;
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid var(--color-gray-100, #F3F4F6);
-}
-.booking-thumbnail-placeholder {
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 0.5rem;
-    background-color: #F0FDF4;
-    border: 1px solid #DCFCE7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
+.booking-thumbnail { width: 3.5rem; height: 3.5rem; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0; border: 1px solid var(--color-gray-100, #F3F4F6); }
+.booking-thumbnail-placeholder { width: 3.5rem; height: 3.5rem; border-radius: 0.5rem; background-color: #F0FDF4; border: 1px solid #DCFCE7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-.booking-facility-name {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--color-gray-800, #1F2937);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0 0 0.125rem;
-}
-.booking-facility-address {
-    font-size: 0.75rem;
-    color: var(--color-gray-500, #6B7280);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0;
-}
+.booking-facility-name { font-size: 0.875rem; font-weight: 700; color: var(--color-gray-800, #1F2937); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 0.125rem; }
+.booking-facility-address { font-size: 0.75rem; color: var(--color-gray-500, #6B7280); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
 
 /* ============================================
    HEADER LAYOUT
    ============================================ */
 
-.history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-}
+.history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
 
-/* Title group — đồng bộ review-updation */
-.review-title-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
+.review-title-group { display: flex; align-items: center; gap: 8px; }
 .review-page-title {
-    font-size: 1.125rem;
-    font-weight: 900;
-    font-style: normal;
+    font-size: 1.125rem; font-weight: 900; font-style: normal;
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #064E3B;
-    margin: 0;
-    line-height: 1;
+    text-transform: uppercase; letter-spacing: 0.04em; color: #064E3B; margin: 0; line-height: 1;
 }
-
-.review-title-icon {
-    color: #A3E635;
-    flex-shrink: 0;
-}
-
-/* ============================================
-   EMPTY STATE — NÚT ĐẶT SÂN NGAY
-   ============================================ */
-
-.btn-book-now {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 2rem;
-    padding: 0.875rem 2.5rem;
-    background-color: #A3E635;
-    color: #064E3B;
-    border: 2px solid #A3E635;
-    border-radius: 9999px;
-    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 900;
-    font-style: normal;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(163, 230, 53, 0.35);
-    transition: background-color 0.2s ease, color 0.2s ease,
-                border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-}
-.btn-book-now:hover {
-    background-color: #064E3B;
-    border-color: #064E3B;
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(6, 78, 59, 0.28);
-}
-.btn-book-now:active { transform: scale(0.97); box-shadow: none; }
-
-/* Title group — đồng bộ review-updation */
-.review-title-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.review-page-title {
-    font-size: 1.125rem;
-    font-weight: 900;
-    font-style: normal;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #064E3B;
-    margin: 0;
-    line-height: 1;
-}
-
-.review-title-icon {
-    color: #A3E635;
-    flex-shrink: 0;
-}
+.review-title-icon { color: #A3E635; flex-shrink: 0; }
 
 /* ============================================
    FILTER ROW
@@ -623,15 +338,27 @@
 
 .history-filter-row {
     display: flex;
-    align-items: flex-end;
-    gap: 16px;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+
+    display: flex;
+    align-items: center;          /* CHANGED: center vertically with inline labels */
+    gap: 12px;                    /* CHANGED: was 16px, sync with review-history */
     flex-wrap: wrap;
 }
 
+/* ── DATE GROUP: label LEFT of input, same row ── */
 .history-date-group {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+
+    display: flex;
+    flex-direction: row;          /* CHANGED: was column */
+    align-items: center;          /* CHANGED: vertical center */
+    gap: 8px;                     /* CHANGED: was 4px */
 }
 
 .history-date-label {
@@ -641,13 +368,15 @@
     letter-spacing: 0.08em;
     color: #6B7280;
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    white-space: nowrap;          /* prevent label from wrapping */
 }
 
+/* ── SIZE SYNC to match review-history (40px) ── */
 .history-date-input {
-    height: 44px;
+    height: 40px;                 /* CHANGED: was 44px */
     border: 1px solid #D1D5DB;
     border-radius: 10px;
-    padding: 0 14px;
+    padding: 0 12px;              /* CHANGED: was 0 14px */
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
@@ -667,42 +396,78 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 44px;
-    padding: 0 20px;
+    height: 40px;                 /* CHANGED: was 44px */
+    padding: 0 18px;              /* CHANGED: was 0 20px */
     background-color: #064E3B;
     color: white;
     border: none;
     border-radius: 10px;
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 0.8125rem;         /* CHANGED: was 0.875rem */
+    font-weight: 700;             /* CHANGED: was 600 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-decoration: none;
     transition: background-color 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
-.btn-search:hover  { background-color: #065F46; }
+.btn-search:hover  { background-color: #A3E635; color: #064E3B; }  /* CHANGED: hover sync */
 .btn-search:active { transform: scale(0.97); }
 
 .btn-clear-filter {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 44px;
-    padding: 0 20px;
-    background-color: #A3E635;
+    height: 40px;                 /* CHANGED: was 44px */
+    padding: 0 18px;              /* CHANGED: was 0 20px */
+    background-color: white;      /* CHANGED: was #A3E635 */
     color: #064E3B;
-    border: none;
+    border: 1.5px solid #A3E635;  /* CHANGED: added border */
     border-radius: 10px;
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-size: 0.8125rem;         /* CHANGED: was 0.875rem */
+    font-weight: 700;             /* CHANGED: was 600 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-decoration: none;
-    transition: background-color 0.2s ease, transform 0.15s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
-.btn-clear-filter:hover  { background-color: #84CC16; color: #064E3B; }
+.btn-clear-filter:hover  { background-color: #A3E635; color: #064E3B; }
 .btn-clear-filter:active { transform: scale(0.97); }
+
+/* ============================================
+   TOP BAR LAYOUT — title+dates left, back+actions right
+   ============================================ */
+
+.history-top-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.history-top-left {
+    display: flex;
+    flex-direction: column;
+}
+
+/* RIGHT column: back button on top, action buttons below */
+.history-top-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.625rem;          /* khoảng cách giữa back button và 2 nút */
+    flex-shrink: 0;
+}
+
+/* Action buttons row: Tìm kiếm + Xóa bộ lọc */
+.history-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

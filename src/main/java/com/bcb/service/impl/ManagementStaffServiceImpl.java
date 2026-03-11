@@ -12,7 +12,7 @@ public class ManagementStaffServiceImpl implements ManagementStaffService {
 	@Override
 	public boolean updateInfo(Integer accountId, Integer facilityId, String fullName, String email, String phoneNumber) {
 		if (accountId == null || accountId <= 0) {
-			throw new IllegalArgumentException("Invalid account ID");
+			throw new IllegalArgumentException("account ID không thể null");
 		}
 		
 		return profileRepo.updateInfo(accountId, facilityId, fullName, email, phoneNumber);
@@ -22,7 +22,7 @@ public class ManagementStaffServiceImpl implements ManagementStaffService {
 	@Override
 	public boolean softDeleteAndActive(Integer accountId) {
 		if (accountId == null || accountId <= 0) {
-			throw new IllegalArgumentException("Invalid account ID");
+			throw new IllegalArgumentException("account ID không thể null");
 		}
 		
 		return profileRepo.softDeleteAndActive(accountId);
@@ -32,7 +32,7 @@ public class ManagementStaffServiceImpl implements ManagementStaffService {
 	@Override
 	public boolean resetPassword(Integer accountId, String passwordHash) {
 		if (accountId == null || accountId <= 0) {
-			throw new IllegalArgumentException("Invalid account ID");
+			throw new IllegalArgumentException("account ID không thể null");
 		}
 		
 		return profileRepo.resetPassword(accountId, passwordHash);

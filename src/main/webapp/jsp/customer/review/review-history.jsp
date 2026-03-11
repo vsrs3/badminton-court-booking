@@ -1,4 +1,4 @@
-<%-- customer-review-history.jsp --%>
+<%-- review-history.jsp --%>
 
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
@@ -11,10 +11,9 @@
 
 <div class="rh-page">
 
-	<!-- PHẦN TĨNH — header + filter (không reload khi lọc) -->
 	<div class="rh-static">
 
-		<!-- Header -->
+		<!-- Row 1: Title + Back button -->
 		<div class="rh-header">
 			<div class="rh-title-group">
 				<i data-lucide="star" class="icon-md rh-title-icon"></i>
@@ -26,10 +25,13 @@
 			</a>
 		</div>
 
-		<!-- Date + Rating filter form -->
+		<!-- Row 2: tất cả filter trên 1 hàng -->
 		<form id="rhFilterForm" method="GET"
 			action="${pageContext.request.contextPath}/reviews"
 			class="rh-filter-row">
+			<input type="hidden" name="action" value="user-list"> <input
+				type="hidden" name="rating" id="hiddenRating"
+				value="${selectedRating}">
 
 			<div class="rh-date-group">
 				<label class="rh-date-label">Từ ngày</label> <input type="date"
@@ -39,16 +41,10 @@
 				<label class="rh-date-label">Đến ngày</label> <input type="date"
 					name="dateTo" value="${dateTo}" class="rh-date-input">
 			</div>
-
-			<!-- Hidden rating -->
-			<input type="hidden" name="rating" id="hiddenRating"
-				value="${selectedRating}">
-
 			<button type="submit" class="btn-rh-search">
 				<i data-lucide="search" class="icon-sm"></i> <span>Tìm kiếm</span>
 			</button>
-			<a
-				href="${pageContext.request.contextPath}/profile?section=review-list-user"
+			<a href="${pageContext.request.contextPath}/reviews?action=user-list"
 				class="btn-rh-clear"> Xóa bộ lọc </a>
 		</form>
 
@@ -101,37 +97,29 @@
 		<c:remove var="errorMessage" scope="session" />
 	</c:if>
 
-	<!-- PHẦN ĐỘNG — chỉ phần này reload khi filter -->
+	<!-- PHẦN ĐỘNG -->
 	<div id="rh-list-container" class="rh-list-container">
 		<c:choose>
 			<c:when test="${not empty listUserReview}">
 				<div class="px-6 pb-6 space-y-3">
-
-					<!-- Result count -->
-					<div class="rh-result-count pt-2">
-						Tìm thấy <strong>${fn:length(listUserReview)}</strong> đánh giá
+					<div class="rh-result-count pt-2" id="rh-result-count">
+						Tìm thấy <strong id="rh-count-num">${fn:length(listUserReview)}</strong>
+						đánh giá
 					</div>
-
-					<!-- Review cards -->
 					<c:forEach var="review" items="${listUserReview}">
-						<div class="rh-card">
-
-							<!-- Top: facility info + stars + booking tag -->
+						<div class="rh-card" data-rating="${review.rating}">
 							<div class="rh-card-top">
 								<div class="rh-facility-info">
 									<h3 class="rh-facility-name">
 										<c:out value="${review.name}" />
 									</h3>
 									<div class="rh-facility-address">
-										<i data-lucide="map-pin" class="icon-xs"></i> <span> <c:out
+										<i data-lucide="map-pin" class="icon-xs"></i> <span><c:out
 												value="${review.address}" />, <c:out value="${review.ward}" />,
 											<c:out value="${review.district}" />, <c:out
-												value="${review.province}" />
-										</span>
+												value="${review.province}" /></span>
 									</div>
 								</div>
-
-								<!-- Star display + rating badge -->
 								<div
 									style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;">
 									<div class="rh-stars">
@@ -139,28 +127,20 @@
 											<span class="rh-star ${i <= review.rating ? 'filled' : ''}">★</span>
 										</c:forEach>
 									</div>
-									<span class="rh-rating-badge rh-rating-${review.rating}">
-										${review.rating} sao </span>
+									<span class="rh-rating-badge rh-rating-${review.rating}">${review.rating}
+										sao</span>
 								</div>
 							</div>
-
-							<!-- Booking ID tag -->
-							<div class="rh-booking-tag" style="margin-bottom: 0.5rem;">
-								#Booking ${review.bookingId}</div>
-
-							<!-- Comment -->
+							<div class="rh-booking-tag" style="margin-bottom: 0.5rem;">#Booking
+								${review.bookingId}</div>
 							<div class="rh-comment${empty review.comment ? ' empty' : ''}">
 								<c:choose>
 									<c:when test="${not empty review.comment}">
 										<c:out value="${review.comment}" />
 									</c:when>
-									<c:otherwise>
-                                        Không có nhận xét
-                                    </c:otherwise>
+									<c:otherwise>Không có nhận xét</c:otherwise>
 								</c:choose>
 							</div>
-
-							<!-- Footer: date + actions -->
 							<div class="rh-card-footer">
 								<div class="rh-date">
 									<i data-lucide="clock" class="icon-xs"></i>
@@ -169,20 +149,18 @@
 									<fmt:formatDate value="${parsedDate}"
 										pattern="dd/MM/yyyy HH:mm" />
 								</div>
-
 								<div class="rh-actions">
 									<a
 										href="${pageContext.request.contextPath}/reviews?action=view&bookingId=${review.bookingId}"
-										class="btn-rh-view"> <i data-lucide="eye" class="icon-xs"></i>
-										<span>Xem chi tiết</span>
+										class="btn-rh-view"> <i data-lucide="eye" class="icon-xs"></i><span>Xem
+											chi tiết</span>
 									</a> <a
 										href="${pageContext.request.contextPath}/profile?section=review-updation&bookingId=${review.bookingId}"
-										class="btn-rh-edit"> <i data-lucide="pen" class="icon-xs"></i>
-										<span>Chỉnh sửa</span>
+										class="btn-rh-edit"> <i data-lucide="pen" class="icon-xs"></i><span>Sửa
+											đánh giá</span>
 									</a>
 								</div>
 							</div>
-
 						</div>
 					</c:forEach>
 				</div>
@@ -197,54 +175,20 @@
 			</c:otherwise>
 		</c:choose>
 	</div>
-	<!-- ── KẾT THÚC PHẦN ĐỘNG ── -->
 
 </div>
 
 <script>
-    // Lọc theo rating tab — chỉ reload phần list
-function filterByRating(btn, rating) {
-    document.querySelectorAll('#rh-filter-tabs .rh-tab').forEach(function(b) {
-        b.classList.remove('active');
-    });
-    btn.classList.add('active');
-
-    var hiddenRating = document.getElementById('hiddenRating');
-    if (hiddenRating) hiddenRating.value = rating;
-
-    // Lấy params hiện tại (giữ dateFrom/dateTo nếu đã filter)
-    var params = new URLSearchParams(window.location.search);
-    params.set('rating', rating);
-    var url = '${pageContext.request.contextPath}/reviews?' + params.toString();
-
-    history.pushState(null, '', url);
-    _rhLoadList(url);
-}
-
-//  Form submit 
-document.getElementById('rhFilterForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var params = new URLSearchParams(new FormData(this));
-    var url = '${pageContext.request.contextPath}/reviews?' + params.toString();
-    history.pushState(null, '', url);
-    _rhLoadList(url);
-});
-
-function _rhLoadList(url) {
-    var container = document.getElementById('rh-list-container');
-    if (!container) { window.location.href = url; return; }
-
-    fetch(url) // khớp với doGet → case "list"
-        .then(function(res) { return res.text(); })
-        .then(function(html) {
-            var parser  = new DOMParser();
-            var doc     = parser.parseFromString(html, 'text/html');
-            var newList = doc.getElementById('rh-list-container');
-            if (newList) {
-                container.innerHTML = newList.innerHTML;
-                if (window.lucide) lucide.createIcons();
-            }
-        })
-        .catch(function() { window.location.href = url; });
-}
+	function filterByRating(btn, rating) {
+		document.querySelectorAll('#rh-filter-tabs .rh-tab').forEach(b => b.classList.remove('active'));
+		btn.classList.add('active');
+		let visibleCount = 0;
+		document.querySelectorAll('.rh-card').forEach(card => {
+			const show = rating === 'all' || card.dataset.rating === rating;
+			card.style.display = show ? '' : 'none';
+			if (show) visibleCount++;
+		});
+		const countEl = document.getElementById('rh-count-num');
+		if (countEl) countEl.textContent = visibleCount;
+	}
 </script>

@@ -123,6 +123,17 @@
 	                    contentPanel.innerHTML = body ? body.innerHTML : html;
 	                }
 
+	                // ✅ Re-execute all injected scripts
+	                contentPanel.querySelectorAll('script').forEach(oldScript => {
+	                    const newScript = document.createElement('script');
+	                    // Copy attributes (src, type, etc.)
+	                    Array.from(oldScript.attributes).forEach(attr => {
+	                        newScript.setAttribute(attr.name, attr.value);
+	                    });
+	                    newScript.textContent = oldScript.textContent;
+	                    oldScript.parentNode.replaceChild(newScript, oldScript);
+	                });
+
 	                if (window.lucide) lucide.createIcons();
 	                contentPanel.style.opacity = '1';
 	                history.pushState(null, '', url);

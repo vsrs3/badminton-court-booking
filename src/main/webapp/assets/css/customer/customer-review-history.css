@@ -5,19 +5,16 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
 
-/* ── FONT BASE ───────────────────────────────────────────────── */
 .rh-page,
 .rh-page *:not(i):not(svg) {
     font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-style: normal;
 }
 
-/* ── ICON SIZE HELPERS ──────────────────────────────────────── */
 .icon-xs { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
 .icon-sm { width: 1rem;     height: 1rem;     flex-shrink: 0; }
 .icon-md { width: 1.25rem;  height: 1.25rem;  flex-shrink: 0; }
 
-/* ── PAGE WRAPPER ─────────────────────────────────────────────  */
 .rh-page {
     display: flex;
     flex-direction: column;
@@ -27,13 +24,11 @@
     box-sizing: border-box;
 }
 
-/* ── STATIC HEADER SECTION ───────────────────────────────────── */
 .rh-static {
     padding: 1.5rem 1.5rem 0.75rem;
     flex-shrink: 0;
 }
 
-/* ── HEADER ROW ──────────────────────────────────────────────── */
 .rh-header {
     display: flex;
     align-items: center;
@@ -62,7 +57,6 @@
     flex-shrink: 0;
 }
 
-/* ── BACK BUTTON ────────────────────────────────────────────── */
 .btn-back-home {
     display: inline-flex;
     align-items: center;
@@ -99,16 +93,24 @@
 /* ── FILTER ROW ──────────────────────────────────────────────── */
 .rh-filter-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    margin-bottom: 1rem;
+
+    display: flex;
+    align-items: center;      /* center vertically with inline labels */
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 1rem;
 }
 
+/* ── DATE GROUP: label LEFT of input, same row ── */
 .rh-date-group {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;      /* CHANGED: was column */
+    align-items: center;      /* CHANGED: vertical center */
+    gap: 8px;                 /* CHANGED: was 4px */
 }
 
 .rh-date-label {
@@ -117,6 +119,7 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #6B7280;
+    white-space: nowrap;      /* prevent wrapping */
 }
 
 .rh-date-input {
@@ -137,7 +140,6 @@
     box-shadow: 0 0 0 2px rgba(163, 230, 53, 0.2);
 }
 
-/* Rating filter select */
 .rh-rating-select {
     height: 40px;
     border: 1px solid #D1D5DB;
@@ -246,7 +248,6 @@
     border-color: #064E3B;
     box-shadow: 0 2px 8px rgba(6, 78, 59, 0.3);
 }
-/* Star icons in tabs */
 .rh-tab .tab-star { color: #F59E0B; font-size: 0.75rem; }
 .rh-tab.active .tab-star { color: #A3E635; }
 
@@ -256,13 +257,11 @@
     width: 100%;
 }
 
-/* ── DYNAMIC LIST ────────────────────────────────────────────── */
 .rh-list-container {
     flex: 1;
     overflow-y: auto;
 }
 
-/* ── RESULT COUNT ────────────────────────────────────────────── */
 .rh-result-count {
     font-size: 0.6875rem;
     font-weight: 900;
@@ -273,7 +272,6 @@
 }
 .rh-result-count strong { color: #064E3B; }
 
-/* ── REVIEW CARD ─────────────────────────────────────────────── */
 .rh-card {
     background: white;
     border: 1px solid #F3F4F6;
@@ -288,7 +286,6 @@
     border-color: #BBF7D0;
 }
 
-/* Card top row: facility info + rating + booking id */
 .rh-card-top {
     display: flex;
     align-items: flex-start;
@@ -323,7 +320,6 @@
 .rh-facility-address i,
 .rh-facility-address svg { color: #9CA3AF; flex-shrink: 0; margin-top: 1px; }
 
-/* Star rating display */
 .rh-stars {
     display: flex;
     align-items: center;
@@ -333,7 +329,6 @@
 .rh-star       { font-size: 1.125rem; color: #E5E7EB; }
 .rh-star.filled { color: #F59E0B; }
 
-/* Booking id tag */
 .rh-booking-tag {
     font-size: 0.6875rem;
     font-weight: 700;
@@ -344,7 +339,6 @@
     align-self: flex-start;
 }
 
-/* Comment block */
 .rh-comment {
     background: #F9FAFB;
     border: 1px solid #F3F4F6;
@@ -363,7 +357,6 @@
     font-weight: 400;
 }
 
-/* Card footer: date + actions */
 .rh-card-footer {
     display: flex;
     align-items: center;
@@ -390,7 +383,6 @@
     gap: 8px;
 }
 
-/* View + Edit buttons — mirror booking history style */
 .btn-rh-view {
     display: inline-flex;
     align-items: center;
@@ -435,7 +427,6 @@
 }
 .btn-rh-edit:active { transform: scale(0.97); }
 
-/* ── RATING BADGE on card (1★ – 5★) ────────────────────────── */
 .rh-rating-badge {
     display: inline-flex;
     align-items: center;
@@ -452,7 +443,6 @@
 .rh-rating-2 { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
 .rh-rating-1 { background: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
 
-/* ── EMPTY STATE ─────────────────────────────────────────────── */
 .rh-empty {
     display: flex;
     flex-direction: column;
@@ -480,7 +470,6 @@
     letter-spacing: 0.04em;
 }
 
-/* ── NOTIFICATION BANNERS ────────────────────────────────────── */
 .rh-notif {
     display: flex;
     align-items: center;
@@ -500,4 +489,37 @@
 @keyframes rh-fade-in {
     from { opacity:0; transform:translateY(-6px); }
     to   { opacity:1; transform:translateY(0); }
+}
+
+/* ============================================
+   TOP BAR LAYOUT — title+dates left, back+actions right
+   ============================================ */
+
+.rh-top-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rh-top-left {
+    display: flex;
+    flex-direction: column;
+}
+
+/* RIGHT column: back button on top, action buttons below */
+.rh-top-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.625rem;          /* khoảng cách giữa back button và 2 nút */
+    flex-shrink: 0;
+}
+
+/* Action buttons row: Tìm kiếm + Xóa bộ lọc */
+.rh-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
