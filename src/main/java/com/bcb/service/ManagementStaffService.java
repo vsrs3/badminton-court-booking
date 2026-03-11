@@ -35,3 +35,4 @@ public interface ManagementStaffService {
 	 */
 	boolean resetPassword(Integer accountId, String passwordHash);
 }
+

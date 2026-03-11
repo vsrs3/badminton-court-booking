@@ -7,3 +7,4 @@ import java.util.List;
 public interface CourtTypeService {
     List<CourtType> getAllTypes();
 }
+

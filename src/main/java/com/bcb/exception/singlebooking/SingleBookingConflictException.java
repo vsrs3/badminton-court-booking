@@ -19,3 +19,4 @@ public class SingleBookingConflictException extends RuntimeException {
         return code;
     }
 }
+

@@ -138,6 +138,19 @@
             #confirmBarInner { flex-direction:column; gap:.75rem; }
             #confirmBtn { width:100%; justify-content:center; }
         }
+
+        /* ── Free-booking state ── */
+        .pv-radio-label.disabled-option {
+            opacity:.45; pointer-events:none; cursor:not-allowed;
+        }
+        #freeBanner {
+            display:none; align-items:center; gap:.75rem;
+            padding:.875rem 1rem; border-radius:.625rem;
+            background:#D1FAE5; border:1px solid #6EE7B7;
+            font-size:.9rem; color:#065F46; font-weight:700;
+            margin-top:.75rem;
+        }
+        #freeBanner.show { display:flex; }
     </style>
 </head>
 <body>
@@ -219,20 +232,62 @@
             <span class="pv-radio-amount" id="amtDeposit">—</span>
         </label>
 
-        <!-- Thông tin VNPay QR -->
-        <div class="alert alert-success d-flex align-items-center gap-2 mt-3 mb-0 small">
+        <!-- Banner hiển thị khi đơn = 0đ nhờ voucher -->
+        <div id="freeBanner">
+            <i class="bi bi-gift-fill fs-5"></i>
+            <span>Voucher đã giảm 100% – Đơn hàng này <strong>miễn phí!</strong> Xác nhận để đặt sân ngay.</span>
+        </div>
+
+        <!-- Thông tin VNPay QR (ẩn khi đơn = 0đ) -->
+        <div class="alert alert-success d-flex align-items-center gap-2 mt-3 mb-0 small" id="vnpayNotice">
             <i class="bi bi-qr-code-scan fs-5"></i>
             <div>Thanh toán qua <strong>VNPay QR</strong> – quét mã để thanh toán nhanh chóng</div>
         </div>
     </div>
 
-    <!-- 4. TÓM TẮT -->
+    <!-- 4. VOUCHER -->
+    <div class="pv-card" id="voucherCard">
+        <div class="pv-section-label"><i class="bi bi-ticket-perforated-fill"></i> Mã giảm giá</div>
+        <div class="input-group">
+            <input type="text" id="voucherInput" class="form-control"
+                   placeholder="Nhập mã voucher..." maxlength="50"
+                   style="text-transform:uppercase;letter-spacing:.05em;font-weight:600;"
+                   autocomplete="off"/>
+            <button class="btn btn-outline-success fw-semibold px-4" id="applyVoucherBtn" type="button">
+                <i class="bi bi-check-lg me-1"></i>Áp dụng
+            </button>
+            <button class="btn btn-outline-secondary px-3 d-none" id="removeVoucherBtn" type="button" title="Xóa voucher">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <!-- Result area -->
+        <div id="voucherResultOk" class="d-none mt-3 p-3 rounded-3 d-flex align-items-center gap-2"
+             style="background:#D1FAE5;border:1px solid #6EE7B7;">
+            <i class="bi bi-patch-check-fill text-success fs-5"></i>
+            <div class="flex-fill">
+                <div class="fw-bold text-success small" id="voucherOkName"></div>
+                <div class="text-success small" id="voucherOkDesc"></div>
+            </div>
+            <div class="fw-bold text-success" id="voucherOkAmt"></div>
+        </div>
+        <div id="voucherResultErr" class="d-none mt-3 p-3 rounded-3 d-flex align-items-center gap-2"
+             style="background:#FEE2E2;border:1px solid #FCA5A5;">
+            <i class="bi bi-exclamation-circle-fill text-danger fs-5"></i>
+            <div class="text-danger small fw-semibold" id="voucherErrMsg"></div>
+        </div>
+    </div>
+
+    <!-- 5. TÓM TẮT -->
     <div class="pv-card">
         <div class="pv-section-label"><i class="bi bi-receipt"></i> Tóm tắt đơn hàng</div>
 
         <div class="pv-total-row">
             <span>Tạm tính (<span id="pvSlotCount">0</span> slot)</span>
             <span id="pvSubtotal">—</span>
+        </div>
+        <div class="pv-total-row text-success" id="pvVoucherRow" style="display:none;">
+            <span><i class="bi bi-ticket-perforated me-1"></i>Giảm giá voucher</span>
+            <span class="fw-bold" id="pvVoucherDiscount">—</span>
         </div>
         <div class="pv-total-row" id="pvDepositRow" style="display:none;">
             <span>Số tiền đặt cọc (30%)</span>
@@ -244,7 +299,7 @@
         </div>
     </div>
 
-    <!-- 5. ĐIỀU KHOẢN -->
+    <!-- 6. ĐIỀU KHOẢN -->
     <div class="alert alert-info d-flex gap-2 small">
         <i class="bi bi-shield-check-fill flex-shrink-0 mt-1"></i>
         <div>
@@ -302,8 +357,10 @@
     const bookingDate= pv.bookingDate || payload.bookingDate || payload.date;
 
     /* ── State ── */
-    let depositPercent = 100;
-    let isSubmitting   = false;
+    let depositPercent  = 100;
+    let isSubmitting    = false;
+    // Voucher state
+    let appliedVoucher  = null;  // null | { voucherId, voucherCode, voucherName, discountAmount, finalAmount }
 
     /* ── Helpers ── */
     function fmtVnd(n){ return Number(n||0).toLocaleString('vi-VN')+' ₫'; }
@@ -408,14 +465,39 @@
     const totalAmount = Number(pv.estimatedTotal || 0);
 
     function updateFinancials(){
-        const payAmount = depositPercent === 100 ? totalAmount : Math.ceil(totalAmount * depositPercent / 100);
+        const discount   = appliedVoucher ? Number(appliedVoucher.discountAmount || 0) : 0;
+        const afterDisc  = Math.max(0, totalAmount - discount);
+        const isFree     = afterDisc === 0;
+
+        // Force full-payment when order is free; restore previous choice otherwise
+        if (isFree && depositPercent !== 100) {
+            depositPercent = 100;
+            const radioFull = document.getElementById('radioFull');
+            if (radioFull) radioFull.checked = true;
+            document.querySelectorAll('.pv-radio-label').forEach(function(l){ l.classList.remove('active'); });
+            const lblFull = document.getElementById('labelFull');
+            if (lblFull) lblFull.classList.add('active');
+        }
+
+        const payAmount  = depositPercent === 100 ? afterDisc : Math.ceil(afterDisc * depositPercent / 100);
 
         pvSlotCount.textContent = pv.totalSlots || 0;
         pvSubtotal.textContent  = fmtVnd(totalAmount);
-        pvTotal.textContent     = fmtVnd(totalAmount);
+
+        // Voucher discount row
+        const voucherRow    = document.getElementById('pvVoucherRow');
+        const voucherDiscEl = document.getElementById('pvVoucherDiscount');
+        if (discount > 0) {
+            voucherRow.style.display = '';
+            voucherDiscEl.textContent = '- ' + fmtVnd(discount);
+        } else {
+            voucherRow.style.display = 'none';
+        }
+
+        pvTotal.textContent = isFree ? 'Miễn phí' : fmtVnd(afterDisc);
 
         // deposit row
-        if (depositPercent < 100){
+        if (depositPercent < 100 && !isFree){
             pvDepRow.style.display = '';
             pvDepAmt.textContent   = fmtVnd(payAmount);
         } else {
@@ -423,14 +505,136 @@
         }
 
         // radio amount labels
-        if (amtFull)    amtFull.textContent    = fmtVnd(totalAmount);
-        if (amtDeposit) amtDeposit.textContent = fmtVnd(Math.ceil(totalAmount * 0.3));
+        if (amtFull)    amtFull.textContent    = isFree ? 'Miễn phí' : fmtVnd(afterDisc);
+        if (amtDeposit) amtDeposit.textContent = isFree ? '—' : fmtVnd(Math.ceil(afterDisc * 0.3));
 
-        pvConfirmAmt.textContent = fmtVnd(payAmount);
+        // Lock / unlock deposit option
+        const labelDeposit = document.getElementById('labelDeposit');
+        const radioDeposit = document.getElementById('radioDeposit');
+        if (labelDeposit && radioDeposit) {
+            if (isFree) {
+                labelDeposit.classList.add('disabled-option');
+                radioDeposit.disabled = true;
+            } else {
+                labelDeposit.classList.remove('disabled-option');
+                radioDeposit.disabled = false;
+            }
+        }
+
+        // Free banner & VNPay notice
+        const freeBanner  = document.getElementById('freeBanner');
+        const vnpayNotice = document.getElementById('vnpayNotice');
+        if (freeBanner)  freeBanner.classList.toggle('show', isFree);
+        if (vnpayNotice) vnpayNotice.style.display = isFree ? 'none' : '';
+
+        // Confirm bar amount
+        pvConfirmAmt.textContent = isFree ? 'Miễn phí 🎉' : fmtVnd(payAmount);
+
+        // Confirm button label
+        if (confirmBtn) {
+            confirmBtn.innerHTML = isFree
+                ? '<i class="bi bi-check-circle"></i> XÁC NHẬN ĐẶT SÂN'
+                : '<i class="bi bi-credit-card"></i> XÁC NHẬN &amp; THANH TOÁN';
+        }
     }
     updateFinancials();
 
-    /* ── Deposit radio ── */
+    /* ── Voucher logic ── */
+    const voucherInput     = document.getElementById('voucherInput');
+    const applyVoucherBtn  = document.getElementById('applyVoucherBtn');
+    const removeVoucherBtn = document.getElementById('removeVoucherBtn');
+    const voucherResultOk  = document.getElementById('voucherResultOk');
+    const voucherResultErr = document.getElementById('voucherResultErr');
+    const voucherOkName    = document.getElementById('voucherOkName');
+    const voucherOkDesc    = document.getElementById('voucherOkDesc');
+    const voucherOkAmt     = document.getElementById('voucherOkAmt');
+    const voucherErrMsg    = document.getElementById('voucherErrMsg');
+
+    function setVoucherApplied(data) {
+        appliedVoucher = data;
+        voucherInput.value     = data.voucherCode;
+        voucherInput.readOnly  = true;
+        applyVoucherBtn.classList.add('d-none');
+        removeVoucherBtn.classList.remove('d-none');
+
+        // Show success panel
+        voucherResultOk.classList.remove('d-none');
+        voucherResultErr.classList.add('d-none');
+        voucherOkName.textContent = data.voucherName || data.voucherCode;
+        voucherOkDesc.textContent = data.discountType === 'PERCENTAGE'
+            ? 'Giảm ' + data.discountValue + '%' + (data.discountType === 'PERCENTAGE' ? '' : '')
+            : 'Giảm ' + fmtVnd(data.discountValue);
+        voucherOkAmt.textContent = '- ' + fmtVnd(data.discountAmount);
+
+        updateFinancials();
+    }
+
+    function clearVoucher() {
+        appliedVoucher             = null;
+        voucherInput.value         = '';
+        voucherInput.readOnly      = false;
+        applyVoucherBtn.classList.remove('d-none');
+        removeVoucherBtn.classList.add('d-none');
+        voucherResultOk.classList.add('d-none');
+        voucherResultErr.classList.add('d-none');
+        updateFinancials();
+    }
+
+    function showVoucherError(msg) {
+        voucherResultErr.classList.remove('d-none');
+        voucherResultOk.classList.add('d-none');
+        voucherErrMsg.textContent = msg;
+    }
+
+    applyVoucherBtn.addEventListener('click', function() {
+        const code = voucherInput.value.trim().toUpperCase();
+        if (!code) { showVoucherError('Vui lòng nhập mã voucher.'); return; }
+
+        applyVoucherBtn.disabled = true;
+        applyVoucherBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang kiểm tra...';
+        voucherResultErr.classList.add('d-none');
+        voucherResultOk.classList.add('d-none');
+
+        fetch(CTX + '/api/single-booking/apply-voucher', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body:    JSON.stringify({
+                voucherCode: code,
+                facilityId:  facilityId,
+                totalAmount: totalAmount
+            })
+        })
+        .then(function(res) { return res.json().then(function(j){ j._status = res.status; return j; }); })
+        .then(function(json) {
+            applyVoucherBtn.disabled = false;
+            applyVoucherBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Áp dụng';
+
+            if (json._status === 401) {
+                showAlert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.', 'warning');
+                return;
+            }
+            const ok = json.success !== undefined ? json.success : (json._status >= 200 && json._status < 300);
+            if (!ok) {
+                const errMsg = (json.error && json.error.message) || json.message || 'Mã voucher không hợp lệ.';
+                showVoucherError(errMsg);
+                return;
+            }
+            const data = json.data || json;
+            setVoucherApplied(data);
+        })
+        .catch(function() {
+            applyVoucherBtn.disabled = false;
+            applyVoucherBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Áp dụng';
+            showVoucherError('Lỗi kết nối. Vui lòng thử lại.');
+        });
+    });
+
+    // Allow applying by pressing Enter in the input
+    voucherInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !voucherInput.readOnly) applyVoucherBtn.click();
+    });
+
+    removeVoucherBtn.addEventListener('click', clearVoucher);
     document.querySelectorAll('input[name="pvDeposit"]').forEach(function(r){
         r.addEventListener('change', function(){
             depositPercent = parseInt(this.value, 10);
@@ -453,12 +657,13 @@
         hideAlert();
         showLoad();
 
-        // Body chỉ gồm: facilityId, bookingDate, depositPercent, selections
+        // Body includes voucherCode if a voucher was applied
         const body = {
             facilityId:     facilityId,
             bookingDate:    bookingDate,
             depositPercent: depositPercent,
-            selections:     selections
+            selections:     selections,
+            voucherCode:    appliedVoucher ? appliedVoucher.voucherCode : null
         };
 
         fetch(CTX+'/api/single-booking/confirm-and-pay', {
@@ -498,13 +703,15 @@
                 return;
             }
 
-            /* SUCCESS → redirect to payment URL or home */
+            /* SUCCESS */
             sessionStorage.removeItem('sbPreviewData');
             const data   = json.data || json;
             const payUrl = data.paymentUrl;
             if (payUrl) {
+                // Normal path – redirect to VNPay payment gateway
                 window.location.href = payUrl;
             } else {
+                // Free order (voucher covered 100%) – booking already confirmed, skip payment
                 window.location.href = CTX + '/?bookingSuccess=1&bookingId=' + (data.bookingId || '');
             }
         })
@@ -523,10 +730,17 @@
     }
 
     function setBtnLoading(on){
+        const discount  = appliedVoucher ? Number(appliedVoucher.discountAmount || 0) : 0;
+        const afterDisc = Math.max(0, totalAmount - discount);
+        const isFree    = afterDisc === 0;
         confirmBtn.disabled = on;
-        confirmBtn.innerHTML = on
-            ? '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...'
-            : '<i class="bi bi-credit-card"></i> XÁC NHẬN &amp; THANH TOÁN';
+        if (on) {
+            confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+        } else {
+            confirmBtn.innerHTML = isFree
+                ? '<i class="bi bi-check-circle"></i> XÁC NHẬN ĐẶT SÂN'
+                : '<i class="bi bi-credit-card"></i> XÁC NHẬN &amp; THANH TOÁN';
+        }
     }
 
 })();

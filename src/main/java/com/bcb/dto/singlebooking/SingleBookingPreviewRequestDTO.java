@@ -24,3 +24,4 @@ public class SingleBookingPreviewRequestDTO {
     public List<SingleBookingSelectionItemDTO> getSelections() { return selections; }
     public void setSelections(List<SingleBookingSelectionItemDTO> selections) { this.selections = selections; }
 }
+

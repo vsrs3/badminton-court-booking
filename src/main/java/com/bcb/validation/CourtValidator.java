@@ -62,3 +62,4 @@ public class CourtValidator {
         return validate(court).isEmpty();
     }
 }
+

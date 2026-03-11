@@ -107,13 +107,24 @@ public class OwnerCourtController extends HttpServlet {
         request.setAttribute("facility", facility);
         request.setAttribute("courts", courtService.getCourtsByFacilityDTO(facilityId));
         request.setAttribute("courtTypes", courtTypeService.getAllTypes());
+        request.setAttribute("totalRecords", courtService.getCourtsByFacilityDTO(facilityId).size());
+
+        // Flash messages forwarded via query params (e.g. after bulk create redirect)
+        String successMsg = request.getParameter("success");
+        String errorMsg = request.getParameter("error");
+        if (successMsg != null && !successMsg.isEmpty()) {
+            request.setAttribute("success", successMsg);
+        }
+        if (errorMsg != null && !errorMsg.isEmpty()) {
+            request.setAttribute("error", errorMsg);
+        }
 
         // Breadcrumb
         BreadcrumbUtils.builder(request)
                 .dashboard()
                 .facilityList()
                 .facility(facility.getName(), facilityId)
-                .active("Courts")
+                .active("Quản lý sân")
                 .build();
 
         request.getRequestDispatcher("/jsp/owner/court/court-list.jsp")
@@ -152,7 +163,9 @@ public class OwnerCourtController extends HttpServlet {
     }
 
     /**
-     * CREATE + UPDATE dùng chung
+     * CREATE + UPDATE dùng chung. Hỗ trợ chế độ tạo nhiều sân (bulk).
+     *
+     * @author AnhTN
      */
     private void saveCourt(HttpServletRequest request, HttpServletResponse response)
             throws ValidationException, BusinessException, IOException {
@@ -160,49 +173,75 @@ public class OwnerCourtController extends HttpServlet {
         String courtIdStr = request.getParameter("courtId");
         int facilityId = Integer.parseInt(request.getParameter("facilityId"));
 
-        String courtName = request.getParameter("courtName");
-        String courtTypeIdStr = request.getParameter("courtTypeId");
-        String description = request.getParameter("description");
+        boolean isBulk = "true".equals(request.getParameter("isBulk"));
 
-        if (courtTypeIdStr == null || courtTypeIdStr.isEmpty()) {
-            throw new ValidationException("Court type is required");
-        }
+        if (isBulk) {
+            // ---- BULK CREATE ----
+            String courtNamePrefix = request.getParameter("courtNamePrefix");
+            String courtCountStr = request.getParameter("courtCount");
+            String courtTypeIdStr = request.getParameter("courtTypeId");
+            String description = request.getParameter("description");
 
-        int courtTypeId = Integer.parseInt(courtTypeIdStr);
-
-        Court court;
-
-        if (courtIdStr == null || courtIdStr.isEmpty()) {
-            // create
-            court = new Court();
-            court.setFacilityId(facilityId);
-            court.setIsActive(true);
-
-        } else {
-            // update
-            int courtId = Integer.parseInt(courtIdStr);
-            court = courtService.getCourtById(courtId);
-
-            if (court == null) {
-                throw new BusinessException("Court not found");
+            if (courtTypeIdStr == null || courtTypeIdStr.isEmpty()) {
+                throw new ValidationException("Loại sân là bắt buộc");
             }
-        }
+            if (courtCountStr == null || courtCountStr.isEmpty()) {
+                throw new ValidationException("Số lượng sân là bắt buộc");
+            }
 
-        court.setCourtName(courtName);
-        court.setCourtTypeId(courtTypeId);
-        court.setDescription(description);
+            int courtTypeId = Integer.parseInt(courtTypeIdStr);
+            int courtCount = Integer.parseInt(courtCountStr);
 
-        CourtValidator.validate(court);
+            java.util.List<String> created = courtService.createBulkCourts(
+                    facilityId, courtNamePrefix, courtCount, courtTypeId, description);
 
-        if (courtIdStr == null || courtIdStr.isEmpty()) {
-            courtService.createCourt(court);
+            String message = "Đã tạo " + created.size() + " sân: " + String.join(", ", created);
+            response.sendRedirect(
+                    request.getContextPath() + "/owner/courts/list/" + facilityId
+                            + "?success=" + java.net.URLEncoder.encode(message, "UTF-8")
+            );
         } else {
-            courtService.updateCourt(court);
-        }
+            // ---- SINGLE CREATE / UPDATE ----
+            String courtName = request.getParameter("courtName");
+            String courtTypeIdStr = request.getParameter("courtTypeId");
+            String description = request.getParameter("description");
 
-        response.sendRedirect(
-                request.getContextPath() + "/owner/courts/list/" + facilityId
-        );
+            if (courtTypeIdStr == null || courtTypeIdStr.isEmpty()) {
+                throw new ValidationException("Loại sân là bắt buộc");
+            }
+
+            int courtTypeId = Integer.parseInt(courtTypeIdStr);
+
+            Court court;
+
+            if (courtIdStr == null || courtIdStr.isEmpty()) {
+                court = new Court();
+                court.setFacilityId(facilityId);
+                court.setIsActive(true);
+            } else {
+                int courtId = Integer.parseInt(courtIdStr);
+                court = courtService.getCourtById(courtId);
+                if (court == null) {
+                    throw new BusinessException("Court not found");
+                }
+            }
+
+            court.setCourtName(courtName);
+            court.setCourtTypeId(courtTypeId);
+            court.setDescription(description);
+
+            CourtValidator.validate(court);
+
+            if (courtIdStr == null || courtIdStr.isEmpty()) {
+                courtService.createCourt(court);
+            } else {
+                courtService.updateCourt(court);
+            }
+
+            response.sendRedirect(
+                    request.getContextPath() + "/owner/courts/list/" + facilityId
+            );
+        }
     }
 
     private void deactivateCourt(HttpServletRequest request, HttpServletResponse response,
@@ -229,4 +268,5 @@ public class OwnerCourtController extends HttpServlet {
         return value.replace("\"", "\\\"");
     }
 }
+
 

@@ -74,3 +74,4 @@ public class PriceRuleRequestDTO {
         this.pricePerHour = pricePerHour;
     }
 }
+

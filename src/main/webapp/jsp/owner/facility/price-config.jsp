@@ -83,8 +83,12 @@
                     </div>
 
                     <%-- ACTIONS --%>
-                    <div class="col-md-3 text-end">
-                        <button class="btn btn-accent" onclick="openCreateModal()">
+                    <div class="col-md-3 text-end d-flex gap-2 justify-content-end">
+                        <button class="btn btn-accent btn-lift" onclick="openSmartPriceModal()"
+                                style="background:var(--primary-color);color:#fff;border:none;">
+                            <i class="bi bi-table me-1"></i> Cấu hình thông minh
+                        </button>
+                        <button class="btn btn-accent btn-lift" onclick="openCreateModal()">
                             <i class="bi bi-plus-circle me-1"></i> Thêm khoảng giá
                         </button>
                     </div>

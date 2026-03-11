@@ -60,3 +60,4 @@ public interface FacilityImageRepository {
     int deleteByFacility(int facilityId);
 
 }
+

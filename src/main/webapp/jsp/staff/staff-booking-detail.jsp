@@ -1,5 +1,3 @@
-<%-- staff-booking-detail.jsp — Task 8 v2 + Payment confirmation --%>
-
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
@@ -56,7 +54,7 @@
                         Chi tiết đặt sân
                     </p>
                 </div>
-                <span class="sbd-status-badge" id="dStatusBadge"></span>
+                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">                    <button type="button" class="btn btn-sm rounded-3 d-none" id="btnEditBooking" style="background:var(--primary-color);color:#fff;"><i class="bi bi-pencil-square me-1"></i>Chỉnh sửa                  </button>                  <button type="button" class="btn btn-sm rounded-3 d-none" id="btnCancelRemaining" style="background:#DC2626;color:#fff;">                       <i class="bi bi-x-circle me-1"></i>Hủy phần còn lại                 </button>                 <span class="sbd-status-badge" id="dStatusBadge"></span>                </div>
             </div>
 
             <%-- Cards grid --%>
@@ -213,6 +211,14 @@
                     Nhập đúng số tiền còn thiếu để hoàn tất thanh toán
                 </small>
             </div>
+            <div class="sbd-modal-input-group">
+                <label class="sbd-modal-input-label" for="paymentMethodSelect">Phương thức thanh toán</label>
+                <select class="sbd-modal-input" id="paymentMethodSelect">
+                    <option value="CASH" selected>Tiền mặt (CASH)</option>
+                    <option value="BANK_TRANSFER">Chuyển khoản (BANK_TRANSFER)</option>
+                    <option value="VNPAY">VNPAY</option>
+                </select>
+            </div>
             <div class="sbd-modal-error d-none" id="paymentModalError"></div>
         </div>
         <div class="sbd-modal-footer">
@@ -232,7 +238,9 @@
 <script>
     window.ST_CTX = '${pageContext.request.contextPath}';
 </script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-detail.js"></script>
 
 </body>
 </html>
+

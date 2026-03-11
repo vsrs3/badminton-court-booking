@@ -29,6 +29,20 @@
 			<i class="bi bi-person-badge"></i> <span>Quản Lý Nhân Viên</span>
 		</a>
 
+		<%-- Voucher Management --%>
+		<a href="${pageContext.request.contextPath}/owner/vouchers/dashboard"
+			class="nav-link ${pageContext.request.requestURI.contains('/voucher') ? 'active' : ''}">
+			<i class="bi bi-ticket-perforated"></i> <span>Quản Lý Voucher</span>
+		</a>
+
+
+        <%-- Inventory Management --%>
+       <a href="${pageContext.request.contextPath}/owner/inventory"
+            class="nav-link ${pageContext.request.requestURI.contains('/inventory') ? 'active' : ''}">
+            <i class="bi bi-box-seam"></i>
+            <span>Quản Lý Dụng Cụ</span>
+       </a>
+
 		<%-- Settings --%>
 		<a href="#"
 			class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">

@@ -12,7 +12,17 @@
         <c:when test="${not empty bookingDetail}">
             <c:set var="d" value="${bookingDetail}" />
 
-            <!-- Header -->
+            <%-- Pre-compute button flags (same logic as list) --%>
+            <c:set var="canPay" value="${d.bookingStatus == 'PENDING'
+                and d.paymentStatus == 'UNPAID'
+                and not empty d.holdExpiredAt}" />
+            <c:set var="canPayRemaining" value="${d.bookingStatus == 'CONFIRMED'
+                and d.paymentStatus == 'PARTIAL'}" />
+            <c:set var="canCancel" value="${(d.bookingStatus == 'PENDING'
+                or d.bookingStatus == 'CONFIRMED')
+                and d.paymentStatus == 'UNPAID'}" />
+
+            <!-- Header with Back button -->
             <div class="bg-white p-5 border-b border-gray-100">
 
                 <!-- Row 1: Title + Back button -->
@@ -119,42 +129,104 @@
                     <c:if test="${not empty d.createdAt}">
                         <div class="detail-row">
                             <span class="detail-label">Ngày tạo</span>
-                            <span class="detail-value text-gray-500 font-normal">
-                                ${d.createdAt}
+                            <span class="detail-value text-gray-500 font-normal">${d.createdAt}</span>
+                        </div>
+                    </c:if>
+                    <%-- Hold expiry info for PENDING --%>
+                    <c:if test="${canPay and not empty d.holdExpiredAt}">
+                        <div class="detail-row">
+                            <span class="detail-label">Hạn thanh toán</span>
+                            <span class="detail-value text-amber-600 font-semibold"
+                                id="detail-countdown"
+                                data-expire="${d.holdExpiredAt}">
+                                Đang tải...
                             </span>
                         </div>
                     </c:if>
                 </div>
 
-                <!-- Slot Details -->
+                <!-- Slot Details — merged view (same as list) -->
                 <div class="detail-section">
                     <h3>
                         <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
-                        Chi tiết lịch đặt (${fn:length(d.slots)} slot)
+                        Lịch đặt sân
                     </h3>
-                    <c:forEach var="slot" items="${d.slots}">
-                        <div class="slot-row">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 rounded-full
-                                    <c:choose>
-                                        <c:when test='${slot.slotStatus == "PENDING"}'>bg-yellow-400</c:when>
-                                        <c:when test='${slot.slotStatus == "CHECKED_IN"}'>bg-blue-400</c:when>
-                                        <c:when test='${slot.slotStatus == "CHECK_OUT"}'>bg-green-400</c:when>
-                                        <c:when test='${slot.slotStatus == "CANCELLED"}'>bg-red-400</c:when>
-                                        <c:otherwise>bg-gray-400</c:otherwise>
-                                    </c:choose>
-                                "></div>
-                                <div>
-                                    <span class="text-xs font-semibold text-gray-700">${slot.courtName}</span>
-                                    <span class="text-xs text-gray-500 ml-1">${slot.startTime} - ${slot.endTime}</span>
+                    <c:choose>
+                        <c:when test="${not empty d.mergedSlots}">
+                            <c:forEach var="ms" items="${d.mergedSlots}">
+                                <div class="slot-row">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                                        <div>
+                                            <span class="text-xs font-semibold text-gray-700">${ms.courtName}</span>
+                                            <span class="text-xs text-gray-500 ml-1">${ms.startTime} - ${ms.endTime}</span>
+                                            <c:if test="${ms.slotCount > 1}">
+                                                <span class="text-xs text-gray-400 ml-1">(${ms.slotCount} slot)</span>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-700">
+                                        <fmt:formatNumber value="${ms.totalPrice}" type="number" groupingUsed="true" />đ
+                                    </span>
                                 </div>
-                            </div>
-                            <span class="text-xs font-bold text-gray-700">
-                                <fmt:formatNumber value="${slot.price}" type="number" groupingUsed="true" />đ
-                            </span>
-                        </div>
-                    </c:forEach>
+                            </c:forEach>
+                        </c:when>
+                        <c:otherwise>
+                            <%-- Fallback: render raw slots if mergedSlots not available --%>
+                            <c:forEach var="slot" items="${d.slots}">
+                                <div class="slot-row">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                                        <div>
+                                            <span class="text-xs font-semibold text-gray-700">${slot.courtName}</span>
+                                            <span class="text-xs text-gray-500 ml-1">${slot.startTime} - ${slot.endTime}</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-700">
+                                        <fmt:formatNumber value="${slot.price}" type="number" groupingUsed="true" />đ
+                                    </span>
+                                </div>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
+
+                <!-- Slot breakdown (toggle — chi tiết từng slot khi merged) -->
+                <c:if test="${fn:length(d.mergedSlots) < fn:length(d.slots)}">
+                    <div class="detail-section">
+                        <button type="button"
+                                class="text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600 transition-colors"
+                                onclick="toggleSlotBreakdown(this)">
+                            <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                            Xem chi tiết từng slot (${fn:length(d.slots)} slot)
+                            <i data-lucide="chevron-down" class="w-3 h-3" id="breakdown-chevron"></i>
+                        </button>
+                        <div id="slot-breakdown" class="hidden mt-2 space-y-1">
+                            <c:forEach var="slot" items="${d.slots}">
+                                <div class="slot-row opacity-70">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-1.5 h-1.5 rounded-full
+                                            <c:choose>
+                                                <c:when test='${slot.slotStatus == "PENDING"}'>bg-yellow-400</c:when>
+                                                <c:when test='${slot.slotStatus == "CHECKED_IN"}'>bg-blue-400</c:when>
+                                                <c:when test='${slot.slotStatus == "CHECK_OUT"}'>bg-green-400</c:when>
+                                                <c:when test='${slot.slotStatus == "CANCELLED"}'>bg-red-400</c:when>
+                                                <c:otherwise>bg-gray-400</c:otherwise>
+                                            </c:choose>
+                                        "></div>
+                                        <div>
+                                            <span class="text-xs text-gray-600">${slot.courtName}</span>
+                                            <span class="text-xs text-gray-400 ml-1">${slot.startTime}-${slot.endTime}</span>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs text-gray-500">
+                                        <fmt:formatNumber value="${slot.price}" type="number" groupingUsed="true" />đ
+                                    </span>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </div>
+                </c:if>
 
                 <!-- Payment Info -->
                 <div class="detail-section">
@@ -175,9 +247,7 @@
                                 <c:when test="${d.paymentStatus == 'PAID'}">
                                     <span class="text-green-600">Đã thanh toán</span>
                                 </c:when>
-                                <c:otherwise>
-                                    <span class="text-gray-500">-</span>
-                                </c:otherwise>
+                                <c:otherwise><span class="text-gray-500">-</span></c:otherwise>
                             </c:choose>
                         </span>
                     </div>
@@ -187,18 +257,26 @@
                             <fmt:formatNumber value="${d.totalAmount}" type="number" groupingUsed="true" />đ
                         </span>
                     </div>
-                    <c:if test="${d.paidAmount != null && d.paidAmount > 0}">
+                    <c:if test="${d.paidAmount != null and d.paidAmount > 0}">
                         <div class="detail-row">
                             <span class="detail-label">Đã thanh toán</span>
                             <span class="detail-value text-green-600">
                                 <fmt:formatNumber value="${d.paidAmount}" type="number" groupingUsed="true" />đ
                             </span>
                         </div>
+                        <c:if test="${d.paymentStatus == 'PARTIAL'}">
+                            <div class="detail-row">
+                                <span class="detail-label">Còn lại</span>
+                                <span class="detail-value text-orange-600 font-bold">
+                                    <fmt:formatNumber value="${d.totalAmount - d.paidAmount}" type="number" groupingUsed="true" />đ
+                                </span>
+                            </div>
+                        </c:if>
                     </c:if>
                 </div>
 
                 <!-- Staff Contact -->
-                <c:if test="${not empty d.staffPhone || not empty d.staffName}">
+                <c:if test="${not empty d.staffPhone or not empty d.staffName}">
                     <div class="detail-section">
                         <h3>
                             <i data-lucide="phone" class="w-4 h-4 text-purple-600"></i>
@@ -222,26 +300,61 @@
                 </c:if>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center space-x-3 pt-2 pb-4">
-                    <a href="${pageContext.request.contextPath}/my-bookings" class="detail-btn-back">
-                        ← Quay lại
-                    </a>
-                    <c:if test="${(d.bookingStatus == 'PENDING' || d.bookingStatus == 'CONFIRMED') && d.paymentStatus == 'UNPAID'}">
+                <div class="flex flex-col gap-2 pt-2 pb-4">
+                    <%-- Row 1: Thanh Toán (full width when shown) --%>
+                    <c:if test="${canPay}">
                         <form method="post" action="${pageContext.request.contextPath}/my-bookings"
-                              class="flex-1"
-                              onsubmit="return confirmCancelDetail(this, ${d.bookingId})">
-                            <input type="hidden" name="action" value="cancel" />
+                              onsubmit="return handlePayClick(this)">
+                            <input type="hidden" name="action" value="retryPayment" />
                             <input type="hidden" name="bookingId" value="${d.bookingId}" />
-                            <button type="submit" class="detail-btn-cancel">
-                                Hủy booking
+                            <button type="submit"
+                                    class="w-full py-3 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i> Thanh Toán Ngay
                             </button>
                         </form>
                     </c:if>
-                </div>
 
+                    <%-- Row 2: Thanh Toán Phần Còn Lại --%>
+                    <c:if test="${canPayRemaining}">
+                        <form method="post" action="${pageContext.request.contextPath}/my-bookings"
+                              onsubmit="return handlePayClick(this)">
+                            <input type="hidden" name="action" value="payRemaining" />
+                            <input type="hidden" name="bookingId" value="${d.bookingId}" />
+                            <button type="submit"
+                                    class="w-full py-3 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="banknote" class="w-4 h-4"></i>
+                                Thanh Toán Phần Còn Lại
+                                <c:if test="${d.paidAmount != null}">
+                                    (<fmt:formatNumber value="${d.totalAmount - d.paidAmount}" type="number" groupingUsed="true" />đ)
+                                </c:if>
+                            </button>
+                        </form>
+                    </c:if>
+
+                    <%-- Row 3: Hủy + Quay lại side by side --%>
+                    <div class="flex items-center gap-2">
+                        <a href="${pageContext.request.contextPath}/my-bookings"
+                           class="flex-1 text-center py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+                            ← Quay lại
+                        </a>
+                        <c:if test="${canCancel}">
+                            <form method="post" action="${pageContext.request.contextPath}/my-bookings"
+                                  class="flex-1"
+                                  onsubmit="return confirmCancelDetail(this, ${d.bookingId})">
+                                <input type="hidden" name="action" value="cancel" />
+                                <input type="hidden" name="bookingId" value="${d.bookingId}" />
+                                <button type="submit"
+                                        class="w-full py-3 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors">
+                                    Hủy booking
+                                </button>
+                            </form>
+                        </c:if>
+                    </div>
+                </div>
             </div>
         </c:when>
         <c:otherwise>
+            <!-- Not found -->
             <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
                 <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
                     <i data-lucide="alert-triangle" class="w-10 h-10 text-red-400"></i>
@@ -258,6 +371,27 @@
 </div>
 
 <script>
+    /* ── Toggle slot breakdown ── */
+    function toggleSlotBreakdown(btn) {
+        var panel   = document.getElementById('slot-breakdown');
+        var chevron = document.getElementById('breakdown-chevron');
+        var hidden  = panel.classList.toggle('hidden');
+        if (chevron) {
+            chevron.setAttribute('data-lucide', hidden ? 'chevron-down' : 'chevron-up');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    /* ── Pay button: disable after click to prevent double-submit ── */
+    function handlePayClick(form) {
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn.disabled) return false;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Đang xử lý...';
+        return true;
+    }
+
+    /* ── Cancel confirmation ── */
     function confirmCancelDetail(form, bookingId) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -270,12 +404,35 @@
                 confirmButtonText: 'Hủy booking',
                 cancelButtonText: 'Quay lại'
             }).then(function(result) {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
+                if (result.isConfirmed) form.submit();
             });
             return false;
         }
         return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
     }
+
+    /* ── Detail countdown timer for PENDING hold expiry ── */
+    (function() {
+        var el = document.getElementById('detail-countdown');
+        if (!el) return;
+        var expireStr = el.getAttribute('data-expire');
+        if (!expireStr) return;
+        var expireTime = new Date(expireStr.replace('T', ' '));
+        var interval = setInterval(function() {
+            var diff = expireTime - new Date();
+            if (diff <= 0) {
+                el.textContent = 'Đã hết hạn thanh toán';
+                el.classList.remove('text-amber-600');
+                el.classList.add('text-red-600');
+                clearInterval(interval);
+                // Hide pay button
+                var payBtn = document.querySelector('button[type="submit"]');
+                if (payBtn) payBtn.style.display = 'none';
+                return;
+            }
+            var mins = Math.floor(diff / 60000);
+            var secs = Math.floor((diff % 60000) / 1000);
+            el.textContent = 'Hết hạn sau: ' + mins + 'm ' + (secs < 10 ? '0' : '') + secs + 's';
+        }, 1000);
+    })();
 </script>

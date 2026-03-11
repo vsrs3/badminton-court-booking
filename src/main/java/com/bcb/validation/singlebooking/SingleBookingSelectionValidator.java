@@ -67,8 +67,8 @@ public final class SingleBookingSelectionValidator {
         for (SingleBookingSelectionItemDTO sel : selections) {
             SingleBookingMatrixTimeSlotDTO slot = slotMap.get(sel.getSlotId());
             if (slot != null) {
-                LocalTime start = LocalTime.parse(slot.getStartTime(), TF);
-                if (start.isBefore(now)) {
+                LocalTime end = LocalTime.parse(slot.getEndTime(), TF);
+                if (end.isBefore(now)) {
                     pastDetails.add(Map.of("field", "slotId", "issue", "past_time_slot",
                             "rejectedValue", sel.getSlotId()));
                 }
@@ -132,3 +132,4 @@ public final class SingleBookingSelectionValidator {
         }
     }
 }
+

@@ -43,6 +43,18 @@ public class BreadcrumbUtils {
         return this;
     }
 
+    /** Add the "Voucher Dashboard" item (linked) */
+    public BreadcrumbUtils voucherDashboard() {
+        items.add(BreadcrumbItem.of("Quản Lý Voucher", contextPath + "/owner/vouchers/dashboard"));
+        return this;
+    }
+
+    /** Add the "Danh Sách Voucher" item (linked) */
+    public BreadcrumbUtils voucherList() {
+        items.add(BreadcrumbItem.of("Danh Sách Voucher", contextPath + "/owner/vouchers/list"));
+        return this;
+    }
+
     /** Add a generic linked item */
     public BreadcrumbUtils add(String label, String url) {
         items.add(BreadcrumbItem.of(label, url));
@@ -65,3 +77,4 @@ public class BreadcrumbUtils {
         }
     }
 }
+

@@ -27,7 +27,7 @@ import java.util.List;
  */
 @WebServlet(name = "ProfileController", urlPatterns = {"/profile"})
 public class ProfileController extends HttpServlet {
-	
+
 	private final ReviewService reviewService = new ReviewServiceImpl();
 	private final FacilityService facilityService = new FacilityServiceImpl();
 
@@ -56,10 +56,10 @@ public class ProfileController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + redirectUrl);
             return;
         }
-        
+
         // Handle section = review
         String section = request.getParameter("section");
-        
+
         if ("review".equals(section) || "review-updation".equals(section)) {
             String bookingIdParam = request.getParameter("bookingId");
             if (bookingIdParam == null || bookingIdParam.isEmpty()) {
@@ -73,7 +73,7 @@ public class ProfileController extends HttpServlet {
 
                 session.setAttribute("facilityReview", facility);
                 session.setAttribute("bookingId", bookingId);
-                
+
                 // load review cũ cho form edit
                 if ("review-updation".equals(section)) {
                     ReviewDTO dto    = new ReviewDTO(bookingId, account.getAccountId());
@@ -91,6 +91,4 @@ public class ProfileController extends HttpServlet {
         // Show profile page
         request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
     }
-    
-    
 }

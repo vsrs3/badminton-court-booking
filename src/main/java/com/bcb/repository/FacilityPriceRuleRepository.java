@@ -2,6 +2,7 @@ package com.bcb.repository;
 
 import com.bcb.model.FacilityPriceRule;
 
+import java.sql.Connection;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -43,4 +44,17 @@ public interface FacilityPriceRuleRepository {
      * Delete a price rule by ID.
      */
     void delete(int priceId);
+
+    /**
+     * Delete ALL price rules for a facility within an existing transaction connection.
+     * Used by the smart-config replace-all flow.
+     */
+    void deleteAllByFacilityId(Connection conn, int facilityId);
+
+    /**
+     * Batch insert a list of price rules within an existing transaction connection.
+     * Used by the smart-config replace-all flow.
+     */
+    void insertBatch(Connection conn, List<FacilityPriceRule> rules);
 }
+
