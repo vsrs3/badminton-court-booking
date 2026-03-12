@@ -1,5 +1,6 @@
 package com.bcb.dto.staff;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +16,10 @@ public class StaffBookingDetailDataDTO {
     private List<StaffBookingDetailSlotDTO> slots = new ArrayList<>();
     private StaffBookingDetailInvoiceDTO invoice;
     private String etag;
+    private List<StaffBookingDetailRentalRowDTO> rentalRows;
+    private BigDecimal rentalTotal;
+    private BigDecimal grandTotal;
+
 
     public int getBookingId() {
         return bookingId;
@@ -102,6 +107,32 @@ public class StaffBookingDetailDataDTO {
 
     public void setEtag(String etag) {
         this.etag = etag;
+    }
+
+    public List<StaffBookingDetailRentalRowDTO> getRentalRows() {
+
+        return rentalRows;
+    }
+
+    public void setRentalRows(List<StaffBookingDetailRentalRowDTO> rentalRows) {
+        this.rentalRows = rentalRows;
+    }
+
+    public BigDecimal getRentalTotal() {
+        return rentalTotal;
+    }
+
+    public void setRentalTotal(BigDecimal rentalTotal) {
+        this.rentalTotal = rentalTotal;
+    }
+
+
+    public BigDecimal getGrandTotal() {
+        return grandTotal;
+    }
+
+    public void setGrandTotal(BigDecimal grandTotal) {
+        this.grandTotal = grandTotal;
     }
 }
 

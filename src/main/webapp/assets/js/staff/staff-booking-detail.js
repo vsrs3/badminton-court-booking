@@ -7,6 +7,7 @@
     var CTX = window.ST_CTX || '';
     var NO_SHOW_BUFFER_MINUTES = 15;
 
+
     // DOM
     var stateLoading      = document.getElementById('stateLoading');
     var stateError        = document.getElementById('stateError');
@@ -14,10 +15,11 @@
     var detailContent     = document.getElementById('detailContent');
     var backLink          = document.getElementById('backLink');
     var backLinkError     = document.getElementById('backLinkError');
-    var sessionsContainer = document.getElementById('sessionsContainer');
+    var sessionsTableBody = document.getElementById('sessionsTableBody');
     var sessionProgress   = document.getElementById('sessionProgress');
     var btnEditBooking    = document.getElementById('btnEditBooking');
     var btnCancelRemaining = document.getElementById('btnCancelRemaining');
+
 
     // Payment DOM
     var confirmPaymentBtnWrap = document.getElementById('confirmPaymentBtnWrap');
@@ -151,9 +153,31 @@
         setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'T\u00e0i kho\u1ea3n' : 'Kh\u00e1ch v\u00e3ng lai');
 
         renderInvoice(d);
+        renderRentalRows(d.rentalRows || []);
         renderSessions(d);
         renderEditActions(d);
     }
+
+    function renderRentalRows(rentalRows) {
+        if (!sessionsTableBody) return;
+
+        if (!rentalRows || rentalRows.length === 0) {
+            sessionsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Không có dữ liệu phiên chơi / đồ thuê</td></tr>';
+            return;
+        }
+
+        sessionsTableBody.innerHTML = rentalRows.map(function (row) {
+            return '' +
+                '<tr>' +
+                '   <td>' + escapeHtml(row.courtName || '') + '</td>' +
+                '   <td>' + escapeHtml(row.startTime || '') + ' - ' + escapeHtml(row.endTime || '') + '</td>' +
+                '   <td>' + escapeHtml(row.rentalItemsText || '') + '</td>' +
+                '   <td>' + formatMoney(row.rentalTotal || 0) + '</td>' +
+                '   <td>-</td>' +
+                '</tr>';
+        }).join('');
+    }
+
     function renderEditActions(d) {
         var canEdit = d.bookingStatus === 'CONFIRMED';
 
@@ -176,12 +200,18 @@
     // ─── Render Invoice ───
     function renderInvoice(d) {
         if (d.invoice) {
-            var totalAmount = d.invoice.totalAmount;
-            var paidAmount = d.invoice.paidAmount;
+            var courtAmount = d.invoice && d.invoice.totalAmount != null
+                ? d.invoice.totalAmount
+                : 0;
+            var rentalAmount = d.rentalTotal || 0;
+            var totalAmount = d.grandTotal || 0;
+            var paidAmount = d.invoice.paidAmount || 0;
             var remaining = totalAmount - paidAmount;
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
 
+            setText('dCourtAmount', formatMoney(courtAmount));
+            setText('dRentalAmount', formatMoney(rentalAmount));
             setText('dTotalAmount', formatMoney(totalAmount));
             setText('dPaidAmount', formatMoney(paidAmount));
 
@@ -209,7 +239,9 @@
                 paymentWarningBanner.classList.add('d-none');
             }
         } else {
-            setText('dTotalAmount', '—');
+            setText('dCourtAmount', '—');
+            setText('dRentalAmount', formatMoney(d.rentalTotal || 0));
+            setText('dTotalAmount', formatMoney(d.grandTotal || 0));
             setText('dPaidAmount', '—');
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
@@ -220,106 +252,34 @@
 
     // ─── Render Sessions (with NO_SHOW support) ───
     function renderSessions(d) {
-        sessionsContainer.innerHTML = '';
         var sessions = d.sessions || [];
 
         if (sessions.length === 0) {
-            sessionsContainer.innerHTML = '<div class="sbd-no-data">Kh\u00f4ng c\u00f3 phi\u00ean ch\u01a1i</div>';
-            sessionProgress.textContent = '';
+            if (sessionProgress) sessionProgress.textContent = '';
             return;
         }
 
-        // Progress: count finished (COMPLETED or NO_SHOW)
         var finishedCount = 0;
         var noShowCount = 0;
         var cancelledCount = 0;
+
         sessions.forEach(function (s) {
             if (s.sessionStatus === 'COMPLETED' || s.sessionStatus === 'NO_SHOW') finishedCount++;
             if (s.sessionStatus === 'NO_SHOW') noShowCount++;
             if (s.sessionStatus === 'CANCELLED') cancelledCount++;
         });
 
-        var progressText = finishedCount + '/' + sessions.length + ' ho\u00e0n th\u00e0nh';
+        var progressText = finishedCount + '/' + sessions.length + ' hoàn thành';
         if (noShowCount > 0) {
             progressText += ' (' + noShowCount + ' vắng)';
         }
         if (cancelledCount > 0) {
             progressText += ' (' + cancelledCount + ' hủy)';
         }
-        sessionProgress.textContent = progressText;
 
-        var isToday = (d.bookingDate === todayStr());
-        var isConfirmed = (d.bookingStatus === 'CONFIRMED');
-        var canPlayActions = isToday && isConfirmed;
-
-        sessions.forEach(function (s, i) {
-            var row = document.createElement('div');
-            row.className = 'sbd-session sbd-ss-' + s.sessionStatus.toLowerCase();
-            row.id = 'session-' + i;
-
-            // ─ Index badge ─
-            var idxEl = document.createElement('div');
-            idxEl.className = 'sbd-session-idx';
-            if (s.sessionStatus === 'COMPLETED') {
-                idxEl.innerHTML = '<i class="bi bi-check-lg"></i>';
-            } else if (s.sessionStatus === 'CHECKED_IN') {
-                idxEl.innerHTML = '<i class="bi bi-play-fill"></i>';
-            } else if (s.sessionStatus === 'NO_SHOW') {
-                idxEl.innerHTML = '<i class="bi bi-person-x-fill"></i>';
-            } else if (s.sessionStatus === 'CANCELLED') {
-                idxEl.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
-            } else {
-                idxEl.textContent = i + 1;
-            }
-            row.appendChild(idxEl);
-
-            // ─ Info block ─
-            var infoEl = document.createElement('div');
-            infoEl.className = 'sbd-session-info';
-
-            var courtEl = document.createElement('div');
-            courtEl.className = 'sbd-session-court';
-            courtEl.textContent = s.courtName;
-            infoEl.appendChild(courtEl);
-
-            var metaEl = document.createElement('div');
-            metaEl.className = 'sbd-session-meta';
-            metaEl.innerHTML =
-                '<span><i class="bi bi-clock"></i>' + s.startTime + ' → ' + s.endTime + '</span>' +
-                '<span><i class="bi bi-layers"></i>' + s.slotCount + ' slot</span>' +
-                '<span class="sbd-session-price">' + formatMoney(s.totalPrice) + '</span>';
-            infoEl.appendChild(metaEl);
-
-            // Time info
-            if (s.checkinTime || s.checkoutTime) {
-                var timeInfoEl = document.createElement('div');
-                timeInfoEl.className = 'sbd-session-time-info';
-                var parts = [];
-                if (s.checkinTime) parts.push('In: ' + s.checkinTime);
-                if (s.checkoutTime) parts.push('Out: ' + s.checkoutTime);
-                timeInfoEl.textContent = parts.join(' · ');
-                infoEl.appendChild(timeInfoEl);
-            }
-
-            row.appendChild(infoEl);
-
-            // ─ Action area ─
-            var actionEl = document.createElement('div');
-            actionEl.className = 'sbd-session-action';
-            actionEl.id = 'session-action-' + i;
-
-            if (canPlayActions || hasReleasableSlot(s)) {
-                renderSessionAction(actionEl, s, i, d, canPlayActions);
-            } else {
-                var labelEl = document.createElement('span');
-                labelEl.className = 'sbd-session-status ' + sessionStatusLabelClass(s.sessionStatus);
-                labelEl.textContent = sessionStatusLabel(s.sessionStatus);
-                actionEl.appendChild(labelEl);
-            }
-
-            row.appendChild(actionEl);
-            sessionsContainer.appendChild(row);
-        });
+        if (sessionProgress) {
+            sessionProgress.textContent = progressText;
+        }
     }
 
     function hasReleasableSlot(session) {
@@ -502,10 +462,12 @@
     function openPaymentModal() {
         if (!bookingData || !bookingData.invoice) return;
         var inv = bookingData.invoice;
-        var remaining = inv.totalAmount - inv.paidAmount;
+        var totalAmount = bookingData.grandTotal || 0;
+        var paidAmount = inv.paidAmount || 0;
+        var remaining = totalAmount - paidAmount;
 
-        setText('modalTotalAmount', formatMoney(inv.totalAmount));
-        setText('modalPaidAmount', formatMoney(inv.paidAmount));
+        setText('modalTotalAmount', formatMoney(totalAmount));
+        setText('modalPaidAmount', formatMoney(paidAmount));
         setText('modalRemainingAmount', formatMoney(remaining));
 
         paymentAmountInput.value = remaining;
@@ -540,7 +502,7 @@
     function handleConfirmPayment() {
         hideModalError();
         var inv = bookingData.invoice;
-        var remaining = inv.totalAmount - inv.paidAmount;
+        var remaining = (bookingData.grandTotal || 0) - (inv.paidAmount || 0);
         var inputVal = paymentAmountInput.value.trim();
 
         if (!inputVal || isNaN(inputVal)) {
@@ -585,6 +547,7 @@
                 closePaymentModal();
                 resetConfirmButton();
                 renderInvoice(bookingData);
+                renderRentalRows(bookingData.rentalRows || []);
                 renderSessions(bookingData);
 
                 if (pendingAction) {
@@ -959,6 +922,15 @@
     function formatMoney(amount) {
         if (amount == null) return '—';
         return Number(amount).toLocaleString('vi-VN') + 'đ';
+    }
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function bookingStatusLabel(s) {
