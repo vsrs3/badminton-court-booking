@@ -1,1 +1,91 @@
-package com.bcb.repository.impl;import com.bcb.dto.staff.StaffRefundListItemDTO;import com.bcb.repository.staff.StaffRefundRepository;import java.sql.Connection;import java.sql.PreparedStatement;import java.sql.ResultSet;import java.util.ArrayList;import java.util.List;public class StaffRefundRepositoryImpl implements StaffRefundRepository {    @Override    public int countPendingRefunds(Connection conn, int facilityId) throws Exception {        String sql = "SELECT COUNT(*) " +                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +                "WHERE b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0";        try (PreparedStatement ps = conn.prepareStatement(sql)) {            ps.setInt(1, facilityId);            try (ResultSet rs = ps.executeQuery()) {                rs.next();                return rs.getInt(1);            }        }    }    @Override    public List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size)            throws Exception {        String sql = "SELECT b.booking_id, b.booking_date, b.created_at, " +                "COALESCE(a.full_name, g.guest_name) AS customer_name, " +                "COALESCE(a.phone, g.phone) AS phone, " +                "i.total_amount, i.paid_amount, i.refund_due, i.refund_status, i.refund_note " +                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +                "LEFT JOIN Account a ON b.account_id = a.account_id " +                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +                "WHERE b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0 " +                "ORDER BY b.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";        List<StaffRefundListItemDTO> results = new ArrayList<>();        try (PreparedStatement ps = conn.prepareStatement(sql)) {            ps.setInt(1, facilityId);            ps.setInt(2, offset);            ps.setInt(3, size);            try (ResultSet rs = ps.executeQuery()) {                while (rs.next()) {                    StaffRefundListItemDTO item = new StaffRefundListItemDTO();                    item.setBookingId(rs.getInt("booking_id"));                    item.setCustomerName(rs.getString("customer_name"));                    item.setPhone(rs.getString("phone"));                    item.setBookingDate(rs.getString("booking_date"));                    item.setCreatedAt(rs.getString("created_at"));                    item.setTotalAmount(rs.getBigDecimal("total_amount"));                    item.setPaidAmount(rs.getBigDecimal("paid_amount"));                    item.setRefundDue(rs.getBigDecimal("refund_due"));                    item.setRefundStatus(rs.getString("refund_status"));                    item.setRefundNote(rs.getString("refund_note"));                    results.add(item);                }            }        }        return results;    }    @Override    public String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception {        String sql = "SELECT i.refund_note " +                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +                "WHERE i.booking_id = ? AND b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL'";        try (PreparedStatement ps = conn.prepareStatement(sql)) {            ps.setInt(1, bookingId);            ps.setInt(2, facilityId);            try (ResultSet rs = ps.executeQuery()) {                return rs.next() ? rs.getString(1) : null;            }        }    }    @Override    public int markRefunded(Connection conn, int bookingId, int facilityId, String refundNote) throws Exception {        String sql = "UPDATE i SET i.refund_status = 'REFUNDED', i.refund_note = ? " +                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +                "WHERE i.booking_id = ? AND b.facility_id = ? " +                "AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0";        try (PreparedStatement ps = conn.prepareStatement(sql)) {            ps.setString(1, refundNote);            ps.setInt(2, bookingId);            ps.setInt(3, facilityId);            return ps.executeUpdate();        }    }}
+package com.bcb.repository.impl;
+import com.bcb.dto.staff.StaffRefundListItemDTO;
+import com.bcb.repository.staff.StaffRefundRepository;
+import java.sql.Connection;import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+public class StaffRefundRepositoryImpl implements StaffRefundRepository {
+
+    @Override
+    public int countPendingRefunds(Connection conn, int facilityId) throws Exception {
+        String sql = "SELECT COUNT(*) " +
+                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +
+                "WHERE b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, facilityId);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    @Override
+    public List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size)            throws Exception {
+        String sql = "SELECT b.booking_id, b.booking_date, b.created_at, " +
+                "COALESCE(a.full_name, g.guest_name) AS customer_name, " +
+                "COALESCE(a.phone, g.phone) AS phone, " +
+                "i.total_amount, i.paid_amount, i.refund_due, i.refund_status, i.refund_note " +
+                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "WHERE b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0 " + "ORDER BY b.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        List<StaffRefundListItemDTO> results = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, facilityId);
+            ps.setInt(2, offset);
+            ps.setInt(3, size);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StaffRefundListItemDTO item = new StaffRefundListItemDTO();
+                    item.setBookingId(rs.getInt("booking_id"));
+                    item.setCustomerName(rs.getString("customer_name"));
+                    item.setPhone(rs.getString("phone"));
+                    item.setBookingDate(rs.getString("booking_date"));
+                    item.setCreatedAt(rs.getString("created_at"));
+                    item.setTotalAmount(rs.getBigDecimal("total_amount"));
+                    item.setPaidAmount(rs.getBigDecimal("paid_amount"));
+                    item.setRefundDue(rs.getBigDecimal("refund_due"));
+                    item.setRefundStatus(rs.getString("refund_status"));
+                    item.setRefundNote(rs.getString("refund_note"));
+                    results.add(item);
+                }
+            }
+        }
+        return results;
+    }
+
+    @Override
+    public String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception {        String sql = "SELECT i.refund_note " +
+            "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +
+            "WHERE i.booking_id = ? AND b.facility_id = ? AND i.refund_status = 'PENDING_MANUAL'";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setInt(2, facilityId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
+    @Override
+    public int markRefunded(Connection conn, int bookingId, int facilityId, String refundNote) throws Exception {
+        String sql = "UPDATE i SET i.refund_status = 'REFUNDED', i.refund_note = ? " +
+                "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +
+                "WHERE i.booking_id = ? AND b.facility_id = ? " +
+                "AND i.refund_status = 'PENDING_MANUAL' AND i.refund_due > 0";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, refundNote);
+            ps.setInt(2, bookingId);
+            ps.setInt(3, facilityId);
+            return ps.executeUpdate();
+        }
+    }
+}

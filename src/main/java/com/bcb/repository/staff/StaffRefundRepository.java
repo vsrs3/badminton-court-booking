@@ -1,1 +1,14 @@
-package com.bcb.repository.staff;import com.bcb.dto.staff.StaffRefundListItemDTO;import java.sql.Connection;import java.util.List;public interface StaffRefundRepository {    int countPendingRefunds(Connection conn, int facilityId) throws Exception;    List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size) throws Exception;    String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception;    int markRefunded(Connection conn, int bookingId, int facilityId, String refundNote) throws Exception;}
+package com.bcb.repository.staff;
+import com.bcb.dto.staff.StaffRefundListItemDTO;
+import java.sql.Connection;
+import java.util.List;
+
+public interface StaffRefundRepository {
+
+    int countPendingRefunds(Connection conn, int facilityId) throws Exception;
+
+    List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size) throws Exception;
+
+    String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception;
+
+    int markRefunded(Connection conn, int bookingId, int facilityId, String refundNote) throws Exception;}
