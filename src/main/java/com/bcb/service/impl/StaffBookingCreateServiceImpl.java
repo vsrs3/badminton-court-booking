@@ -1,6 +1,7 @@
 package com.bcb.service.impl;
 
-import com.bcb.utils.staff.StaffAuthUtil;
+
+import com.bcb.dto.staff.RentalItemDTO;
 import com.bcb.dto.staff.StaffBookingCreateOutcomeDTO;
 import com.bcb.dto.staff.StaffBookingCreateSlotDTO;
 import com.bcb.dto.staff.StaffCustomerAccountDTO;
@@ -8,6 +9,7 @@ import com.bcb.repository.impl.StaffBookingCreateRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingCreateRepository;
 import com.bcb.service.staff.StaffBookingCreateService;
 import com.bcb.utils.DBContext;
+import com.bcb.utils.staff.StaffAuthUtil;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -36,7 +38,9 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         String accountIdStr = extractString(body, "accountId");
         String guestName = extractString(body, "guestName");
         String guestPhone = normalizePhone(extractString(body, "guestPhone"));
+
         List<StaffBookingCreateSlotDTO> slots = parseSlots(body);
+        List<RentalItemDTO> rentals = parseRentals(body);
 
         if (dateStr == null || dateStr.isEmpty()) {
             return out(400, jsonError("Thiếu ngày đặt sân"));
@@ -95,9 +99,23 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             return out(400, jsonError("Đã quá giờ kết thúc của một hoặc nhiều slot. Vui long chon slot khac."));
         }
 
+        if (!validateRentals(rentals)) {
+            return out(400, jsonError("Dữ liệu đồ thuê không hợp lệ"));
+        }
+
         try {
-            int bookingId = createBookingTransaction(facilityId, bookingDate, customerType,
-                    accountId, guestName, guestPhone, staffId, slots);
+            int bookingId = createBookingTransaction(
+                    facilityId,
+                    bookingDate,
+                    customerType,
+                    accountId,
+                    guestName,
+                    guestPhone,
+                    staffId,
+                    slots,
+                    rentals
+            );
+
             return out(200, "{\"success\":true,\"message\":\"Đặt sân thành công\",\"data\":{\"bookingId\":" + bookingId + "}}");
         } catch (SlotConflictException e) {
             return out(409, jsonError("Slot đã được đặt bởi người khác. Vui lòng chọn lại."));
@@ -106,9 +124,33 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         }
     }
 
+    /**
+     * Giữ nguyên chữ ký cũ để không ảnh hưởng logic cũ nếu nơi khác còn gọi.
+     */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
                                          Integer accountId, String guestName, String guestPhone,
                                          int staffId, List<StaffBookingCreateSlotDTO> slots) throws Exception {
+        return createBookingTransaction(
+                facilityId,
+                bookingDate,
+                customerType,
+                accountId,
+                guestName,
+                guestPhone,
+                staffId,
+                slots,
+                new ArrayList<>()
+        );
+    }
+
+    /**
+     * Hàm mới: mở rộng thêm rentals nhưng không phá logic cũ.
+     */
+    private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
+                                         Integer accountId, String guestName, String guestPhone,
+                                         int staffId, List<StaffBookingCreateSlotDTO> slots,
+                                         List<RentalItemDTO> rentals) throws Exception {
+
         DayOfWeek dow = bookingDate.getDayOfWeek();
         String dayType = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) ? "WEEKEND" : "WEEKDAY";
 
@@ -130,6 +172,12 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
+                /**
+                 * Map để nối slot vừa tạo với bookingSlotId mới sinh ra.
+                 * Key: courtId_slotId
+                 */
+                Map<String, Integer> bookingSlotIdByCourtAndSlot = new HashMap<>();
+
                 for (StaffBookingCreateSlotDTO slot : slots) {
                     BigDecimal price = lookupPrice(slot, priceCache, courtTypeMap, slotTimeMap);
                     totalAmount = totalAmount.add(price);
@@ -141,7 +189,53 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                         conn.rollback();
                         throw new SlotConflictException();
                     }
+
+                    bookingSlotIdByCourtAndSlot.put(buildCourtSlotKey(slot.getCourtId(), slot.getSlotId()), bookingSlotId);
                 }
+
+                /**
+                 * Lưu đồ thuê sau khi booking slots đã có.
+                 * Không ảnh hưởng logic cũ nếu rentals rỗng.
+                 */
+                BigDecimal rentalTotal = BigDecimal.ZERO;
+
+                for (RentalItemDTO rental : rentals) {
+                    if (rental == null) continue;
+
+                    List<Integer> matchedBookingSlotIds = new ArrayList<>();
+                    for (Integer slotId : rental.getSlotIds()) {
+                        Integer bookingSlotId = bookingSlotIdByCourtAndSlot.get(
+                                buildCourtSlotKey(rental.getCourtId(), slotId)
+                        );
+                        if (bookingSlotId != null) {
+                            matchedBookingSlotIds.add(bookingSlotId);
+                        }
+                    }
+
+                    if (matchedBookingSlotIds.isEmpty()) {
+                        continue;
+                    }
+
+                    for (Integer bookingSlotId : matchedBookingSlotIds) {
+                        repository.insertBookingRental(
+                                conn,
+                                bookingId,
+                                bookingSlotId,
+                                rental.getInventoryId(),
+                                rental.getQuantity(),
+                                rental.getUnitPrice(),
+                                staffId
+                        );
+                    }
+
+                    BigDecimal lineTotal = rental.getUnitPrice()
+                            .multiply(BigDecimal.valueOf(rental.getQuantity()))
+                            .multiply(BigDecimal.valueOf(matchedBookingSlotIds.size()));
+
+                    rentalTotal = rentalTotal.add(lineTotal);
+                }
+
+                totalAmount = totalAmount.add(rentalTotal);
 
                 repository.insertInvoice(conn, bookingId, totalAmount);
                 conn.commit();
@@ -231,37 +325,151 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return true;
     }
 
+    private boolean validateRentals(List<RentalItemDTO> rentals) {
+        if (rentals == null || rentals.isEmpty()) return true;
+
+        for (RentalItemDTO item : rentals) {
+            if (item == null) return false;
+            if (item.getCourtId() == null || item.getCourtId() <= 0) return false;
+            if (item.getInventoryId() == null || item.getInventoryId() <= 0) return false;
+            if (item.getQuantity() == null || item.getQuantity() <= 0) return false;
+            if (item.getUnitPrice() == null || item.getUnitPrice().compareTo(BigDecimal.ZERO) < 0) return false;
+            if (item.getSlotIds() == null || item.getSlotIds().isEmpty()) return false;
+        }
+
+        return true;
+    }
+
     private List<StaffBookingCreateSlotDTO> parseSlots(String json) {
         List<StaffBookingCreateSlotDTO> result = new ArrayList<>();
-        String slotsKey = "\"slots\"";
-        int idx = json.indexOf(slotsKey);
-        if (idx < 0) return result;
 
-        int arrStart = json.indexOf("[", idx);
-        int arrEnd = json.indexOf("]", arrStart);
-        if (arrStart < 0 || arrEnd < 0) return result;
+        String arrStr = extractArray(json, "slots");
+        if (arrStr == null || arrStr.isEmpty()) return result;
 
-        String arrStr = json.substring(arrStart, arrEnd + 1);
-
-        int pos = 0;
-        while (pos < arrStr.length()) {
-            int objStart = arrStr.indexOf("{", pos);
-            if (objStart < 0) break;
-            int objEnd = arrStr.indexOf("}", objStart);
-            if (objEnd < 0) break;
-
-            String obj = arrStr.substring(objStart, objEnd + 1);
+        List<String> objects = splitTopLevelObjects(arrStr);
+        for (String obj : objects) {
             String courtIdStr = extractString(obj, "courtId");
             String slotIdStr = extractString(obj, "slotId");
 
             if (courtIdStr != null && slotIdStr != null) {
                 try {
-                    result.add(new StaffBookingCreateSlotDTO(Integer.parseInt(courtIdStr), Integer.parseInt(slotIdStr)));
+                    result.add(new StaffBookingCreateSlotDTO(
+                            Integer.parseInt(courtIdStr),
+                            Integer.parseInt(slotIdStr)
+                    ));
                 } catch (NumberFormatException ignored) {
                 }
             }
+        }
 
-            pos = objEnd + 1;
+        return result;
+    }
+
+    private List<RentalItemDTO> parseRentals(String json) {
+        List<RentalItemDTO> result = new ArrayList<>();
+
+        String arrStr = extractArray(json, "rentals");
+        if (arrStr == null || arrStr.isEmpty()) return result;
+
+        List<String> objects = splitTopLevelObjects(arrStr);
+        for (String obj : objects) {
+            RentalItemDTO item = new RentalItemDTO();
+
+            String courtIdStr = extractString(obj, "courtId");
+            String inventoryIdStr = extractString(obj, "inventoryId");
+            String quantityStr = extractString(obj, "quantity");
+            String unitPriceStr = extractString(obj, "unitPrice");
+            String name = extractString(obj, "name");
+
+            try {
+                item.setCourtId(courtIdStr == null ? null : Integer.parseInt(courtIdStr));
+                item.setInventoryId(inventoryIdStr == null ? null : Integer.parseInt(inventoryIdStr));
+                item.setQuantity(quantityStr == null ? null : Integer.parseInt(quantityStr));
+                item.setUnitPrice(unitPriceStr == null ? null : new BigDecimal(unitPriceStr));
+                item.setName(name);
+                item.setGroupKey(extractString(obj, "groupKey"));
+                item.setStartTime(extractString(obj, "startTime"));
+                item.setEndTime(extractString(obj, "endTime"));
+                item.setSlotIds(parseIntArray(obj, "slotIds"));
+
+                result.add(item);
+            } catch (Exception ignored) {
+            }
+        }
+
+        return result;
+    }
+
+    private List<Integer> parseIntArray(String json, String key) {
+        List<Integer> result = new ArrayList<>();
+
+        String arr = extractArray(json, key);
+        if (arr == null || arr.length() < 2) return result;
+
+        String content = arr.substring(1, arr.length() - 1).trim();
+        if (content.isEmpty()) return result;
+
+        String[] parts = content.split(",");
+        for (String part : parts) {
+            try {
+                result.add(Integer.parseInt(part.trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return result;
+    }
+
+    private String extractArray(String json, String key) {
+        String search = "\"" + key + "\"";
+        int idx = json.indexOf(search);
+        if (idx < 0) return null;
+
+        int arrStart = json.indexOf("[", idx + search.length());
+        if (arrStart < 0) return null;
+
+        int arrEnd = findMatchingBracket(json, arrStart);
+        if (arrEnd < 0) return null;
+
+        return json.substring(arrStart, arrEnd + 1);
+    }
+
+    private int findMatchingBracket(String text, int openIndex) {
+        int level = 0;
+        for (int i = openIndex; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '[') {
+                level++;
+            } else if (c == ']') {
+                level--;
+                if (level == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private List<String> splitTopLevelObjects(String arrayText) {
+        List<String> result = new ArrayList<>();
+        if (arrayText == null || arrayText.length() < 2) return result;
+
+        int level = 0;
+        int objStart = -1;
+
+        for (int i = 0; i < arrayText.length(); i++) {
+            char c = arrayText.charAt(i);
+
+            if (c == '{') {
+                if (level == 0) objStart = i;
+                level++;
+            } else if (c == '}') {
+                level--;
+                if (level == 0 && objStart >= 0) {
+                    result.add(arrayText.substring(objStart, i + 1));
+                    objStart = -1;
+                }
+            }
         }
 
         return result;
@@ -276,25 +484,57 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         if (idx < 0) return null;
 
         idx++;
-        while (idx < json.length() && json.charAt(idx) == ' ') idx++;
+        while (idx < json.length() && Character.isWhitespace(json.charAt(idx))) idx++;
         if (idx >= json.length()) return null;
 
-        if (json.charAt(idx) == 'n') return null;
+        if (json.startsWith("null", idx)) return null;
 
         if (json.charAt(idx) == '"') {
-            int end = json.indexOf('"', idx + 1);
-            if (end < 0) return null;
-            return json.substring(idx + 1, end);
+            StringBuilder sb = new StringBuilder();
+            boolean escaped = false;
+
+            for (int i = idx + 1; i < json.length(); i++) {
+                char c = json.charAt(i);
+
+                if (escaped) {
+                    sb.append(c);
+                    escaped = false;
+                    continue;
+                }
+
+                if (c == '\\') {
+                    escaped = true;
+                    continue;
+                }
+
+                if (c == '"') {
+                    return sb.toString();
+                }
+
+                sb.append(c);
+            }
+            return null;
         }
 
         int end = idx;
-        while (end < json.length() && json.charAt(end) != ',' && json.charAt(end) != '}' && json.charAt(end) != ' ') end++;
+        while (end < json.length()
+                && json.charAt(end) != ','
+                && json.charAt(end) != '}'
+                && json.charAt(end) != ']'
+                && !Character.isWhitespace(json.charAt(end))) {
+            end++;
+        }
+
         return json.substring(idx, end);
     }
 
     private String normalizePhone(String phone) {
         if (phone == null) return null;
         return phone.replaceAll("\\s+", "").trim();
+    }
+
+    private String buildCourtSlotKey(Integer courtId, Integer slotId) {
+        return courtId + "_" + slotId;
     }
 
     private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
@@ -322,5 +562,6 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             super("Slot conflict");
         }
     }
+
 }
 

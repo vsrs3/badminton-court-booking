@@ -190,5 +190,24 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
             ps.executeUpdate();
         }
     }
+
+    @Override
+    public void insertBookingRental(Connection conn, int bookingId, int bookingSlotId,
+                                    int inventoryId, int quantity, BigDecimal unitPrice,
+                                    int createdBy) throws Exception {
+        String sql = "INSERT INTO RacketRental " +
+                "(booking_slot_id, inventory_id, quantity, unit_price, created_by, created_at) " +
+                "VALUES (?, ?, ?, ?, ?, GETDATE())";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setInt(2, bookingSlotId);
+            ps.setInt(3, inventoryId);
+            ps.setInt(4, quantity);
+            ps.setBigDecimal(5, unitPrice);
+            ps.setInt(6, createdBy);
+            ps.executeUpdate();
+        }
+    }
 }
 

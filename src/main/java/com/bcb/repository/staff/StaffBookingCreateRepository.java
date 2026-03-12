@@ -33,5 +33,10 @@ public interface StaffBookingCreateRepository {
                                 java.time.LocalDate bookingDate, int bookingSlotId) throws Exception;
 
     void insertInvoice(Connection conn, int bookingId, BigDecimal totalAmount) throws Exception;
+
+    void insertBookingRental(Connection conn, int bookingId, int bookingSlotId,
+                             int inventoryId, int quantity, BigDecimal unitPrice,
+                             int createdBy) throws Exception;
+
 }
 

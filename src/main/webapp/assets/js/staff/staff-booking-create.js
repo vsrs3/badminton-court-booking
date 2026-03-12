@@ -431,7 +431,9 @@
         var selectedGroup = rentalState.selectedGroup;
         var groupKey = selectedGroup ? selectedGroup.groupKey : '';
         var selectedItems = rentalState.rentalsByGroup[groupKey] || [];
-        var existed = selectedItems.find(function (x) { return Number(x.inventoryId) === Number(item.inventoryId); });
+        var existed = selectedItems.find(function (x) {
+            return Number(x.inventoryId) === Number(item.inventoryId);
+        });
 
         var actionHtml = '';
 
@@ -455,15 +457,22 @@
                 '</div>';
         } else {
             actionHtml =
-                '<button class="btn btn-sm btn-outline-primary" type="button" onclick="selectRentalItem(' + Number(item.inventoryId) + ', \'' + jsString(item.name || '') + '\', ' + Number(item.rentalPrice || 0) + ', ' + Number(item.availableQuantity || 0) + ')">' +
-                '   Chọn' +
-                '</button>' +
-                '<div class="mt-2 d-none" id="qtyWrap_' + Number(item.inventoryId) + '">' +
-                '   <input type="number" min="0" max="' + Number(item.availableQuantity || 0) + '" class="form-control form-control-sm mb-2" ' +
-                '          id="qty_' + Number(item.inventoryId) + '" oninput="onQtyChange(' + Number(item.inventoryId) + ', ' + Number(item.availableQuantity || 0) + ')">' +
-                '   <button class="btn btn-sm btn-success" disabled id="rentBtn_' + Number(item.inventoryId) + '" onclick="rentItem(' + Number(item.inventoryId) + ', ' + Number(item.rentalPrice || 0) + ', \'' + jsString(item.name || '') + '\')">' +
-                '       Thuê' +
+                '<div id="selectBtnWrap_' + Number(item.inventoryId) + '">' +
+                '   <button class="btn btn-sm btn-outline-primary" type="button" onclick="selectRentalItem(' + Number(item.inventoryId) + ')">' +
+                '       Chọn' +
                 '   </button>' +
+                '</div>' +
+                '<div class="mt-2 d-none" id="qtyWrap_' + Number(item.inventoryId) + '">' +
+                '   <input type="number" min="1" max="' + Number(item.availableQuantity || 0) + '" class="form-control form-control-sm mb-2" ' +
+                '          id="qty_' + Number(item.inventoryId) + '" oninput="onQtyChange(' + Number(item.inventoryId) + ', ' + Number(item.availableQuantity || 0) + ')">' +
+                '   <div class="d-flex gap-2">' +
+                '       <button class="btn btn-sm btn-success" disabled id="rentBtn_' + Number(item.inventoryId) + '" type="button" onclick="rentItem(' + Number(item.inventoryId) + ', ' + Number(item.rentalPrice || 0) + ', \'' + jsString(item.name || '') + '\')">' +
+                '           Thuê' +
+                '       </button>' +
+                '       <button class="btn btn-sm btn-secondary" type="button" onclick="cancelSelectRentalItem(' + Number(item.inventoryId) + ')">' +
+                '           Hủy' +
+                '       </button>' +
+                '   </div>' +
                 '</div>';
         }
 
@@ -481,7 +490,22 @@
 
     function selectRentalItem(inventoryId) {
         var wrap = document.getElementById('qtyWrap_' + inventoryId);
+        var btnWrap = document.getElementById('selectBtnWrap_' + inventoryId);
+
+        if (btnWrap) btnWrap.classList.add('d-none');
         if (wrap) wrap.classList.remove('d-none');
+    }
+
+    function cancelSelectRentalItem(inventoryId) {
+        var wrap = document.getElementById('qtyWrap_' + inventoryId);
+        var btnWrap = document.getElementById('selectBtnWrap_' + inventoryId);
+        var qtyEl = document.getElementById('qty_' + inventoryId);
+        var rentBtn = document.getElementById('rentBtn_' + inventoryId);
+
+        if (wrap) wrap.classList.add('d-none');
+        if (btnWrap) btnWrap.classList.remove('d-none');
+        if (qtyEl) qtyEl.value = '';
+        if (rentBtn) rentBtn.disabled = true;
     }
 
     function onQtyChange(inventoryId, maxQty) {
@@ -499,62 +523,54 @@
         var qtyEl = document.getElementById('qty_' + inventoryId);
         var qty = parseInt((qtyEl && qtyEl.value) || '0', 10);
 
-        if (!rentalState.selectedGroup || qty <= 0) return;
+        if (!rentalState.selectedGroup) return;
 
-        var payload = {
-            inventoryId: Number(inventoryId),
-            quantity: qty,
-            unitPrice: Number(unitPrice),
-            bookingSlotIds: rentalState.selectedGroup.bookingSlotIds || []
-        };
+        var item = (rentalState.items || []).find(function (x) {
+            return Number(x.inventoryId) === Number(inventoryId);
+        });
 
-        try {
-            var res = await fetch(CTX + '/api/staff/rental/save', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            var json = await res.json();
-            if (!json.success) {
-                showError(json.message || 'Không thể thuê đồ');
-                return;
-            }
-
-            var groupKey = rentalState.selectedGroup.groupKey;
-            if (!rentalState.rentalsByGroup[groupKey]) rentalState.rentalsByGroup[groupKey] = [];
-
-            var existed = rentalState.rentalsByGroup[groupKey].find(function (x) {
-                return Number(x.inventoryId) === Number(inventoryId);
-            });
-
-            if (existed) {
-                existed.quantity = qty;
-                existed.unitPrice = Number(unitPrice);
-                existed.name = name;
-            } else {
-                rentalState.rentalsByGroup[groupKey].push({
-                    inventoryId: Number(inventoryId),
-                    name: name,
-                    quantity: qty,
-                    unitPrice: Number(unitPrice)
-                });
-            }
-
-            renderSelectedRentals(groupKey);
-            renderRentalFeeSummary();
-            loadRentalInventory();
-            hideError();
-        } catch (err) {
-            console.error('Rent item error:', err);
-            showError('Lỗi kết nối khi lưu thuê đồ');
+        if (!item) {
+            showError('Không tìm thấy đồ thuê');
+            return;
         }
-    }
 
+        if (isNaN(qty) || qty <= 0) {
+            showError('Số lượng thuê phải lớn hơn 0');
+            return;
+        }
+
+        if (qty > Number(item.availableQuantity || 0)) {
+            showError('Số lượng thuê vượt quá số lượng khả dụng');
+            return;
+        }
+
+        var groupKey = rentalState.selectedGroup.groupKey;
+        if (!rentalState.rentalsByGroup[groupKey]) {
+            rentalState.rentalsByGroup[groupKey] = [];
+        }
+
+        var existed = rentalState.rentalsByGroup[groupKey].find(function (x) {
+            return Number(x.inventoryId) === Number(inventoryId);
+        });
+
+        if (existed) {
+            existed.quantity = qty;
+            existed.unitPrice = Number(unitPrice);
+            existed.name = name;
+        } else {
+            rentalState.rentalsByGroup[groupKey].push({
+                inventoryId: Number(inventoryId),
+                name: name,
+                quantity: qty,
+                unitPrice: Number(unitPrice)
+            });
+        }
+
+        renderSelectedRentals(groupKey);
+        renderRentalFeeSummary();
+        renderRentalInventoryTable();
+        hideError();
+    }
     async function saveRentalEdit(inventoryId, unitPrice, name, maxQty) {
         if (!rentalState.selectedGroup) return;
 
@@ -567,97 +583,53 @@
         }
 
         if (qty === 0) {
-            await removeRentalItem(inventoryId);
+            removeRentalItem(inventoryId);
             return;
         }
 
-        var payload = {
-            inventoryId: Number(inventoryId),
-            quantity: qty,
-            unitPrice: Number(unitPrice),
-            bookingSlotIds: rentalState.selectedGroup.bookingSlotIds || []
-        };
+        var groupKey = rentalState.selectedGroup.groupKey;
+        var list = rentalState.rentalsByGroup[groupKey] || [];
+        var existed = list.find(function (x) {
+            return Number(x.inventoryId) === Number(inventoryId);
+        });
 
-        try {
-            var res = await fetch(CTX + '/api/staff/rental/update', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            var json = await res.json();
-            if (!json.success) {
-                showError(json.message || 'Không thể cập nhật thuê đồ');
-                return;
-            }
-
-            var groupKey = rentalState.selectedGroup.groupKey;
-            var list = rentalState.rentalsByGroup[groupKey] || [];
-            var existed = list.find(function (x) {
-                return Number(x.inventoryId) === Number(inventoryId);
-            });
-
-            if (existed) {
-                existed.quantity = qty;
-                existed.unitPrice = Number(unitPrice);
-                existed.name = name;
-            }
-
-            renderSelectedRentals(groupKey);
-            renderRentalFeeSummary();
-            loadRentalInventory();
-            hideError();
-        } catch (err) {
-            console.error('Update rental error:', err);
-            showError('Lỗi kết nối khi cập nhật thuê đồ');
+        if (!existed) {
+            showError('Đồ thuê chưa tồn tại trong nhóm này');
+            return;
         }
+
+        existed.quantity = qty;
+        existed.unitPrice = Number(unitPrice);
+        existed.name = name;
+
+        renderSelectedRentals(groupKey);
+        renderRentalFeeSummary();
+        renderRentalInventoryTable();
+        hideError();
     }
+
+
+
+
+
+
+
 
     async function removeRentalItem(inventoryId) {
         if (!rentalState.selectedGroup) return;
 
-        var payload = {
-            inventoryId: Number(inventoryId),
-            bookingSlotIds: rentalState.selectedGroup.bookingSlotIds || []
-        };
+        var groupKey = rentalState.selectedGroup.groupKey;
+        var list = rentalState.rentalsByGroup[groupKey] || [];
 
-        try {
-            var res = await fetch(CTX + '/api/staff/rental/delete', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
+        rentalState.rentalsByGroup[groupKey] = list.filter(function (x) {
+            return Number(x.inventoryId) !== Number(inventoryId);
+        });
 
-            var json = await res.json();
-            if (!json.success) {
-                showError(json.message || 'Không thể xóa thuê đồ');
-                return;
-            }
-
-            var groupKey = rentalState.selectedGroup.groupKey;
-            var list = rentalState.rentalsByGroup[groupKey] || [];
-            rentalState.rentalsByGroup[groupKey] = list.filter(function (x) {
-                return Number(x.inventoryId) !== Number(inventoryId);
-            });
-
-            renderSelectedRentals(groupKey);
-            renderRentalFeeSummary();
-            loadRentalInventory();
-            hideError();
-        } catch (err) {
-            console.error('Remove rental error:', err);
-            showError('Lỗi kết nối khi xóa thuê đồ');
-        }
+        renderSelectedRentals(groupKey);
+        renderRentalFeeSummary();
+        renderRentalInventoryTable();
+        hideError();
     }
-
     function openRentalModal(groupKey) {
         var group = findGroupByKey(groupKey);
         if (!group) return;
@@ -684,6 +656,7 @@
     // Expose for inline onclick
     window.openRentalModal = openRentalModal;
     window.selectRentalItem = selectRentalItem;
+    window.cancelSelectRentalItem = cancelSelectRentalItem;
     window.onQtyChange = onQtyChange;
     window.rentItem = rentItem;
     window.saveRentalEdit = saveRentalEdit;
@@ -858,7 +831,12 @@
                     rentalPayload.push({
                         groupKey: groupKey,
                         courtId: group.courtId,
-                        bookingSlotIds: group.bookingSlotIds || [],
+                        courtName: group.courtName,
+                        startTime: group.startTime,
+                        endTime: group.endTime,
+                        slotIds: (group.slots || []).map(function (s) {
+                            return s.slotId;
+                        }),
                         inventoryId: item.inventoryId,
                         name: item.name,
                         quantity: item.quantity,
