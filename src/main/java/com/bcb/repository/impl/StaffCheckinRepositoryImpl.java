@@ -145,5 +145,19 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
             ps.executeUpdate();
         }
     }
+    @Override
+    public List<Integer> findConfirmedBookingIdsWithPendingSlots(Connection conn, java.time.LocalDate bookingDate) throws Exception {
+        String sql = "SELECT DISTINCT b.booking_id\n                FROM Booking b\n                JOIN BookingSlot bs ON b.booking_id = bs.booking_id\n                WHERE b.booking_status = 'CONFIRMED'\n                  AND b.booking_date = ?\n                  AND bs.slot_status = 'PENDING'";
+        List<Integer> ids = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(bookingDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("booking_id"));
+                }
+            }
+        }
+        return ids;
+    }
 }
 

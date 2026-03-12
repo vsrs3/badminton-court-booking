@@ -50,7 +50,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 }
                 if ("CANCELLED".equals(targetStatus)) {
                     conn.rollback();
-                    return "{\"success\":false,\"message\":\"Phi\u00ean n\u00e0y \u0111\u00e3 b\u1ecb h\u1ee7y\"}";
+                    return "{\"success\":false,\"message\":\"Phiên này đã bị hủy\"}";
                 }
 
                 LocalTime now = LocalTime.now();
@@ -130,7 +130,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 }
                 if ("CANCELLED".equals(targetStatus)) {
                     conn.rollback();
-                    return "{\"success\":false,\"message\":\"Phi\u00ean \u0111\u00e3 b\u1ecb h\u1ee7y\"}";
+                    return "{\"success\":false,\"message\":\"Phiên đã bị hủy\"}";
                 }
 
                 Timestamp nowTs = new Timestamp(System.currentTimeMillis());
