@@ -30,7 +30,7 @@
 
       <!-- Rating Badge -->
       <div class="detail-rating-badge">
-        <span id="detailRating">★ 0.0 (0 đánh giá)</span>
+        <span id="detailRating">&#9733; 0.0 (0 đánh giá)</span>
       </div>
 
       <!-- Floating Book Button -->
@@ -80,7 +80,7 @@
         <button class="detail-tab active" data-detail-tab="info">Thông tin</button>
         <button class="detail-tab" data-detail-tab="pricing">Bảng giá</button>
         <button class="detail-tab" data-detail-tab="images">Hình ảnh</button>
-        <button class="detail-tab" data-detail-tab="terms">Điều khoản & quy định</button>
+        <button class="detail-tab" data-detail-tab="terms">Điều khoản &amp; quy định</button>
         <button class="detail-tab" data-detail-tab="reviews">Đánh giá</button>
       </div>
 
@@ -89,45 +89,24 @@
         <!-- Info Tab -->
         <div id="detailTabInfo" class="detail-tab-pane active">
           <div class="detail-section">
-            <h3 class="detail-section-title">
-              <i class="bi bi-globe2"></i> Website
-            </h3>
-            <p class="detail-section-text text-muted fst-italic">
-              Đang cập nhật...
-            </p>
-          </div>
-
-          <div class="detail-section mt-4 pt-4 border-top">
             <h3 class="detail-section-title text-warning">
               <i class="bi bi-info-circle-fill"></i> Tổng quan
             </h3>
             <div class="detail-overview">
-              <p id="detailOverview">
-                Chào mừng bạn đến với <strong class="text-success" id="detailNameInOverview"></strong>.
-                Chúng tôi tự hào cung cấp hệ thống sân tập đạt tiêu chuẩn quốc tế với đầy đủ tiện nghi,
-                hệ thống chiếu sáng chống chói và mặt thảm chất lượng cao giúp giảm chấn thương.
-                Môi trường tập luyện chuyên nghiệp, năng động phù hợp cho mọi lứa tuổi và trình độ.
-              </p>
+              <p id="detailOverview">chưa có</p>
             </div>
           </div>
         </div>
 
-        <!-- Other Tabs (Coming Soon) -->
         <div id="detailTabPricing" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Bảng giá sắp ra mắt...</p>
+          <div id="detailPricingContent">
+            <div class="detail-empty-state">chưa có</div>
           </div>
         </div>
 
         <div id="detailTabImages" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Hình ảnh sắp ra mắt...</p>
+          <div id="detailImagesContent">
+            <div class="detail-empty-state">chưa có</div>
           </div>
         </div>
 
@@ -136,16 +115,13 @@
             <div class="coming-soon-icon">
               <i class="bi bi-info-circle"></i>
             </div>
-            <p>Dữ liệu Điều khoản & quy định sắp ra mắt...</p>
+            <p>Dữ liệu Điều khoản &amp; quy định sắp ra mắt...</p>
           </div>
         </div>
 
         <div id="detailTabReviews" class="detail-tab-pane">
-          <div class="detail-coming-soon">
-            <div class="coming-soon-icon">
-              <i class="bi bi-info-circle"></i>
-            </div>
-            <p>Dữ liệu Đánh giá sắp ra mắt...</p>
+          <div id="detailReviewsContent">
+            <div class="detail-empty-state">chưa có comment nào</div>
           </div>
         </div>
       </div>

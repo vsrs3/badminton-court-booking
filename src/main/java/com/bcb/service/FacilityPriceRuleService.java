@@ -2,6 +2,7 @@ package com.bcb.service;
 
 import com.bcb.dto.FacilityPriceViewDTO;
 import com.bcb.dto.PriceRuleRequestDTO;
+import com.bcb.dto.SmartPriceConfigRequestDTO;
 import com.bcb.exception.BusinessException;
 
 public interface FacilityPriceRuleService {
@@ -28,4 +29,14 @@ public interface FacilityPriceRuleService {
      * Delete a price rule.
      */
     void deletePriceRule(int priceId) throws BusinessException;
+
+    /**
+     * Smart config: validates all rows, then replaces ALL price rules for the
+     * facility atomically (DELETE all → INSERT new) inside one transaction.
+     *
+     * @param request facilityId + list of config rows (prices per hour)
+     * @throws BusinessException on validation failure
+     */
+    void saveSmartPriceConfig(SmartPriceConfigRequestDTO request) throws BusinessException;
 }
+

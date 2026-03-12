@@ -74,3 +74,4 @@ public interface StaffRepository {
 	 */
 	boolean createStaff(String fullName, String email, String phone, Integer facilityId);
 }
+

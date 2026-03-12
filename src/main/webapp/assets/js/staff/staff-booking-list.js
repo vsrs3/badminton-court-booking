@@ -1,6 +1,3 @@
-/**
- * staff-booking-list.js — Task 5: Search + paginated booking list
- */
 (function () {
     'use strict';
 
@@ -246,6 +243,15 @@
     }
 
     // ─── Init ───
+    // Refresh list when page is restored from browser cache or flagged dirty after edit.
+    window.addEventListener('pageshow', function (event) {
+        var isDirty = sessionStorage.getItem('staffBookingListDirty') === '1';
+        if (!event.persisted && !isDirty) return;
+        if (isDirty) {
+            sessionStorage.removeItem('staffBookingListDirty');
+        }
+        loadBookings();
+    });
     loadBookings();
 
 })();

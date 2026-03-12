@@ -173,6 +173,9 @@
                 case "notifications":
             %> <%@ include file="notifications.jsp" %> <%
                     break;
+                case "favorites":
+            %> <%@ include file="customer_favorite.jsp" %> <%
+                    break;
                 case "languages":
             %> <%@ include file="languages-setting.jsp" %> <%
                     break;
@@ -196,3 +199,4 @@
     <script src="<c:url value='/assets/js/previewAvatar.js' />"></script>
 </body>
 </html>
+

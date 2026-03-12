@@ -6,7 +6,6 @@
         <button class="nav-item active" data-tab="home">
             <i class="bi bi-house-door-fill"></i>
             <span class="nav-text">Trang chủ</span>
-            <div class="nav-indicator"></div>
         </button>
 
         <!-- Map Tab -->
@@ -30,7 +29,7 @@
         </button>
 
         <!-- Profile Tab -->
-        <a href="${pageContext.request.contextPath}/profile" class="nav-item" data-tab="profile" style="text-decoration: none">
+        <a href="${pageContext.request.contextPath}/my-bookings" class="nav-item" data-tab="profile" style="text-decoration: none">
             <i class="bi bi-person-fill"></i>
             <span class="nav-text">Cá nhân</span>
         </a>

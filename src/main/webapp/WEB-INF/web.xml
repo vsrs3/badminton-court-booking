@@ -87,7 +87,36 @@
         <url-pattern>/forgot-password</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+	    <servlet-name>ReviewController</servlet-name>
+	    <servlet-class>com.bcb.controller.review.ReviewController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	    <servlet-name>ReviewController</servlet-name>
+	    <url-pattern>/reviews</url-pattern>
+	</servlet-mapping>
 
+    <servlet>
+        <servlet-name>InventoryController</servlet-name>
+        <servlet-class>com.bcb.controller.owner.InventoryController</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>InventoryController</servlet-name>
+        <url-pattern>/owner/inventory</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+    <servlet-name>OwnerFacilityInventoryController</servlet-name>
+    <servlet-class>
+        com.bcb.controller.owner.OwnerFacilityInventoryController
+    </servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>OwnerFacilityInventoryController</servlet-name>
+    <url-pattern>/owner/facility/inventory/*</url-pattern>
+</servlet-mapping>
 
     <welcome-file-list>
         <welcome-file>home</welcome-file>

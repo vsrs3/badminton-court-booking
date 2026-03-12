@@ -19,7 +19,7 @@
                     <p class="text-xs text-white/70">${sessionScope.account.getEmail()}</p>
                 </div>
             </div>
-            <a href="profile?section=profile-info">
+            <a href="${pageContext.request.contextPath}/profile?section=profile-info">
                 <i data-lucide="chevron-right" class="w-5 h-5 text-white/50"></i>
             </a>
 
@@ -56,20 +56,20 @@
         <div class="px-4 pt-6 pb-2">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hoạt động</h3>
         </div>
-        <a href="profile?section=profile-info" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
+        <a href="${pageContext.request.contextPath}/profile?section=profile-info" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="user" class="w-5 h-5 text-emerald-700"></i>
                 <span class="text-sm font-medium text-gray-700">Thông tin cá nhân</span>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
         </a>
-        <div class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
+        <a href="${pageContext.request.contextPath}/profile/favorites" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="heart" class="w-5 h-5 text-emerald-700"></i>
                 <span class="text-sm font-medium text-gray-700">Danh sách yêu thích</span>
             </div>
             <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
-        </div>
+        </a>
         <div class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="crown" class="w-5 h-5 text-emerald-700"></i>
@@ -80,7 +80,7 @@
         <div class="px-4 pt-6 pb-2">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Hệ thống</h3>
         </div>
-        <a href="profile?section=settings" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
+        <a href="${pageContext.request.contextPath}/profile?section=settings" class="flex items-center justify-between p-4 cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50">
             <div class="flex items-center space-x-3">
                 <i data-lucide="settings" class="w-5 h-5 text-emerald-700"></i>
                 <span class="text-sm font-medium text-gray-700">Cài đặt</span>
@@ -110,3 +110,5 @@
         </div>
     </div>
 </div>
+
+

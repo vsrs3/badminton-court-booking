@@ -45,3 +45,4 @@ public class SingleBookingRangeDTO {
     public List<SingleBookingMatrixSlotPriceDTO> getSlotPrices() { return slotPrices; }
     public void setSlotPrices(List<SingleBookingMatrixSlotPriceDTO> slotPrices) { this.slotPrices = slotPrices; }
 }
+

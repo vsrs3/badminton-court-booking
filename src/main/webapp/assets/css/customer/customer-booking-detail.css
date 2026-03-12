@@ -1,0 +1,218 @@
+/* ============================================
+   CUSTOMER BOOKING DETAIL
+   Synced with badminton-pro design system
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
+
+/* ============================================
+   HEADER — synced với rh-header / review-history
+   ============================================ */
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.detail-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-page-title {
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 1.125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #064E3B;
+    margin: 0;
+    line-height: 1;
+}
+
+.detail-title-icon {
+    color: #064E3B;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0.5rem 0.625rem;
+    background-color: #F0FDF4;
+    color: #064E3B;
+    border: 1.5px solid #A3E635;
+    border-radius: 9999px;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.btn-back-home:hover {
+    background-color: #064E3B;
+    border-color: #064E3B;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
+}
+.btn-back-home:hover i,
+.btn-back-home:hover svg { transform: translateX(-3px); color: #ffffff; }
+.btn-back-home:active { transform: scale(0.97); box-shadow: none; }
+
+/* ============================================
+   SECTION CARDS
+   ============================================ */
+
+.detail-section {
+    background: white;
+    border: 1px solid #F3F4F6;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+.detail-section h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   DETAIL ROWS
+   ============================================ */
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #F9FAFB;
+}
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: #6B7280;
+}
+.detail-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1F2937;
+    text-align: right;
+}
+
+/* ============================================
+   SLOT ROW
+   ============================================ */
+
+.slot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    background-color: #F9FAFB;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.slot-row:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+
+.detail-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+.detail-badge-pending   { background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+.detail-badge-confirmed { background-color: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+.detail-badge-completed { background-color: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+.detail-badge-cancelled { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.detail-badge-expired   { background-color: #F3F4F6; color: #6B7280; border: 1px solid #D1D5DB; }
+.detail-type-single     { background-color: #EDE9FE; color: #5B21B6; }
+.detail-type-recurring  { background-color: #FCE7F3; color: #9D174D; }
+
+/* ============================================
+   ACTION BUTTONS — synced với review-history
+   ============================================ */
+
+.detail-btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background-color: #F0FDF4;
+    color: #064E3B;
+    border: 1.5px solid #A3E635;
+    border-radius: 0.75rem;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.detail-btn-back:hover {
+    background-color: #064E3B;
+    border-color: #064E3B;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
+}
+.detail-btn-back:active { transform: scale(0.97); box-shadow: none; }
+
+.detail-btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border: 1.5px solid #FCA5A5;
+    border-radius: 0.75rem;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.detail-btn-cancel:hover {
+    background-color: #DC2626;
+    border-color: #DC2626;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+}
+.detail-btn-cancel:active { transform: scale(0.97); box-shadow: none; }

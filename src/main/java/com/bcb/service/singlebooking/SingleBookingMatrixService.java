@@ -16,3 +16,4 @@ public interface SingleBookingMatrixService {
      */
     SingleBookingMatrixResponseDTO getMatrixData(int facilityId, LocalDate bookingDate);
 }
+

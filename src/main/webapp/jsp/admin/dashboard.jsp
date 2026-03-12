@@ -163,6 +163,13 @@
           </div>
         </div>
 
+        <div class="col-md-4">
+          <a href="${pageContext.request.contextPath}/admin/reports"
+             class="btn btn-outline-success w-100 p-3">
+            <i class="bi bi-bar-chart-line"></i> Báo cáo
+          </a>
+        </div>
+
         <p class="text-center text-muted mt-4 mb-0">
           <small>Các chức năng chi tiết sẽ được triển khai sau</small>
         </p>

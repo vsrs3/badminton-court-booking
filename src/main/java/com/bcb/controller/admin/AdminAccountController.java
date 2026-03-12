@@ -28,7 +28,7 @@ public class AdminAccountController extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
-
+        System.out.print("hello");
         if (pathInfo == null || "/".equals(pathInfo)) {
             response.sendRedirect(request.getContextPath() + "/admin/accounts/list");
             return;
@@ -283,3 +283,4 @@ public class AdminAccountController extends HttpServlet {
         }
     }
 }
+

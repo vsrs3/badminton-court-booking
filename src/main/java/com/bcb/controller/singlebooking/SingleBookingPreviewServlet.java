@@ -47,3 +47,4 @@ public class SingleBookingPreviewServlet extends HttpServlet {
         }
     }
 }
+

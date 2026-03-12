@@ -5,14 +5,20 @@ import java.util.stream.Collectors;
 import java.util.Optional;
 
 import com.bcb.service.SendEmailService;
-import com.bcb.service.StaffProfilService;
+import com.bcb.service.ManagementStaffService;
 import com.bcb.service.impl.SendEmailServiceImpl;
-import com.bcb.service.impl.StaffProfileServiceImpl;
+import com.bcb.service.impl.ManagementStaffServiceImpl;
 
 import java.io.IOException;
 import com.bcb.service.impl.StaffServiceImpl;
+import com.bcb.service.mybooking.MyBookingService;
+import com.bcb.service.mybooking.impl.MyBookingServiceImpl;
+import com.bcb.service.notification.NotificationService;
+import com.bcb.service.notification.impl.NotificationServiceImpl;
 import com.bcb.utils.PasswordUtil;
 import com.bcb.service.StaffService;
+import com.bcb.dto.notilication.NotificationDTO;
+import com.bcb.dto.response.StaffRePassResponse;
 import com.bcb.model.Account;
 import com.bcb.model.Facility;
 
@@ -27,14 +33,17 @@ import java.io.IOException;
 @WebServlet("/owner/staffs/*")
 public class OwnerStaffController extends HttpServlet {
 
-	// Service instance for staff-related operations
+	// Service instance for staff location operations
 	private final StaffService staffService = new StaffServiceImpl();
 
 	// Service instance for staff profile operations (update info, avatar, etc.)
-	private final StaffProfilService staffProfileService = new StaffProfileServiceImpl();
+	private final ManagementStaffService staffProfileService = new ManagementStaffServiceImpl();
 
 	// Service instance for sending staff email
 	private final SendEmailService sendEmail = new SendEmailServiceImpl();
+	
+	// Service notification
+	private final NotificationService notificationService = new NotificationServiceImpl();
 
 	/**
 	 * Handle GET requests for listing staff, viewing staff details, and deleting
@@ -62,9 +71,8 @@ public class OwnerStaffController extends HttpServlet {
 			} else if (pathInfo.startsWith("/toggle/")) {
 				toggleStatus(request, response);
 
-			} else {
-				response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			}
+			
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -94,9 +102,8 @@ public class OwnerStaffController extends HttpServlet {
 			} else if (pathInfo.equals("/reset-password")) {
 				resetPassword(request, response);
 
-			} else {
-				response.sendError(HttpServletResponse.SC_NOT_FOUND);
-			}
+			} 
+			
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -123,7 +130,8 @@ public class OwnerStaffController extends HttpServlet {
 		if (pageParam != null) {
 			try {
 				page = Math.max(1, Integer.parseInt(pageParam));
-			} catch (NumberFormatException ignored) {
+			} 
+			catch (NumberFormatException ignored) {
 			}
 		}
 
@@ -395,9 +403,19 @@ public class OwnerStaffController extends HttpServlet {
 
 					// Send email to staff if create account successful
 					sendEmail.resetStaffPassword(email, fullName, tempPassword, loginLink);
-
+					
+					// Send staff notification
+					/*
+					 * NotificationDTO dto = new NotificationDTO(); StaffRePassResponse description
+					 * = new StaffRePassResponse();
+					 * 
+					 * dto.setAccountId(accountId); dto.setTitle(description.getTitle());
+					 * dto.setContent(description.getContent());
+					 * 
+					 * notificationService.insertResetPassNotification(dto);
+					 */
 				} catch (Exception e) {
-					System.out.print(e.getMessage());
+					throw new IllegalArgumentException("Lỗi khi gửi email chứa link đăng nhập hoặc thông báo cho nhân viên");
 				}
 				
 				response.getWriter().write("{\"success\":true,\"tempPassword\":\"" + tempPassword + "\"}");
@@ -414,3 +432,4 @@ public class OwnerStaffController extends HttpServlet {
 	}
 
 }
+

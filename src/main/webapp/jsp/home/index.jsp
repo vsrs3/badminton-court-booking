@@ -115,8 +115,9 @@
 		                <p>Vui lòng quay lại sau</p>
 		            </div>
            		</c:when>
+           		
            		<c:otherwise>
-           		    <jsp:include page="../customer/profile/profile.jsp" />
+           		    <jsp:include page="/jsp/customer/profile.jsp" />
        			</c:otherwise>
            	</c:choose>
         </div>
@@ -134,6 +135,9 @@
 
     <!-- Court Detail Modal -->
     <jsp:include page="../common/court-detail.jsp" />
+
+    <!-- Location Permission Modal -->
+    <jsp:include page="../common/location-permission-modal.jsp" />
 
     <!-- Auth Modal -->
     <jsp:include page="../common/auth-modal.jsp" />

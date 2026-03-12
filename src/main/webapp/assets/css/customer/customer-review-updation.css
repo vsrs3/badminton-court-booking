@@ -1,0 +1,429 @@
+/* ============================================================
+   CUSTOMER REVIEW UPDATION — customer-review-updation.css
+   Đồng bộ hoàn toàn với customer-review-adding.css
+   Palette: #064E3B | #A3E635 | #111827 | gray scale
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
+
+/* ── ICON SIZE HELPERS ──────────────────────────────────────── */
+.icon-xs { width: 0.875rem; height: 0.875rem; flex-shrink: 0; }
+.icon-sm { width: 1rem;     height: 1rem;     flex-shrink: 0; }
+.icon-md { width: 1.25rem;  height: 1.25rem;  flex-shrink: 0; }
+
+/* ── PAGE WRAPPER ────────────────────────────────────────────── */
+.review-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100%;
+    background: #ffffff;
+    padding: 1.5rem;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-style: normal;
+    color: #111827;
+    box-sizing: border-box;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+.review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.review-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-page-title {
+    font-size: 1.125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #064E3B;
+    margin: 0;
+    line-height: 1;
+}
+
+.review-title-icon {
+    color: #A3E635;
+    flex-shrink: 0;
+}
+
+/* ── BACK BUTTON ────────────────────────────────────────────── */
+.review-header button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0.5rem 0.625rem;
+    background-color: #F0FDF4;
+    color: #064E3B;
+    border: 1.5px solid #A3E635;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.review-header button:hover {
+    background-color: #A3E635;
+    border-color: #A3E635;
+    color: #064E3B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
+}
+.review-header button:hover i,
+.review-header button:hover svg { color: #064E3B; transform: translateX(-3px); }
+.review-header button:active     { transform: scale(0.97); box-shadow: none; }
+
+/* ── REVIEW CONTAINER ────────────────────────────────────────── */
+.review-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── REVIEW CARD ─────────────────────────────────────────────── */
+.review-card {
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── REVIEW CONTENT ──────────────────────────────────────────── */
+.review-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+/* ── REVIEW SECTION ──────────────────────────────────────────── */
+.review-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.review-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #064E3B;
+    margin-bottom: 0.625rem;
+}
+.review-section-label i,
+.review-section-label svg { color: #064E3B; }
+
+.review-optional {
+    font-weight: 500;
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #9CA3AF;
+    font-size: 0.75rem;
+}
+
+/* ── STARS CSS-ONLY ──────────────────────────────────────────── */
+.stars-row {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 0.5rem;
+}
+.stars-row input[type="radio"] { display: none; }
+.stars-row label {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.15s;
+    user-select: none;
+}
+.stars-row label:hover,
+.stars-row label:hover ~ label { color: #f59e0b; }
+.stars-row input[type="radio"]:checked ~ label { color: #f59e0b; }
+
+.star-hint {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-style: normal;
+    color: #6B7280;
+    min-height: 1.4em;
+    margin: 0;
+}
+
+/* ── TEXTAREA ────────────────────────────────────────────────── */
+.textarea-wrap { position: relative; }
+
+.review-textarea {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    padding: 1rem 1.25rem 2.5rem;
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-style: normal;
+    color: #111827;
+    resize: vertical;
+    line-height: 1.6;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.review-textarea::placeholder { color: #9CA3AF; }
+.review-textarea:focus {
+    background: #ffffff;
+    border-color: #064E3B;
+    box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.2);
+}
+
+.error-msg {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-style: normal;
+    color: #EF4444;
+    margin: 0.375rem 0 0;
+}
+
+/* ── REVIEW ACTIONS ──────────────────────────────────────────── */
+.review-actions {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    padding-top: 1rem;
+    border-top: 1px solid #E5E7EB;
+}
+
+.btn-submit-review,
+.btn-reset-review {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    border-radius: 1rem;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    box-sizing: border-box;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Primary letter-spacing */
+.btn-submit-review { letter-spacing: 0.1em; }
+
+/* Secondary letter-spacing */
+.btn-reset-review  { letter-spacing: 0.05em; }
+.btn-submit-review:active,
+.btn-reset-review:active { transform: scale(0.97); }
+
+/* "Lưu thay đổi" — filled xanh đậm */
+.btn-submit-review {
+    background-color: #064E3B;
+    color: #ffffff;
+    border: 2px solid #064E3B;
+    box-shadow: 0 2px 8px rgba(6, 78, 59, 0.2);
+}
+.btn-submit-review:hover:not(:disabled) {
+    background-color: #A3E635;
+    border-color: #A3E635;
+    color: #064E3B;
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+    transform: translateY(-1px);
+}
+.btn-submit-review:active { transform: scale(0.97); box-shadow: none; }
+.btn-submit-review:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* "Hủy" — outlined xanh đậm */
+.btn-reset-review {
+    background-color: #ffffff;
+    color: #064E3B;
+    border: 2px solid #064E3B;
+}
+.btn-reset-review:hover {
+    background-color: #064E3B;
+    color: #ffffff;
+    border-color: #064E3B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+}
+.btn-reset-review:active { transform: scale(0.97); box-shadow: none; }
+
+/* Mobile: stack dọc */
+@media (max-width: 480px) {
+    .review-actions      { flex-direction: column; }
+    .btn-submit-review,
+    .btn-reset-review    { flex: 0 0 auto; width: 100%; }
+}
+
+/* ── NOTIFICATION ────────────────────────────────────────────── */
+.review-notification {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-style: normal;
+    animation: notif-fade-in 0.3s ease both;
+}
+
+/* Nằm trong form — ngăn cách với review-actions */
+form .review-notification { margin-top: 1rem; }
+
+.review-notification.error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+}
+.review-notification.error i,
+.review-notification.error svg { color: #DC2626; flex-shrink: 0; }
+
+/* Fade-in animation */
+@keyframes notif-fade-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── FIELD INFO CARD ─────────────────────────────────────────── */
+.field-info-card {
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+.field-info-card::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg, #064E3B 0%, #A3E635 100%);
+}
+
+.facility-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.facility-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.facility-name {
+    font-size: 1rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #111827;
+    margin: 0 0 0.375rem;
+    line-height: 1.25;
+}
+
+.facility-address {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-style: normal;
+    color: #111827;
+    line-height: 1.55;
+}
+.facility-address i,
+.facility-address svg {
+    color: #111827;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    width: 1rem;
+    height: 1rem;
+}
+
+.facility-desc {
+    font-size: 0.8125rem;
+    font-style: normal;
+    font-weight: 400;
+    color: #111827;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+.facility-hours {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid #E5E7EB;
+}
+
+.hour-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.hour-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #6B7280;
+    margin: 0;
+}
+.hour-label i,
+.hour-label svg { width: 0.8rem; height: 0.8rem; flex-shrink: 0; }
+.hour-label.open  i { color: #111827; }
+.hour-label.close i { color: #EF4444; }
+
+.hour-value {
+    font-size: 1.1rem;
+    font-weight: 900;
+    font-style: normal;
+    color: #111827;
+    letter-spacing: -0.01em;
+}

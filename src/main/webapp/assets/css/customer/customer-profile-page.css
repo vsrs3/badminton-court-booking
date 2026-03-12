@@ -1,0 +1,386 @@
+/* ============================================
+   CUSTOMER PROFILE PAGE - BASE STYLES
+   Đồng bộ font + color với review-updation.css
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
+
+:root {
+    /* Brand Colors */
+    --color-green-brand: #064E3B;
+    --color-lime-brand:  #A3E635;
+    --color-green-50:    #F0FDF4;
+    --color-green-100:   #DCFCE7;
+    --color-green-200:   #BBF7D0;
+    --color-green-300:   #86EFAC;
+    --color-green-400:   #4ADE80;
+    --color-green-500:   #22C55E;
+    --color-green-600:   #16A34A;
+    --color-green-700:   #15803D;
+    --color-green-800:   #166534;
+    --color-green-900:   #14532D;
+
+    /* Neutral Colors */
+    --color-gray-50:  #F9FAFB;
+    --color-gray-100: #F3F4F6;
+    --color-gray-200: #E5E7EB;
+    --color-gray-300: #D1D5DB;
+    --color-gray-400: #9CA3AF;
+    --color-gray-500: #6B7280;
+    --color-gray-600: #4B5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1F2937;
+    --color-gray-900: #111827;
+
+    /* Accent Colors */
+    --color-yellow-500: #EAB308;
+    --color-yellow-600: #CA8A04;
+    --color-red-500:    #EF4444;
+    --color-red-600:    #DC2626;
+    --color-red-700:    #B91C1C;
+    --color-blue-500:   #3B82F6;
+    --color-orange-400: #FB923C;
+    --color-orange-600: #EA580C;
+
+    /* Spacing */
+    --spacing-xs:  0.25rem;
+    --spacing-sm:  0.5rem;
+    --spacing-md:  1rem;
+    --spacing-lg:  1.5rem;
+    --spacing-xl:  2rem;
+    --spacing-2xl: 3rem;
+
+    /* Border Radius */
+    --radius-sm:   0.375rem;
+    --radius-md:   0.5rem;
+    --radius-lg:   0.75rem;
+    --radius-xl:   1rem;
+    --radius-2xl:  1.25rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Typography — Be Vietnam Pro làm default */
+    --font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Z-Index */
+    --z-base:           1;
+    --z-dropdown:       1000;
+    --z-sticky:         1020;
+    --z-fixed:          1030;
+    --z-modal-backdrop: 9999;
+    --z-modal:          10000;
+    --z-popover:        1060;
+    --z-tooltip:        1070;
+    --z-toast:          9998;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-900);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   SCROLLBAR UTILITIES
+   ============================================ */
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.elegant-scrollbar::-webkit-scrollbar { width: 4px; }
+.elegant-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.elegant-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
+}
+.elegant-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.12); }
+
+/* ============================================
+   BRAND COLOR UTILITIES
+   ============================================ */
+
+.bg-green-brand   { background-color: var(--color-green-brand); }
+.bg-lime-brand    { background-color: var(--color-lime-brand);  }
+.text-green-brand { color: var(--color-green-brand); }
+.text-lime-brand  { color: var(--color-lime-brand);  }
+.border-gray-brand { border-color: var(--color-gray-100); }
+.bg-gray-brand    { background-color: var(--color-gray-50); }
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   ============================================ */
+
+/* Page-level heading — đồng bộ review-updation .review-page-title */
+.profile-page-title {
+    font-size: 1.125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #064E3B;
+    margin: 0;
+    line-height: 1;
+}
+
+/* Section sub-headings */
+.profile-section-label {
+    font-size: 0.6875rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #064E3B;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Body text */
+.profile-body-text {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-style: normal;
+    color: var(--color-gray-700);
+    line-height: 1.6;
+}
+
+/* Small / meta text */
+.profile-meta-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-gray-400);
+}
+
+/* ============================================
+   SHARED BUTTON STYLES
+   ============================================ */
+
+/* Primary */
+.btn-profile-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #064E3B;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-family);
+    font-size: 0.8125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 2px solid #064E3B;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(6, 78, 59, 0.2);
+    transition: all var(--transition-fast);
+}
+.btn-profile-primary:hover {
+    background-color: #A3E635;
+    border-color: #A3E635;
+    color: #064E3B;
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+    transform: translateY(-1px);
+}
+.btn-profile-primary:active { transform: scale(0.97); }
+
+/* Secondary */
+.btn-profile-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: white;
+    color: #064E3B;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-xl);
+    font-family: var(--font-family);
+    font-size: 0.8125rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 2px solid #064E3B;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn-profile-secondary:hover {
+    background-color: #064E3B;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(6, 78, 59, 0.28);
+}
+.btn-profile-secondary:active { transform: scale(0.97); }
+
+/* Danger */
+.btn-profile-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #FEE2E2;
+    color: var(--color-red-700);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-lg);
+    font-family: var(--font-family);
+    font-size: 0.75rem;
+    font-weight: 900;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid #FECACA;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn-profile-danger:hover { background-color: #FCA5A5; color: #7F1D1D; }
+
+/* ============================================
+   SHARED CARD STYLE
+   ============================================ */
+
+.profile-card {
+    background-color: white;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-gray-100);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+.profile-card:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+    border-color: #BBF7D0;
+}
+
+/* ============================================
+   SHARED INPUT STYLE
+   ============================================ */
+
+.profile-input {
+    width: 100%;
+    padding: 1rem;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-gray-200);
+    font-family: var(--font-family);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-style: normal;
+    color: var(--color-gray-800);
+    background-color: white;
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.profile-input:focus {
+    border-color: #064E3B;
+    box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.2);
+}
+.profile-input.input-error {
+    border-color: var(--color-red-500) !important;
+    background-color: #fef2f2;
+}
+.profile-input.input-error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+.profile-input.input-valid { border-color: #10B981; }
+
+/* ============================================
+   SECTION HEADER BAR
+   ============================================ */
+
+.profile-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    /* border-bottom bỏ — per request */
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    backdrop-filter: blur(12px);
+}
+
+.profile-back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-full);
+    color: var(--color-gray-600);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+}
+.profile-back-link:hover { background-color: var(--color-gray-100); }
+
+/* ============================================
+   NOTIFICATION BANNERS
+   ============================================ */
+
+.profile-notification {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-xl);
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-style: normal;
+    margin: 0 1.5rem 1rem;
+    animation: notif-fade-in 0.3s ease both;
+}
+.profile-notification.success {
+    background-color: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #065F46;
+}
+.profile-notification.success i,
+.profile-notification.success svg { color: #16A34A; flex-shrink: 0; }
+.profile-notification.error {
+    background-color: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+}
+.profile-notification.error i,
+.profile-notification.error svg { color: #DC2626; flex-shrink: 0; }
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes notif-fade-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }

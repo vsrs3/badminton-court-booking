@@ -1,32 +1,25 @@
 package com.bcb.controller.staff;
 
-import com.bcb.controller.staff.StaffAuthUtil.AuthResult;
-import com.bcb.utils.DBContext;
+import com.bcb.dto.staff.StaffConfirmPaymentResultDTO;
+import com.bcb.service.impl.StaffConfirmPaymentServiceImpl;
+import com.bcb.service.staff.StaffConfirmPaymentService;
+import com.bcb.utils.staff.StaffAuthUtil;
+import com.bcb.utils.staff.StaffAuthUtil.AuthResult;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.*;
 
 /**
  * REST API for staff to confirm full payment before check-in/check-out.
- *
- * POST /api/staff/payment/confirm
- *   Body: {"bookingId": 9, "amount": 110000}
- *
- * Rules:
- * - Booking must belong to staff's facility
- * - Invoice must exist and not already PAID
- * - paidAmount + amount must equal totalAmount exactly
- * - Updates Invoice: paidAmount = totalAmount, paymentStatus = 'PAID'
  */
 @WebServlet(name = "StaffConfirmPaymentApiServlet", urlPatterns = {"/api/staff/payment/confirm"})
-public class StaffConfirmPaymentApiServlet extends HttpServlet {
+public class StaffConfirmPaymentApiServlet extends BaseStaffApiServlet {
+
+    private final StaffConfirmPaymentService staffConfirmPaymentService = new StaffConfirmPaymentServiceImpl();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -37,120 +30,51 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
         AuthResult auth = StaffAuthUtil.validateStaff(request, response);
         if (!auth.valid) return;
 
-        // Parse JSON body
-        String body = readBody(request);
+        String body = readRequestBody(request);
         int bookingId = extractInt(body, "bookingId");
         BigDecimal amount = extractDecimal(body, "amount");
+        String method = extractString(body, "method");
 
         if (bookingId <= 0) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Thiếu bookingId\"}");
+            writeError(response, 400, "Thieu bookingId");
             return;
         }
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            response.setStatus(400);
-            response.getWriter().print("{\"success\":false,\"message\":\"Số tiền phải lớn hơn 0\"}");
+            writeError(response, 400, "So tien phai lon hon 0");
+            return;
+        }
+
+        if (method == null || method.trim().isEmpty()) method = "CASH";
+        method = method.trim().toUpperCase();
+        if (!"CASH".equals(method) && !"BANK_TRANSFER".equals(method) && !"VNPAY".equals(method)) {
+            writeError(response, 400, "Phuong thuc thanh toan khong hop le");
+            return;
+        }
+
+        Integer staffId = (Integer) request.getSession().getAttribute("staffId");
+        if (staffId == null || staffId <= 0) {
+            writeError(response, 403, "Khong xac dinh duoc staff");
             return;
         }
 
         try {
-            String result = doConfirmPayment(bookingId, amount, auth.facilityId);
-            response.getWriter().print(result);
+            StaffConfirmPaymentResultDTO result = staffConfirmPaymentService.confirmPayment(
+                    bookingId, amount, method, auth.facilityId, staffId);
+            writeJson(response, buildResponseJson(result));
         } catch (Exception e) {
             e.printStackTrace();
-            response.setStatus(500);
-            response.getWriter().print("{\"success\":false,\"message\":\"Lỗi hệ thống\"}");
+            writeError(response, 500, "Loi he thong");
         }
     }
 
-    private String doConfirmPayment(int bookingId, BigDecimal amount, int facilityId) throws Exception {
-        try (Connection conn = DBContext.getConnection()) {
-            conn.setAutoCommit(false);
-            try {
-                // 1. Validate booking belongs to facility
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT facility_id FROM Booking WHERE booking_id = ?")) {
-                    ps.setInt(1, bookingId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Không tìm thấy booking\"}";
-                        }
-                        if (rs.getInt("facility_id") != facilityId) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Booking không thuộc cơ sở của bạn\"}";
-                        }
-                    }
-                }
-
-                // 2. Get Invoice
-                BigDecimal totalAmount;
-                BigDecimal paidAmount;
-                String paymentStatus;
-
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT total_amount, paid_amount, payment_status FROM Invoice WHERE booking_id = ?")) {
-                    ps.setInt(1, bookingId);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            conn.rollback();
-                            return "{\"success\":false,\"message\":\"Không tìm thấy hóa đơn cho booking này\"}";
-                        }
-                        totalAmount = rs.getBigDecimal("total_amount");
-                        paidAmount = rs.getBigDecimal("paid_amount");
-                        paymentStatus = rs.getString("payment_status");
-                    }
-                }
-
-                // 3. Check not already PAID
-                if ("PAID".equals(paymentStatus)) {
-                    conn.rollback();
-                    return "{\"success\":false,\"message\":\"Booking đã được thanh toán đầy đủ\"}";
-                }
-
-                // 4. Validate amount: paidAmount + amount must equal totalAmount
-                BigDecimal newPaidAmount = paidAmount.add(amount);
-                if (newPaidAmount.compareTo(totalAmount) != 0) {
-                    BigDecimal remaining = totalAmount.subtract(paidAmount);
-                    conn.rollback();
-                    return "{\"success\":false,\"message\":\"Số tiền không hợp lệ. Cần thu thêm đúng " +
-                            formatMoney(remaining) + " để đủ tổng tiền.\"}";
-                }
-
-                // 5. Update Invoice
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "UPDATE Invoice SET paid_amount = ?, payment_status = 'PAID' WHERE booking_id = ?")) {
-                    ps.setBigDecimal(1, totalAmount);
-                    ps.setInt(2, bookingId);
-                    ps.executeUpdate();
-                }
-
-                conn.commit();
-                return "{\"success\":true,\"message\":\"Xác nhận thanh toán thành công\"," +
-                        "\"data\":{\"paidAmount\":" + totalAmount + ",\"paymentStatus\":\"PAID\"}}";
-
-            } catch (Exception e) {
-                conn.rollback();
-                throw e;
-            } finally {
-                conn.setAutoCommit(true);
-            }
+    private String buildResponseJson(StaffConfirmPaymentResultDTO result) {
+        if (!result.isSuccess()) {
+            return "{\"success\":false,\"message\":\"" + result.getMessage() + "\"}";
         }
-    }
-
-    private String formatMoney(BigDecimal amount) {
-        if (amount == null) return "0đ";
-        return String.format("%,.0f", amount) + "đ";
-    }
-
-    // ─── Parse simple JSON (no library) ───
-    private String readBody(HttpServletRequest request) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = request.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-        }
-        return sb.toString();
+        return "{\"success\":true,\"message\":\"" + result.getMessage() + "\"," +
+                "\"data\":{\"paidAmount\":" + result.getPaidAmount() +
+                ",\"paymentStatus\":\"" + result.getPaymentStatus() + "\",\"method\":\"" + result.getMethod() + "\"}}";
     }
 
     private int extractInt(String json, String key) {
@@ -195,6 +119,24 @@ public class StaffConfirmPaymentApiServlet extends HttpServlet {
                 }
             }
             return num.length() > 0 ? new BigDecimal(num.toString()) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String extractString(String json, String key) {
+        try {
+            String search = "\"" + key + "\"";
+            int idx = json.indexOf(search);
+            if (idx < 0) return null;
+            int colonIdx = json.indexOf(":", idx + search.length());
+            if (colonIdx < 0) return null;
+
+            int firstQuote = json.indexOf("\"", colonIdx + 1);
+            if (firstQuote < 0) return null;
+            int endQuote = json.indexOf("\"", firstQuote + 1);
+            if (endQuote < 0) return null;
+            return json.substring(firstQuote + 1, endQuote);
         } catch (Exception e) {
             return null;
         }

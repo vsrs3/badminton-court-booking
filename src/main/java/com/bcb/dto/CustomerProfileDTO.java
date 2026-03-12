@@ -60,3 +60,4 @@ public class CustomerProfileDTO {
         this.avatarFile = avatarFile;
     }
 }
+

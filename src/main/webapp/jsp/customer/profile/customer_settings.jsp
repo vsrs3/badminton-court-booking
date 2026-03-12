@@ -1,86 +1,67 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- customer_settings.jsp --%>
 
-<div class="flex flex-col h-full bg-white">
-    <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
-<%--        <a href="profile?section=profile" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">--%>
-<%--            <i data-lucide="arrow-left" class="w-6 h-6"></i>--%>
-<%--        </a>--%>
-        <div class="flex items-center space-x-2">
-            <i data-lucide="settings" class="w-6 h-6 text-emerald-700"></i>
-            <h1 class="text-xl font-bold text-gray-800">Cài đặt</h1>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-setting.css">
+
+<div class="settings-page">
+
+    <!-- HEADER -->
+    <div class="settings-header">
+        <div class="settings-title-group">
+            <i data-lucide="settings" class="settings-title-icon"></i>
+            <h1 class="settings-page-title">Cài đặt</h1>
         </div>
+        <a href="${pageContext.request.contextPath}/home" class="btn-back-settings">
+            <i data-lucide="arrow-left" class="icon-sm"></i>
+            <span>Quay lại trang chủ</span>
+        </a>
     </div>
-    <div class="flex-1 overflow-y-auto">
-        <a href="profile?section=notifications" class="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <div class="flex items-center space-x-3">
-                <div class="text-blue-500">
-                    <i data-lucide="bell" class="w-5 h-5"></i>
-                </div>
-                <span class="text-sm font-medium text-gray-800">Cài đặt thông báo</span>
-            </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
-        </a>
-        <a href="profile?section=languages" class="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <div class="flex items-center space-x-3">
-                <div class="text-purple-500">
-                    <i data-lucide="languages" class="w-5 h-5"></i>
-                </div>
-                <span class="text-sm font-medium text-gray-800">Ngôn ngữ</span>
-            </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
-        </a>
-        <a href="profile?section=change-password" class="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <div class="flex items-center space-x-3">
-                <div class="text-green-500">
-                    <i data-lucide="key-round" class="w-5 h-5"></i>
-                </div>
-                <span class="text-sm font-medium text-gray-800">Đổi mật khẩu</span>
-            </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
-        </a>
-        <form action="customerController" method="GET" id="logoutForm"
-              class="flex items-center justify-
-              between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <input type="hidden" name="action" value="logout">
-            <button type="submit" class="flex items-center space-x-3 w-full text-left">
-                <div class="text-red-500">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
-                </div>
-                <span class="text-sm font-medium text-gray-800">Đăng xuất</span>
-            </button>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300 pointer-events-none"></i>
-        </form>
 
-        <div class="flex items-center justify-between p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <div class="flex items-center space-x-3">
-                <div class="text-red-500">
-                    <i data-lucide="user-x" class="w-5 h-5"></i>
+    <!-- MENU LIST -->
+    <div class="settings-list">
+
+        <a href="profile?section=notifications" class="settings-row">
+            <div class="settings-row-left">
+                <div class="settings-icon-wrap" style="background:#EFF6FF;">
+                    <i data-lucide="bell" class="icon-md" style="color:#3B82F6;"></i>
                 </div>
-                <span class="text-sm font-medium text-gray-800">Xóa tài khoản</span>
+                <span class="settings-row-label">Cài Đặt Thông Báo</span>
             </div>
-            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-300"></i>
-        </div>
+            <i data-lucide="chevron-right" class="icon-sm settings-chevron"></i>
+        </a>
+
+        <a href="profile?section=languages" class="settings-row">
+            <div class="settings-row-left">
+                <div class="settings-icon-wrap" style="background:#F5F3FF;">
+                    <i data-lucide="languages" class="icon-md" style="color:#7C3AED;"></i>
+                </div>
+                <span class="settings-row-label">Cài Đặt Ngôn Ngữ</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon-sm settings-chevron"></i>
+        </a>
+
+        <a href="profile?section=change-password" class="settings-row">
+            <div class="settings-row-left">
+                <div class="settings-icon-wrap" style="background:#F0FDF4;">
+                    <i data-lucide="key-round" class="icon-md" style="color:#064E3B;"></i>
+                </div>
+                <span class="settings-row-label">Đổi Mật Khẩu</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon-sm settings-chevron"></i>
+        </a>
+
     </div>
 </div>
 
 <script>
-    document.getElementById('logoutForm')
-        .addEventListener('submit', async e => {
+    var logoutForm = document.getElementById('logoutForm');
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', function(e) {
             e.preventDefault();
-
-            const confirmed = await Swal.fire({
-                title: 'Đăng xuất',
-                text: 'Bạn có chắc muốn đăng xuất không?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Đăng xuất',
-                cancelButtonText: 'Hủy',
-                reverseButtons: true
-            });
-
-            if (confirmed.isConfirmed) {
-                e.target.submit();
-            }
+            var ok = confirm('Bạn có chắc muốn đăng xuất không?');
+            if (ok) e.target.submit();
         });
-
+    }
 </script>

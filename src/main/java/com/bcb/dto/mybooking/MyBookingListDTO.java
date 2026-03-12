@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 
 /**
  * DTO representing a booking item in "My Bookings" list.
+ * Includes holdExpiredAt and paidAmount to support Pay / Pay Remaining buttons.
+ *
+ * @author AnhTN
  */
 public class MyBookingListDTO {
     private int bookingId;
@@ -14,11 +17,15 @@ public class MyBookingListDTO {
     private LocalDate bookingDate;
     private String bookingStatus;       // PENDING, CONFIRMED, EXPIRED, CANCELLED, COMPLETED
     private String bookingType;         // SINGLE or RECURRING
-    private String slotDetails;         // e.g. "Sân A1: 17:00-18:00, Sân A2: 18:00-19:00"
+    private String slotDetails;         // merged consecutive slots, e.g. "Sân A1: 17:00-19:00"
     private BigDecimal totalAmount;
+    private BigDecimal paidAmount;      // amount already paid (for PARTIAL status)
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
     private LocalDateTime createdAt;
+    private LocalDateTime holdExpiredAt; // hold expiry for PENDING bookings
     private String thumbnailPath;       // facility image
+
+    private boolean reviewed;           // check customer review or not
 
     public MyBookingListDTO() {}
 
@@ -49,9 +56,21 @@ public class MyBookingListDTO {
     public String getPaymentStatus() { return paymentStatus; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 
+    public BigDecimal getPaidAmount() { return paidAmount; }
+    public void setPaidAmount(BigDecimal paidAmount) { this.paidAmount = paidAmount; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public LocalDateTime getHoldExpiredAt() { return holdExpiredAt; }
+    public void setHoldExpiredAt(LocalDateTime holdExpiredAt) { this.holdExpiredAt = holdExpiredAt; }
+
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
+
+	public boolean isReviewed() { return reviewed; }
+	public void setReviewed(boolean reviewed) { this.reviewed = reviewed; }
+    
+    
 }
+

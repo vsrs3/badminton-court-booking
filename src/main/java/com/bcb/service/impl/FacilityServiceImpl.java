@@ -7,6 +7,8 @@ import com.bcb.model.Facility;
 import com.bcb.model.FacilityImage;
 import com.bcb.repository.FacilityImageRepository;
 import com.bcb.dto.FacilityDTO;
+import com.bcb.dto.FacilityPriceRuleDetailDTO;
+import com.bcb.dto.FacilityReviewDetailDTO;
 import com.bcb.repository.FacilityRepository;
 import com.bcb.repository.impl.FacilityImageRepositoryImpl;
 import com.bcb.repository.impl.FacilityRepositoryImpl;
@@ -14,8 +16,8 @@ import com.bcb.service.FacilityImageService;
 import com.bcb.service.FacilityService;
 import com.bcb.service.UploadService;
 import com.bcb.validation.FacilityValidator;
-import jakarta.servlet.http.Part;
 import com.bcb.utils.DBContext;
+import jakarta.servlet.http.Part;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -78,8 +80,8 @@ public class FacilityServiceImpl implements FacilityService {
     @Override
     public Facility findById(int facilityId) throws BusinessException {
         return facilityRepository.findById(facilityId)
-            .orElseThrow(() -> new BusinessException("FACILITY_NOT_FOUND",
-                "Facility not found with ID: " + facilityId));
+                                 .orElseThrow(() -> new BusinessException("FACILITY_NOT_FOUND",
+                                         "Facility not found with ID: " + facilityId));
     }
 
     @Override
@@ -94,7 +96,7 @@ public class FacilityServiceImpl implements FacilityService {
             return facilityRepository.insert(facility);
         } catch (Exception e) {
             throw new BusinessException("FACILITY_CREATE_ERROR",
-                "Failed to create facility: " + e.getMessage(), e);
+                    "Failed to create facility: " + e.getMessage(), e);
         }
     }
 
@@ -109,18 +111,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facility.getFacilityId()).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                "Facility not found with ID: " + facility.getFacilityId());
+                    "Facility not found with ID: " + facility.getFacilityId());
         }
 
         try {
             int rowsAffected = facilityRepository.update(facility);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_UPDATE_ERROR",
-                    "No rows affected during update");
+                        "No rows affected during update");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_UPDATE_ERROR",
-                "Failed to update facility: " + e.getMessage(), e);
+                    "Failed to update facility: " + e.getMessage(), e);
         }
     }
 
@@ -231,18 +233,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facilityId).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                "Facility not found with ID: " + facilityId);
+                    "Facility not found with ID: " + facilityId);
         }
 
         try {
             int rowsAffected = facilityRepository.softDelete(facilityId);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_DELETE_ERROR",
-                    "No rows affected during delete");
+                        "No rows affected during delete");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_DELETE_ERROR",
-                "Failed to delete facility: " + e.getMessage(), e);
+                    "Failed to delete facility: " + e.getMessage(), e);
         }
     }
 
@@ -254,13 +256,13 @@ public class FacilityServiceImpl implements FacilityService {
 
         for (Facility f : facilities) {
             String fullAddress = Stream.of(
-                            f.getAddress(),
-                            f.getWard(),
-                            f.getDistrict(),
-                            f.getProvince()
-                    )
-                    .filter(s -> s != null && !s.isBlank())
-                    .collect(Collectors.joining(", "));
+                                               f.getAddress(),
+                                               f.getWard(),
+                                               f.getDistrict(),
+                                               f.getProvince()
+                                       )
+                                       .filter(s -> s != null && !s.isBlank())
+                                       .collect(Collectors.joining(", "));
 
             map.put(f.getFacilityId(), fullAddress);
         }
@@ -336,53 +338,38 @@ public class FacilityServiceImpl implements FacilityService {
             );
         }
     }
-//    ============= VUONGPD =============
-@Override
-public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId) {
-    try {
-        System.out.println("=== START getFacilities ===");
+    //    ============= VUONGPD =============
+    @Override
+    public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
+        Integer favoriteAccountId = favoritesOnly ? accountId : null;
+        if (favoritesOnly && favoriteAccountId == null) {
+            return new ArrayList<>();
+        }
 
         int offset = page * pageSize;
+        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
 
-        System.out.println("📍 getFacilities - page=" + page + ", pageSize=" + pageSize + ", offset=" + offset);
-
-        // Get facilities from repository
-        System.out.println("📦 Fetching facilities from repository...");
-        List<Facility> facilities = facilityRepository.findAllWithPagination(offset, pageSize);
-        System.out.println("✅ Loaded " + facilities.size() + " facilities");
-
-        // Get total count
-        int totalCount = facilityRepository.getTotalCount();
-        System.out.println("📊 Total active facilities in DB: " + totalCount);
-
-        // Step 2: Get favorites
         Set<Integer> favoriteFacilityIds = new HashSet<>();
         if (accountId != null) {
-            System.out.println("👤 Fetching favorites for account: " + accountId);
             favoriteFacilityIds = getFavoriteFacilityIds(accountId);
         }
 
-        // Step 3: Convert to DTOs
-        List<FacilityDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < facilities.size(); i++) {
-            Facility facility = facilities.get(i);
-            System.out.println("🔄 Converting facility " + (i+1) + ": " + facility.getName());
+        List<Integer> facilityIds = facilities.stream()
+                                              .map(Facility::getFacilityId)
+                                              .collect(Collectors.toList());
 
-            try {
-                FacilityDTO dto = enrichEntityToDTO(facility, userLat, userLng);
-                dto.setIsFavorite(favoriteFacilityIds.contains(facility.getFacilityId()));
-                dtos.add(dto);
-                System.out.println("✅ Converted: " + dto.getName());
-            } catch (Exception e) {
-                System.err.println("❌ ERROR converting facility: " + facility.getName());
-                e.printStackTrace();
-                throw e; // Re-throw để thấy full stack trace
-            }
+        Map<Integer, Double> ratingMap = facilityRepository.findAverageRatings(facilityIds);
+        Map<Integer, String> priceRangeMap = facilityRepository.findPriceRanges(facilityIds);
+        Map<Integer, String> thumbnailMap = facilityRepository.findThumbnailPaths(facilityIds);
+
+        List<FacilityDTO> dtos = new ArrayList<>(facilities.size());
+        for (Facility facility : facilities) {
+            FacilityDTO dto = enrichEntityToDTO(facility, userLat, userLng, ratingMap, priceRangeMap, thumbnailMap);
+            dto.setIsFavorite(favoriteFacilityIds.contains(facility.getFacilityId()));
+            dtos.add(dto);
         }
 
-        // Step 4: Sort
         if (userLat != null && userLng != null) {
-            System.out.println("🔄 Sorting by distance...");
             dtos.sort((a, b) -> {
                 Double distA = a.getDistanceValue() != null ? a.getDistanceValue() : Double.MAX_VALUE;
                 Double distB = b.getDistanceValue() != null ? b.getDistanceValue() : Double.MAX_VALUE;
@@ -390,54 +377,73 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
             });
         }
 
-        System.out.println("=== END getFacilities - Success: " + dtos.size() + " DTOs ===");
         return dtos;
-
-    } catch (Exception e) {
-        System.err.println("❌❌❌ FATAL ERROR in getFacilities ❌❌❌");
-        e.printStackTrace();
-        throw new RuntimeException("Error in getFacilities: " + e.getMessage(), e);
     }
-}
-
     @Override
     public int getTotalCount() {
         return facilityRepository.getTotalCount();
     }
 
     @Override
+    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly) {
+        Integer favoriteAccountId = favoritesOnly ? accountId : null;
+        if (favoritesOnly && favoriteAccountId == null) {
+            return 0;
+        }
+        return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
+    }
+
+    @Override
     public FacilityDTO getFacilityById(Integer facilityId, Integer accountId) {
         return facilityRepository.findById(facilityId)
-                .map(facility -> {
-                    FacilityDTO dto = enrichEntityToDTO(facility, null, null);
+                                 .map(facility -> {
+                                     FacilityDTO dto = enrichEntityToDTO(facility, null, null);
 
-                    // Check if favorite
-                    if (accountId != null) {
-                        dto.setIsFavorite(isFavorite(accountId, facilityId));
-                    } else {
-                        dto.setIsFavorite(false);
-                    }
+                                     dto.setDescription(normalizeText(facility.getDescription()));
 
-                    return dto;
-                })
-                .orElse(null);
+                                     List<String> galleryImages = getGalleryImageUrls(facilityId);
+                                     dto.setGalleryImages(galleryImages);
+
+                                     List<FacilityPriceRuleDetailDTO> priceRules = getPriceRulesForDetail(facilityId);
+                                     dto.setPriceRules(priceRules);
+
+                                     List<FacilityReviewDetailDTO> reviews = getReviewsForDetail(facilityId);
+                                     dto.setReviews(reviews);
+                                     dto.setReviewCount(reviews.size());
+
+                                     if (accountId != null) {
+                                         dto.setIsFavorite(isFavorite(accountId, facilityId));
+                                     } else {
+                                         dto.setIsFavorite(false);
+                                     }
+
+                                     return dto;
+                                 })
+                                 .orElse(null);
     }
 
     /**
-     * ✅ NEW: Enrich pure Entity to DTO with computed fields
+     * Enrich pure Entity to DTO with computed fields
      * This is where business logic happens
      */
     private FacilityDTO enrichEntityToDTO(Facility facility, Double userLat, Double userLng) {
+        return enrichEntityToDTO(facility, userLat, userLng, null, null, null);
+    }
+
+    private FacilityDTO enrichEntityToDTO(Facility facility,
+                                          Double userLat,
+                                          Double userLng,
+                                          Map<Integer, Double> ratingMap,
+                                          Map<Integer, String> priceRangeMap,
+                                          Map<Integer, String> thumbnailMap) {
         FacilityDTO dto = new FacilityDTO();
 
-        // ✅ Map basic fields from entity
         dto.setId(String.valueOf(facility.getFacilityId()));
         dto.setName(facility.getName());
         dto.setLocation(facility.getFullAddress());
         dto.setProvince(facility.getProvince());
         dto.setDistrict(facility.getDistrict());
 
-        // ✅ Calculate distance (computed field)
         if (userLat != null && userLng != null &&
                 facility.getLatitude() != null && facility.getLongitude() != null) {
 
@@ -449,39 +455,36 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
 
             dto.setDistance(formatDistance(distance));
             dto.setDistanceValue(distance);
-
-            System.out.println("📏 " + facility.getName() + " -> " + distance + " km");
         } else {
-            dto.setDistance("Đang tính...");
-            dto.setDistanceValue(Double.MAX_VALUE);
+            dto.setDistance(null);
+            dto.setDistanceValue(null);
         }
 
-        // ✅ Get rating (queried separately)
-        Double rating = facilityRepository.getAverageRating(facility.getFacilityId());
+        Double rating = ratingMap != null
+                ? ratingMap.getOrDefault(facility.getFacilityId(), 0.0)
+                : facilityRepository.getAverageRating(facility.getFacilityId());
         dto.setRating(rating != null ? rating : 0.0);
 
-        // ✅ Format open/close time
         dto.setOpenTime(formatTimeRange(facility.getOpenTime(), facility.getCloseTime()));
 
-        // ✅ Get price range
-        dto.setPriceRange(getPriceRange(facility.getFacilityId()));
+        String priceRange = priceRangeMap != null
+                ? priceRangeMap.get(facility.getFacilityId())
+                : getPriceRange(facility.getFacilityId());
+        dto.setPriceRange(priceRange != null && !priceRange.isEmpty() ? priceRange : "Lien he");
 
-        // ✅ Get thumbnail image (queried separately)
-        String imagePath = facilityRepository.findThumbnailPath(facility.getFacilityId());
+        String imagePath = thumbnailMap != null
+                ? thumbnailMap.get(facility.getFacilityId())
+                : facilityRepository.findThumbnailPath(facility.getFacilityId());
         if (imagePath != null && !imagePath.isEmpty()) {
             dto.setImageUrl("uploads/" + imagePath);
         } else {
-            // Fallback placeholder
-            dto.setImageUrl("https://placehold.co/800x450/064E3B/A3E635?text=" +
-                    facility.getName().substring(0, 1));
+            dto.setImageUrl("uploads/facility/default-facility.jpg");
         }
 
-        // Contact info (TODO: add to Facility or link to Owner)
         dto.setHotline("");
         dto.setWebsite("");
         dto.setBookingLink("");
 
-        // Coordinates for map
         if (facility.getLatitude() != null && facility.getLongitude() != null) {
             dto.setLat(facility.getLatitude().doubleValue());
             dto.setLng(facility.getLongitude().doubleValue());
@@ -579,60 +582,158 @@ public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, D
         return "Liên hệ";
     }
 
-    /**
-     * Get favorite facility IDs for a user
-     */
-    private Set<Integer> getFavoriteFacilityIds(Integer accountId) {
-        Set<Integer> favoriteIds = new HashSet<>();
 
+    private List<String> getGalleryImageUrls(Integer facilityId) {
+        List<String> imageUrls = new ArrayList<>();
+
+        List<FacilityImage> galleryImages = facilityImageRepository.findGallery(facilityId);
+        if (galleryImages != null && !galleryImages.isEmpty()) {
+            for (FacilityImage image : galleryImages) {
+                if (image.getImagePath() != null && !image.getImagePath().isBlank()) {
+                    imageUrls.add("uploads/" + image.getImagePath());
+                }
+            }
+        }
+
+        if (!imageUrls.isEmpty()) {
+            return imageUrls;
+        }
+
+        FacilityImage thumbnail = facilityImageRepository.findThumbnail(facilityId);
+        if (thumbnail != null && thumbnail.getImagePath() != null && !thumbnail.getImagePath().isBlank()) {
+            imageUrls.add("uploads/" + thumbnail.getImagePath());
+        }
+
+        return imageUrls;
+    }
+
+    private List<FacilityPriceRuleDetailDTO> getPriceRulesForDetail(Integer facilityId) {
         String sql = """
-            SELECT facility_id 
-            FROM CustomerFavoriteFacility 
-            WHERE account_id = ?
+            SELECT
+                COALESCE(NULLIF(ct.description, ''), ct.type_code) AS court_type_name,
+                pr.day_type,
+                pr.start_time,
+                pr.end_time,
+                pr.price
+            FROM FacilityPriceRule pr
+            INNER JOIN CourtType ct ON ct.court_type_id = pr.court_type_id
+            WHERE pr.facility_id = ?
+            ORDER BY COALESCE(NULLIF(ct.description, ''), ct.type_code) ASC, pr.day_type ASC, pr.start_time ASC
         """;
+
+        List<FacilityPriceRuleDetailDTO> priceRules = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, accountId);
+            ps.setInt(1, facilityId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    favoriteIds.add(rs.getInt("facility_id"));
+                    FacilityPriceRuleDetailDTO dto = new FacilityPriceRuleDetailDTO();
+                    dto.setCourtTypeName(normalizeText(rs.getString("court_type_name")));
+                    dto.setDayType(normalizeText(rs.getString("day_type")));
+
+                    java.sql.Time startTime = rs.getTime("start_time");
+                    java.sql.Time endTime = rs.getTime("end_time");
+                    dto.setStartTime(startTime != null ? formatSingleTime(startTime.toLocalTime()) : null);
+                    dto.setEndTime(endTime != null ? formatSingleTime(endTime.toLocalTime()) : null);
+                    dto.setPrice(rs.getBigDecimal("price"));
+
+                    priceRules.add(dto);
                 }
             }
-
         } catch (SQLException e) {
-            System.err.println("Error fetching favorites: " + e.getMessage());
+            System.err.println("Error fetching detail price rules for facility " + facilityId + ": " + e.getMessage());
         }
 
-        return favoriteIds;
+        return priceRules;
+    }
+
+    private List<FacilityReviewDetailDTO> getReviewsForDetail(Integer facilityId) {
+        String sql = """
+            SELECT
+                a.full_name,
+                r.rating,
+                r.comment,
+                r.created_at
+            FROM Review r
+            INNER JOIN Booking b ON b.booking_id = r.booking_id
+            INNER JOIN Account a ON a.account_id = r.account_id
+            WHERE b.facility_id = ?
+            ORDER BY r.created_at DESC
+        """;
+
+        List<FacilityReviewDetailDTO> reviews = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, facilityId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    FacilityReviewDetailDTO dto = new FacilityReviewDetailDTO();
+                    dto.setReviewerName(normalizeText(rs.getString("full_name")));
+                    dto.setRating(rs.getInt("rating"));
+                    dto.setComment(normalizeText(rs.getString("comment")));
+
+                    java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+                    dto.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime().toString() : null);
+
+                    reviews.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching detail reviews: " + e.getMessage());
+        }
+
+        return reviews;
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+    @Override
+    public boolean addFavorite(Integer accountId, Integer facilityId) {
+        return facilityRepository.addFavorite(accountId, facilityId);
+    }
+
+    @Override
+    public boolean removeFavorite(Integer accountId, Integer facilityId) {
+        return facilityRepository.removeFavorite(accountId, facilityId);
+    }
+
+    /**
+     */
+    private Set<Integer> getFavoriteFacilityIds(Integer accountId) {
+        return new HashSet<>(facilityRepository.getFavoriteFacilityIds(accountId));
     }
 
     /**
      * Check if a facility is favorite for a user
      */
     private boolean isFavorite(Integer accountId, Integer facilityId) {
-        String sql = """
-            SELECT 1 FROM CustomerFavoriteFacility 
-            WHERE account_id = ? AND facility_id = ?
-        """;
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, accountId);
-            ps.setInt(2, facilityId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error checking favorite: " + e.getMessage());
-        }
-
-        return false;
+        return facilityRepository.isFavorite(accountId, facilityId);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
