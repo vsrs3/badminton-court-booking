@@ -1,4 +1,4 @@
-(function (window, document) {
+﻿(function (window, document) {
     'use strict';
 
     if (window.StaffDialog) return;
@@ -166,5 +166,3 @@
         }
     };
 })(window, document);
-
-

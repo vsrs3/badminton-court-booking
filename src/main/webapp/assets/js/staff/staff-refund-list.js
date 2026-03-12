@@ -1,12 +1,8 @@
-(function () {
+﻿(function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
 
-    // DOM
-    var searchInput   = document.getElementById('searchInput');
-    var searchClear   = document.getElementById('searchClear');
-    var searchBtn     = document.getElementById('searchBtn');
     var resultsInfo   = document.getElementById('resultsInfo');
     var resultsText   = document.getElementById('resultsText');
     var stateLoading  = document.getElementById('stateLoading');
@@ -20,31 +16,6 @@
     var currentPage = 1;
     var pageSize = 10;
 
-    // ─── Show/hide clear button ───
-    searchInput.addEventListener('input', function () {
-        searchClear.classList.toggle('d-none', this.value.length === 0);
-    });
-    searchClear.addEventListener('click', function () {
-        searchInput.value = '';
-        searchClear.classList.add('d-none');
-        currentPage = 1;
-        loadBookings();
-    });
-
-    // ─── Search triggers ───
-    searchBtn.addEventListener('click', function () {
-        currentPage = 1;
-        loadBookings();
-    });
-    searchInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            currentPage = 1;
-            loadBookings();
-        }
-    });
-
-    // ─── Show state ───
     function showState(state) {
         stateLoading.classList.add('d-none');
         stateError.classList.add('d-none');
@@ -59,14 +30,11 @@
         }
     }
 
-    // ─── Fetch bookings ───
-    window.loadBookings = function () {
+    window.loadRefunds = function () {
         showState('loading');
         resultsInfo.classList.add('d-none');
 
-        var search = searchInput.value.trim();
-        var url = CTX + '/api/staff/booking/list?page=' + currentPage + '&size=' + pageSize;
-        if (search) url += '&search=' + encodeURIComponent(search);
+        var url = CTX + '/api/staff/refund/list?page=' + currentPage + '&size=' + pageSize;
 
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (res) {
@@ -78,69 +46,126 @@
                 renderList(body.data);
             })
             .catch(function (err) {
-                console.error('Booking list error:', err);
+                console.error('Refund list error:', err);
                 errorMessage.textContent = err.message || 'Không thể tải dữ liệu.';
                 showState('error');
             });
     };
 
-    // ─── Render ───
     function renderList(data) {
-        var bookings = data.bookings;
+        var refunds = data.refunds;
 
-        // Results info
         resultsInfo.classList.remove('d-none');
         if (data.totalRows === 0) {
-            resultsText.textContent = 'Không tìm thấy kết quả.';
+            resultsText.textContent = 'Không có yêu cầu hoàn tiền nào.';
             showState('empty');
             return;
         }
 
         var from = (data.page - 1) * data.size + 1;
         var to = Math.min(data.page * data.size, data.totalRows);
-        resultsText.textContent = 'Hiển thị ' + from + '–' + to + ' trong ' + data.totalRows + ' booking';
+        resultsText.textContent = 'Hiển thị ' + from + '-' + to + ' trong ' + data.totalRows + ' yêu cầu';
 
-        // Table body
         tableBody.innerHTML = '';
-        bookings.forEach(function (b) {
+        refunds.forEach(function (r) {
             var tr = document.createElement('tr');
-            tr.addEventListener('click', function () {
-                window.location.href = CTX + '/staff/booking/detail/' + b.bookingId;
-            });
 
-            // Build status cell: if COMPLETED + hasNoShow → show extra badge
-            var statusHtml = '<span class="sbl-status sbl-status-' + b.bookingStatus.toLowerCase() + '">' +
-                statusLabel(b.bookingStatus) + '</span>';
-            if (b.bookingStatus === 'COMPLETED' && b.hasNoShow) {
-                statusHtml += ' <span class="sbl-status sbl-status-noshow">Có vắng</span>';
-            }
+            var noteHtml = esc(r.refundNote) || '<span class="srl-note">-</span>';
+            var paidTotal = fmtMoney(r.paidAmount) + ' / ' + fmtMoney(r.totalAmount);
 
             tr.innerHTML =
-                '<td><span class="sbl-booking-id">#' + b.bookingId + '</span></td>' +
-                '<td><span class="sbl-customer-name">' + esc(b.customerName) + '</span></td>' +
-                '<td>' + esc(b.phone) + '</td>' +
-                '<td>' + fmtDate(b.bookingDate) + '</td>' +
-                '<td>' + esc(b.courtDisplay) + '</td>' +
-                '<td>' + statusHtml + '</td>' +
-                '<td>' + paymentBadge(b.paymentStatus) + '</td>';
+                '<td><a class="srl-booking-id" href="' + CTX + '/staff/booking/detail/' + r.bookingId + '">#' + r.bookingId + '</a></td>' +
+                '<td>' + esc(r.customerName) + '</td>' +
+                '<td>' + esc(r.phone) + '</td>' +
+                '<td>' + fmtDate(r.bookingDate) + '</td>' +
+                '<td>' + paidTotal + '</td>' +
+                '<td><span class="srl-money">' + fmtMoney(r.refundDue) + '</span></td>' +
+                '<td>' + noteHtml + '</td>' +
+                '<td>' + actionButton(r.bookingId) + '</td>';
 
             tableBody.appendChild(tr);
         });
 
-        // Pagination
+        wireActions();
         renderPagination(data.page, data.totalPages);
         showState('table');
     }
 
-    // ─── Pagination ───
+    function actionButton(bookingId) {
+        return '<button class="srl-action-btn" data-booking-id="' + bookingId + '">' +
+               '<i class="bi bi-check2"></i>Xác nhận</button>';
+    }
+
+    function wireActions() {
+        var buttons = tableBody.querySelectorAll('.srl-action-btn');
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var bookingId = parseInt(btn.getAttribute('data-booking-id'), 10);
+                if (!bookingId) return;
+
+                confirmRefundFlow(bookingId, btn);
+            });
+        });
+    }
+
+    function confirmRefundFlow(bookingId, btn) {
+        if (!window.StaffDialog) {
+            return;
+        }
+
+        StaffDialog.confirm({
+            title: 'Xác nhận',
+            message: 'Xác nhận hoàn tiền cho booking #' + bookingId + '?' 
+        }).then(function (ok) {
+            if (!ok) return;
+            return StaffDialog.prompt({
+                title: 'Ghi chú xác nhận',
+                message: 'Nhập ghi chú xác nhận (không bắt buộc):',
+                defaultValue: '',
+                placeholder: 'Ví dụ: Đã chuyển khoản ngân hàng'
+            });
+        }).then(function (note) {
+            if (note === null || typeof note === 'undefined') return;
+            btn.disabled = true;
+            return doConfirmRefund(bookingId, note)
+                .finally(function () {
+                    btn.disabled = false;
+                });
+        });
+    }
+
+    function doConfirmRefund(bookingId, note) {
+        return fetch(CTX + '/api/staff/refund/confirm', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ bookingId: bookingId, note: note || '' })
+        })
+            .then(function (res) {
+                return res.json().then(function (body) {
+                    if (!res.ok || !body.success) {
+                        throw new Error(body.message || 'Lỗi');
+                    }
+                    return body;
+                });
+            })
+            .then(function () {
+                loadRefunds();
+            })
+            .catch(function (err) {
+                if (window.StaffDialog) {
+                    return StaffDialog.alert({ title: 'Lỗi', message: err.message || 'Không thể xác nhận hoàn tiền' });
+                }
+            });
+    }
+
     function renderPagination(current, total) {
         paginationUl.innerHTML = '';
         if (total <= 1) return;
 
-        // Prev
         addPageItem('«', current > 1 ? current - 1 : null, false);
 
-        // Page numbers (smart: show max 7)
         var pages = buildPageNumbers(current, total, 7);
         pages.forEach(function (p) {
             if (p === '...') {
@@ -150,7 +175,6 @@
             }
         });
 
-        // Next
         addPageItem('»', current < total ? current + 1 : null, false);
     }
 
@@ -169,7 +193,7 @@
             a.addEventListener('click', function (e) {
                 e.preventDefault();
                 currentPage = targetPage;
-                loadBookings();
+                loadRefunds();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         } else {
@@ -204,54 +228,28 @@
         return pages;
     }
 
-    // ─── Helpers ───
     function esc(s) {
-        if (!s) return '<span style="color:#D1D5DB;">—</span>';
+        if (!s) return '';
         var div = document.createElement('div');
         div.textContent = s;
         return div.innerHTML;
     }
 
     function fmtDate(d) {
-        if (!d) return '—';
+        if (!d) return '-';
         var dt = new Date(d + 'T00:00:00');
         return String(dt.getDate()).padStart(2, '0') + '/' +
             String(dt.getMonth() + 1).padStart(2, '0') + '/' +
             dt.getFullYear();
     }
 
-    function statusLabel(s) {
-        switch (s) {
-            case 'PENDING':   return 'Chờ XN';
-            case 'CONFIRMED': return 'Đã XN';
-            case 'COMPLETED': return 'Xong';
-            case 'CANCELLED': return 'Đã hủy';
-            default:          return s;
-        }
+    function fmtMoney(val) {
+        if (val === null || val === undefined || val === '') return '-';
+        var num = Number(val);
+        if (isNaN(num)) return val;
+        return num.toLocaleString('vi-VN');
     }
 
-    function paymentBadge(s) {
-        if (!s) return '<span style="color:#D1D5DB;">—</span>';
-        var label, cls;
-        switch (s) {
-            case 'UNPAID':  label = 'Chưa TT'; cls = 'sbl-pay-unpaid'; break;
-            case 'PARTIAL': label = 'Một phần'; cls = 'sbl-pay-partial'; break;
-            case 'PAID':    label = 'Đã TT';   cls = 'sbl-pay-paid'; break;
-            default:        label = s; cls = '';
-        }
-        return '<span class="sbl-status ' + cls + '">' + label + '</span>';
-    }
-
-    // ─── Init ───
-    // Refresh list when page is restored from browser cache or flagged dirty after edit.
-    window.addEventListener('pageshow', function (event) {
-        var isDirty = sessionStorage.getItem('staffBookingListDirty') === '1';
-        if (!event.persisted && !isDirty) return;
-        if (isDirty) {
-            sessionStorage.removeItem('staffBookingListDirty');
-        }
-        loadBookings();
-    });
-    loadBookings();
+    loadRefunds();
 
 })();

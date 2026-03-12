@@ -30,12 +30,12 @@
 
       <!-- Rating Badge -->
       <div class="detail-rating-badge">
-        <span id="detailRating">&#9733; 0.0 (0 &#273;&#225;nh gi&#225;)</span>
+        <span id="detailRating">&#9733; 0.0 (0 đánh giá)</span>
       </div>
 
       <!-- Floating Book Button -->
       <button id="detailBookBtn" class="detail-book-btn">
-        &#272;&#7863;t l&#7883;ch
+        Đặt lịch
       </button>
     </div>
 
@@ -54,7 +54,7 @@
             </div>
             <div class="detail-badge">
               <div class="badge-dot"></div>
-              <span>C&#7847;u l&#244;ng</span>
+              <span>Cầu lông</span>
             </div>
           </div>
         </div>
@@ -70,18 +70,18 @@
           </div>
           <div class="info-item">
             <i class="bi bi-telephone-fill"></i>
-            <button class="detail-contact-btn">Li&#234;n h&#7879;</button>
+            <button class="detail-contact-btn">Liên hệ</button>
           </div>
         </div>
       </div>
 
       <!-- Tabs Navigation -->
       <div class="detail-tabs">
-        <button class="detail-tab active" data-detail-tab="info">Th&#244;ng tin</button>
-        <button class="detail-tab" data-detail-tab="pricing">B&#7843;ng gi&#225;</button>
-        <button class="detail-tab" data-detail-tab="images">H&#236;nh &#7843;nh</button>
-        <button class="detail-tab" data-detail-tab="terms">&#272;i&#7873;u kho&#7843;n &amp; quy &#273;&#7883;nh</button>
-        <button class="detail-tab" data-detail-tab="reviews">&#272;&#225;nh gi&#225;</button>
+        <button class="detail-tab active" data-detail-tab="info">Thông tin</button>
+        <button class="detail-tab" data-detail-tab="pricing">Bảng giá</button>
+        <button class="detail-tab" data-detail-tab="images">Hình ảnh</button>
+        <button class="detail-tab" data-detail-tab="terms">Điều khoản &amp; quy định</button>
+        <button class="detail-tab" data-detail-tab="reviews">Đánh giá</button>
       </div>
 
       <!-- Tab Content -->
@@ -90,23 +90,23 @@
         <div id="detailTabInfo" class="detail-tab-pane active">
           <div class="detail-section">
             <h3 class="detail-section-title text-warning">
-              <i class="bi bi-info-circle-fill"></i> T&#7893;ng quan
+              <i class="bi bi-info-circle-fill"></i> Tổng quan
             </h3>
             <div class="detail-overview">
-              <p id="detailOverview">ch&#432;a c&#243;</p>
+              <p id="detailOverview">chưa có</p>
             </div>
           </div>
         </div>
 
         <div id="detailTabPricing" class="detail-tab-pane">
           <div id="detailPricingContent">
-            <div class="detail-empty-state">ch&#432;a c&#243;</div>
+            <div class="detail-empty-state">chưa có</div>
           </div>
         </div>
 
         <div id="detailTabImages" class="detail-tab-pane">
           <div id="detailImagesContent">
-            <div class="detail-empty-state">ch&#432;a c&#243;</div>
+            <div class="detail-empty-state">chưa có</div>
           </div>
         </div>
 
@@ -115,13 +115,13 @@
             <div class="coming-soon-icon">
               <i class="bi bi-info-circle"></i>
             </div>
-            <p>D&#7919; li&#7879;u &#272;i&#7873;u kho&#7843;n &amp; quy &#273;&#7883;nh s&#7855;p ra m&#7855;t...</p>
+            <p>Dữ liệu Điều khoản &amp; quy định sắp ra mắt...</p>
           </div>
         </div>
 
         <div id="detailTabReviews" class="detail-tab-pane">
           <div id="detailReviewsContent">
-            <div class="detail-empty-state">ch&#432;a c&#243; comment n&#224;o</div>
+            <div class="detail-empty-state">chưa có comment nào</div>
           </div>
         </div>
       </div>

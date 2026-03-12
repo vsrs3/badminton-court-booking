@@ -73,12 +73,6 @@ VALUES
 
 GO
 
--- Insert sample images (placeholders)
-INSERT INTO FacilityImage (facility_id, image_path, is_thumbnail, created_at)
-SELECT facility_id, 'facility/default-facility.jpg', 1, GETDATE()
-FROM Facility;
-GO
-
 -- ============================================================
 -- 1. TÀI KHOẢN ADMIN (1 tài khoản)
 -- ============================================================

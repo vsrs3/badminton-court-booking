@@ -121,7 +121,7 @@
 
     function confirmGuestPhoneMatched(matched) {
         var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
-            '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+            '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
             '- ' + (matched.phone || '') + '\n\n' +
             'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục?';
         return uiConfirm(msg, 'Trùng số điện thoại');

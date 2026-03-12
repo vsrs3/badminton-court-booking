@@ -30,7 +30,7 @@ public class StaffController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ─── Auth guard ───
+        // --- Auth guard ---
         HttpSession session = request.getSession(false);
         if (session == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login");
@@ -49,7 +49,7 @@ public class StaffController extends HttpServlet {
             loadStaffSession(session, staffAccount);
         }
 
-        // ─── Routing ───
+        // --- Routing ---
         String pathInfo = request.getPathInfo();
 
         // Default: redirect to timeline
@@ -69,6 +69,10 @@ public class StaffController extends HttpServlet {
 
             case "/booking/create":
                 forward(request, response, "/jsp/staff/staff-booking-create.jsp");
+                break;
+
+            case "/refunds":
+                forward(request, response, "/jsp/staff/staff-refund-list.jsp");
                 break;
 
             default:
