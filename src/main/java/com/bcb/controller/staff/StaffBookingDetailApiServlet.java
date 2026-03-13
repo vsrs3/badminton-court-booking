@@ -64,6 +64,9 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         json.append("{\"success\":true,\"data\":{");
         json.append("\"bookingId\":").append(data.getBookingId());
         json.append(",\"bookingDate\":\"").append(data.getBookingDate()).append("\"");
+        json.append(",\"isRecurring\":").append(data.isRecurring());
+        json.append(",\"recurringStartDate\":").append(esc(data.getRecurringStartDate()));
+        json.append(",\"recurringEndDate\":").append(esc(data.getRecurringEndDate()));
         json.append(",\"bookingStatus\":\"").append(data.getBookingStatus()).append("\"");
         json.append(",\"createdAt\":").append(esc(data.getCreatedAt()));
         json.append(",\"customerName\":").append(esc(data.getCustomerName()));
@@ -78,6 +81,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
             json.append("{\"sessionIndex\":").append(session.getSessionIndex());
             json.append(",\"courtId\":").append(session.getCourtId());
             json.append(",\"courtName\":").append(esc(session.getCourtName()));
+            json.append(",\"sessionDate\":").append(esc(session.getSessionDate()));
             json.append(",\"startTime\":\"").append(session.getStartTime()).append("\"");
             json.append(",\"endTime\":\"").append(session.getEndTime()).append("\"");
             json.append(",\"slotCount\":").append(session.getSlotCount());
@@ -130,6 +134,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
     private void appendSlotJson(StringBuilder json, StaffBookingDetailSlotDTO slot) {
         json.append("{\"bookingSlotId\":").append(slot.getBookingSlotId());
         json.append(",\"courtId\":").append(slot.getCourtId());
+        json.append(",\"bookingDate\":").append(esc(slot.getBookingDate()));
         json.append(",\"slotId\":").append(slot.getSlotId());
         json.append(",\"startTime\":\"").append(slot.getStartTime()).append("\"");
         json.append(",\"endTime\":\"").append(slot.getEndTime()).append("\"");

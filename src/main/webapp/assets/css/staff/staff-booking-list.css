@@ -198,6 +198,20 @@
     white-space: nowrap;
 }
 
+.sbl-recurring-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: #EEF2FF;
+    color: #3730A3;
+    margin-right: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
 .sbl-status-pending   { background: #FEF3C7; color: #92400E; }
 .sbl-status-confirmed { background: #D1FAE5; color: #065F46; }
 .sbl-status-completed { background: #DBEAFE; color: #1E40AF; }

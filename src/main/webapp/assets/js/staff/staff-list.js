@@ -47,7 +47,7 @@ function closeHireModal() {
    LOCATION PICKER
 ══════════════════════════════════════════ */
 function renderHsLocList(query) {
-    const q        = (query || '').toLowerCase();
+    const q = (query || '').toLowerCase();
     const filtered = HS.allLocs.filter(l =>
         l.name.toLowerCase().includes(q) ||
         l.addr.toLowerCase().includes(q)
@@ -69,10 +69,11 @@ function renderHsLocList(query) {
                     }
                 </div>`;
         }).join('')
-        : '<div class="hs-loc-empty">Không tìm thấy cơ sở</div>';
+        : '<div class="hs-loc-empty">Kh?ng t?m th?y c? s?</div>';
 
     document.getElementById('hs-sel-count').textContent = HS.selLoc ? '1' : '0';
 }
+
 
 function hsSelectLoc(id) {
     HS.selLoc = HS.selLoc === String(id) ? null : String(id);

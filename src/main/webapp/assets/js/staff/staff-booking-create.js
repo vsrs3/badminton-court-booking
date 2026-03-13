@@ -123,7 +123,7 @@
         var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
             '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
             '- ' + (matched.phone || '') + '\n\n' +
-            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục?';
+            'H? th?ng s? chuy?n sang lu?ng Kh?ch c? t?i kho?n. Ti?p t?c';
         return uiConfirm(msg, 'Trùng số điện thoại');
     }
 

@@ -17,6 +17,7 @@
 
     var btnProxyMode = document.getElementById('btnProxyMode');
     var btnProxyCancel = document.getElementById('btnProxyCancel');
+    var btnRecurring = document.getElementById('btnRecurring');
     var legendSelected = document.getElementById('legendSelected');
     var bottomBar = document.getElementById('bottomBar');
     var bottomCount = document.getElementById('bottomCount');
@@ -133,6 +134,12 @@
             bottomBar.classList.add('d-none');
             selectedSlots = [];
         }
+    }
+
+    if (btnRecurring) {
+        btnRecurring.addEventListener('click', function () {
+            window.location.href = CTX + '/staff/booking/recurring';
+        });
     }
 
     function cellKey(courtId, slotId) {
@@ -424,7 +431,7 @@
 
     function findCourtName(courtId) {
         var c = courtsData.find(function (x) { return x.courtId === courtId; });
-        return c ? c.courtName : ('Sân ' + courtId);
+        return c ? c.courtName : ('S?n ' + courtId);
     }
 
     function findSlot(slotId) {
@@ -614,7 +621,7 @@
             var firstConfirm = await uiConfirm('Bạn sắp bỏ toàn bộ slot PENDING còn lại. Booking sẽ được tính lại trạng thái theo các phiên còn lại.', 'Xác nhận thay đổi lớn');
             if (!firstConfirm) return;
 
-            var secondConfirm = await uiConfirm('Xác nhận lần 2: bạn chắc chắn muốn hủy toàn bộ slot còn lại?', 'Xác nhận lần 2');
+            var secondConfirm = await uiConfirm('X?c nh?n l?n 2: b?n ch?c ch?n mu?n h?y to?n b? slot c?n l?i', 'X?c nh?n l?n 2');
             if (!secondConfirm) return;
 
             reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');

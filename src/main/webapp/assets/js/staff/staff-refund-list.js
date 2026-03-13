@@ -116,7 +116,7 @@
 
         StaffDialog.confirm({
             title: 'Xác nhận',
-            message: 'Xác nhận hoàn tiền cho booking #' + bookingId + '?' 
+            message: 'X?c nh?n ho?n ti?n cho booking #' + bookingId
         }).then(function (ok) {
             if (!ok) return;
             return StaffDialog.prompt({
@@ -164,7 +164,7 @@
         paginationUl.innerHTML = '';
         if (total <= 1) return;
 
-        addPageItem('«', current > 1 ? current - 1 : null, false);
+        addPageItem('?', current > 1 ? current - 1 : null, false);
 
         var pages = buildPageNumbers(current, total, 7);
         pages.forEach(function (p) {
@@ -175,7 +175,7 @@
             }
         });
 
-        addPageItem('»', current < total ? current + 1 : null, false);
+        addPageItem('?', current < total ? current + 1 : null, false);
     }
 
     function addPageItem(label, targetPage, isActive, isEllipsis) {

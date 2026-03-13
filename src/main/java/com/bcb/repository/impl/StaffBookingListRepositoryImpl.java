@@ -15,7 +15,10 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
 
     @Override
     public int countBookings(StaffBookingListSearchCriteriaDTO criteria) throws Exception {
-        String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
+        String fromJoin = " FROM Booking b " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "LEFT JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
         String whereSearch = buildWhereSearch(criteria);
 
@@ -32,7 +35,10 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
     @Override
     public List<StaffBookingListItemDTO> findBookings(StaffBookingListSearchCriteriaDTO criteria, int offset, int size)
             throws Exception {
-        String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
+        String fromJoin = " FROM Booking b " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "LEFT JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
         String whereSearch = buildWhereSearch(criteria);
 
@@ -41,6 +47,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
                        COALESCE(a.phone, g.phone) AS phone,
                        b.booking_date, b.booking_status, i.payment_status,
+                       b.recurring_id, rb.start_date AS recurring_start_date, rb.end_date AS recurring_end_date,
                        (SELECT COUNT(DISTINCT bs2.court_id)
                         FROM BookingSlot bs2
                         WHERE bs2.booking_id = b.booking_id
@@ -77,6 +84,9 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                     item.setCustomerName(rs.getString("customer_name"));
                     item.setPhone(rs.getString("phone"));
                     item.setBookingDate(rs.getString("booking_date"));
+                    item.setRecurring(rs.getObject("recurring_id") != null);
+                    item.setRecurringStartDate(rs.getString("recurring_start_date"));
+                    item.setRecurringEndDate(rs.getString("recurring_end_date"));
                     item.setBookingStatus(rs.getString("booking_status"));
                     item.setPaymentStatus(rs.getString("payment_status"));
                     item.setCourtDisplay(courtDisplay);

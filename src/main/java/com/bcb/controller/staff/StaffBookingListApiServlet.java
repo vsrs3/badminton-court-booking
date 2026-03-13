@@ -71,6 +71,9 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
             json.append(",\"customerName\":").append(StaffAuthUtil.escapeJson(booking.getCustomerName()));
             json.append(",\"phone\":").append(StaffAuthUtil.escapeJson(booking.getPhone()));
             json.append(",\"bookingDate\":\"").append(booking.getBookingDate()).append("\"");
+            json.append(",\"isRecurring\":").append(booking.isRecurring());
+            json.append(",\"recurringStartDate\":").append(StaffAuthUtil.escapeJson(booking.getRecurringStartDate()));
+            json.append(",\"recurringEndDate\":").append(StaffAuthUtil.escapeJson(booking.getRecurringEndDate()));
             json.append(",\"bookingStatus\":\"").append(booking.getBookingStatus()).append("\"");
             json.append(",\"paymentStatus\":").append(StaffAuthUtil.escapeJson(booking.getPaymentStatus()));
             json.append(",\"courtDisplay\":").append(StaffAuthUtil.escapeJson(booking.getCourtDisplay()));

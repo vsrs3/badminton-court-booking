@@ -67,6 +67,17 @@
     border-color: var(--primary-color, #064e3b);
 }
 
+.st-proxy-btn-secondary {
+    background: #F1F5F9;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+}
+
+.st-proxy-btn-secondary:hover {
+    background: #E2E8F0;
+    color: #0F172A;
+}
+
 /* Date input wrapper */
 .st-date-input-wrap {
     position: relative;

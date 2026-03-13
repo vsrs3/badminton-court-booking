@@ -226,19 +226,16 @@ CREATE TABLE FacilityInventory (
 );
 GO
 
--- Recurring Booking
 CREATE TABLE RecurringBooking (
     recurring_id INT IDENTITY PRIMARY KEY,
     facility_id INT NOT NULL,
-    account_id INT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(20)
         CHECK (status IN ('ACTIVE','PAUSED','CANCELLED'))
         DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
-    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 );
 GO
 
@@ -246,10 +243,12 @@ GO
 CREATE TABLE RecurringPattern (
     pattern_id INT IDENTITY PRIMARY KEY,
     recurring_id INT NOT NULL,
+    court_id INT NOT NULL,
     day_of_week INT CHECK (day_of_week BETWEEN 1 AND 7),
     slot_id INT NOT NULL,
     FOREIGN KEY (recurring_id) REFERENCES RecurringBooking(recurring_id) ON DELETE CASCADE,
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
+    foreign key (court_id) references Court(court_id),
     UNIQUE (recurring_id, day_of_week, slot_id)
 );
 GO
@@ -268,7 +267,7 @@ CREATE TABLE Booking (
 
     recurring_id INT NULL,
     facility_id INT NOT NULL, -- them de nhat quan, giam quer
-    booking_date DATE NOT NULL,
+    booking_date DATE NULL,
 
     account_id INT NULL,     -- user online
     guest_id INT NULL,       -- walk-in / phone
@@ -302,6 +301,7 @@ CREATE TABLE BookingSlot (
     booking_slot_id INT IDENTITY PRIMARY KEY,
     booking_id INT NOT NULL,
     court_id INT NOT NULL,        -- FIX: gắn sân tại slot
+    booking_date DATE NULL,
     slot_id INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
 
@@ -317,7 +317,7 @@ CREATE TABLE BookingSlot (
     FOREIGN KEY (court_id) REFERENCES Court(court_id),
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-    UNIQUE (booking_id, court_id, slot_id)
+    UNIQUE (booking_id, court_id, slot_id, booking_date)
 );
 GO
 
