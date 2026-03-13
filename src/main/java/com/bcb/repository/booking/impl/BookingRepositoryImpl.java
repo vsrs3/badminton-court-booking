@@ -88,7 +88,14 @@ public class BookingRepositoryImpl implements BookingRepository {
     /** {@inheritDoc} */
     @Override
     public String[] findBookingOwnershipInfo(int bookingId, int accountId) {
-        String sql = "SELECT b.booking_status, f.name AS facility_name "
+        String sql = "SELECT CASE "
+                + "         WHEN b.booking_status = 'PENDING' "
+                + "              AND b.hold_expired_at IS NOT NULL "
+                + "              AND b.hold_expired_at <= GETDATE() "
+                + "         THEN 'EXPIRED' "
+                + "         ELSE b.booking_status "
+                + "       END AS booking_status, "
+                + "       f.name AS facility_name "
                 + "FROM Booking b JOIN Facility f ON b.facility_id = f.facility_id "
                 + "WHERE b.booking_id = ? AND b.account_id = ?";
         try (Connection conn = DBContext.getConnection();

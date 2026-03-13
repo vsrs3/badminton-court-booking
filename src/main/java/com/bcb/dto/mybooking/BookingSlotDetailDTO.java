@@ -1,6 +1,7 @@
 package com.bcb.dto.mybooking;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * DTO for individual slot detail within a booking detail view.
@@ -12,6 +13,7 @@ public class BookingSlotDetailDTO {
     private String endTime;         // HH:mm
     private BigDecimal price;
     private String slotStatus;      // PENDING, CHECKED_IN, CHECK_OUT, NO_SHOW, CANCELLED
+    private LocalDate bookingDate;
 
     public BookingSlotDetailDTO() {}
 
@@ -32,5 +34,8 @@ public class BookingSlotDetailDTO {
 
     public String getSlotStatus() { return slotStatus; }
     public void setSlotStatus(String slotStatus) { this.slotStatus = slotStatus; }
+
+    public LocalDate getBookingDate() { return bookingDate; }
+    public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
 }
 

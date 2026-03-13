@@ -27,6 +27,7 @@ import java.util.*;
 public class MyBookingServiceImpl implements MyBookingService {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DTF_UI = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final MyBookingRepository bookingRepo;
     private final NotificationRepository notificationRepo;
@@ -41,9 +42,15 @@ public class MyBookingServiceImpl implements MyBookingService {
     public List<MyBookingListDTO> getMyBookings(int accountId, String status,
                                                  LocalDate dateFrom, LocalDate dateTo) {
         List<MyBookingListDTO> bookings = bookingRepo.findMyBookings(accountId, status, dateFrom, dateTo);
-        // Post-process: merge consecutive slots per court
+        // Post-process: single booking keeps old slot merge, recurring shows weekly pattern summary.
         for (MyBookingListDTO b : bookings) {
-            b.setSlotDetails(mergeConsecutiveSlots(b.getSlotDetails()));
+            if ("RECURRING".equals(b.getBookingType())) {
+                String patternText = mergeRecurringPatternSlots(b.getRecurringPatternDetails());
+                b.setRecurringPatternDetails(patternText);
+                b.setSlotDetails(patternText);
+            } else {
+                b.setSlotDetails(mergeConsecutiveSlots(b.getSlotDetails()));
+            }
         }
         return bookings;
     }
@@ -58,9 +65,19 @@ public class MyBookingServiceImpl implements MyBookingService {
         // Load slot details
         List<BookingSlotDetailDTO> slots = bookingRepo.findSlotsByBookingId(bookingId);
         detail.setSlots(slots);
+        if (detail.getCreatedAt() != null) {
+            detail.setCreatedAtDisplay(detail.getCreatedAt().format(DTF_UI));
+        }
 
         // Build merged slots for display (same algorithm as list view)
-        detail.setMergedSlots(mergeSlots(slots));
+        if ("RECURRING".equals(detail.getBookingType())) {
+            detail.setRecurringPatternDetails(mergeRecurringPatternSlots(detail.getRecurringPatternDetails()));
+            detail.setRecurringSessions(mergeSlotsByDate(slots));
+            detail.setMergedSlots(new ArrayList<>());
+        } else {
+            detail.setMergedSlots(mergeSlots(slots));
+            detail.setRecurringSessions(new ArrayList<>());
+        }
 
         // Calculate total hours from slots
         double totalHours = 0;
@@ -265,6 +282,131 @@ public class MyBookingServiceImpl implements MyBookingService {
               .append(((LocalTime) seg[1]).format(TF));
         }
         return sb.toString();
+    }
+
+    /**
+     * Merges recurring weekly pattern raw tokens into readable blocks grouped by day-of-week + court.
+     * Input token format: dayOfWeek|courtName|start|end
+     */
+    private String mergeRecurringPatternSlots(String patternRaw) {
+        if (patternRaw == null || patternRaw.isBlank()) return "";
+
+        String[] tokens = patternRaw.split(";;");
+        LinkedHashMap<String, List<LocalTime[]>> grouped = new LinkedHashMap<>();
+
+        for (String token : tokens) {
+            String[] parts = token.split("\\|");
+            if (parts.length < 4) continue;
+            try {
+                int dayOfWeek = Integer.parseInt(parts[0].trim());
+                String courtName = parts[1].trim();
+                LocalTime start = LocalTime.parse(parts[2].trim(), TF);
+                LocalTime end = LocalTime.parse(parts[3].trim(), TF);
+                String key = dayOfWeek + "|" + courtName;
+                grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(new LocalTime[]{start, end});
+            } catch (Exception ignored) {
+                // skip malformed token
+            }
+        }
+
+        List<String> chunks = new ArrayList<>();
+        for (Map.Entry<String, List<LocalTime[]>> entry : grouped.entrySet()) {
+            String[] keyParts = entry.getKey().split("\\|", 2);
+            int day = Integer.parseInt(keyParts[0]);
+            String court = keyParts[1];
+            List<LocalTime[]> ranges = entry.getValue();
+            ranges.sort(Comparator.comparing(a -> a[0]));
+
+            LocalTime segStart = ranges.get(0)[0];
+            LocalTime segEnd = ranges.get(0)[1];
+            for (int i = 1; i < ranges.size(); i++) {
+                LocalTime curStart = ranges.get(i)[0];
+                LocalTime curEnd = ranges.get(i)[1];
+                if (curStart.equals(segEnd)) {
+                    segEnd = curEnd;
+                } else {
+                    chunks.add(dayOfWeekLabel(day) + " - " + court + ": "
+                            + segStart.format(TF) + "-" + segEnd.format(TF));
+                    segStart = curStart;
+                    segEnd = curEnd;
+                }
+            }
+            chunks.add(dayOfWeekLabel(day) + " - " + court + ": "
+                    + segStart.format(TF) + "-" + segEnd.format(TF));
+        }
+
+        return String.join("\n", chunks);
+    }
+
+    /**
+     * Builds recurring sessions similar to preview screen: grouped by booking date + court + contiguous time.
+     */
+    private List<MergedSlotDTO> mergeSlotsByDate(List<BookingSlotDetailDTO> slots) {
+        if (slots == null || slots.isEmpty()) return new ArrayList<>();
+
+        LinkedHashMap<String, List<BookingSlotDetailDTO>> grouped = new LinkedHashMap<>();
+        for (BookingSlotDetailDTO s : slots) {
+            if (s.getBookingDate() == null || s.getStartTime() == null || s.getEndTime() == null) {
+                continue;
+            }
+            String key = s.getBookingDate() + "|" + s.getCourtName();
+            grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(s);
+        }
+
+        List<MergedSlotDTO> merged = new ArrayList<>();
+        for (Map.Entry<String, List<BookingSlotDetailDTO>> entry : grouped.entrySet()) {
+            String[] keyParts = entry.getKey().split("\\|", 2);
+            LocalDate bookingDate = LocalDate.parse(keyParts[0]);
+            String courtName = keyParts[1];
+
+            List<BookingSlotDetailDTO> list = entry.getValue();
+            list.sort(Comparator.comparing(s -> LocalTime.parse(s.getStartTime(), TF)));
+
+            BookingSlotDetailDTO first = list.get(0);
+            LocalTime segStart = LocalTime.parse(first.getStartTime(), TF);
+            LocalTime segEnd = LocalTime.parse(first.getEndTime(), TF);
+            BigDecimal price = first.getPrice() != null ? first.getPrice() : BigDecimal.ZERO;
+            int count = 1;
+
+            for (int i = 1; i < list.size(); i++) {
+                BookingSlotDetailDTO cur = list.get(i);
+                LocalTime curStart = LocalTime.parse(cur.getStartTime(), TF);
+                LocalTime curEnd = LocalTime.parse(cur.getEndTime(), TF);
+                BigDecimal curPrice = cur.getPrice() != null ? cur.getPrice() : BigDecimal.ZERO;
+
+                if (curStart.equals(segEnd)) {
+                    segEnd = curEnd;
+                    price = price.add(curPrice);
+                    count++;
+                } else {
+                    merged.add(new MergedSlotDTO(courtName, segStart.format(TF), segEnd.format(TF), price, count, bookingDate));
+                    segStart = curStart;
+                    segEnd = curEnd;
+                    price = curPrice;
+                    count = 1;
+                }
+            }
+            merged.add(new MergedSlotDTO(courtName, segStart.format(TF), segEnd.format(TF), price, count, bookingDate));
+        }
+
+        merged.sort(Comparator
+                .comparing(MergedSlotDTO::getBookingDate)
+                .thenComparing(MergedSlotDTO::getStartTime)
+                .thenComparing(MergedSlotDTO::getCourtName));
+        return merged;
+    }
+
+    private String dayOfWeekLabel(int dayOfWeek) {
+        return switch (dayOfWeek) {
+            case 1 -> "Chủ nhật";
+            case 2 -> "Thứ hai";
+            case 3 -> "Thứ ba";
+            case 4 -> "Thứ tư";
+            case 5 -> "Thứ năm";
+            case 6 -> "Thứ sáu";
+            case 7 -> "Thứ bảy";
+            default -> "Thứ " + dayOfWeek;
+        };
     }
 }
 
