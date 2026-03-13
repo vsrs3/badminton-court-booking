@@ -14,6 +14,7 @@ public class RecurringPreviewResponseDTO {
     private Integer totalSessions;
     private Integer availableSessions;
     private Integer conflictSessions;
+    private Integer minRequiredSessions;
     private BigDecimal totalAmount;
     private List<RecurringPreviewSessionDTO> sessions;
 
@@ -47,6 +48,14 @@ public class RecurringPreviewResponseDTO {
 
     public void setConflictSessions(Integer conflictSessions) {
         this.conflictSessions = conflictSessions;
+    }
+
+    public Integer getMinRequiredSessions() {
+        return minRequiredSessions;
+    }
+
+    public void setMinRequiredSessions(Integer minRequiredSessions) {
+        this.minRequiredSessions = minRequiredSessions;
     }
 
     public BigDecimal getTotalAmount() {

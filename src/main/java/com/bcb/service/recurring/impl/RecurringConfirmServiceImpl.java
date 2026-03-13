@@ -17,6 +17,7 @@ import com.bcb.exception.recurring.RecurringValidationException;
 import com.bcb.model.Booking;
 import com.bcb.model.BookingSlot;
 import com.bcb.model.Court;
+import com.bcb.model.Facility;
 import com.bcb.model.FacilityPriceRule;
 import com.bcb.model.Invoice;
 import com.bcb.model.RecurringBooking;
@@ -25,12 +26,14 @@ import com.bcb.repository.booking.BookingRepository;
 import com.bcb.repository.booking.BookingSlotRepository;
 import com.bcb.repository.booking.CourtRepository;
 import com.bcb.repository.booking.CourtSlotBookingRepository;
+import com.bcb.repository.booking.FacilityRepository;
 import com.bcb.repository.booking.InvoiceRepository;
 import com.bcb.repository.booking.TimeSlotRepository;
 import com.bcb.repository.booking.impl.BookingRepositoryImpl;
 import com.bcb.repository.booking.impl.BookingSlotRepositoryImpl;
 import com.bcb.repository.booking.impl.CourtRepositoryImpl;
 import com.bcb.repository.booking.impl.CourtSlotBookingRepositoryImpl;
+import com.bcb.repository.booking.impl.FacilityRepositoryImpl;
 import com.bcb.repository.booking.impl.InvoiceRepositoryImpl;
 import com.bcb.repository.booking.impl.TimeSlotRepositoryImpl;
 import com.bcb.repository.impl.FacilityPriceRuleRepositoryImpl;
@@ -77,6 +80,7 @@ import java.util.stream.Collectors;
 public class RecurringConfirmServiceImpl implements RecurringConfirmService {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int MIN_REQUIRED_SESSIONS = 4;
 
     private final RecurringBookingRepository recurringBookingRepo;
     private final RecurringPatternRepository recurringPatternRepo;
@@ -86,6 +90,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
     private final CourtSlotBookingRepository courtSlotBookingRepo;
     private final InvoiceRepository invoiceRepo;
     private final CourtRepository courtRepo;
+    private final FacilityRepository facilityRepo;
     private final TimeSlotRepository timeSlotRepo;
     private final FacilityPriceRuleRepository priceRuleRepo;
     private final PaymentService paymentService;
@@ -101,6 +106,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
         this.courtSlotBookingRepo = new CourtSlotBookingRepositoryImpl();
         this.invoiceRepo = new InvoiceRepositoryImpl();
         this.courtRepo = new CourtRepositoryImpl();
+        this.facilityRepo = new FacilityRepositoryImpl();
         this.timeSlotRepo = new TimeSlotRepositoryImpl();
         this.priceRuleRepo = new FacilityPriceRuleRepositoryImpl();
         this.paymentService = new PaymentServiceImpl();
@@ -123,18 +129,27 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
 
         Set<LocalDate> skipDates = parseSkipDates(request.getSkipDates(), preview.getStartDate(), preview.getEndDate());
 
+        Facility facility = facilityRepo.findActiveById(preview.getFacilityId())
+                .orElseThrow(() -> new RecurringNotFoundException("NOT_FOUND",
+                        "Facility not found with id=" + preview.getFacilityId()));
+        LocalTime openTime = facility.getOpenTime() != null ? facility.getOpenTime() : LocalTime.of(6, 0);
+        LocalTime closeTime = facility.getCloseTime() != null ? facility.getCloseTime() : LocalTime.of(22, 0);
+
         List<Court> courts = courtRepo.findActiveByFacilityId(preview.getFacilityId());
         Map<Integer, Court> courtMap = courts.stream().collect(Collectors.toMap(Court::getCourtId, c -> c));
-        List<SingleBookingMatrixTimeSlotDTO> slots = timeSlotRepo.findByTimeRange(LocalTime.MIN, LocalTime.MAX);
+        List<SingleBookingMatrixTimeSlotDTO> slots = timeSlotRepo.findByTimeRange(openTime, closeTime);
         Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap = slots.stream()
                 .collect(Collectors.toMap(SingleBookingMatrixTimeSlotDTO::getSlotId, s -> s));
 
         Map<String, RuntimeSession> runtimeSessionMap = buildRuntimeSessionMap(preview.getSessions(), skipDates);
-        applyModifiedSessions(request.getModifiedSessions(), runtimeSessionMap, courtMap, slots, preview.getFacilityId());
+        applyModifiedSessions(request.getModifiedSessions(), runtimeSessionMap, courtMap, slots,
+                preview.getFacilityId(), openTime, closeTime);
 
         if (runtimeSessionMap.isEmpty()) {
             throw new RecurringValidationException("NO_SESSIONS_REMAINING", "Cannot skip all sessions.");
         }
+
+        validateMinimumSessions(preview.getSessions(), skipDates, runtimeSessionMap.size());
 
         for (RuntimeSession runtime : runtimeSessionMap.values()) {
             if ("CONFLICT".equals(runtime.status)) {
@@ -192,7 +207,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             recurring.setStatus("ACTIVE");
             int recurringId = recurringBookingRepo.insert(conn, recurring);
 
-            List<SingleBookingMatrixTimeSlotDTO> facilitySlots = timeSlotRepo.findByTimeRange(LocalTime.MIN, LocalTime.MAX);
+            List<SingleBookingMatrixTimeSlotDTO> facilitySlots = timeSlotRepo.findByTimeRange(openTime, closeTime);
             for (RecurringPatternDTO pattern : preview.getPatterns()) {
                 List<Integer> patternSlotIds = convertTimeRangeToSlots(
                         parseTime(pattern.getStartTime(), "startTime"),
@@ -327,7 +342,9 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                                        Map<String, RuntimeSession> runtimeSessionMap,
                                        Map<Integer, Court> courtMap,
                                        List<SingleBookingMatrixTimeSlotDTO> slots,
-                                       int facilityId) {
+                                       int facilityId,
+                                       LocalTime openTime,
+                                       LocalTime closeTime) {
         if (modifiedSessions == null || modifiedSessions.isEmpty()) {
             return;
         }
@@ -362,6 +379,10 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             if (!newEnd.isAfter(newStart)) {
                 throw new RecurringValidationException("INVALID_TIME_RANGE", "newEndTime must be after newStartTime.");
             }
+            if (newStart.isBefore(openTime) || newEnd.isAfter(closeTime)) {
+                throw new RecurringValidationException("OUT_OF_OPERATING_HOURS",
+                        "Modified session time is outside facility operating hours.");
+            }
 
             long minutes = java.time.temporal.ChronoUnit.MINUTES.between(newStart, newEnd);
             if (minutes < 60) {
@@ -395,6 +416,41 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             parsed.add(skipDate);
         }
         return parsed;
+    }
+
+    private void validateMinimumSessions(List<RecurringPreviewSessionDTO> previewSessions,
+                                         Set<LocalDate> skipDates,
+                                         int remainingSessions) {
+        if (remainingSessions >= MIN_REQUIRED_SESSIONS) {
+            return;
+        }
+
+        int skippedConflictSessions = 0;
+        int skippedNonConflictSessions = 0;
+        if (previewSessions != null && !skipDates.isEmpty()) {
+            for (RecurringPreviewSessionDTO session : previewSessions) {
+                LocalDate sessionDate = LocalDate.parse(session.getDate());
+                if (!skipDates.contains(sessionDate)) {
+                    continue;
+                }
+                if ("CONFLICT".equals(session.getStatus())) {
+                    skippedConflictSessions++;
+                } else {
+                    skippedNonConflictSessions++;
+                }
+            }
+        }
+
+        boolean skipOnlyConflict = !skipDates.isEmpty() && skippedNonConflictSessions == 0 && skippedConflictSessions > 0;
+        if (skipOnlyConflict) {
+            return;
+        }
+
+        throw new RecurringValidationException(
+                "MIN_SESSIONS_REQUIRED",
+                "Recurring booking must have at least " + MIN_REQUIRED_SESSIONS
+                        + " sessions. You currently have " + remainingSessions + " session(s)."
+        );
     }
 
     private List<Integer> convertTimeRangeToSlots(LocalTime start,

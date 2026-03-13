@@ -499,7 +499,7 @@ const contextPath = window.location.pathname.split('/')[1]
 
                 // Ưu tiên dùng BookingTypeModal nếu đã load từ jsp/components
                 if (window.BookingTypeModal) {
-                    window.BookingTypeModal.open(venueId, courtName);
+                    window.BookingTypeModal.open(venueId, courtName, courtId);
                 } else {
                     // Fallback: navigate thẳng tới single-booking
                     const today = new Date();

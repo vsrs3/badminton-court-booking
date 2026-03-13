@@ -3,6 +3,7 @@ package com.bcb.service.recurring.impl;
 import com.bcb.dto.recurring.RecurringPatternDTO;
 import com.bcb.dto.recurring.RecurringPreviewRequestDTO;
 import com.bcb.dto.recurring.RecurringPreviewResponseDTO;
+import com.bcb.dto.recurring.RecurringSessionSuggestionDTO;
 import com.bcb.dto.recurring.RecurringPreviewSessionDTO;
 import com.bcb.dto.singlebooking.SingleBookingMatrixTimeSlotDTO;
 import com.bcb.exception.recurring.RecurringNotFoundException;
@@ -32,8 +33,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +51,8 @@ import java.util.stream.Collectors;
 public class RecurringPreviewServiceImpl implements RecurringPreviewService {
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
+    private static final int MIN_REQUIRED_SESSIONS = 4;
+    private static final int MAX_SUGGESTIONS_PER_CONFLICT = 6;
 
     private final FacilityRepository facilityRepo;
     private final CourtRepository courtRepo;
@@ -105,6 +110,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 timeSlotRepo.findByTimeRange(facility.getOpenTime(), facility.getCloseTime());
         Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap = slots.stream()
                 .collect(Collectors.toMap(SingleBookingMatrixTimeSlotDTO::getSlotId, s -> s));
+        Map<Integer, Integer> slotIndexMap = buildSlotIndexMap(slots);
 
         List<PatternPrepared> preparedPatterns = preparePatterns(request.getPatterns(), facility, courtMap, slots);
 
@@ -131,7 +137,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                         slotMap
                 );
 
-                boolean hasConflict = hasConflict(bookedByCourt, prepared.court.getCourtId(), prepared.slotIds);
+                List<Integer> conflictSlots = extractConflictSlots(bookedByCourt, prepared.court.getCourtId(), prepared.slotIds);
+                boolean hasConflict = !conflictSlots.isEmpty();
 
                 RecurringPreviewSessionDTO session = new RecurringPreviewSessionDTO();
                 session.setSessionId("temp-" + UUID.randomUUID());
@@ -142,8 +149,23 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 session.setStartTime(prepared.pattern.getStartTime());
                 session.setEndTime(prepared.pattern.getEndTime());
                 session.setSlots(prepared.slotIds);
+                session.setConflictSlots(conflictSlots);
                 session.setPrice(sessionPrice);
                 session.setStatus(hasConflict ? "CONFLICT" : "AVAILABLE");
+                if (hasConflict) {
+                    session.setSuggestions(buildSuggestions(
+                            request.getFacilityId(),
+                            current,
+                            prepared,
+                            courts,
+                            bookedByCourt,
+                            slots,
+                            slotMap,
+                            slotIndexMap
+                    ));
+                } else {
+                    session.setSuggestions(Collections.emptyList());
+                }
                 sessions.add(session);
 
                 if (hasConflict) {
@@ -170,6 +192,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         response.setTotalSessions(sessions.size());
         response.setAvailableSessions(availableSessions);
         response.setConflictSessions(conflictSessions);
+        response.setMinRequiredSessions(MIN_REQUIRED_SESSIONS);
         response.setTotalAmount(totalAmount);
         response.setSessions(sessions);
         return response;
@@ -314,18 +337,183 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         return total;
     }
 
-    private boolean hasConflict(Map<Integer, List<Integer>> bookedByCourt, int courtId, List<Integer> requestedSlots) {
+    private List<Integer> extractConflictSlots(Map<Integer, List<Integer>> bookedByCourt,
+                                               int courtId,
+                                               List<Integer> requestedSlots) {
         List<Integer> booked = bookedByCourt.get(courtId);
         if (booked == null || booked.isEmpty()) {
-            return false;
+            return Collections.emptyList();
         }
         Set<Integer> bookedSet = new HashSet<>(booked);
+        List<Integer> conflict = new ArrayList<>();
         for (Integer slotId : requestedSlots) {
             if (bookedSet.contains(slotId)) {
-                return true;
+                conflict.add(slotId);
             }
         }
-        return false;
+        return conflict;
+    }
+
+    private List<RecurringSessionSuggestionDTO> buildSuggestions(int facilityId,
+                                                                 LocalDate bookingDate,
+                                                                 PatternPrepared prepared,
+                                                                 List<Court> courts,
+                                                                 Map<Integer, List<Integer>> bookedByCourt,
+                                                                 List<SingleBookingMatrixTimeSlotDTO> allSlots,
+                                                                 Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap,
+                                                                 Map<Integer, Integer> slotIndexMap) {
+        if (prepared.slotIds == null || prepared.slotIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<RecurringSessionSuggestionDTO> suggestions = new ArrayList<>();
+        Set<String> uniqueKeys = new LinkedHashSet<>();
+        int slotCount = prepared.slotIds.size();
+
+        Integer firstIndex = slotIndexMap.get(prepared.slotIds.get(0));
+        if (firstIndex == null) {
+            return suggestions;
+        }
+
+        // 1) Preferred: same time block on other courts.
+        for (Court court : courts) {
+            if (suggestions.size() >= MAX_SUGGESTIONS_PER_CONFLICT) {
+                break;
+            }
+            if (court.getCourtId().equals(prepared.court.getCourtId())) {
+                continue;
+            }
+            addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_SAME_TIME",
+                    court, bookingDate, prepared.slotIds, bookedByCourt, facilityId, slotMap);
+        }
+
+        // 2) Then: same court, nearest valid time blocks with same duration.
+        for (int shift = 1; suggestions.size() < MAX_SUGGESTIONS_PER_CONFLICT; shift++) {
+            boolean hasCandidate = false;
+            int plusStart = firstIndex + shift;
+            if (plusStart + slotCount <= allSlots.size()) {
+                hasCandidate = true;
+                List<Integer> plusSlots = sliceSlotIds(allSlots, plusStart, slotCount);
+                addSuggestionIfAvailable(uniqueKeys, suggestions, "SAME_COURT_NEAREST_TIME",
+                        prepared.court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap);
+            }
+
+            int minusStart = firstIndex - shift;
+            if (minusStart >= 0) {
+                hasCandidate = true;
+                List<Integer> minusSlots = sliceSlotIds(allSlots, minusStart, slotCount);
+                addSuggestionIfAvailable(uniqueKeys, suggestions, "SAME_COURT_NEAREST_TIME",
+                        prepared.court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap);
+            }
+
+            if (!hasCandidate) {
+                break;
+            }
+        }
+
+        // 3) Fallback: nearest-time blocks on other courts.
+        for (Court court : courts) {
+            if (suggestions.size() >= MAX_SUGGESTIONS_PER_CONFLICT) {
+                break;
+            }
+            if (court.getCourtId().equals(prepared.court.getCourtId())) {
+                continue;
+            }
+
+            for (int shift = 1; suggestions.size() < MAX_SUGGESTIONS_PER_CONFLICT; shift++) {
+                boolean hasCandidate = false;
+                int plusStart = firstIndex + shift;
+                if (plusStart + slotCount <= allSlots.size()) {
+                    hasCandidate = true;
+                    List<Integer> plusSlots = sliceSlotIds(allSlots, plusStart, slotCount);
+                    addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_NEAREST_TIME",
+                            court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap);
+                }
+
+                int minusStart = firstIndex - shift;
+                if (minusStart >= 0) {
+                    hasCandidate = true;
+                    List<Integer> minusSlots = sliceSlotIds(allSlots, minusStart, slotCount);
+                    addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_NEAREST_TIME",
+                            court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap);
+                }
+
+                if (!hasCandidate) {
+                    break;
+                }
+            }
+        }
+
+        return suggestions;
+    }
+
+    private void addSuggestionIfAvailable(Set<String> uniqueKeys,
+                                          List<RecurringSessionSuggestionDTO> suggestions,
+                                          String type,
+                                          Court court,
+                                          LocalDate bookingDate,
+                                          List<Integer> slotIds,
+                                          Map<Integer, List<Integer>> bookedByCourt,
+                                          int facilityId,
+                                          Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
+        if (slotIds == null || slotIds.isEmpty()) {
+            return;
+        }
+        if (!isSlotRangeAvailable(bookedByCourt, court.getCourtId(), slotIds)) {
+            return;
+        }
+        String key = court.getCourtId() + "|" + slotIds.get(0) + "|" + slotIds.get(slotIds.size() - 1);
+        if (!uniqueKeys.add(key)) {
+            return;
+        }
+
+        BigDecimal price = calculateSessionPrice(
+                facilityId,
+                court.getCourtTypeId(),
+                bookingDate,
+                slotIds,
+                slotMap
+        );
+
+        RecurringSessionSuggestionDTO suggestion = new RecurringSessionSuggestionDTO();
+        suggestion.setType(type);
+        suggestion.setCourtId(court.getCourtId());
+        suggestion.setCourtName(court.getCourtName());
+        suggestion.setSlots(new ArrayList<>(slotIds));
+        suggestion.setStartTime(slotMap.get(slotIds.get(0)).getStartTime());
+        suggestion.setEndTime(slotMap.get(slotIds.get(slotIds.size() - 1)).getEndTime());
+        suggestion.setPrice(price);
+        suggestions.add(suggestion);
+    }
+
+    private boolean isSlotRangeAvailable(Map<Integer, List<Integer>> bookedByCourt, int courtId, List<Integer> slotIds) {
+        List<Integer> booked = bookedByCourt.get(courtId);
+        if (booked == null || booked.isEmpty()) {
+            return true;
+        }
+        Set<Integer> bookedSet = new HashSet<>(booked);
+        for (Integer slotId : slotIds) {
+            if (bookedSet.contains(slotId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<Integer> sliceSlotIds(List<SingleBookingMatrixTimeSlotDTO> slots, int startIndex, int count) {
+        List<Integer> ids = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            ids.add(slots.get(startIndex + i).getSlotId());
+        }
+        return ids;
+    }
+
+    private Map<Integer, Integer> buildSlotIndexMap(List<SingleBookingMatrixTimeSlotDTO> slots) {
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < slots.size(); i++) {
+            map.put(slots.get(i).getSlotId(), i);
+        }
+        return map;
     }
 
     private LocalDate parseDate(String value, String field) {

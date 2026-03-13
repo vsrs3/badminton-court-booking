@@ -18,6 +18,8 @@ public class RecurringPreviewSessionDTO {
     private String startTime;
     private String endTime;
     private List<Integer> slots;
+    private List<Integer> conflictSlots;
+    private List<RecurringSessionSuggestionDTO> suggestions;
     private BigDecimal price;
     private String status; // AVAILABLE | CONFLICT
 
@@ -83,6 +85,22 @@ public class RecurringPreviewSessionDTO {
 
     public void setSlots(List<Integer> slots) {
         this.slots = slots;
+    }
+
+    public List<Integer> getConflictSlots() {
+        return conflictSlots;
+    }
+
+    public void setConflictSlots(List<Integer> conflictSlots) {
+        this.conflictSlots = conflictSlots;
+    }
+
+    public List<RecurringSessionSuggestionDTO> getSuggestions() {
+        return suggestions;
+    }
+
+    public void setSuggestions(List<RecurringSessionSuggestionDTO> suggestions) {
+        this.suggestions = suggestions;
     }
 
     public BigDecimal getPrice() {
