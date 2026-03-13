@@ -300,6 +300,40 @@
 
     /** Binds click listeners for dynamic create page actions. */
     function bindEvents() {
+        function openDatePicker(input) {
+            if (!input || input.disabled) return;
+            if (typeof input.showPicker === 'function') {
+                try {
+                    input.showPicker();
+                    return;
+                } catch (e) {
+                    // Fallback for browsers/restrictions where showPicker is blocked.
+                }
+            }
+            input.focus();
+        }
+
+        function bindDatePicker(inputId) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const wrapper = input.closest('.recurring-date-btn');
+            if (wrapper) {
+                wrapper.addEventListener('click', function (e) {
+                    if (e.target !== input) {
+                        openDatePicker(input);
+                    }
+                });
+            }
+
+            input.addEventListener('click', function () {
+                openDatePicker(input);
+            });
+        }
+
+        bindDatePicker('startDate');
+        bindDatePicker('endDate');
+
         addPatternBtn.addEventListener('click', function () {
             addPatternRow();
         });

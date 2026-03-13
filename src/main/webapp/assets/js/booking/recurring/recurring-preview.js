@@ -13,11 +13,13 @@
     const statTotal = document.getElementById('statTotal');
     const statAvailable = document.getElementById('statAvailable');
     const statConflict = document.getElementById('statConflict');
+    const statModified = document.getElementById('statModified');
     const statTotalAmount = document.getElementById('statTotalAmount');
     const sessionBody = document.getElementById('sessionBody');
 
     const voucherCodeInput = document.getElementById('voucherCode');
     const applyVoucherBtn = document.getElementById('applyVoucherBtn');
+    const voucherStatus = document.getElementById('voucherStatus');
 
     const moneyTotal = document.getElementById('moneyTotal');
     const moneyDiscount = document.getElementById('moneyDiscount');
@@ -46,6 +48,9 @@
     let mdStartPicker = null;
     let mdEndPicker = null;
     const defaultMinRequiredSessions = 4;
+    let trackedVoucherCode = '';
+    let autoVoucherTimer = null;
+    let voucherReqSeq = 0;
 
     /** Shows error alert in preview screen. */
     function showError(msg) {
@@ -128,14 +133,40 @@
         moneyTotal.textContent = formatMoney(total);
         moneyDiscount.textContent = formatMoney(discountAmount);
         moneyFinal.textContent = formatMoney(finalAmount);
+        statTotalAmount.textContent = formatMoney(total);
+    }
+
+    function setVoucherStatus(message, type) {
+        if (!voucherStatus) return;
+        voucherStatus.classList.remove('text-muted', 'text-success', 'text-warning');
+        voucherStatus.classList.add(type === 'success' ? 'text-success' : (type === 'warning' ? 'text-warning' : 'text-muted'));
+        voucherStatus.textContent = message || '';
     }
 
     /** Renders summary cards from preview data. */
     function renderSummary() {
-        statTotal.textContent = String(previewData.totalSessions || 0);
-        statAvailable.textContent = String(previewData.availableSessions || 0);
-        statConflict.textContent = String(previewData.conflictSessions || 0);
-        statTotalAmount.textContent = formatMoney(previewData.totalAmount || 0);
+        let available = 0;
+        let conflict = 0;
+        let modified = 0;
+
+        (previewData.sessions || []).forEach(function (s) {
+            if (skippedDates.has(s.date)) return;
+            if (modifiedBySessionId[s.sessionId]) {
+                modified++;
+                return;
+            }
+            if (s.status === 'CONFLICT') {
+                conflict++;
+                return;
+            }
+            available++;
+        });
+
+        const total = available + conflict + modified;
+        statTotal.textContent = String(total);
+        statAvailable.textContent = String(available);
+        statConflict.textContent = String(conflict);
+        if (statModified) statModified.textContent = String(modified);
     }
 
     /** Creates status badge HTML for each session row. */
@@ -216,7 +247,77 @@
         }).join('');
 
         sessionBody.innerHTML = rows;
+        renderSummary();
         refreshMoneySummary();
+    }
+
+    async function applyVoucherCore(options) {
+        const opts = options || {};
+        const mode = opts.mode || 'manual';
+        const isAuto = mode === 'auto';
+        const code = (opts.code || '').trim();
+
+        if (!code) {
+            if (!isAuto) showError('Vui lòng nhập voucher trước khi áp dụng.');
+            return;
+        }
+
+        const reqId = ++voucherReqSeq;
+        try {
+            applyVoucherBtn.disabled = true;
+            const payload = {
+                voucherCode: code,
+                facilityId: createPayload ? createPayload.facilityId : null,
+                totalAmount: getCurrentEstimatedTotal()
+            };
+
+            const res = await fetch(CTX + '/api/recurring/apply-voucher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            if (reqId !== voucherReqSeq) return;
+
+            if (!res.ok || !json.success) {
+                const msg = (json && json.error && json.error.message) || 'Không thể áp dụng voucher.';
+                throw new Error(msg);
+            }
+
+            discountAmount = Number(json.data.discountAmount || 0);
+            trackedVoucherCode = code;
+            refreshMoneySummary();
+            setVoucherStatus('Voucher ' + code + ' đang áp dụng: giảm ' + formatMoney(discountAmount) + '.', 'success');
+            if (!isAuto) showInfo('Áp dụng voucher thành công: giảm ' + formatMoney(discountAmount));
+        } catch (e) {
+            if (reqId !== voucherReqSeq) return;
+            discountAmount = 0;
+            refreshMoneySummary();
+            setVoucherStatus('Voucher ' + code + ' không còn hợp lệ với lựa chọn hiện tại.', 'warning');
+            if (!isAuto) showError(e.message || 'Áp dụng voucher thất bại.');
+        } finally {
+            if (reqId === voucherReqSeq) applyVoucherBtn.disabled = false;
+        }
+    }
+
+    function scheduleAutoVoucherRefresh() {
+        if (!trackedVoucherCode) return;
+        if (autoVoucherTimer) clearTimeout(autoVoucherTimer);
+        autoVoucherTimer = setTimeout(function () {
+            applyVoucherCore({ mode: 'auto', code: trackedVoucherCode });
+        }, 180);
+    }
+
+    function isVoucherErrorCode(code) {
+        return typeof code === 'string' && code.indexOf('VOUCHER_') === 0;
+    }
+
+    function clearAppliedVoucher(message) {
+        discountAmount = 0;
+        trackedVoucherCode = '';
+        if (voucherCodeInput) voucherCodeInput.value = '';
+        refreshMoneySummary();
+        setVoucherStatus(message || 'Voucher da duoc bo ap dung.', 'warning');
     }
 
     /** Loads courts/setup data for edit modal by facility id. */
@@ -331,6 +432,7 @@
         clearAlerts();
         showInfo('Đã cập nhật session xung đột. Hệ thống sẽ xác thực xung đột lại khi xác nhận.');
         renderSessions();
+        scheduleAutoVoucherRefresh();
         modifyModal.hide();
     }
 
@@ -351,6 +453,7 @@
         clearAlerts();
         showInfo('Đã áp dụng gợi ý cho session ' + session.date + '.');
         renderSessions();
+        scheduleAutoVoucherRefresh();
     }
 
     function countSkippedNonConflictSessions() {
@@ -374,40 +477,7 @@
     async function applyVoucher() {
         clearAlerts();
         const code = (voucherCodeInput.value || '').trim();
-        if (!code) {
-            showError('Vui lòng nhập voucher trước khi áp dụng.');
-            return;
-        }
-
-        try {
-            applyVoucherBtn.disabled = true;
-            const payload = {
-                voucherCode: code,
-                facilityId: createPayload ? createPayload.facilityId : null,
-                totalAmount: getCurrentEstimatedTotal()
-            };
-
-            const res = await fetch(CTX + '/api/recurring/apply-voucher', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const json = await res.json();
-            if (!res.ok || !json.success) {
-                const msg = (json && json.error && json.error.message) || 'Không thể áp dụng voucher.';
-                throw new Error(msg);
-            }
-
-            discountAmount = Number(json.data.discountAmount || 0);
-            refreshMoneySummary();
-            showInfo('Áp dụng voucher thành công: giảm ' + formatMoney(discountAmount));
-        } catch (e) {
-            discountAmount = 0;
-            refreshMoneySummary();
-            showError(e.message || 'Áp dụng voucher thất bại.');
-        } finally {
-            applyVoucherBtn.disabled = false;
-        }
+        await applyVoucherCore({ mode: 'manual', code: code });
     }
 
     /** Builds confirm payload from current UI state. */
@@ -442,18 +512,44 @@
             }
 
             const payload = buildConfirmPayload();
-            const res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
+            let res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const json = await res.json();
+            let json = await res.json();
             if (!res.ok || !json.success) {
+                const errCode = json && json.error && json.error.code;
+                if (payload.voucherCode && isVoucherErrorCode(errCode)) {
+                    clearAppliedVoucher('Voucher khong con du dieu kien. He thong da bo ap dung voucher va tiep tuc thanh toan.');
+
+                    const retryPayload = Object.assign({}, payload, { voucherCode: null });
+                    res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(retryPayload)
+                    });
+                    json = await res.json();
+                    if (!res.ok || !json.success) {
+                        if (json && json.error && json.error.code === 'MIN_SESSIONS_REQUIRED') {
+                            throw new Error(json.error.message || 'Không đủ số session tối thiểu để đặt lịch cố định.');
+                        }
+                        const retryMsg = (json && json.error && json.error.message) || 'Xác nhận recurring thất bại.';
+                        throw new Error(retryMsg);
+                    }
+
+                    showInfo('Voucher khong con hop le. He thong da bo voucher va tiep tuc thanh toan voi tong tien moi.');
+                }
+
+                if (res.ok && json.success) {
+                    // Continue success flow after voucher fallback.
+                } else {
                 if (json && json.error && json.error.code === 'MIN_SESSIONS_REQUIRED') {
                     throw new Error(json.error.message || 'Không đủ số session tối thiểu để đặt lịch cố định.');
                 }
                 const msg = (json && json.error && json.error.message) || 'Xác nhận recurring thất bại.';
                 throw new Error(msg);
+                }
             }
 
             const data = json.data || {};
@@ -485,6 +581,7 @@
             if (target.checked) skippedDates.add(date);
             else skippedDates.delete(date);
             renderSessions();
+            scheduleAutoVoucherRefresh();
         });
 
         sessionBody.addEventListener('click', function (e) {
@@ -517,6 +614,7 @@
             await loadSetupData();
             renderSummary();
             renderSessions();
+            setVoucherStatus('Chưa áp dụng voucher.', 'muted');
             bindEvents();
         } catch (e) {
             showError(e.message || 'Không thể khởi tạo trang preview recurring.');

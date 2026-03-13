@@ -60,16 +60,24 @@
 
         <div class="row g-4 mb-4">
             <div class="col-md-6">
-                <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                <label for="startDate" class="form-label fw-semibold d-flex align-items-center gap-2">
                     <i class="bi bi-calendar3"></i> Ngày bắt đầu
                 </label>
-                <input type="date" id="startDate" class="form-control date-input" />
+                <div class="recurring-date-btn">
+                    <i class="bi bi-calendar3 recurring-date-icon-start"></i>
+                    <input type="date" id="startDate" class="form-control date-input" />
+                    <i class="bi bi-chevron-down recurring-date-icon-end"></i>
+                </div>
             </div>
             <div class="col-md-6">
-                <label class="form-label fw-semibold d-flex align-items-center gap-2">
+                <label for="endDate" class="form-label fw-semibold d-flex align-items-center gap-2">
                     <i class="bi bi-calendar3"></i> Ngày kết thúc
                 </label>
-                <input type="date" id="endDate" class="form-control date-input" />
+                <div class="recurring-date-btn">
+                    <i class="bi bi-calendar3 recurring-date-icon-start"></i>
+                    <input type="date" id="endDate" class="form-control date-input" />
+                    <i class="bi bi-chevron-down recurring-date-icon-end"></i>
+                </div>
             </div>
         </div>
 

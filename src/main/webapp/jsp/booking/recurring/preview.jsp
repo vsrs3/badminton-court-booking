@@ -95,6 +95,10 @@
                         <span class="text-light">Buổi xung đột:</span>
                         <strong id="statConflict" class="text-danger">0</strong>
                     </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-light">Buổi đã đổi:</span>
+                        <strong id="statModified" class="text-primary">0</strong>
+                    </div>
                     <div class="d-flex justify-content-between mb-0">
                         <span class="text-light">Tạm tính:</span>
                         <strong id="statTotalAmount" class="text-white">0 VND</strong>
@@ -104,14 +108,15 @@
                 <hr class="border-secondary" />
 
                 <div class="mb-4">
-                    <label class="form-label text-light fw-semibold mb-2">
+                    <label for="voucherCode" class="form-label text-light fw-semibold mb-2">
                         <i class="bi bi-ticket-perforated me-2"></i> Voucher (tùy chọn)
                     </label>
                     <div class="input-group voucher-input-group">
                         <input id="voucherCode" class="form-control" placeholder="Nhập mã voucher recurring" />
                         <button id="applyVoucherBtn" class="btn btn-outline-success" type="button">Áp dụng</button>
                     </div>
-                    <small class="text-muted d-block mt-2">Chỉ áp dụng voucher loại RECURRING hoặc BOTH</small>
+                    <small class="text-white d-block mt-2">Chỉ áp dụng voucher loại RECURRING hoặc BOTH</small>
+                    <small id="voucherStatus" class="d-block mt-1 text-muted"></small>
                 </div>
 
                 <div class="text-center mt-4">
@@ -147,7 +152,7 @@
                 <input type="hidden" id="mdSessionId" />
                 <div class="mb-2 small text-muted" id="mdSessionDateText"></div>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Sân mới</label>
+                    <label for="mdCourtId" class="form-label fw-semibold">Sân mới</label>
                     <select id="mdCourtId" class="form-select"></select>
                 </div>
                 <div class="row g-2">
