@@ -27,6 +27,24 @@
     let facilityName = '';
     let pickerSeq = 0;
 
+    function getSavedCreatePayload() {
+        try {
+            const raw = sessionStorage.getItem('recurringCreatePayload');
+            if (!raw) return null;
+            const payload = JSON.parse(raw);
+            if (!payload || typeof payload !== 'object') return null;
+
+            const currentFacilityId = parseInt(facilityIdInput.value, 10);
+            const payloadFacilityId = parseInt(payload.facilityId, 10);
+            if (!Number.isFinite(payloadFacilityId) || payloadFacilityId !== currentFacilityId) {
+                return null;
+            }
+            return payload;
+        } catch (e) {
+            return null;
+        }
+    }
+
     function renderFacilityName() {
         if (!facilityNameText) return;
         const facilityId = parseInt(facilityIdInput.value, 10);
@@ -207,6 +225,21 @@
         if (!payload.startDate || !payload.endDate) {
             throw new Error('Vui lòng chọn ngày bắt đầu và kết thúc.');
         }
+
+        const start = new Date(payload.startDate + 'T00:00:00');
+        const end = new Date(payload.endDate + 'T00:00:00');
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+            throw new Error('Định dạng ngày không hợp lệ.');
+        }
+
+        const diffDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+            throw new Error('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.');
+        }
+        if (diffDays < 28) {
+            throw new Error('Khoảng ngày đặt lịch phải ít nhất 28 ngày mới có thể xem preview.');
+        }
+
         if (!payload.patterns.length) {
             throw new Error('Vui lòng thêm ít nhất 1 pattern.');
         }
@@ -284,9 +317,32 @@
     /** Bootstraps recurring create page. */
     async function init() {
         try {
-            initDates();
             await loadCourts();
-            addPatternRow();
+
+            const savedPayload = getSavedCreatePayload();
+            if (savedPayload && savedPayload.startDate && savedPayload.endDate) {
+                startDateInput.value = savedPayload.startDate;
+                endDateInput.value = savedPayload.endDate;
+
+                patternContainer.innerHTML = '';
+                const patterns = Array.isArray(savedPayload.patterns) ? savedPayload.patterns : [];
+                if (patterns.length) {
+                    patterns.forEach(function (p) {
+                        addPatternRow({
+                            dayOfWeek: p.dayOfWeek,
+                            courtId: p.courtId,
+                            startTime: p.startTime,
+                            endTime: p.endTime
+                        });
+                    });
+                } else {
+                    addPatternRow();
+                }
+            } else {
+                initDates();
+                addPatternRow();
+            }
+
             bindEvents();
         } catch (e) {
             showError(e.message || 'Không thể khởi tạo trang recurring create.');
