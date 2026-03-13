@@ -1,290 +1,581 @@
-<!-- dashboard.jsp -->
-
+<%-- dashboard.jsp --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ include file="layout/layout.jsp"%>
 <%@ include file="layout/sidebar.jsp"%>
 
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/owner/dashboard.css">
+<style>
+  /* Xóa padding thừa của .content-area khi dùng dashboard overview */
+  .content-area { padding: 0 !important; }
+</style>
+
 <div class="main-content">
-	<%@ include file="layout/header.jsp"%>
+    <%@ include file="layout/header.jsp"%>
 
-	<div class="content-area">
+    <div class="dov-wrap">
 
-		<%-- ===== PAGE HEADER ROW ===== --%>
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<div>
-				<h1 class="fw-black mb-1" style="font-size:1.75rem;color:var(--color-gray-900);letter-spacing:-0.02em;">Dashboard</h1>
-				<p class="text-secondary mb-0" style="font-size:0.875rem;">Performance summary of all locations</p>
-			</div>
-			<a href="${pageContext.request.contextPath}/owner/export"
-				class="btn btn-brand d-flex align-items-center gap-2 fw-bold rounded-3"
-				style="padding:0.625rem 1.25rem;box-shadow:0 4px 14px rgba(6,78,59,0.25);">
-				<i class="bi bi-download"></i> Export Data
-			</a>
-		</div>
+        <%-- ============================================================
+             ERROR ALERT
+        ============================================================ --%>
+        <c:if test="${not empty requestScope.error}">
+            <div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                <span class="fw-semibold">${requestScope.error}</span>
+            </div>
+        </c:if>
 
-		<%-- ===== ERROR ALERT ===== --%>
-		<c:if test="${not empty requestScope.error}">
-			<div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
-				<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-				<span class="fw-semibold">${requestScope.error}</span>
-			</div>
-		</c:if>
+        <%-- ============================================================
+             STAT CARDS
+        ============================================================ --%>
+        <div class="dov-stats-grid">
+        	
+        	<%-- Daily Revenue --%>
+            <div class="dov-card dov-fadein dov-d1">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i> 
+                        ${sessionScope.dailyRevenue.changePercent != null ? sessionScope.dailyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">Doanh thu hàng ngày</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.dailyRevenue.currentAmount != null ? sessionScope.dailyRevenue.formattedAmount  : 'null'}
+                </p>
+            </div>
 
-		<%-- ===== STAT CARDS ===== --%>
-		<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-4">
+            <%-- Weekly Revenue --%>
+            <div class="dov-card dov-fadein dov-d2">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i> 
+                        ${sessionScope.weeklyRevenue.changePercent != null ? sessionScope.weeklyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">>Doanh thu hàng tuần</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.weeklyRevenue.currentAmount != null ? sessionScope.weeklyRevenue.formattedAmount  : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Total Locations --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-600);box-shadow:0 6px 16px rgba(22,163,74,0.3);">
-								<i class="bi bi-building fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 12%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Total Locations</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.totalLocations != null ? requestScope.totalLocations : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- Monthly Revenue --%>
+            <div class="dov-card dov-fadein dov-d3">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i> 
+                        ${sessionScope.monthlyRevenue.changePercent != null ? sessionScope.monthlyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">>Doanh thu hàng tháng</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.monthlyRevenue.currentAmount != null ? sessionScope.monthlyRevenue.formattedAmount  : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Total Customers --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-blue-500);box-shadow:0 6px 16px rgba(59,130,246,0.28);">
-								<i class="bi bi-people fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:#EFF6FF;color:#1D4ED8;">↓ 1</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Total Customers</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.totalCourts != null ? requestScope.totalCourts : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- Yearly Revenue --%>
+            <div class="dov-card dov-fadein dov-d4">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        ${sessionScope.yearlyRevenue.changePercent != null ? sessionScope.yearlyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">>Doanh thu hàng năm</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.yearlyRevenue.currentAmount != null ? sessionScope.yearlyRevenue.formattedAmount  : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Monthly Revenue --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-600);box-shadow:0 6px 16px rgba(22,163,74,0.3);">
-								<i class="bi bi-cash-stack fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 8%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Monthly Revenue</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.activeCourts != null ? requestScope.activeCourts : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- <%-- Total Bookings
+            <div class="dov-card dov-fadein dov-d4">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--blue">
+                        <i class="bi bi-check2-square fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--down">
+                        <i class="bi bi-graph-down-arrow"></i> -2.1%
+                    </span>
+                </div>
+                <p class="dov-stat-label">Total Bookings</p>
+                <p class="dov-stat-value">
+                    ${requestScope.totalBookings != null ? requestScope.totalBookings : '4,250'}
+                </p>
+            </div> --%>
 
-			<%-- Card: Monthly Bookings --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-brand);box-shadow:0 6px 16px rgba(6,78,59,0.25);">
-								<i class="bi bi-calendar-check fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 24%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Monthly Bookings</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.monthlyBookings != null ? requestScope.monthlyBookings : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+        </div><%-- end dov-stats-grid --%>
 
-		</div>
+        <%-- ============================================================
+             ROW 2: Booking Status Distribution + Occupancy Rate
+        ============================================================ --%>
+        <div class="dov-two-col">
 
-		<%-- ===== CHARTS ROW ===== --%>
-		<div class="row g-4 mb-4">
+            <%-- Booking Status Distribution --%>
+            <div class="dov-card dov-fadein dov-d5">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Trạng thái đặt lịch (%)</h3>
+                    <div class="dov-tabs" id="bookingTabs">
+                        <button class="dov-tab" data-tab="booking" data-period="Day">Hôm nay</button>
+                        <button class="dov-tab" data-tab="booking" data-period="Week">Tuần này</button>
+                        <button class="dov-tab is-active" data-tab="booking" data-period="Month">Tháng này</button>
+                        <button class="dov-tab" data-tab="booking" data-period="Year">Năm nay</button>
+                    </div>
+                </div>
+                <div class="dov-status-list" id="bookingStatusList">
+                    <%-- Rendered by JS --%>
+                </div>
+            </div>
 
-			<%-- Revenue Trends --%>
-			<div class="col-12 col-lg-6">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-center gap-2 mb-4">
-							<i class="bi bi-graph-up" style="color:var(--color-gray-400);"></i>
-							<p class="text-uppercase fw-black mb-0" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Revenue Trends</p>
-						</div>
-						<div style="height:240px;position:relative;">
-							<canvas id="revenueChart"></canvas>
-						</div>
-					</div>
-				</div>
-			</div>
+            <%-- Occupancy Rate --%>
+            <div class="dov-card dov-fadein dov-d6">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Tỉ lệ lấp đầy địa điểm (%)</h3>
+                    <div class="dov-tabs" id="occupancyTabs">
+                        <button class="dov-tab" data-tab="occupancy" data-period="Day">Hôm nay</button>
+                        <button class="dov-tab" data-tab="occupancy" data-period="Week">Tuần này</button>
+                        <button class="dov-tab is-active" data-tab="occupancy" data-period="Month">Tháng này</button>
+                        <button class="dov-tab" data-tab="occupancy" data-period="Year">Năm nay</button>
+                    </div>
+                </div>
+                <div class="dov-occupancy-body">
+                    <%-- Legend --%>
+                    <div class="dov-occ-legend">
+                        <div class="dov-occ-item">
+                            <div class="dov-occ-dot-row">
+                                <div class="dov-occ-dot dov-occ-dot--lime"></div>
+                                <span class="dov-occ-tag">Khung giờ lấp đầy</span>
+                            </div>
+                            <p class="dov-occ-value" id="occpctOccupied">65%</p>
+                        </div>
+                        <div class="dov-occ-item">
+                            <div class="dov-occ-dot-row">
+                                <div class="dov-occ-dot dov-occ-dot--gray"></div>
+                                <span class="dov-occ-tag">Khung giờ còn trống</span>
+                            </div>
+                            <p class="dov-occ-value" id="occpctAvailable">35%</p>
+                        </div>
+                    </div>
+                    <%-- SVG Donut --%>
+                    <svg class="dov-donut-svg" id="donutSvg"
+                         width="176" height="176" viewBox="0 0 176 176">
+                        <circle class="dov-donut-track" cx="88" cy="88" r="68"/>
+                        <circle class="dov-donut-arc"   cx="88" cy="88" r="68"
+                                id="donutArc"
+                                transform="rotate(-90 88 88)"
+                                stroke-dasharray="0 427.26"/>
+                        <text class="dov-donut-pct" x="88" y="83"
+                              text-anchor="middle" id="donutpctText">65%</text>
+                        <text class="dov-donut-label" x="88" y="102"
+                              text-anchor="middle">Đã lấp đầy</text>
+                    </svg>
+                </div>
+            </div>
 
-			<%-- Daily Bookings --%>
-			<div class="col-12 col-lg-6">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-center gap-2 mb-4">
-							<i class="bi bi-bar-chart" style="color:var(--color-gray-400);"></i>
-							<p class="text-uppercase fw-black mb-0" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Daily Bookings</p>
-						</div>
-						<div style="height:240px;position:relative;">
-							<canvas id="bookingsChart"></canvas>
-						</div>
-					</div>
-				</div>
-			</div>
+        </div><%-- end row 2 --%>
 
-		</div>
+        <%-- ============================================================
+             ROW 3: Weekly Revenue Chart + Yearly Revenue Chart
+        ============================================================ --%>
+        <div class="dov-two-col">
 
-		<%-- ===== QUICK ACTIONS ===== --%>
-		<div class="card border-0 rounded-4" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-			<div class="card-body p-4">
-				<p class="text-uppercase fw-black mb-3" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Quick Actions</p>
-				<div class="d-flex flex-wrap gap-3">
-					<a href="${pageContext.request.contextPath}/owner/facility/list"
-						class="btn btn-brand d-flex align-items-center gap-2 fw-bold rounded-3"
-						style="padding:0.625rem 1.25rem;box-shadow:0 4px 14px rgba(6,78,59,0.2);">
-						<i class="bi bi-plus-circle"></i> Manage Locations
-					</a>
-					
-					
-					<a href="${pageContext.request.contextPath}/owner/inventory"
-       class="btn btn-outline-success d-flex align-items-center gap-2 fw-bold rounded-3"
-       style="padding:0.625rem 1.25rem;">
-        <i class="bi bi-box-seam"></i> Manage Inventory
-    </a>
-    
-					<a href="#"
-						class="btn btn-outline-secondary d-flex align-items-center gap-2 fw-bold rounded-3"
-						style="padding:0.625rem 1.25rem;">
-						<i class="bi bi-gear"></i> System Settings
-					</a>
-				</div>
-			</div>
-		</div>
+            <%-- Weekly Revenue Bar Chart --%>
+            <div class="dov-card dov-fadein dov-d7">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Daily Revenue</h3>
+                    <div class="dov-tabs">
+                        <button class="dov-tab is-active" data-tab="weekly" data-period="This Week">This Week</button>
+                        <button class="dov-tab" data-tab="weekly" data-period="Previous Week">Previous Week</button>
+                    </div>
+                </div>
+                <div class="dov-chart-wrap">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
 
-	</div><%-- end content-area --%>
+            <%-- Yearly Revenue Bar Chart --%>
+            <div class="dov-card dov-fadein dov-d8">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Montly Revenue</h3>
+                    <div class="dov-tabs">
+                        <button class="dov-tab is-active" data-tab="yearly" data-period="This Year">This Year</button>
+                        <button class="dov-tab" data-tab="yearly" data-period="Previous Year">Previous Year</button>
+                    </div>
+                </div>
+                <div class="dov-chart-wrap">
+                    <canvas id="yearlyChart"></canvas>
+                </div>
+            </div>
 
-	<%-- ===== CHART.JS — giữ nguyên toàn bộ logic ===== --%>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        </div><%-- end row 3 --%>
+
+        <%-- ============================================================
+             ROW 4: Revenue Trend Area Chart
+        ============================================================ --%>
+        <div class="dov-card dov-fadein dov-d9">
+            <div class="dov-card-header">
+                <h3 class="dov-card-title">Revenue Trend</h3>
+                <div class="dov-tabs">
+                    <button class="dov-tab is-active" data-tab="trend" data-period="Monthly">Monthly</button>
+                    <button class="dov-tab" data-tab="trend" data-period="Yearly">Yearly</button>
+                </div>
+            </div>
+            <div class="dov-chart-wrap--lg">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+    </div><%-- end dov-wrap --%>
+
+
+    <%-- ================================================================
+         SCRIPTS
+    ================================================================ --%>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+	<script type="application/json" id="bookingStatusRaw">
+    	${not empty bookingStatusJson ? bookingStatusJson : '{"Day":[],"Week":[],"Month":[],"Year":[]}'}
+	</script>
+	
+	<script type="application/json" id="revenueChartRaw">
+   	 	${not empty revenueChartJson ? revenueChartJson : '{"weekly":{},"yearly":{},"trend":{}}'}
+	</script>
+	
+	<script type="application/json" id="facilityStartDateRaw">
+    	"${not empty facilityStartDate ? facilityStartDate : ''}"
+	</script>
+	
 	<script>
-		Chart.defaults.font.family = "'Inter', sans-serif";
-		Chart.defaults.color = '#9CA3AF';
-
-		const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-		const crosshairPlugin = {
-			id: 'crosshair',
-			afterDraw(chart) {
-				if (chart.tooltip._active && chart.tooltip._active.length) {
-					const ctx = chart.ctx;
-					const x = chart.tooltip._active[0].element.x;
-					const topY = chart.scales.y.top;
-					const bottomY = chart.scales.y.bottom;
-					ctx.save();
-					ctx.beginPath();
-					ctx.moveTo(x, topY);
-					ctx.lineTo(x, bottomY);
-					ctx.lineWidth = 1.5;
-					ctx.strokeStyle = '#064E3B';
-					ctx.setLineDash([4, 4]);
-					ctx.stroke();
-					ctx.restore();
-				}
-			}
-		};
-
-		const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-		const greenGradient = revenueCtx.createLinearGradient(0, 0, 0, 240);
-		greenGradient.addColorStop(0, 'rgba(22,163,74,0.20)');
-		greenGradient.addColorStop(1, 'rgba(22,163,74,0.00)');
-
-		new Chart(revenueCtx, {
-			type: 'line',
-			plugins: [crosshairPlugin],
-			data: {
-				labels: days,
-				datasets: [{
-					data: [2800, 2600, 2200, 3100, 4800, 6300, 5900],
-					borderColor: '#064E3B',
-					borderWidth: 2.5,
-					backgroundColor: greenGradient,
-					fill: true,
-					tension: 0.45,
-					pointRadius: 0,
-					pointHoverRadius: 5,
-					pointHoverBackgroundColor: '#064E3B',
-					pointHoverBorderColor: '#fff',
-					pointHoverBorderWidth: 2
-				}]
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				interaction: { mode: 'index', intersect: false },
-				plugins: {
-					legend: { display: false },
-					tooltip: {
-						backgroundColor: '#fff',
-						titleColor: '#111827',
-						bodyColor: '#374151',
-						borderColor: '#E5E7EB',
-						borderWidth: 1,
-						padding: 10,
-						cornerRadius: 8,
-						callbacks: { label: ctx => ' revenue : ' + ctx.parsed.y.toLocaleString() }
-					}
-				},
-				scales: {
-					x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' } } },
-					y: { grid: { color: '#F3F4F6', lineWidth: 1 }, border: { display: false, dash: [4,4] }, ticks: { font: { size: 11 } } }
-				}
-			}
-		});
-
-		new Chart(document.getElementById('bookingsChart').getContext('2d'), {
-			type: 'bar',
-			data: {
-				labels: days,
-				datasets: [{
-					data: [40, 50, 38, 72, 90, 125, 110],
-					backgroundColor: '#A3E635',
-					hoverBackgroundColor: '#84CC16',
-					borderRadius: 8,
-					borderSkipped: false
-				}]
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				plugins: {
-					legend: { display: false },
-					tooltip: {
-						backgroundColor: '#064E3B',
-						titleColor: '#A3E635',
-						bodyColor: '#fff',
-						padding: 10,
-						cornerRadius: 8,
-						callbacks: { label: ctx => ' ' + ctx.parsed.y + ' bookings' }
-					}
-				},
-				scales: {
-					x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' } } },
-					y: { grid: { color: '#F3F4F6' }, border: { display: false }, beginAtZero: true, ticks: { font: { size: 11 } } }
-				}
-			}
-		});
+	(function () {
+	    'use strict';
+	
+	    /* ── Design tokens ─────────────────────────────────────────── */
+	    const BRAND = '#064E3B';
+	    const LIME  = '#A3E635';
+	    const LIME2 = '#d9f99d';
+	    const G100  = '#F3F4F6';
+	    const G200  = '#E5E7EB';
+	    const G400  = '#9CA3AF';
+	
+	    Chart.defaults.font.family = "'Inter', sans-serif";
+	    Chart.defaults.color = G400;
+	
+	    /* ── Parse tất cả JSON một chỗ ────────────────────────────── */
+	    let BOOKING_STATUS_DATA, REVENUE_CHART_DATA, FACILITY_START_DATE;
+	
+	    try {
+	        BOOKING_STATUS_DATA = JSON.parse(document.getElementById('bookingStatusRaw').textContent);
+	    } catch (e) {
+	        console.error('bookingStatusRaw parse failed:', e);
+	        BOOKING_STATUS_DATA = { Day: [], Week: [], Month: [], Year: [] };
+	    }
+	
+	    try {
+	        REVENUE_CHART_DATA = JSON.parse(document.getElementById('revenueChartRaw').textContent);
+	    } catch (e) {
+	        console.error('revenueChartRaw parse failed:', e);
+	        REVENUE_CHART_DATA = { weekly: {}, yearly: {}, trend: {} };
+	    }
+	
+	    try {
+	        const raw = JSON.parse(document.getElementById('facilityStartDateRaw').textContent);
+	        FACILITY_START_DATE = raw ? new Date(raw) : null;
+	    } catch (e) {
+	        FACILITY_START_DATE = null;
+	    }
+	
+	    /* ── Dataset registry ──────────────────────────────────────── */
+	    const DATA = {
+	        booking:   BOOKING_STATUS_DATA,
+	        occupancy: { Day: 58, Week: 62, Month: 65, Year: 70 },
+	        weekly:    REVENUE_CHART_DATA.weekly,
+	        yearly:    REVENUE_CHART_DATA.yearly,
+	        trend:     REVENUE_CHART_DATA.trend,
+	    };
+	
+	    /* ── Format VND ────────────────────────────────────────────── */
+	    function formatVND(v) {
+	        if (v >= 1_000_000) {
+	            return ' ' + (v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' tr VND';
+	        }
+	        return ' ' + v.toLocaleString('vi-VN') + ' VND';
+	    }
+	
+	    /* ── Shared tooltip ────────────────────────────────────────── */
+	    const limeTooltip = {
+	        backgroundColor: '#fff',
+	        titleColor: G400,
+	        bodyColor: BRAND,
+	        borderColor: G200,
+	        borderWidth: 1,
+	        padding: 10,
+	        cornerRadius: 10,
+	        titleFont: { size: 10, weight: '700' },
+	        bodyFont:  { size: 14, weight: '800' },
+	        callbacks: {
+	            label: ctx => formatVND(ctx.parsed.y)
+	        }
+	    };
+	
+	    /* ── Tooltip riêng cho trend — hiện ngày bắt đầu kinh doanh ─ */
+	    const trendTooltip = {
+	        ...limeTooltip,
+	        callbacks: {
+	            title: ctx => {
+	                const label = ctx[0].label; // "2026" hoặc "Jan"
+	
+	                if (FACILITY_START_DATE) {
+	                    const startYear  = FACILITY_START_DATE.getFullYear();
+	                    const startMonth = FACILITY_START_DATE.toLocaleString('en-US', { month: 'short' });
+	                    const startDay   = FACILITY_START_DATE.getDate();
+	
+	                    // Yearly trend — label là năm
+	                    if (/^\d{4}$/.test(label) && parseInt(label) === startYear) {
+	                        return label + ' (from ' + startDay + ' ' + startMonth + ' ' + startYear + ')';
+	                    }
+	                }
+	                return label;
+	            },
+	            label: ctx => formatVND(ctx.parsed.y)
+	        }
+	    };
+	
+	    /* ── Build bar chart ───────────────────────────────────────── */
+	    function makeBarChart(canvasId, dataset) {
+	        const ctx = document.getElementById(canvasId).getContext('2d');
+	        return new Chart(ctx, {
+	            type: 'bar',
+	            data: {
+	                labels: dataset.labels,
+	                datasets: [{
+	                    data: dataset.data,
+	                    backgroundColor: LIME,
+	                    hoverBackgroundColor: LIME2,
+	                    borderRadius: 6,
+	                    borderSkipped: false,
+	                }]
+	            },
+	            options: {
+	                responsive: true, maintainAspectRatio: false,
+	                plugins: { legend: { display: false }, tooltip: limeTooltip },
+	                scales: {
+	                    x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: G400 } },
+	                    y: { grid: { color: G100 },    border: { display: false }, ticks: { font: { size: 11 }, color: G400,
+	                        callback: v => v >= 1_000_000
+	                            ? (v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'tr'
+	                            : v.toLocaleString('vi-VN')
+	                    }}
+	                }
+	            }
+	        });
+	    }
+	
+	    /* ── Build area chart ──────────────────────────────────────── */
+	    function makeAreaChart(canvasId, dataset) {
+	        const ctx = document.getElementById(canvasId).getContext('2d');
+	        const grad = ctx.createLinearGradient(0, 0, 0, 240);
+	        grad.addColorStop(0, 'rgba(163,230,53,0.35)');
+	        grad.addColorStop(1, 'rgba(163,230,53,0.02)');
+	
+	        return new Chart(ctx, {
+	            type: 'line',
+	            data: {
+	                labels: dataset.labels,
+	                datasets: [{
+	                    data: dataset.data,
+	                    borderColor: BRAND,
+	                    borderWidth: 2.5,
+	                    backgroundColor: grad,
+	                    fill: true,
+	                    tension: 0.45,
+	                    pointRadius: 0,
+	                    pointHoverRadius: 5,
+	                    pointHoverBackgroundColor: BRAND,
+	                    pointHoverBorderColor: '#fff',
+	                    pointHoverBorderWidth: 2,
+	                }]
+	            },
+	            options: {
+	                responsive: true, maintainAspectRatio: false,
+	                interaction: { mode: 'index', intersect: false },
+	                plugins: {
+	                    legend: { display: false },
+	                    tooltip: trendTooltip       // ← dùng trendTooltip có title ngày
+	                },
+	                scales: {
+	                    x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: G400 } },
+	                    y: { grid: { color: G100 },    border: { display: false }, ticks: { font: { size: 11 }, color: G400,
+	                        callback: v => v >= 1_000_000
+	                            ? (v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'tr'
+	                            : v.toLocaleString('vi-VN')
+	                    }}
+	                }
+	            }
+	        });
+	    }
+	
+	    /* ── Update chart data in-place ────────────────────────────── */
+	    function updateChart(chart, dataset) {
+	        chart.data.labels = dataset.labels;
+	        chart.data.datasets[0].data = dataset.data;
+	        chart.update('active');
+	    }
+	
+	    /* ── Booking Status bars + tooltip ────────────────────────── */
+	    function renderBookingStatus(period) {
+	        const rows = DATA.booking[period];
+	        const list = document.getElementById('bookingStatusList');
+	        list.innerHTML = '';
+	
+	        if (!rows || rows.length === 0) {
+	            list.innerHTML = '<p style="color:#9CA3AF;font-size:13px;padding:16px 0;">No data available</p>';
+	            return;
+	        }
+	
+	        rows.forEach(function (row) {
+	            var html = '<div class="dov-status-row">'
+	                + '<span class="dov-status-name">' + row.label + '</span>'
+	                + '<div class="dov-status-track">'
+	                + '<div class="dov-status-bar"'
+	                + '     style="width:' + row.pct + '%;background:' + row.color + ';"'
+	                + '     data-count="' + row.count + '"'
+	                + '     data-label="' + row.label + '">'
+	                + '</div>'
+	                + '</div>'
+	                + '<span class="dov-status-pct">' + row.pct + '%</span>'
+	                + '</div>';
+	            list.insertAdjacentHTML('beforeend', html);
+	        });
+	
+	        attachBarTooltips();
+	    }
+	
+	    /* ── Custom tooltip hover thanh bar ────────────────────────── */
+	    function attachBarTooltips() {
+	        const tooltip = document.getElementById('statusTooltip') || createTooltipEl();
+	
+	        document.querySelectorAll('.dov-status-bar').forEach(bar => {
+	            bar.addEventListener('mouseenter', function () {
+	                tooltip.textContent   = this.dataset.label + ': '
+	                                      + Number(this.dataset.count).toLocaleString('vi-VN')
+	                                      + ' bookings';
+	                tooltip.style.display = 'block';
+	            });
+	            bar.addEventListener('mousemove', function (e) {
+	                tooltip.style.left = (e.pageX + 12) + 'px';
+	                tooltip.style.top  = (e.pageY - 28) + 'px';
+	            });
+	            bar.addEventListener('mouseleave', function () {
+	                tooltip.style.display = 'none';
+	            });
+	        });
+	    }
+	
+	    function createTooltipEl() {
+	        const el = document.createElement('div');
+	        el.id = 'statusTooltip';
+	        el.style.cssText = `
+	            position: fixed;
+	            background: #fff;
+	            border: 1px solid #E5E7EB;
+	            border-radius: 8px;
+	            padding: 6px 12px;
+	            font-size: 13px;
+	            font-weight: 700;
+	            color: #064E3B;
+	            pointer-events: none;
+	            display: none;
+	            z-index: 9999;
+	            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	        `;
+	        document.body.appendChild(el);
+	        return el;
+	    }
+	
+	    /* ── Occupancy donut ───────────────────────────────────────── */
+	    const CIRC = 2 * Math.PI * 68;
+	
+	    function renderOccupancy(period) {
+	        const pct      = DATA.occupancy[period];
+	        const dashArr  = (pct / 100) * CIRC;
+	        const arc      = document.getElementById('donutArc');
+	        const txtpct   = document.getElementById('donutpctText');
+	        const lblOcc   = document.getElementById('occpctOccupied');
+	        const lblAvail = document.getElementById('occpctAvailable');
+	
+	        arc.setAttribute('stroke-dasharray', dashArr.toFixed(2) + ' ' + (CIRC - dashArr).toFixed(2));
+	        txtpct.textContent   = pct + '%';
+	        lblOcc.textContent   = pct + '%';
+	        lblAvail.textContent = (100 - pct) + '%';
+	    }
+	
+	    /* ── Tab click handler ─────────────────────────────────────── */
+	    const charts = {};
+	
+	    function initTabGroup(containerSelector, handler) {
+	        document.querySelectorAll(containerSelector + ' .dov-tab').forEach(btn => {
+	            btn.addEventListener('click', function () {
+	                document.querySelectorAll(containerSelector + ' .dov-tab')
+	                    .forEach(b => b.classList.remove('is-active'));
+	                this.classList.add('is-active');
+	                handler(this.dataset.period);
+	            });
+	        });
+	    }
+	
+	    /* ── Init ──────────────────────────────────────────────────── */
+	    document.addEventListener('DOMContentLoaded', function () {
+	
+	        /* Booking status */
+	        renderBookingStatus('Month');
+	        initTabGroup('#bookingTabs', period => renderBookingStatus(period));
+	
+	        /* Occupancy */
+	        renderOccupancy('Month');
+	        initTabGroup('#occupancyTabs', period => renderOccupancy(period));
+	
+	        /* Weekly bar */
+	        charts.weekly = makeBarChart('weeklyChart', DATA.weekly['This Week']);
+	        document.querySelectorAll('[data-tab="weekly"]').forEach(btn => {
+	            btn.addEventListener('click', function () {
+	                document.querySelectorAll('[data-tab="weekly"]').forEach(b => b.classList.remove('is-active'));
+	                this.classList.add('is-active');
+	                updateChart(charts.weekly, DATA.weekly[this.dataset.period]);
+	            });
+	        });
+	
+	        /* Yearly bar */
+	        charts.yearly = makeBarChart('yearlyChart', DATA.yearly['This Year']);
+	        document.querySelectorAll('[data-tab="yearly"]').forEach(btn => {
+	            btn.addEventListener('click', function () {
+	                document.querySelectorAll('[data-tab="yearly"]').forEach(b => b.classList.remove('is-active'));
+	                this.classList.add('is-active');
+	                updateChart(charts.yearly, DATA.yearly[this.dataset.period]);
+	            });
+	        });
+	
+	        /* Revenue trend area */
+	        charts.trend = makeAreaChart('trendChart', DATA.trend['Monthly']);
+	        document.querySelectorAll('[data-tab="trend"]').forEach(btn => {
+	            btn.addEventListener('click', function () {
+	                document.querySelectorAll('[data-tab="trend"]').forEach(b => b.classList.remove('is-active'));
+	                this.classList.add('is-active');
+	                updateChart(charts.trend, DATA.trend[this.dataset.period]);
+	            });
+	        });
+	    });
+	
+	})();
 	</script>
 
 </div><%-- end main-content --%>

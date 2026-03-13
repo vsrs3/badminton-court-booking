@@ -1,0 +1,219 @@
+/* =================================================================
+   dashboard-overview.css
+   BCB Owner Dashboard – Overview Page
+   Palette: brand #064E3B · lime #A3E635 · gray scale
+   ================================================================= */
+
+/* ── Keyframes ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes barGrow {
+  from { width: 0; }
+}
+
+/* ── Layout wrapper: stretch full width ─────────────────────────── */
+.dov-wrap {
+  padding: 1.5rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Animated entry ────────────────────────────────────────────── */
+.dov-fadein { animation: fadeUp .4s ease both; }
+.dov-d1 { animation-delay: .05s; }
+.dov-d2 { animation-delay: .10s; }
+.dov-d3 { animation-delay: .15s; }
+.dov-d4 { animation-delay: .20s; }
+.dov-d5 { animation-delay: .25s; }
+.dov-d6 { animation-delay: .30s; }
+.dov-d7 { animation-delay: .35s; }
+.dov-d8 { animation-delay: .40s; }
+.dov-d9 { animation-delay: .45s; }
+
+/* ── Card ──────────────────────────────────────────────────────── */
+.dov-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #F3F4F6;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ── Stat grid: 4 equal columns, full width ─────────────────────── */
+.dov-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+/* ── Stat card internals ────────────────────────────────────────── */
+.dov-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+.dov-stat-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.25rem; flex-shrink: 0;
+}
+.dov-stat-icon--green {
+  background: #16A34A;
+  box-shadow: 0 6px 16px rgba(22,163,74,.30);
+}
+.dov-stat-icon--blue {
+  background: #3B82F6;
+  box-shadow: 0 6px 16px rgba(59,130,246,.28);
+}
+.dov-stat-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 700;
+}
+.dov-stat-badge--up   { color: #16A34A; }
+.dov-stat-badge--down { color: #EF4444; }
+.dov-stat-label {
+  font-size: 13px; color: #6B7280; font-weight: 500; margin: 0 0 6px;
+}
+.dov-stat-value {
+  font-size: 26px; font-weight: 900;
+  color: #111827; letter-spacing: -.02em; margin: 0;
+}
+
+/* ── Two-col grid: full width, equal halves ─────────────────────── */
+.dov-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+/* ── Card header row ────────────────────────────────────────────── */
+.dov-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.dov-card-title {
+  font-size: 15px; font-weight: 700; color: #111827; margin: 0;
+}
+
+/* ── Tab group ──────────────────────────────────────────────────── */
+.dov-tabs { display: flex; gap: 4px; }
+.dov-tab {
+  padding: 4px 12px; border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid #E5E7EB;
+  background: #fff; color: #6B7280;
+  cursor: pointer; transition: all .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.dov-tab:hover { border-color: #9CA3AF; color: #374151; }
+.dov-tab.is-active {
+  background: #111827; border-color: #111827; color: #fff;
+}
+
+/* ── Booking status bars ────────────────────────────────────────── */
+.dov-status-list {
+  display: flex; flex-direction: column; gap: 1.1rem;
+}
+.dov-status-row {
+  display: flex; align-items: center; gap: 1rem;
+}
+.dov-status-name {
+  min-width: 82px; font-size: 13px; color: #6B7280; font-weight: 500;
+}
+.dov-status-track {
+  flex: 1; height: 10px;
+  background: #F3F4F6; border-radius: 999px; overflow: hidden;
+}
+.dov-status-bar {
+  height: 100%; border-radius: 999px;
+  animation: barGrow .6s ease both;
+  transition: width .5s ease;
+}
+.dov-status-pct {
+  min-width: 44px; text-align: right;
+  font-size: 13px; font-weight: 700; color: #111827;
+}
+
+/* ── Occupancy card body ────────────────────────────────────────── */
+.dov-occupancy-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 1rem;
+}
+.dov-occ-legend { display: flex; flex-direction: column; gap: 1.5rem; }
+.dov-occ-dot-row {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 6px;
+}
+.dov-occ-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+}
+.dov-occ-dot--lime { background: #A3E635; }
+.dov-occ-dot--gray { background: #E5E7EB; }
+.dov-occ-tag {
+  font-size: 10px; font-weight: 800; color: #9CA3AF;
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.dov-occ-value {
+  font-size: 22px; font-weight: 900; color: #111827; margin: 0;
+}
+
+/* ── SVG donut ──────────────────────────────────────────────────── */
+.dov-donut-svg    { flex-shrink: 0; }
+.dov-donut-track  { fill: none; stroke: #E5E7EB; stroke-width: 14; }
+.dov-donut-arc    {
+  fill: none; stroke: #A3E635; stroke-width: 14;
+  stroke-linecap: round;
+  transition: stroke-dasharray .6s ease;
+}
+.dov-donut-pct    {
+  font-size: 28px; font-weight: 900; fill: #111827;
+  font-family: 'Inter', sans-serif;
+}
+.dov-donut-label  {
+  font-size: 10px; font-weight: 700; fill: #6B7280;
+  letter-spacing: .08em; text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Chart canvas wrappers ──────────────────────────────────────── */
+.dov-chart-wrap    { height: 220px; position: relative; width: 100%; }
+.dov-chart-wrap--lg { height: 250px; position: relative; width: 100%; }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .dov-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .dov-two-col { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .dov-stats-grid { grid-template-columns: 1fr; }
+  .dov-wrap       { padding: 1rem; }
+  .dov-card-header { flex-direction: column; align-items: flex-start; }
+  .dov-occupancy-body { flex-direction: column; gap: 1.5rem; }
+}
+
+/* ── Override content-area padding khi dùng dov-wrap ───────────── */
+.content-area:has(.dov-wrap) {
+  padding: 0 !important;
+}
+/* Fallback cho browser cũ không hỗ trợ :has() */
+.content-area > .dov-wrap {
+  margin: 0;
+}

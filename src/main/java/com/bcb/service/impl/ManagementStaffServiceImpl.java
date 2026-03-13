@@ -2,13 +2,13 @@ package com.bcb.service.impl;
 
 import com.bcb.service.ManagementStaffService;
 import com.bcb.exception.DataAccessException;
-import com.bcb.repository.StaffProfileRepository;
-import com.bcb.repository.impl.StaffProfileRepositoryImpl;
+import com.bcb.repository.ManagementStaffRepository;
+import com.bcb.repository.impl.ManagementStaffRepositoryImpl;
 
 public class ManagementStaffServiceImpl implements ManagementStaffService {
 	
 	// Repository instance for database operations
-	private final StaffProfileRepository profileRepo = new StaffProfileRepositoryImpl();
+	private final ManagementStaffRepository profileRepo = new ManagementStaffRepositoryImpl();
 
 	@Override
 	public boolean updateInfo(Integer accountId, Integer facilityId, String fullName, String email, String phoneNumber) {
