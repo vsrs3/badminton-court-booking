@@ -320,7 +320,7 @@ CREATE TABLE BookingSlot (
     FOREIGN KEY (court_id) REFERENCES Court(court_id),
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-    UNIQUE (booking_id, court_id, slot_id)
+    UNIQUE (booking_id, booking_date,court_id, slot_id)
 );
 GO
 

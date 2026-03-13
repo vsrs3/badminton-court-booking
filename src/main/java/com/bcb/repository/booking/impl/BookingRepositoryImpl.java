@@ -19,14 +19,27 @@ public class BookingRepositoryImpl implements BookingRepository {
     /** {@inheritDoc} */
     @Override
     public int insertBooking(Connection conn, Booking booking) {
-        String sql = "INSERT INTO Booking (facility_id, booking_date, account_id, booking_status, hold_expired_at) "
-                   + "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Booking (recurring_id, facility_id, booking_date, account_id, booking_status, hold_expired_at) "
+                   + "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, booking.getFacilityId());
-            ps.setDate(2, Date.valueOf(booking.getBookingDate()));
-            ps.setInt(3, booking.getAccountId());
-            ps.setString(4, booking.getBookingStatus());
-            ps.setTimestamp(5, Timestamp.valueOf(booking.getHoldExpiredAt()));
+            if (booking.getRecurringId() != null) {
+                ps.setInt(1, booking.getRecurringId());
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+            ps.setInt(2, booking.getFacilityId());
+            if (booking.getBookingDate() != null) {
+                ps.setDate(3, Date.valueOf(booking.getBookingDate()));
+            } else {
+                ps.setNull(3, Types.DATE);
+            }
+            ps.setInt(4, booking.getAccountId());
+            ps.setString(5, booking.getBookingStatus());
+            if (booking.getHoldExpiredAt() != null) {
+                ps.setTimestamp(6, Timestamp.valueOf(booking.getHoldExpiredAt()));
+            } else {
+                ps.setNull(6, Types.TIMESTAMP);
+            }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
