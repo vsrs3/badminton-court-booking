@@ -18,6 +18,10 @@
             return;
         }
 
+        if (window.__USER_LOCATION__ && window.__USER_LOCATION__.lat && window.__USER_LOCATION__.lng) {
+            userLocation = window.__USER_LOCATION__;
+        }
+
         let courts = [];
         try {
             courts = await fetchAllCourtsForMap();
@@ -255,6 +259,7 @@ function fitMapToCourts(courts) {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
                 userLocation = { lat: userLat, lng: userLng };
+                window.__USER_LOCATION__ = userLocation;
 
                 const userIcon = L.divIcon({
                     className: 'custom-div-icon',
@@ -385,6 +390,18 @@ function fitMapToCourts(courts) {
     }
 
     window.initMap = initMap;
+
+    window.setUserLocationForMap = function(location) {
+        if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng)) {
+            return;
+        }
+        userLocation = { lat: location.lat, lng: location.lng };
+        window.__USER_LOCATION__ = userLocation;
+
+        if (mapInstance) {
+            addCourtMarkers(getMapCourtsDataset());
+        }
+    };
 
     window.updateMapMarkers = function(courts) {
         if (!Array.isArray(courts)) {

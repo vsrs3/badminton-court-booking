@@ -49,6 +49,7 @@ const contextPath = getContextPath();
     let isLoading = false;
     let hasMore = true;
     let inFlightRequestController = null;
+    let lastFacilitiesRequestKey = null;
 
     // ============================================
     // AUTH MODAL FUNCTIONS
@@ -83,6 +84,7 @@ const contextPath = getContextPath();
     }
 
     const LOCATION_PROMPT_KEY = "locationPrompted";
+    const USER_LOCATION_KEY = "userLocation";
 
     function showLocationPermissionModal() {
         const backdrop = document.getElementById("locationPermissionBackdrop");
@@ -116,6 +118,8 @@ const contextPath = getContextPath();
         }
 
         AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
         updateDistanceFilterAvailability();
         loadFacilitiesFromAPI(0);
     }
@@ -130,11 +134,26 @@ const contextPath = getContextPath();
         }
 
         if (status === "granted") {
+            const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+            if (cachedLocation) {
+                try {
+                    AppState.userLocation = JSON.parse(cachedLocation);
+                    window.__USER_LOCATION__ = AppState.userLocation;
+                    updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                }
+            }
             getUserLocation();
             return;
         }
 
         AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
         updateDistanceFilterAvailability();
         loadFacilitiesFromAPI(0);
     }
@@ -246,6 +265,21 @@ const contextPath = getContextPath();
     async function loadFacilitiesFromAPI(page = 0) {
         console.log('Loading facilities from API, page:', page);
 
+        const requestKey = [
+            page,
+            PAGE_SIZE,
+            AppState.searchQuery.trim(),
+            AppState.filters.province,
+            AppState.filters.district,
+            AppState.isShowingFavorites ? 'fav' : 'all',
+            AppState.userLocation ? `${AppState.userLocation.lat},${AppState.userLocation.lng}` : 'no-loc'
+        ].join('|');
+
+        if (isLoading && requestKey === lastFacilitiesRequestKey) {
+            console.log('Duplicate in-flight request, skipping...');
+            return;
+        }
+
         if (isLoading && page > 0) {
             console.log('Already loading, skipping...');
             return;
@@ -258,6 +292,7 @@ const contextPath = getContextPath();
         }
 
         isLoading = true;
+        lastFacilitiesRequestKey = requestKey;
 
         try {
             // Build API URL
@@ -375,7 +410,12 @@ const contextPath = getContextPath();
                         lng: position.coords.longitude
                     };
                     console.log('✅ User location obtained:', AppState.userLocation);
+                    sessionStorage.setItem(USER_LOCATION_KEY, JSON.stringify(AppState.userLocation));
+                    window.__USER_LOCATION__ = AppState.userLocation;
                     updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
 
                     // ✅ Reload facilities with location to get distance calculation
                     loadFacilitiesFromAPI(0);
@@ -384,6 +424,8 @@ const contextPath = getContextPath();
                     console.error("Error getting location:", error);
                     showToast("Không thể lấy vị trí của bạn");
                     AppState.userLocation = null;
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                    window.__USER_LOCATION__ = null;
                     updateDistanceFilterAvailability();
 
                     // Still load facilities without location
@@ -393,6 +435,8 @@ const contextPath = getContextPath();
         } else {
             console.log("Geolocation not supported");
             AppState.userLocation = null;
+            sessionStorage.removeItem(USER_LOCATION_KEY);
+            window.__USER_LOCATION__ = null;
             updateDistanceFilterAvailability();
             // Load without location
             loadFacilitiesFromAPI(0);
@@ -1535,7 +1579,25 @@ const contextPath = getContextPath();
         // Attach event listeners
         attachEventListeners();
 
+        const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+        const status = sessionStorage.getItem(LOCATION_PROMPT_KEY);
+        if (status === "granted" && cachedLocation) {
+            try {
+                AppState.userLocation = JSON.parse(cachedLocation);
+                window.__USER_LOCATION__ = AppState.userLocation;
+            } catch (e) {
+                AppState.userLocation = null;
+                sessionStorage.removeItem(USER_LOCATION_KEY);
+            }
+        }
+
         updateDistanceFilterAvailability();
+        if (AppState.userLocation && window.setUserLocationForMap) {
+            window.setUserLocationForMap(AppState.userLocation);
+        }
+
+        // Always load baseline data (do not depend on geolocation callbacks)
+        loadFacilitiesFromAPI(0);
 
         // Ask for location permission once per session
         showLocationPromptIfNeeded();
@@ -1554,6 +1616,15 @@ const contextPath = getContextPath();
 
         console.log('App initialized');
     }
+
+    // Reload data when returning via back/forward cache
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            currentPage = 0;
+            hasMore = true;
+            loadFacilitiesFromAPI(0);
+        }
+    });
 
     // Start app when DOM is ready
     if (document.readyState === 'loading') {
