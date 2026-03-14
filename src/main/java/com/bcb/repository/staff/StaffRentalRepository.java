@@ -21,7 +21,7 @@ public interface StaffRentalRepository {
             int inventoryId,
             int quantity,
             BigDecimal unitPrice,
-            int addedBy) throws Exception;
+            String addedBy) throws Exception;
 
     void updateRacketRental(
             int bookingSlotId,

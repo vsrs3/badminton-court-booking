@@ -219,12 +219,11 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                     for (Integer bookingSlotId : matchedBookingSlotIds) {
                         repository.insertBookingRental(
                                 conn,
-                                bookingId,
                                 bookingSlotId,
                                 rental.getInventoryId(),
                                 rental.getQuantity(),
                                 rental.getUnitPrice(),
-                                staffId
+                                "STAFF"
                         );
                     }
 

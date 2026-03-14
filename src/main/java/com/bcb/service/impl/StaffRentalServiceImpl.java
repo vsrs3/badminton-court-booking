@@ -127,7 +127,7 @@ public class StaffRentalServiceImpl implements com.bcb.service.staff.StaffRental
 
         for (int bookingSlotId : bookingSlotIds) {
             if (!repo.existsRacketRental(bookingSlotId, inventoryId)) {
-                repo.insertRacketRental(bookingSlotId, inventoryId, quantity, unitPrice, staffId);
+                repo.insertRacketRental(bookingSlotId, inventoryId, quantity, unitPrice, "STAFF");
             } else {
                 repo.updateRacketRental(bookingSlotId, inventoryId, quantity);
             }

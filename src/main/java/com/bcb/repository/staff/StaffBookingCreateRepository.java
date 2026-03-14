@@ -34,9 +34,9 @@ public interface StaffBookingCreateRepository {
 
     void insertInvoice(Connection conn, int bookingId, BigDecimal totalAmount) throws Exception;
 
-    void insertBookingRental(Connection conn, int bookingId, int bookingSlotId,
+    void insertBookingRental(Connection conn, int bookingSlotId,
                              int inventoryId, int quantity, BigDecimal unitPrice,
-                             int createdBy) throws Exception;
+                             String addedBy) throws Exception;
 
 }
 

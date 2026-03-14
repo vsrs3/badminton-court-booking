@@ -125,7 +125,7 @@ public abstract class StaffRentalRepositoryImpl implements StaffRentalRepository
     }
 
     @Override
-    public void insertRacketRental(int bookingSlotId, int inventoryId, int quantity, BigDecimal unitPrice, int addedBy) throws Exception {
+    public void insertRacketRental(int bookingSlotId, int inventoryId, int quantity, BigDecimal unitPrice, String addedBy) throws Exception {
         String sql = """
                 INSERT INTO RacketRental
                 (booking_slot_id, inventory_id, quantity, unit_price, added_by, created_at)
@@ -137,7 +137,7 @@ public abstract class StaffRentalRepositoryImpl implements StaffRentalRepository
             ps.setInt(2, inventoryId);
             ps.setInt(3, quantity);
             ps.setBigDecimal(4, unitPrice);
-            ps.setInt(5, addedBy);
+            ps.setString(5, addedBy);
             ps.executeUpdate();
         }
     }

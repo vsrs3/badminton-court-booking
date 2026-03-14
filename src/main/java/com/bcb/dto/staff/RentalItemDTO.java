@@ -1,10 +1,15 @@
 package com.bcb.dto.staff;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RentalItemDTO {
+    private Integer racketRentalId;
+    private Integer bookingSlotId;
+    private String addedBy;
+    private LocalDateTime createdAt;
     private String groupKey;
     private Integer courtId;
     private String name;
@@ -14,6 +19,38 @@ public class RentalItemDTO {
     private Integer inventoryId;
     private Integer quantity;
     private BigDecimal unitPrice;
+
+    public Integer getRacketRentalId() {
+        return racketRentalId;
+    }
+
+    public void setRacketRentalId(Integer racketRentalId) {
+        this.racketRentalId = racketRentalId;
+    }
+
+    public Integer getBookingSlotId() {
+        return bookingSlotId;
+    }
+
+    public void setBookingSlotId(Integer bookingSlotId) {
+        this.bookingSlotId = bookingSlotId;
+    }
+
+    public String getAddedBy() {
+        return addedBy;
+    }
+
+    public void setAddedBy(String addedBy) {
+        this.addedBy = addedBy;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public String getGroupKey() {
         return groupKey;
