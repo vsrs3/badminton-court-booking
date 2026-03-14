@@ -149,7 +149,8 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 Integer guestId = null;
                 if ("GUEST".equals(req.getCustomerType())) {
-                    guestId = repository.insertGuest(conn, req.getGuestName(), normalizePhone(req.getGuestPhone()));
+                    guestId = repository.insertGuest(conn, req.getGuestName(),
+                            normalizePhone(req.getGuestPhone()), null);
                 }
 
                 int bookingId = repository.insertBookingRoot(conn, facilityId, req.getAccountId(), guestId, staffId);

@@ -12,7 +12,7 @@ import java.util.Map;
 public interface StaffRecurringBookingRepository {
     StaffCustomerAccountDTO findActiveCustomerByPhone(String phone) throws Exception;
 
-    Integer insertGuest(Connection conn, String guestName, String guestPhone) throws Exception;
+    Integer insertGuest(Connection conn, String guestName, String guestPhone, String guestEmail) throws Exception;
 
     int insertBookingRoot(Connection conn, int facilityId, Integer accountId, Integer guestId, int staffId) throws Exception;
 

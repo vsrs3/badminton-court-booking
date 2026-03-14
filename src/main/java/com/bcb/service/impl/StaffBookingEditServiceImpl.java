@@ -10,6 +10,8 @@ import com.bcb.dto.staff.StaffBookingEditStatusCountDTO;
 import com.bcb.repository.impl.StaffBookingEditRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingEditRepository;
 import com.bcb.service.staff.StaffBookingEditService;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.utils.DBContext;
 
 import java.math.BigDecimal;
@@ -30,6 +32,7 @@ import java.util.Set;
 public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private final StaffBookingEditRepository repository = new StaffBookingEditRepositoryImpl();
+    private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
     @Override
     public StaffBookingEditOutcomeDTO process(String servletPath, int facilityId, int staffId, String body) throws Exception {
@@ -136,6 +139,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                     reason, beforeEtag, afterEtag, before, after, invoice.refundDue);
 
             conn.commit();
+
+            try {
+                String payload = buildUpdatePayload(before, after, reason);
+                emailQueueService.enqueueBookingUpdated(bookingId, payload);
+            } catch (Exception ignored) {
+            }
             return "{\"success\":true,\"message\":\"Lưu thay đổi thành công\",\"data\":{"
                     + "\"etag\":" + StaffAuthUtil.escapeJson(afterEtag)
                     + ",\"bookingStatus\":\"" + nextBookingStatus + "\""
@@ -265,6 +274,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                     reason, beforeEtag, afterEtag, before, after, invoice.refundDue);
 
             conn.commit();
+
+            try {
+                String payload = buildCancelPayload(reason);
+                emailQueueService.enqueueBookingCancelled(bookingId, payload);
+            } catch (Exception ignored) {
+            }
             return "{\"success\":true,\"message\":\"Hủy các slot còn lại thành công\",\"data\":{"
                     + "\"etag\":" + StaffAuthUtil.escapeJson(afterEtag)
                     + ",\"bookingStatus\":\"" + nextBookingStatus + "\""
@@ -726,6 +741,27 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         return json.toString();
     }
 
+    private String buildUpdatePayload(StaffBookingSnapshotTokenUtil.Snapshot before,
+                                      StaffBookingSnapshotTokenUtil.Snapshot after,
+                                      String reason) {
+        StringBuilder json = new StringBuilder(2048);
+        json.append('{');
+        json.append("\"before\":").append(buildSnapshotJson(before));
+        json.append(",\"after\":").append(buildSnapshotJson(after));
+        if (reason != null && !reason.isEmpty()) {
+            json.append(",\"reason\":").append(StaffAuthUtil.escapeJson(reason));
+        }
+        json.append('}');
+        return json.toString();
+    }
+
+    private String buildCancelPayload(String reason) {
+        if (reason == null || reason.isEmpty()) {
+            return "{}";
+        }
+        return "{\"reason\":" + StaffAuthUtil.escapeJson(reason) + "}";
+    }
+
     private List<SlotPair> parseSlotPairs(String json, String key) {
         String arr = extractArray(json, key);
         List<SlotPair> out = new ArrayList<>();
@@ -866,6 +902,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
+
+
 
 
 
