@@ -41,6 +41,9 @@
                 <button type="button" class="st-proxy-btn st-proxy-btn-secondary" id="btnRecurring">
                     <i class="bi bi-arrow-repeat me-1"></i>Đặt định kỳ
                 </button>
+                <button type="button" class="st-proxy-btn st-proxy-btn-warning" id="btnBlockMode">
+                    <i class="bi bi-slash-circle me-1"></i>Block lịch
+                </button>
                 <button type="button" class="st-proxy-btn st-proxy-btn-cancel d-none" id="btnProxyCancel">
                     <i class="bi bi-x-circle me-1"></i>Hủy đặt hộ
                 </button>
@@ -173,3 +176,5 @@
 
 </body>
 </html>
+
+

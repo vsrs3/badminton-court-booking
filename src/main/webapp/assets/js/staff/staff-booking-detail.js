@@ -336,6 +336,7 @@
     }
 
     function hasReleasableSlot(session) {
+        if (isSessionEnded(session)) return false;
         var slots = session.bookingSlots || [];
         for (var i = 0; i < slots.length; i++) {
             var slotStatus = slots[i].slotStatus;
@@ -508,6 +509,28 @@
         return nowMinutes > deadlineMinutes;
     }
 
+    function isSessionEnded(session) {
+        if (!bookingData || !bookingData.bookingDate || !session.endTime) return false;
+
+        var dateStr = bookingData.bookingDate;
+        var now = new Date();
+        var todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+
+        if (dateStr < todayStr) return true;
+        if (dateStr > todayStr) return false;
+
+        var parts = session.endTime.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return false;
+
+        var endMinutes = h * 60 + m;
+        var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        return nowMinutes > endMinutes;
+    }
+
     // ═══════════════════════════════════════════
     // PAYMENT MODAL (unchanged)
     // ═══════════════════════════════════════════
@@ -562,11 +585,11 @@
         }
         var amount = parseFloat(inputVal);
         if (amount <= 0) {
-            showModalError('Số tiá»n phải lớn hơn 0.');
+            showModalError('Số tiền phải lớn hơn 0.');
             return;
         }
         if (amount !== remaining) {
-            showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiá»n.');
+            showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiền.');
             return;
         }
 
@@ -804,6 +827,10 @@
 
     async function handleReleaseSession(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
+        if (isSessionEnded(session)) {
+            showToast('Phiên đã quá giờ, không thể giải phóng slot', 'warning');
+            return;
+        }
         var bookingSlots = (session.bookingSlots || []).filter(function (slot) {
             return !slot.released && slot.slotStatus === 'NO_SHOW';
         });
@@ -1006,6 +1033,9 @@
     }
 
 })();
+
+
+
 
 
 
