@@ -47,11 +47,16 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
     @Override
     public List<StaffCheckinSessionSlotRowDTO> findSessionSlotRows(Connection conn, int bookingId) throws Exception {
         String sql = """
-                SELECT bs.booking_slot_id, bs.court_id, ts.start_time, ts.end_time
+                SELECT bs.booking_slot_id,
+                       bs.court_id,
+                       COALESCE(bs.booking_date, b.booking_date) AS session_date,
+                       ts.start_time,
+                       ts.end_time
                 FROM BookingSlot bs
+                JOIN Booking b ON b.booking_id = bs.booking_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
                 WHERE bs.booking_id = ?
-                ORDER BY bs.court_id, ts.start_time
+                ORDER BY session_date, bs.court_id, ts.start_time
                 """;
         List<StaffCheckinSessionSlotRowDTO> rows = new ArrayList<>();
 
@@ -62,6 +67,8 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
                     StaffCheckinSessionSlotRowDTO row = new StaffCheckinSessionSlotRowDTO();
                     row.setBookingSlotId(rs.getInt("booking_slot_id"));
                     row.setCourtId(rs.getInt("court_id"));
+                    Date sessionDate = rs.getDate("session_date");
+                    row.setSessionDate(sessionDate != null ? sessionDate.toLocalDate() : null);
                     row.setStartTime(rs.getTime("start_time").toLocalTime());
                     row.setEndTime(rs.getTime("end_time").toLocalTime());
                     rows.add(row);
@@ -147,7 +154,14 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
     }
     @Override
     public List<Integer> findConfirmedBookingIdsWithPendingSlots(Connection conn, java.time.LocalDate bookingDate) throws Exception {
-        String sql = "SELECT DISTINCT b.booking_id\n                FROM Booking b\n                JOIN BookingSlot bs ON b.booking_id = bs.booking_id\n                WHERE b.booking_status = 'CONFIRMED'\n                  AND b.booking_date = ?\n                  AND bs.slot_status = 'PENDING'";
+        String sql = """
+                SELECT DISTINCT b.booking_id
+                FROM Booking b
+                JOIN BookingSlot bs ON b.booking_id = bs.booking_id
+                WHERE b.booking_status = 'CONFIRMED'
+                  AND COALESCE(bs.booking_date, b.booking_date) = ?
+                  AND bs.slot_status = 'PENDING'
+                """;
         List<Integer> ids = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDate(1, Date.valueOf(bookingDate));

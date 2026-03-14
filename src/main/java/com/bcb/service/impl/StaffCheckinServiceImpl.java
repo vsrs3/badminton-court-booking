@@ -38,6 +38,11 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 }
 
                 StaffCheckinSessionDTO target = sessions.get(sessionIndex);
+                String dateCheck = validateSessionDate(target);
+                if (dateCheck != null) {
+                    conn.rollback();
+                    return dateCheck;
+                }
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if ("CHECKED_IN".equals(targetStatus) || "COMPLETED".equals(targetStatus)) {
@@ -114,6 +119,11 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 }
 
                 StaffCheckinSessionDTO target = sessions.get(sessionIndex);
+                String dateCheck = validateSessionDate(target);
+                if (dateCheck != null) {
+                    conn.rollback();
+                    return dateCheck;
+                }
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if ("PENDING".equals(targetStatus)) {
@@ -174,6 +184,11 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 }
 
                 StaffCheckinSessionDTO target = sessions.get(sessionIndex);
+                String dateCheck = validateSessionDate(target);
+                if (dateCheck != null) {
+                    conn.rollback();
+                    return dateCheck;
+                }
                 String targetStatus = getSessionStatus(conn, target.getSlotIds());
 
                 if (!"PENDING".equals(targetStatus)) {
@@ -243,6 +258,16 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         return validateBookingBase(conn, bookingId, facilityId);
     }
 
+    private String validateSessionDate(StaffCheckinSessionDTO session) {
+        if (session == null || session.getSessionDate() == null) {
+            return "{\"success\":false,\"message\":\"Không tìm thấy ngày của phiên chơi\"}";
+        }
+        if (!LocalDate.now().equals(session.getSessionDate())) {
+            return "{\"success\":false,\"message\":\"Chỉ check-in/out booking ngày hôm nay\"}";
+        }
+        return null;
+    }
+
     private String validateBookingBase(Connection conn, int bookingId, int facilityId) throws Exception {
         StaffCheckinBookingDTO booking = repository.findBooking(conn, bookingId);
         if (booking == null) return "{\"success\":false,\"message\":\"Không tìm thấy booking\"}";
@@ -251,10 +276,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             return "{\"success\":false,\"message\":\"Booking không thuộc cơ sở của bạn\"}";
 
         if (!"CONFIRMED".equals(booking.getBookingStatus()))
-            return "{\"success\":false,\"message\":\"Chỉ xử lý booking đã xác nhận. Trạng thái: " + booking.getBookingStatus() + "\"}";
-
-        if (!LocalDate.now().equals(booking.getBookingDate()))
-            return "{\"success\":false,\"message\":\"Chỉ check-in/out booking ngày hôm nay\"}";
+            return "{\"success\":false,\"message\":\"Chỉ xử lý booking đã xác nhận. Trạng thái: \" + booking.getBookingStatus() + \"\"}";
 
         return null;
     }
@@ -266,29 +288,45 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
 
         List<StaffCheckinSessionDTO> sessions = new ArrayList<>();
 
+        StaffCheckinSessionSlotRowDTO first = rows.get(0);
         StaffCheckinSessionDTO current = new StaffCheckinSessionDTO();
-        current.getSlotIds().add(rows.get(0).getBookingSlotId());
-        current.setStartTime(rows.get(0).getStartTime());
-        current.setEndTime(rows.get(0).getEndTime());
+        current.getSlotIds().add(first.getBookingSlotId());
+        current.setSessionDate(first.getSessionDate());
+        current.setStartTime(first.getStartTime());
+        current.setEndTime(first.getEndTime());
 
         for (int i = 1; i < rows.size(); i++) {
             StaffCheckinSessionSlotRowDTO prev = rows.get(i - 1);
             StaffCheckinSessionSlotRowDTO curr = rows.get(i);
 
-            if (prev.getCourtId() == curr.getCourtId() && prev.getEndTime().equals(curr.getStartTime())) {
+            boolean sameDate = (prev.getSessionDate() != null && prev.getSessionDate().equals(curr.getSessionDate()));
+            boolean sameCourt = prev.getCourtId() == curr.getCourtId();
+            boolean contiguous = prev.getEndTime().equals(curr.getStartTime());
+
+            if (sameDate && sameCourt && contiguous) {
                 current.getSlotIds().add(curr.getBookingSlotId());
                 current.setEndTime(curr.getEndTime());
             } else {
                 sessions.add(current);
                 current = new StaffCheckinSessionDTO();
                 current.getSlotIds().add(curr.getBookingSlotId());
+                current.setSessionDate(curr.getSessionDate());
                 current.setStartTime(curr.getStartTime());
                 current.setEndTime(curr.getEndTime());
             }
         }
         sessions.add(current);
 
-        sessions.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
+        sessions.sort((a, b) -> {
+            if (a.getSessionDate() == null && b.getSessionDate() == null) {
+                return a.getStartTime().compareTo(b.getStartTime());
+            }
+            if (a.getSessionDate() == null) return 1;
+            if (b.getSessionDate() == null) return -1;
+            int cmp = a.getSessionDate().compareTo(b.getSessionDate());
+            if (cmp != 0) return cmp;
+            return a.getStartTime().compareTo(b.getStartTime());
+        });
         return sessions;
     }
 
@@ -325,7 +363,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             case "NO_SHOW":
                 return "Vắng mặt";
             case "CANCELLED":
-                return "\u0110\u00e3 h\u1ee7y";
+                return "Đã hủy";
             default:
                 return status;
         }

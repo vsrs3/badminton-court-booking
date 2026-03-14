@@ -106,7 +106,7 @@
             }
 
             var dateHtml = b.isRecurring
-                ? '<span class="sbl-recurring-tag">??nh k?</span> ' + fmtRange(b.recurringStartDate, b.recurringEndDate)
+                ? '<span class="sbl-recurring-tag">Định kỳ</span> ' + fmtRange(b.recurringStartDate, b.recurringEndDate)
                 : fmtDate(b.bookingDate);
 
             tr.innerHTML =
