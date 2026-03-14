@@ -12,9 +12,12 @@
     var tableBody     = document.getElementById('tableBody');
     var paginationUl  = document.getElementById('paginationUl');
     var errorMessage  = document.getElementById('errorMessage');
+    var searchInput   = document.getElementById('searchInput');
+    var searchClear   = document.getElementById('searchClear');
 
     var currentPage = 1;
     var pageSize = 10;
+    var currentQuery = '';
 
     function showState(state) {
         stateLoading.classList.add('d-none');
@@ -35,6 +38,9 @@
         resultsInfo.classList.add('d-none');
 
         var url = CTX + '/api/staff/refund/list?page=' + currentPage + '&size=' + pageSize;
+        if (currentQuery) {
+            url += '&q=' + encodeURIComponent(currentQuery);
+        }
 
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (res) {
@@ -57,14 +63,17 @@
 
         resultsInfo.classList.remove('d-none');
         if (data.totalRows === 0) {
-            resultsText.textContent = 'Không có yêu cầu hoàn tiền nào.';
+            resultsText.textContent = currentQuery
+                ? 'Không tìm thấy yêu cầu hoàn tiền phù hợp.'
+                : 'Không có yêu cầu hoàn tiền nào.';
             showState('empty');
             return;
         }
 
         var from = (data.page - 1) * data.size + 1;
         var to = Math.min(data.page * data.size, data.totalRows);
-        resultsText.textContent = 'Hiển thị ' + from + '-' + to + ' trong ' + data.totalRows + ' yêu cầu';
+        var prefix = currentQuery ? 'Kết quả cho "' + currentQuery + '": ' : '';
+        resultsText.textContent = prefix + 'Hiển thị ' + from + '-' + to + ' trong ' + data.totalRows + ' yêu cầu';
 
         tableBody.innerHTML = '';
         refunds.forEach(function (r) {
@@ -116,7 +125,7 @@
 
         StaffDialog.confirm({
             title: 'Xác nhận',
-            message: 'X?c nh?n ho?n ti?n cho booking #' + bookingId
+            message: 'Xác nhận hoàn tiền cho booking #' + bookingId
         }).then(function (ok) {
             if (!ok) return;
             return StaffDialog.prompt({
@@ -250,6 +259,50 @@
         return num.toLocaleString('vi-VN');
     }
 
+    function updateSearchClear() {
+        if (!searchClear) return;
+        searchClear.disabled = !currentQuery;
+    }
+
+    function bindSearch() {
+        if (!searchInput) return;
+
+        var timer = null;
+        function applySearch(value) {
+            var next = (value || '').trim();
+            if (next === currentQuery) return;
+            currentQuery = next;
+            currentPage = 1;
+            updateSearchClear();
+            loadRefunds();
+        }
+
+        searchInput.addEventListener('input', function () {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(function () {
+                applySearch(searchInput.value);
+            }, 300);
+        });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applySearch(searchInput.value);
+            }
+        });
+
+        if (searchClear) {
+            searchClear.addEventListener('click', function () {
+                if (!currentQuery) return;
+                searchInput.value = '';
+                applySearch('');
+            });
+        }
+
+        updateSearchClear();
+    }
+
+    bindSearch();
     loadRefunds();
 
 })();

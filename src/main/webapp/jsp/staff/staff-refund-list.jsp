@@ -25,6 +25,19 @@
                     </strong>
                 </p>
             </div>
+            <div class="srl-toolbar">
+                <div class="srl-search">
+                    <div class="input-group srl-search-group">
+                        <span class="input-group-text srl-search-icon">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input id="searchInput" type="text" class="form-control srl-search-input"
+                               placeholder="Tìm theo mã booking hoặc số điện thoại" autocomplete="off">
+                        <button id="searchClear" class="btn btn-outline-secondary srl-search-clear" type="button">Xóa</button>
+                    </div>
+                    <div class="srl-search-hint">Tìm theo mã booking hoặc số điện thoại</div>
+                </div>
+            </div>
         </div>
 
         <div class="srl-results-info d-none" id="resultsInfo">

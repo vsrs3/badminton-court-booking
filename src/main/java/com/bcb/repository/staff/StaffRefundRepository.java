@@ -5,9 +5,9 @@ import java.util.List;
 
 public interface StaffRefundRepository {
 
-    int countPendingRefunds(Connection conn, int facilityId) throws Exception;
+    int countPendingRefunds(Connection conn, int facilityId, String search) throws Exception;
 
-    List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size) throws Exception;
+    List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size, String search) throws Exception;
 
     String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception;
 
