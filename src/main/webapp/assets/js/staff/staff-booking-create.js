@@ -66,6 +66,7 @@
         keyword: '',
         totalPages: 1,
         items: [],
+        groups: [],
 
         // groupKey => [{ inventoryId, name, quantity, unitPrice }]
         rentalsByGroup: {}
@@ -176,8 +177,8 @@
     // Rental section
     // =========================
     function renderRentalSection() {
-        var groups = groupConsecutiveSlots(bookingData.slots);
-        renderRentalGroups(groups);
+        rentalState.groups = groupConsecutiveSlots(bookingData.slots);
+        renderRentalGroups(rentalState.groups);
         renderRentalFeeSummary();
     }
 
@@ -247,57 +248,77 @@
 
     function renderRentalGroups(groups) {
         if (!rentalGroupsContainer) return;
-
         if (!groups || groups.length === 0) {
-            rentalGroupsContainer.innerHTML = '<div class="text-muted">Không có nhóm slot để thuê đồ.</div>';
+            rentalGroupsContainer.innerHTML = '<div class="text-muted">Kh\u00f4ng c\u00f3 nh\u00f3m slot \u0111\u1ec3 thu\u00ea \u0111\u1ed3.</div>';
             return;
         }
-
         rentalGroupsContainer.innerHTML = groups.map(function (g) {
             var selectedHtmlId = 'rental-selected-' + safeId(g.groupKey);
             return '' +
                 '<div class="border rounded-3 p-3 mb-3">' +
                 '   <div class="fw-bold">' + escapeHtml(g.courtName) + '</div>' +
                 '   <div class="text-muted small mb-2">' + escapeHtml(g.startTime) + ' - ' + escapeHtml(g.endTime) + ' (' + g.slotCount + ' slot)</div>' +
-                '   <button type="button" class="btn btn-sm btn-primary" onclick="openRentalModal(\'' + jsString(g.groupKey) + '\')">' +
-                '       <i class="bi bi-bag-plus me-1"></i>Xác nhận' +
-                '   </button>' +
+                buildRentalGroupActions(g) +
                 '   <div class="mt-3" id="' + selectedHtmlId + '"></div>' +
                 '</div>';
         }).join('');
-
         groups.forEach(function (g) {
             renderSelectedRentals(g.groupKey);
         });
+    }
+    function buildRentalGroupActions(group) {
+        var currentItems = rentalState.rentalsByGroup[group.groupKey] || [];
+        var previousSource = findPreviousConfiguredGroup(group.groupKey);
+        var modalLabel = currentItems.length ? '\u0110\u1ed3 m\u1edbi' : 'X\u00e1c nh\u1eadn';
+        var modalBtnClass = previousSource ? 'btn btn-sm btn-outline-primary' : 'btn btn-sm btn-primary';
+        var buttons = [];
+        if (previousSource) {
+            buttons.push(
+                '<button type="button" class="btn btn-sm btn-success" onclick="applyPreviousRental(\'' + jsString(group.groupKey) + '\')">' +
+                '   <i class="bi bi-check2-circle me-1"></i>\u00c1p d\u1ee5ng' +
+                '</button>'
+            );
+        }
+        buttons.push(
+            '<button type="button" class="' + modalBtnClass + '" onclick="openRentalModal(\'' + jsString(group.groupKey) + '\')">' +
+            '   <i class="bi bi-bag-plus me-1"></i>' + modalLabel +
+            '</button>'
+        );
+        return '' +
+            '<div class="d-flex flex-wrap gap-2">' + buttons.join('') + '</div>' +
+            buildRentalSourceHint(previousSource);
+    }
+    function buildRentalSourceHint(previousSource) {
+        if (!previousSource) return '';
+        return '<div class="small text-muted mt-2">\u00c1p d\u1ee5ng theo: ' +
+            escapeHtml(previousSource.courtName) + ' - ' +
+            escapeHtml(previousSource.startTime) + ' \u0111\u1ebfn ' +
+            escapeHtml(previousSource.endTime) + '</div>';
     }
 
     function renderSelectedRentals(groupKey) {
         var el = document.getElementById('rental-selected-' + safeId(groupKey));
         if (!el) return;
-
         var items = rentalState.rentalsByGroup[groupKey] || [];
         if (!items.length) {
-            el.innerHTML = '<div class="small text-muted">Chưa có đồ thuê cho nhóm slot này.</div>';
+            el.innerHTML = '<div class="small text-muted">Ch\u01b0a c\u00f3 \u0111\u1ed3 thu\u00ea cho nh\u00f3m slot n\u00e0y.</div>';
             return;
         }
-
         var html = '' +
             '<div class="table-responsive">' +
             '<table class="table table-sm align-middle mb-0">' +
             '<thead>' +
             '   <tr>' +
-            '       <th>Tên đồ</th>' +
-            '       <th style="width:120px;">Số lượng</th>' +
-            '       <th style="width:140px;">Đơn giá</th>' +
-            '       <th style="width:140px;">Thành tiền</th>' +
+            '       <th>T\u00ean \u0111\u1ed3</th>' +
+            '       <th style="width:120px;">S\u1ed1 l\u01b0\u1ee3ng</th>' +
+            '       <th style="width:140px;">\u0110\u01a1n gi\u00e1</th>' +
+            '       <th style="width:140px;">Th\u00e0nh ti\u1ec1n</th>' +
             '   </tr>' +
             '</thead>' +
             '<tbody>';
-
         items.forEach(function (item) {
             var group = findGroupByKey(groupKey);
             var lineTotal = Number(item.unitPrice || 0) * Number(item.quantity || 0) * Number(group ? group.slotCount : 1);
-
             html += '' +
                 '<tr>' +
                 '   <td>' + escapeHtml(item.name) + '</td>' +
@@ -306,39 +327,32 @@
                 '   <td class="fw-bold">' + formatMoney(lineTotal) + '</td>' +
                 '</tr>';
         });
-
         html += '</tbody></table></div>';
         el.innerHTML = html;
     }
 
     function renderRentalFeeSummary() {
         if (!rentalFeeSummary) return;
-
-        var groups = groupConsecutiveSlots(bookingData.slots);
+        var groups = rentalState.groups || [];
         var lines = [];
-
         groups.forEach(function (g) {
             var items = rentalState.rentalsByGroup[g.groupKey] || [];
             if (!items.length) return;
-
             var total = 0;
             items.forEach(function (item) {
                 total += Number(item.unitPrice || 0) * Number(item.quantity || 0) * Number(g.slotCount || 1);
             });
-
             lines.push({
                 label: escapeHtml(g.courtName) + ' : ' + escapeHtml(g.startTime) + ' - ' + escapeHtml(g.endTime),
                 amount: total
             });
         });
-
         if (!lines.length) {
-            rentalFeeSummary.innerHTML = '<div class="text-muted">Chưa có phí thuê đồ.</div>';
-            if (rentalGrandTotal) rentalGrandTotal.textContent = '0đ';
+            rentalFeeSummary.innerHTML = '<div class="text-muted">Ch\u01b0a c\u00f3 ph\u00ed thu\u00ea \u0111\u1ed3.</div>';
+            if (rentalGrandTotal) rentalGrandTotal.textContent = '0\u0111';
             updateGrandSummary();
             return;
         }
-
         rentalFeeSummary.innerHTML = lines.map(function (line) {
             return '' +
                 '<div class="d-flex justify-content-between align-items-start border-bottom py-2">' +
@@ -346,14 +360,13 @@
                 '   <div class="fw-semibold text-nowrap">' + formatMoney(line.amount) + '</div>' +
                 '</div>';
         }).join('');
-
         if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(getRentalGrandTotal());
         updateGrandSummary();
     }
 
     function getRentalGrandTotal() {
         var total = 0;
-        var groups = groupConsecutiveSlots(bookingData.slots);
+        var groups = rentalState.groups || [];
 
         groups.forEach(function (g) {
             var items = rentalState.rentalsByGroup[g.groupKey] || [];
@@ -366,11 +379,76 @@
     }
 
     function findGroupByKey(groupKey) {
-        var groups = groupConsecutiveSlots(bookingData.slots);
+        var groups = rentalState.groups || [];
         for (var i = 0; i < groups.length; i++) {
             if (groups[i].groupKey === groupKey) return groups[i];
         }
         return null;
+    }
+    function findPreviousConfiguredGroup(groupKey) {
+        var groups = rentalState.groups || [];
+        var targetIndex = -1;
+        for (var i = 0; i < groups.length; i++) {
+            if (groups[i].groupKey === groupKey) {
+                targetIndex = i;
+                break;
+            }
+        }
+        if (targetIndex <= 0) return null;
+        for (var j = targetIndex - 1; j >= 0; j--) {
+            if ((rentalState.rentalsByGroup[groups[j].groupKey] || []).length > 0) {
+                return groups[j];
+            }
+        }
+        return null;
+    }
+    function cloneRentalItems(items) {
+        return (items || []).map(function (item) {
+            return {
+                inventoryId: Number(item.inventoryId),
+                name: item.name,
+                quantity: Number(item.quantity || 0),
+                unitPrice: Number(item.unitPrice || 0)
+            };
+        });
+    }
+    function refreshRentalSection() {
+        renderRentalSection();
+        if (rentalState.selectedGroup && rentalState.selectedGroup.groupKey) {
+            var refreshedGroup = findGroupByKey(rentalState.selectedGroup.groupKey);
+            if (refreshedGroup) {
+                rentalState.selectedGroup = refreshedGroup;
+            }
+            renderRentalInventoryTable();
+        }
+    }
+    async function applyPreviousRental(groupKey) {
+        var sourceGroup = findPreviousConfiguredGroup(groupKey);
+        if (!sourceGroup) {
+            showError('Chua co bo do thue truoc do de ap dung.');
+            return;
+        }
+
+        var sourceItems = rentalState.rentalsByGroup[sourceGroup.groupKey] || [];
+        if (!sourceItems.length) {
+            showError('Nhom truoc chua co do thue de ap dung.');
+            return;
+        }
+
+        var currentItems = rentalState.rentalsByGroup[groupKey] || [];
+        if (currentItems.length) {
+            var confirmed = await uiConfirm(
+                'Ap dung se ghi de bo do thue hien tai cua nhom slot nay. Tiep tuc?',
+                'Ghi de do thue'
+            );
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        rentalState.rentalsByGroup[groupKey] = cloneRentalItems(sourceItems);
+        refreshRentalSection();
+        hideError();
     }
 
     // =========================
@@ -566,9 +644,7 @@
             });
         }
 
-        renderSelectedRentals(groupKey);
-        renderRentalFeeSummary();
-        renderRentalInventoryTable();
+        refreshRentalSection();
         hideError();
     }
     async function saveRentalEdit(inventoryId, unitPrice, name, maxQty) {
@@ -602,9 +678,7 @@
         existed.unitPrice = Number(unitPrice);
         existed.name = name;
 
-        renderSelectedRentals(groupKey);
-        renderRentalFeeSummary();
-        renderRentalInventoryTable();
+        refreshRentalSection();
         hideError();
     }
 
@@ -625,9 +699,7 @@
             return Number(x.inventoryId) !== Number(inventoryId);
         });
 
-        renderSelectedRentals(groupKey);
-        renderRentalFeeSummary();
-        renderRentalInventoryTable();
+        refreshRentalSection();
         hideError();
     }
     function openRentalModal(groupKey) {
@@ -661,6 +733,7 @@
     window.rentItem = rentItem;
     window.saveRentalEdit = saveRentalEdit;
     window.removeRentalItem = removeRentalItem;
+    window.applyPreviousRental = applyPreviousRental;
 
     // =========================
     // Events

@@ -17,6 +17,7 @@ public class StaffBookingDetailDataDTO {
     private StaffBookingDetailInvoiceDTO invoice;
     private String etag;
     private List<StaffBookingDetailRentalRowDTO> rentalRows;
+    private BigDecimal courtTotal;
     private BigDecimal rentalTotal;
     private BigDecimal grandTotal;
 
@@ -116,6 +117,14 @@ public class StaffBookingDetailDataDTO {
 
     public void setRentalRows(List<StaffBookingDetailRentalRowDTO> rentalRows) {
         this.rentalRows = rentalRows;
+    }
+
+    public BigDecimal getCourtTotal() {
+        return courtTotal;
+    }
+
+    public void setCourtTotal(BigDecimal courtTotal) {
+        this.courtTotal = courtTotal;
     }
 
     public BigDecimal getRentalTotal() {

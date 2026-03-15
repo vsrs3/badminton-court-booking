@@ -5,82 +5,11 @@ import com.bcb.repository.impl.StaffRentalRepositoryImpl;
 import com.bcb.repository.staff.StaffRentalRepository;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.List;
 
 public class StaffRentalServiceImpl implements com.bcb.service.staff.StaffRentalService {
 
-    private final StaffRentalRepository repo = new StaffRentalRepositoryImpl() {
-        @Override
-        public void insertRentalLogAndDecreaseStock(Connection conn, int bookingId, int facilityId, int staffId) throws Exception {
-
-            String insertLogSql = """
-            INSERT INTO RacketRentalLog (
-                booking_slot_id,
-                facility_inventory_id,
-                quantity,
-                staff_id,
-                rented_at,
-                returned_at
-            )
-            SELECT
-                rr.booking_slot_id,
-                fi.facility_inventory_id,
-                rr.quantity,
-                ?,
-                GETDATE(),
-                NULL
-            FROM RacketRental rr
-            JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
-            JOIN Court c ON c.court_id = bs.court_id
-            JOIN FacilityInventory fi
-                 ON fi.facility_id = c.facility_id
-                AND fi.inventory_id = rr.inventory_id
-            WHERE bs.booking_id = ?
-              AND c.facility_id = ?
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM RacketRentalLog rrl
-                  WHERE rrl.booking_slot_id = rr.booking_slot_id
-                    AND rrl.facility_inventory_id = fi.facility_inventory_id
-              )
-            """;
-
-            try (PreparedStatement ps = conn.prepareStatement(insertLogSql)) {
-                ps.setInt(1, staffId);
-                ps.setInt(2, bookingId);
-                ps.setInt(3, facilityId);
-                ps.executeUpdate();
-            }
-
-            String updateStockSql = """
-            UPDATE fi
-            SET fi.available_quantity = fi.available_quantity - x.total_qty
-            FROM FacilityInventory fi
-            JOIN (
-                SELECT
-                    c.facility_id,
-                    rr.inventory_id,
-                    SUM(rr.quantity) AS total_qty
-                FROM RacketRental rr
-                JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
-                JOIN Court c ON c.court_id = bs.court_id
-                WHERE bs.booking_id = ?
-                  AND c.facility_id = ?
-                GROUP BY c.facility_id, rr.inventory_id
-            ) x
-            ON fi.facility_id = x.facility_id
-            AND fi.inventory_id = x.inventory_id
-            """;
-
-            try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
-                ps.setInt(1, bookingId);
-                ps.setInt(2, facilityId);
-                ps.executeUpdate();
-            }
-        }
-    };
+    private final StaffRentalRepository repo = new StaffRentalRepositoryImpl();
 
     @Override
     public String getInventoryJson(int facilityId, String keyword, int page, int pageSize) throws Exception {

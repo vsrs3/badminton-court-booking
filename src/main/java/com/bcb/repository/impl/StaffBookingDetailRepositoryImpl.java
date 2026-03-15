@@ -153,8 +153,8 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                 while (rs.next()) {
                     StaffBookingDetailRentalRowDTO dto = new StaffBookingDetailRentalRowDTO();
                     dto.setCourtName(rs.getString("court_name"));
-                    dto.setStartTime(rs.getString("start_time"));
-                    dto.setEndTime(rs.getString("end_time"));
+                    dto.setStartTime(fmtTime(rs.getTime("start_time")));
+                    dto.setEndTime(fmtTime(rs.getTime("end_time")));
                     dto.setRentalItemsText(rs.getString("rental_items_text"));
                     dto.setRentalTotal(rs.getBigDecimal("rental_total"));
                     list.add(dto);

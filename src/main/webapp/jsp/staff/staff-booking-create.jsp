@@ -264,8 +264,8 @@
 <script>
     window.ST_CTX = '${pageContext.request.contextPath}';
 </script>
-<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-create.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js?v=<%= System.currentTimeMillis() %>"></script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-create.js?v=<%= System.currentTimeMillis() %>"></script>
 
 </body>
 </html>

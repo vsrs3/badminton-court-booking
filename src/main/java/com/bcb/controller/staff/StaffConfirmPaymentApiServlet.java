@@ -74,6 +74,7 @@ public class StaffConfirmPaymentApiServlet extends BaseStaffApiServlet {
         }
         return "{\"success\":true,\"message\":\"" + result.getMessage() + "\"," +
                 "\"data\":{\"paidAmount\":" + result.getPaidAmount() +
+                ",\"totalAmount\":" + result.getTotalAmount() +
                 ",\"paymentStatus\":\"" + result.getPaymentStatus() + "\",\"method\":\"" + result.getMethod() + "\"}}";
     }
 

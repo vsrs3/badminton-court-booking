@@ -58,15 +58,17 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             List<StaffBookingDetailRentalRowDTO> rentalRows = buildRentalRows(rawRentalRows);
             data.setRentalRows(rentalRows);
 
-            // Rental total
+            BigDecimal courtTotal = calculateCourtTotal(allSlots);
+            data.setCourtTotal(courtTotal);
+
             BigDecimal rentalTotal = calculateRentalTotal(rentalRows);
             data.setRentalTotal(rentalTotal);
 
-            // Grand total = tiền sân + tiền thuê đồ
-            BigDecimal courtTotal = invoice != null && invoice.getTotalAmount() != null
-                    ? invoice.getTotalAmount()
-                    : BigDecimal.ZERO;
-            data.setGrandTotal(courtTotal.add(rentalTotal));
+            BigDecimal grandTotal = courtTotal.add(rentalTotal);
+            if (invoice != null) {
+                invoice.setTotalAmount(grandTotal);
+            }
+            data.setGrandTotal(grandTotal);
 
             // Snapshot / Etag
             StaffBookingSnapshotTokenUtil.Snapshot snapshot =
@@ -136,6 +138,23 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
                 total = total.add(row.getRentalTotal());
             }
         }
+        return total;
+    }
+
+    private BigDecimal calculateCourtTotal(List<StaffBookingDetailSlotDTO> slots) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (slots == null) {
+            return total;
+        }
+
+        for (StaffBookingDetailSlotDTO slot : slots) {
+            if (slot == null) continue;
+            if ("CANCELLED".equals(slot.getSlotStatus())) continue;
+            if (slot.getPrice() != null) {
+                total = total.add(slot.getPrice());
+            }
+        }
+
         return total;
     }
 

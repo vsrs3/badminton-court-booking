@@ -138,6 +138,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         }
         json.append("]");
 
+        json.append(",\"courtTotal\":").append(data.getCourtTotal());
         json.append(",\"rentalTotal\":").append(data.getRentalTotal());
         json.append(",\"grandTotal\":").append(data.getGrandTotal());
 

@@ -130,7 +130,6 @@
                                         <th>Slot chơi</th>
                                         <th>Đồ thuê</th>
                                         <th>Tiền thuê đồ</th>
-                                        <th>Trạng thái</th>
                                     </tr>
                                     </thead>
                                     <tbody id="sessionsTableBody">

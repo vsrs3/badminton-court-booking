@@ -162,7 +162,7 @@
         if (!sessionsTableBody) return;
 
         if (!rentalRows || rentalRows.length === 0) {
-            sessionsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Không có dữ liệu phiên chơi / đồ thuê</td></tr>';
+            sessionsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Không có dữ liệu phiên chơi / đồ thuê</td></tr>';
             return;
         }
 
@@ -173,7 +173,6 @@
                 '   <td>' + escapeHtml(row.startTime || '') + ' - ' + escapeHtml(row.endTime || '') + '</td>' +
                 '   <td>' + escapeHtml(row.rentalItemsText || '') + '</td>' +
                 '   <td>' + formatMoney(row.rentalTotal || 0) + '</td>' +
-                '   <td>-</td>' +
                 '</tr>';
         }).join('');
     }
@@ -200,13 +199,11 @@
     // ─── Render Invoice ───
     function renderInvoice(d) {
         if (d.invoice) {
-            var courtAmount = d.invoice && d.invoice.totalAmount != null
-                ? d.invoice.totalAmount
-                : 0;
-            var rentalAmount = d.rentalTotal || 0;
-            var totalAmount = d.grandTotal || 0;
-            var paidAmount = d.invoice.paidAmount || 0;
-            var remaining = totalAmount - paidAmount;
+            var courtAmount = toMoneyNumber(d.courtTotal);
+            var rentalAmount = toMoneyNumber(d.rentalTotal);
+            var totalAmount = toMoneyNumber(d.grandTotal);
+            var paidAmount = toMoneyNumber(d.invoice.paidAmount);
+            var remaining = Math.max(0, totalAmount - paidAmount);
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
 
@@ -462,16 +459,16 @@
     function openPaymentModal() {
         if (!bookingData || !bookingData.invoice) return;
         var inv = bookingData.invoice;
-        var totalAmount = bookingData.grandTotal || 0;
-        var paidAmount = inv.paidAmount || 0;
-        var remaining = totalAmount - paidAmount;
+        var totalAmount = toMoneyNumber(bookingData.grandTotal);
+        var paidAmount = toMoneyNumber(inv.paidAmount);
+        var remaining = Math.max(0, totalAmount - paidAmount);
 
         setText('modalTotalAmount', formatMoney(totalAmount));
         setText('modalPaidAmount', formatMoney(paidAmount));
         setText('modalRemainingAmount', formatMoney(remaining));
 
-        paymentAmountInput.value = remaining;
-        paymentAmountInput.max = remaining;
+        paymentAmountInput.value = remaining > 0 ? String(Math.round(remaining)) : '';
+        paymentAmountInput.max = String(Math.max(remaining, 0));
         if (paymentMethodSelect) paymentMethodSelect.value = 'CASH';
         paymentInputHint.textContent = 'Nh\u1eadp \u0111\u00fang ' + formatMoney(remaining) + ' \u0111\u1ec3 ho\u00e0n t\u1ea5t thanh to\u00e1n';
 
@@ -502,7 +499,7 @@
     function handleConfirmPayment() {
         hideModalError();
         var inv = bookingData.invoice;
-        var remaining = (bookingData.grandTotal || 0) - (inv.paidAmount || 0);
+        var remaining = Math.max(0, toMoneyNumber(bookingData.grandTotal) - toMoneyNumber(inv.paidAmount));
         var inputVal = paymentAmountInput.value.trim();
 
         if (!inputVal || isNaN(inputVal)) {
@@ -514,7 +511,7 @@
             showModalError('Số tiền phải lớn hơn 0.');
             return;
         }
-        if (amount !== remaining) {
+        if (!isSameMoney(amount, remaining)) {
             showModalError('S\u1ed1 ti\u1ec1n kh\u00f4ng h\u1ee3p l\u1ec7. C\u1ea7n thu th\u00eam \u0111\u00fang ' + formatMoney(remaining) + ' để đủ tổng tiền.');
             return;
         }
@@ -543,6 +540,10 @@
                 }
                 bookingData.invoice.paidAmount = body.data.paidAmount;
                 bookingData.invoice.paymentStatus = body.data.paymentStatus;
+                if (body.data.totalAmount != null) {
+                    bookingData.invoice.totalAmount = body.data.totalAmount;
+                    bookingData.grandTotal = body.data.totalAmount;
+                }
                 showToast('X\u00e1c nh\u1eadn thanh to\u00e1n th\u00e0nh c\u00f4ng!', 'success');
                 closePaymentModal();
                 resetConfirmButton();
@@ -923,6 +924,15 @@
         if (amount == null) return '—';
         return Number(amount).toLocaleString('vi-VN') + 'đ';
     }
+    function toMoneyNumber(value) {
+        var num = Number(value);
+        return isFinite(num) ? num : 0;
+    }
+
+    function isSameMoney(a, b) {
+        return Math.abs(toMoneyNumber(a) - toMoneyNumber(b)) < 0.01;
+    }
+
     function escapeHtml(str) {
         if (str == null) return '';
         return String(str)

@@ -1,18 +1,20 @@
 package com.bcb.repository.impl;
+
 import com.bcb.dto.staff.StaffRentalInventoryItemDTO;
 import com.bcb.repository.staff.StaffRentalRepository;
 import com.bcb.utils.DBContext;
-import com.bcb.repository.impl.StaffRentalRepositoryImpl;
-import com.bcb.repository.staff.StaffRentalRepository;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class StaffRentalRepositoryImpl implements StaffRentalRepository {
+public class StaffRentalRepositoryImpl implements StaffRentalRepository {
 
     @Override
     public List<StaffRentalInventoryItemDTO> findRentalItems(int facilityId, String keyword, int page, int pageSize) throws Exception {
@@ -245,71 +247,7 @@ public abstract class StaffRentalRepositoryImpl implements StaffRentalRepository
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
-
-            String insertLogSql = """
-                    INSERT INTO RacketRentalLog (
-                        booking_slot_id,
-                        facility_inventory_id,
-                        quantity,
-                        staff_id,
-                        rented_at,
-                        returned_at
-                    )
-                    SELECT
-                        rr.booking_slot_id,
-                        fi.facility_inventory_id,
-                        rr.quantity,
-                        ?,
-                        GETDATE(),
-                        NULL
-                    FROM RacketRental rr
-                    JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
-                    JOIN Court c ON c.court_id = bs.court_id
-                    JOIN FacilityInventory fi
-                         ON fi.facility_id = c.facility_id
-                        AND fi.inventory_id = rr.inventory_id
-                    WHERE bs.booking_id = ?
-                      AND c.facility_id = ?
-                      AND NOT EXISTS (
-                          SELECT 1
-                          FROM RacketRentalLog rrl
-                          WHERE rrl.booking_slot_id = rr.booking_slot_id
-                            AND rrl.facility_inventory_id = fi.facility_inventory_id
-                      )
-                    """;
-
-            try (PreparedStatement ps = conn.prepareStatement(insertLogSql)) {
-                ps.setInt(1, staffId);
-                ps.setInt(2, bookingId);
-                ps.setInt(3, facilityId);
-                ps.executeUpdate();
-            }
-
-            String updateStockSql = """
-                    UPDATE fi
-                    SET fi.available_quantity = fi.available_quantity - x.total_qty
-                    FROM FacilityInventory fi
-                    JOIN (
-                        SELECT
-                            c.facility_id,
-                            rr.inventory_id,
-                            SUM(rr.quantity) AS total_qty
-                        FROM RacketRental rr
-                        JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
-                        JOIN Court c ON c.court_id = bs.court_id
-                        WHERE bs.booking_id = ?
-                          AND c.facility_id = ?
-                        GROUP BY c.facility_id, rr.inventory_id
-                    ) x
-                    ON fi.facility_id = x.facility_id
-                    AND fi.inventory_id = x.inventory_id
-                    """;
-
-            try (PreparedStatement ps = conn.prepareStatement(updateStockSql)) {
-                ps.setInt(1, bookingId);
-                ps.setInt(2, facilityId);
-                ps.executeUpdate();
-            }
+            insertRentalLogAndDecreaseStock(conn, bookingId, facilityId, staffId);
 
             conn.commit();
         } catch (Exception e) {
@@ -321,5 +259,47 @@ public abstract class StaffRentalRepositoryImpl implements StaffRentalRepository
         }
     }
 
+    @Override
+    public void insertRentalLogAndDecreaseStock(Connection conn, int bookingId, int facilityId, int staffId) throws Exception {
+        // Legacy method name is kept for compatibility.
+        // Current business rule: confirm booking/payment must not change FacilityInventory.available_quantity.
+        String insertLogSql = """
+                INSERT INTO RacketRentalLog (
+                    booking_slot_id,
+                    facility_inventory_id,
+                    quantity,
+                    staff_id,
+                    rented_at,
+                    returned_at
+                )
+                SELECT
+                    rr.booking_slot_id,
+                    fi.facility_inventory_id,
+                    rr.quantity,
+                    ?,
+                    GETDATE(),
+                    NULL
+                FROM RacketRental rr
+                JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
+                JOIN Court c ON c.court_id = bs.court_id
+                JOIN FacilityInventory fi
+                     ON fi.facility_id = c.facility_id
+                    AND fi.inventory_id = rr.inventory_id
+                WHERE bs.booking_id = ?
+                  AND c.facility_id = ?
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM RacketRentalLog rrl
+                      WHERE rrl.booking_slot_id = rr.booking_slot_id
+                        AND rrl.facility_inventory_id = fi.facility_inventory_id
+                  )
+                """;
 
+        try (PreparedStatement ps = conn.prepareStatement(insertLogSql)) {
+            ps.setInt(1, staffId);
+            ps.setInt(2, bookingId);
+            ps.setInt(3, facilityId);
+            ps.executeUpdate();
+        }
+    }
 }
