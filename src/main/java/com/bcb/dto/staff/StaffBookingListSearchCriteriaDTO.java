@@ -6,6 +6,9 @@ public class StaffBookingListSearchCriteriaDTO {
     private boolean hasSearch;
     private boolean numericSearch;
     private String likePattern;
+    private String status;
+    private boolean todayOnly;
+    private java.sql.Date todayDate;
 
     public int getFacilityId() {
         return facilityId;
@@ -45,6 +48,30 @@ public class StaffBookingListSearchCriteriaDTO {
 
     public void setLikePattern(String likePattern) {
         this.likePattern = likePattern;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isTodayOnly() {
+        return todayOnly;
+    }
+
+    public void setTodayOnly(boolean todayOnly) {
+        this.todayOnly = todayOnly;
+    }
+
+    public java.sql.Date getTodayDate() {
+        return todayDate;
+    }
+
+    public void setTodayDate(java.sql.Date todayDate) {
+        this.todayDate = todayDate;
     }
 }
 

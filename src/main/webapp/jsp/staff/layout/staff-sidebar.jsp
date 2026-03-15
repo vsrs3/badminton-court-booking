@@ -1,4 +1,4 @@
-<%-- staff-sidebar.jsp — Updated Task 6: Navigation polish --%>
+﻿<%-- staff-sidebar.jsp — Updated Task 6: Navigation polish --%>
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
@@ -24,6 +24,8 @@
         }
     } else if (fullPath.contains("/timeline")) {
         activePage = "timeline";
+    } else if (fullPath.contains("/refunds")) {
+        activePage = "refunds";
     }
     request.setAttribute("_activePage", activePage);
 %>
@@ -85,6 +87,13 @@
            class="nav-link ${_activePage == 'booking-list' ? 'active' : ''}">
             <i class="bi bi-list-ul"></i>
             <span>Danh Sách Booking</span>
+        </a>
+
+        <%-- Nav: Hoàn Tiền --%>
+        <a href="${pageContext.request.contextPath}/staff/refunds"
+           class="nav-link ${_activePage == 'refunds' ? 'active' : ''}">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Hoàn Tiền</span>
         </a>
 
         <%-- Divider + Logout --%>

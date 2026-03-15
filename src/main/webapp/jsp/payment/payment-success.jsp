@@ -55,7 +55,7 @@
     <% } %>
 
     <div class="mt-4">
-        <a href="<%= ctx %>/" class="btn btn-success btn-lg px-5">
+        <a href="<%= ctx %>/home" class="btn btn-success btn-lg px-5">
             <i class="bi bi-house me-2"></i>Về trang chủ
         </a>
     </div>

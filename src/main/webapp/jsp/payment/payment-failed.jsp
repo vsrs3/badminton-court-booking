@@ -51,7 +51,7 @@
     <% } %>
 
     <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
-        <a href="<%= ctx %>/" class="btn btn-outline-secondary px-4">
+        <a href="<%= ctx %>/home" class="btn btn-outline-secondary px-4">
             <i class="bi bi-house me-1"></i>Về trang chủ
         </a>
         <a href="javascript:history.back();" class="btn btn-danger px-4">

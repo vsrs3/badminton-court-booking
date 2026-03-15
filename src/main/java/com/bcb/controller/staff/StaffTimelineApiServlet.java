@@ -100,6 +100,7 @@ public class StaffTimelineApiServlet extends BaseStaffApiServlet {
             json.append("{\"courtId\":").append(disabled.getCourtId());
             json.append(",\"slotId\":").append(disabled.getSlotId());
             json.append(",\"state\":\"DISABLED\"");
+            json.append(",\"exceptionId\":").append(disabled.getExceptionId());
             json.append(",\"disabledReason\":").append(StaffAuthUtil.escapeJson(disabled.getReason()));
             json.append("}");
         }

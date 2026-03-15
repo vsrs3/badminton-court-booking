@@ -2,9 +2,12 @@
  * BADMINTON PRO - Main Application JavaScript
  * Handles: Tabs, Search, Filters, Favorites, Court Details, API Integration
  */
-const contextPath = window.location.pathname.split('/')[1]
-    ? '/' + window.location.pathname.split('/')[1]
-    : '';
+function getContextPath() {
+    const seg = window.location.pathname.split("/")[1];
+    return seg ? "/" + seg : "/badminton_court_booking";
+}
+
+const contextPath = getContextPath();
 
 (function() {
     'use strict';
@@ -46,6 +49,7 @@ const contextPath = window.location.pathname.split('/')[1]
     let isLoading = false;
     let hasMore = true;
     let inFlightRequestController = null;
+    let lastFacilitiesRequestKey = null;
 
     // ============================================
     // AUTH MODAL FUNCTIONS
@@ -79,9 +83,84 @@ const contextPath = window.location.pathname.split('/')[1]
         }
     }
 
+    const LOCATION_PROMPT_KEY = "locationPrompted";
+    const USER_LOCATION_KEY = "userLocation";
+
+    function showLocationPermissionModal() {
+        const backdrop = document.getElementById("locationPermissionBackdrop");
+        const modal = document.getElementById("locationPermissionModal");
+
+        if (backdrop && modal) {
+            backdrop.classList.add("active");
+            modal.classList.add("active");
+            document.body.style.overflow = "hidden";
+        }
+    }
+
+    function closeLocationPermissionModal() {
+        const backdrop = document.getElementById("locationPermissionBackdrop");
+        const modal = document.getElementById("locationPermissionModal");
+
+        if (backdrop && modal) {
+            backdrop.classList.remove("active");
+            modal.classList.remove("active");
+            document.body.style.overflow = "";
+        }
+    }
+
+    function handleLocationPromptDecision(decision) {
+        sessionStorage.setItem(LOCATION_PROMPT_KEY, decision);
+        closeLocationPermissionModal();
+
+        if (decision === "granted") {
+            getUserLocation();
+            return;
+        }
+
+        AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
+        updateDistanceFilterAvailability();
+        loadFacilitiesFromAPI(0);
+    }
+
+    function showLocationPromptIfNeeded() {
+        const status = sessionStorage.getItem(LOCATION_PROMPT_KEY);
+
+        if (!status) {
+            showLocationPermissionModal();
+            loadFacilitiesFromAPI(0);
+            return;
+        }
+
+        if (status === "granted") {
+            const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+            if (cachedLocation) {
+                try {
+                    AppState.userLocation = JSON.parse(cachedLocation);
+                    window.__USER_LOCATION__ = AppState.userLocation;
+                    updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                }
+            }
+            getUserLocation();
+            return;
+        }
+
+        AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
+        updateDistanceFilterAvailability();
+        loadFacilitiesFromAPI(0);
+    }
+
     /**
      * Check if user is logged in
-     * ✅ CRITICAL FIX: Check window.IS_LOGGED_IN (set by JSP)
+     * Check window.IS_LOGGED_IN (set by JSP)
      */
     function isUserLoggedIn() {
         // Check global variable set by JSP
@@ -186,6 +265,21 @@ const contextPath = window.location.pathname.split('/')[1]
     async function loadFacilitiesFromAPI(page = 0) {
         console.log('Loading facilities from API, page:', page);
 
+        const requestKey = [
+            page,
+            PAGE_SIZE,
+            AppState.searchQuery.trim(),
+            AppState.filters.province,
+            AppState.filters.district,
+            AppState.isShowingFavorites ? 'fav' : 'all',
+            AppState.userLocation ? `${AppState.userLocation.lat},${AppState.userLocation.lng}` : 'no-loc'
+        ].join('|');
+
+        if (isLoading && requestKey === lastFacilitiesRequestKey) {
+            console.log('Duplicate in-flight request, skipping...');
+            return;
+        }
+
         if (isLoading && page > 0) {
             console.log('Already loading, skipping...');
             return;
@@ -198,6 +292,7 @@ const contextPath = window.location.pathname.split('/')[1]
         }
 
         isLoading = true;
+        lastFacilitiesRequestKey = requestKey;
 
         try {
             // Build API URL
@@ -231,7 +326,7 @@ const contextPath = window.location.pathname.split('/')[1]
             }
 
             // Get context path dynamically
-            const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+            const contextPath = getContextPath().replace(/^\/+/, "");
             const apiUrl = `/${contextPath}/api/facilities?${params}`;
 
             console.log('Fetching from:', apiUrl);
@@ -315,6 +410,12 @@ const contextPath = window.location.pathname.split('/')[1]
                         lng: position.coords.longitude
                     };
                     console.log('✅ User location obtained:', AppState.userLocation);
+                    sessionStorage.setItem(USER_LOCATION_KEY, JSON.stringify(AppState.userLocation));
+                    window.__USER_LOCATION__ = AppState.userLocation;
+                    updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
 
                     // ✅ Reload facilities with location to get distance calculation
                     loadFacilitiesFromAPI(0);
@@ -322,6 +423,10 @@ const contextPath = window.location.pathname.split('/')[1]
                 (error) => {
                     console.error("Error getting location:", error);
                     showToast("Không thể lấy vị trí của bạn");
+                    AppState.userLocation = null;
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                    window.__USER_LOCATION__ = null;
+                    updateDistanceFilterAvailability();
 
                     // Still load facilities without location
                     loadFacilitiesFromAPI(0);
@@ -329,8 +434,25 @@ const contextPath = window.location.pathname.split('/')[1]
             );
         } else {
             console.log("Geolocation not supported");
+            AppState.userLocation = null;
+            sessionStorage.removeItem(USER_LOCATION_KEY);
+            window.__USER_LOCATION__ = null;
+            updateDistanceFilterAvailability();
             // Load without location
             loadFacilitiesFromAPI(0);
+        }
+    }
+
+    function updateDistanceFilterAvailability() {
+        const hasLocation = !!AppState.userLocation;
+        document.querySelectorAll(".filter-distance-btn").forEach(btn => {
+            btn.disabled = !hasLocation;
+            if (!hasLocation) {
+                btn.classList.remove("active");
+            }
+        });
+        if (!hasLocation) {
+            AppState.filters.maxDistance = null;
         }
     }
 
@@ -349,7 +471,8 @@ const contextPath = window.location.pathname.split('/')[1]
             courts = courts.filter(c => {
                 // Parse distance string back to number
                 const distStr = c.distance;
-                if (distStr === 'Đang tính...') return true;
+                if (!distStr) return true;
+                if (!distStr.endsWith('km') && !distStr.endsWith('m')) return true;
 
                 let distKm = 0;
                 if (distStr.endsWith('km')) {
@@ -412,6 +535,7 @@ const contextPath = window.location.pathname.split('/')[1]
 
         // Render cards
         grid.innerHTML = AppState.filteredCourts.map(court => {
+            const distanceBlock = court.distance ? `<span class="distance">(${court.distance})</span> ` : '';
             return templateHTML
                 .replace(/{courtId}/g, court.id)
                 .replace(/{imageUrl}/g, contextPath + '/' + court.imageUrl)
@@ -419,7 +543,7 @@ const contextPath = window.location.pathname.split('/')[1]
                 .replace(/{rating}/g, court.rating.toFixed(1))
                 .replace(/{favoriteClass}/g, court.isFavorite ? 'is-favorite' : '')
                 .replace(/{favoriteFill}/g, court.isFavorite ? '-fill' : '')
-                .replace(/{distance}/g, court.distance)
+                .replace(/{distanceBlock}/g, distanceBlock)
                 .replace(/{location}/g, court.location)
                 .replace(/{openTime}/g, court.openTime);
         }).join('');
@@ -674,9 +798,18 @@ const contextPath = window.location.pathname.split('/')[1]
     // COURT DETAIL MODAL
     // ============================================
 
+    function findCourtById(courtId) {
+        const idStr = String(courtId);
+        const fromState = AppState.courts.find(c => String(c.id) === idStr);
+        if (fromState) {
+            return fromState;
+        }
+        const fromMap = Array.isArray(window.MAP_COURTS_DATA) ? window.MAP_COURTS_DATA : [];
+        return fromMap.find(c => String(c.id) === idStr) || null;
+    }
+
     async function openCourtDetail(courtId) {
-        const court = AppState.courts.find(c => c.id === courtId);
-        if (!court) return;
+        const court = findCourtById(courtId) || { id: String(courtId) };
 
         AppState.selectedCourt = { ...court };
 
@@ -686,7 +819,8 @@ const contextPath = window.location.pathname.split('/')[1]
         updateDetailFavoriteButton();
         showCourtDetailPanel();
 
-        await loadCourtDetail(court.id);
+        const detailId = court.facilityId || court.id || courtId;
+        await loadCourtDetail(detailId);
     }
 
     function renderBaseCourtDetail(court) {
@@ -699,7 +833,7 @@ const contextPath = window.location.pathname.split('/')[1]
         const rating = Number(court.rating || 0);
         const detailRating = document.getElementById('detailRating');
         if (detailRating) {
-            detailRating.textContent = `${"\u2605"} ${rating.toFixed(1)} (0 \u0111\u00e1nh gi\u00e1)`;
+            detailRating.textContent = `${"★"} ${rating.toFixed(1)} (0 đánh giá)`;
         }
 
         setText('detailTitle', court.name || '');
@@ -715,30 +849,35 @@ const contextPath = window.location.pathname.split('/')[1]
     }
 
     function renderDetailLoadingState() {
-        setText('detailOverview', '\u0111ang t\u1ea3i...');
-        setHtml('detailPricingContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
-        setHtml('detailImagesContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
-        setHtml('detailReviewsContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setText('detailOverview', 'đang tải...');
+        setHtml('detailPricingContent', '<div class="detail-empty-state">đang tải...</div>');
+        setHtml('detailImagesContent', '<div class="detail-empty-state">đang tải...</div>');
+        setHtml('detailReviewsContent', '<div class="detail-empty-state">đang tải...</div>');
     }
 
     async function loadCourtDetail(courtId) {
         try {
             const detail = await fetchCourtDetail(courtId);
-            if (!AppState.selectedCourt || String(AppState.selectedCourt.id) !== String(courtId)) {
+            if (!AppState.selectedCourt) {
+                return;
+            }
+            const selectedId = AppState.selectedCourt.facilityId || AppState.selectedCourt.id;
+            if (String(selectedId) !== String(courtId)) {
                 return;
             }
             applyCourtDetail(detail);
         } catch (error) {
             console.error('Error loading facility detail:', error);
-            setText('detailOverview', 'ch\u01b0a c\u00f3');
-            setHtml('detailPricingContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3</div>');
-            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
-            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            setText('detailOverview', 'chưa có');
+            setHtml('detailPricingContent', '<div class="detail-empty-state">chưa có</div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>chưa có hình ảnh</span></div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">chưa có comment nào</div>');
         }
     }
 
     async function fetchCourtDetail(courtId) {
-        const response = await fetch(`${contextPath}/api/facilities/${encodeURIComponent(courtId)}`);
+        const basePath = getContextPath();
+        const response = await fetch(`${basePath}/api/facilities/${encodeURIComponent(courtId)}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -757,9 +896,9 @@ const contextPath = window.location.pathname.split('/')[1]
 
         const rating = Number(selected.rating || 0);
         const reviewCount = Number(selected.reviewCount || 0);
-        setText('detailRating', `${"\u2605"} ${rating.toFixed(1)} (${reviewCount} \u0111\u00e1nh gi\u00e1)`);
+        setText('detailRating', `${"★"} ${rating.toFixed(1)} (${reviewCount} đánh giá)`);
 
-        setText('detailOverview', selected.description || 'ch\u01b0a c\u00f3');
+        setText('detailOverview', selected.description || 'chưa có');
         renderDetailPricing(selected.priceRules || []);
         renderDetailImages(selected.galleryImages || [], selected.name || 'Facility');
         renderDetailReviews(selected.reviews || []);
@@ -768,12 +907,12 @@ const contextPath = window.location.pathname.split('/')[1]
 
     function renderDetailPricing(priceRules) {
         if (!priceRules.length) {
-            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>ch\u01b0a c\u00f3 b\u1ea3ng gi\u00e1</span></div>');
+            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>chưa có bảng giá</span></div>');
             return;
         }
 
         const normalizedRules = priceRules.map(rule => ({
-            courtTypeName: rule.courtTypeName || 'ch\u01b0a c\u00f3',
+            courtTypeName: rule.courtTypeName || 'chưa có',
             dayType: rule.dayType || 'UNKNOWN',
             dayTypeLabel: getDayTypeLabel(rule.dayType),
             dayTypeBadgeClass: getDayTypeBadgeClass(rule.dayType),
@@ -835,10 +974,10 @@ const contextPath = window.location.pathname.split('/')[1]
                     <table class="detail-data-table">
                         <thead>
                             <tr>
-                                <th>Lo\u1ea1i s\u00e2n</th>
-                                <th>Ng\u00e0y \u00e1p d\u1ee5ng</th>
-                                <th>Khung gi\u1edd</th>
-                                <th class="detail-price-header">Gi\u00e1 (VN\u0110/30 ph\u00fat)</th>
+                                <th>Loại sân</th>
+                                <th>Ngày áp dụng</th>
+                                <th>Khung giờ</th>
+                                <th class="detail-price-header">Giá (VNĐ/30 phút)</th>
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
@@ -849,7 +988,7 @@ const contextPath = window.location.pathname.split('/')[1]
     }
     function renderDetailImages(images, facilityName) {
         if (!images.length) {
-            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>chưa có hình ảnh</span></div>');
             return;
         }
 
@@ -869,14 +1008,14 @@ const contextPath = window.location.pathname.split('/')[1]
 
     function renderDetailReviews(reviews) {
         if (!reviews.length) {
-            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">chưa có comment nào</div>');
             return;
         }
 
         const html = reviews.map(review => {
-            const reviewer = escapeHtml(review.reviewerName || 'Ng\u01b0\u1eddi d\u00f9ng');
+            const reviewer = escapeHtml(review.reviewerName || 'Người dùng');
             const rating = Number(review.rating || 0);
-            const comment = escapeHtml((review.comment || '').trim() || 'ch\u01b0a c\u00f3 comment n\u00e0o');
+            const comment = escapeHtml((review.comment || '').trim() || 'chưa có comment nào');
             return `
                 <article class="detail-review-item">
                     <div class="detail-review-head">
@@ -907,17 +1046,17 @@ const contextPath = window.location.pathname.split('/')[1]
     }
 
     function getDayTypeLabel(dayType) {
-        if (dayType === 'WEEKDAY') return 'Trong tu\u1ea7n';
-        if (dayType === 'WEEKEND') return 'Cu\u1ed1i tu\u1ea7n';
-        return dayType || 'ch\u01b0a c\u00f3';
+        if (dayType === 'WEEKDAY') return 'Trong tuần';
+        if (dayType === 'WEEKEND') return 'Cuối tuần';
+        return dayType || 'chưa có';
     }
 
     function formatCurrencyVnd(value) {
         const amount = Number(value || 0);
         if (!Number.isFinite(amount) || amount <= 0) {
-            return 'ch\u01b0a c\u00f3';
+            return 'chưa có';
         }
-        return `${amount.toLocaleString('vi-VN')} \u20ab`;
+        return `${amount.toLocaleString('vi-VN')} ₫`;
     }
 
     function resolveAssetUrl(path) {
@@ -1359,6 +1498,34 @@ const contextPath = window.location.pathname.split('/')[1]
         });
 
         // ✅ NEW: Auth Modal listeners
+        const locationPermissionBackdrop = document.getElementById("locationPermissionBackdrop");
+        if (locationPermissionBackdrop) {
+            locationPermissionBackdrop.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
+        const locationPermissionCloseBtn = document.getElementById("locationPermissionCloseBtn");
+        if (locationPermissionCloseBtn) {
+            locationPermissionCloseBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
+        const locationPermissionAllowBtn = document.getElementById("locationPermissionAllowBtn");
+        if (locationPermissionAllowBtn) {
+            locationPermissionAllowBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("granted");
+            });
+        }
+
+        const locationPermissionDenyBtn = document.getElementById("locationPermissionDenyBtn");
+        if (locationPermissionDenyBtn) {
+            locationPermissionDenyBtn.addEventListener("click", function() {
+                handleLocationPromptDecision("denied");
+            });
+        }
+
         const authModalBackdrop = document.getElementById('authModalBackdrop');
         if (authModalBackdrop) {
             authModalBackdrop.addEventListener('click', closeAuthModal);
@@ -1374,7 +1541,7 @@ const contextPath = window.location.pathname.split('/')[1]
             authLoginBtn.addEventListener('click', function() {
                 closeAuthModal();
                 // ✅ Redirect to login page
-                const contextPath = window.location.pathname.split('/')[1] || 'badminton_court_booking';
+            const contextPath = getContextPath().replace(/^\/+/, "");
                 window.location.href = `/${contextPath}/auth/login`;
             });
         }
@@ -1409,11 +1576,34 @@ const contextPath = window.location.pathname.split('/')[1]
     function init() {
         console.log('Initializing BadmintonPro app...');
 
-        // Get user location FIRST (will trigger API load in callback)
-        getUserLocation();
-
         // Attach event listeners
         attachEventListeners();
+
+        const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+        const status = sessionStorage.getItem(LOCATION_PROMPT_KEY);
+        if (status === "granted" && cachedLocation) {
+            try {
+                AppState.userLocation = JSON.parse(cachedLocation);
+                window.__USER_LOCATION__ = AppState.userLocation;
+            } catch (e) {
+                AppState.userLocation = null;
+                sessionStorage.removeItem(USER_LOCATION_KEY);
+            }
+        }
+
+        updateDistanceFilterAvailability();
+        if (AppState.userLocation && window.setUserLocationForMap) {
+            window.setUserLocationForMap(AppState.userLocation);
+        }
+
+        // Always load baseline data (do not depend on geolocation callbacks)
+        loadFacilitiesFromAPI(0);
+
+        // Ask for location permission once per session
+        showLocationPromptIfNeeded();
+
+
+
 
         // Initialize infinite scroll
         initInfiniteScroll();
@@ -1427,6 +1617,15 @@ const contextPath = window.location.pathname.split('/')[1]
         console.log('App initialized');
     }
 
+    // Reload data when returning via back/forward cache
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            currentPage = 0;
+            hasMore = true;
+            loadFacilitiesFromAPI(0);
+        }
+    });
+
     // Start app when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -1438,6 +1637,20 @@ const contextPath = window.location.pathname.split('/')[1]
     window.openCourtDetail = openCourtDetail;
 
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

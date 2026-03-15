@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
@@ -23,6 +23,7 @@
     var selectedAccountId = document.getElementById('selectedAccountId');
     var guestNameInput    = document.getElementById('guestName');
     var guestPhoneInput   = document.getElementById('guestPhone');
+    var guestEmailInput   = document.getElementById('guestEmail');
     var phoneHint         = document.getElementById('phoneHint');
     var formError         = document.getElementById('formError');
     var btnSubmit         = document.getElementById('btnSubmit');
@@ -32,7 +33,7 @@
     var bookingData  = null; // from sessionStorage
     var searchTimer  = null;
 
-    // ─── Init: load from sessionStorage ───
+    // ---- Init: load from sessionStorage ----
     var raw = sessionStorage.getItem('staffBookingSlots');
     if (!raw) {
         stateNoData.classList.remove('d-none');
@@ -53,7 +54,7 @@
     // Show content
     createContent.classList.remove('d-none');
 
-    // ─── Render summary ───
+    // ---- Render summary ----
     summaryDate.textContent = formatDate(bookingData.date);
 
     // Group slots into sessions (same court, consecutive)
@@ -84,7 +85,7 @@
 
     summaryTotal.textContent = formatMoney(totalPrice);
 
-    // ─── Tab switching ───
+    // ---- Tab switching ----
     tabAccount.addEventListener('click', function () {
         customerType = 'ACCOUNT';
         tabAccount.classList.add('active');
@@ -111,9 +112,9 @@
         formGuest.classList.add('d-none');
 
         selectedAccountId.value = matched.accountId;
-        selName.textContent = matched.fullName || '�';
-        selPhone.textContent = matched.phone || '�';
-        selEmail.textContent = matched.email || '�';
+        selName.textContent = matched.fullName || '—';
+        selPhone.textContent = matched.phone || '—';
+        selEmail.textContent = matched.email || '—';
         selectedCustomer.classList.remove('d-none');
 
         hideError();
@@ -121,13 +122,13 @@
 
     function confirmGuestPhoneMatched(matched) {
         var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
-            '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+            '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
             '- ' + (matched.phone || '') + '\n\n' +
-            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục?';
+            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục';
         return uiConfirm(msg, 'Trùng số điện thoại');
     }
 
-    // ─── Customer search (ACCOUNT) ───
+    // ---- Customer search (ACCOUNT) ----
     customerSearch.addEventListener('input', function () {
         var q = this.value.trim();
         if (q.length < 2) {
@@ -197,14 +198,20 @@
         }
     });
 
-    // ─── Phone validation helper ───
+    // ---- Phone validation helper ----
     function isValidPhone(phone) {
         // Vietnamese phone: exactly 10 digits, starts with 0
         var cleaned = phone.replace(/\s+/g, '');
         return /^0\d{9}$/.test(cleaned);
     }
 
-    // ─── Real-time phone validation on input ───
+    function isValidEmail(email) {
+        var cleaned = (email || '').trim();
+        if (!cleaned) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned);
+    }
+
+    // ---- Real-time phone validation on input ----
     if (guestPhoneInput) {
         // Only allow digits
         guestPhoneInput.addEventListener('input', function () {
@@ -262,7 +269,7 @@
         }
     }
 
-    // ─── Submit ───
+    // ---- Submit ----
     btnSubmit.addEventListener('click', async function () {
         hideError();
 
@@ -288,6 +295,18 @@
                 guestPhoneInput.focus();
                 return;
             }
+            if (guestEmailInput && guestEmailInput.value.trim() && !isValidEmail(guestEmailInput.value)) {
+                showError('Email không đúng định dạng');
+                guestEmailInput.focus();
+                return;
+            }
+            if (guestEmailInput && !guestEmailInput.value.trim()) {
+                var proceed = await uiConfirm(
+                    'Không có email, hệ thống sẽ không gửi thông báo. Tiếp tục?',
+                    'Cảnh báo'
+                );
+                if (!proceed) return;
+            }
         }
 
         // Build request body
@@ -301,6 +320,7 @@
             accountId: customerType === 'ACCOUNT' ? parseInt(selectedAccountId.value) : null,
             guestName: customerType === 'GUEST' ? guestNameInput.value.trim() : null,
             guestPhone: customerType === 'GUEST' ? guestPhoneInput.value.trim() : null,
+            guestEmail: customerType === 'GUEST' && guestEmailInput ? guestEmailInput.value.trim() : null,
             slots: slotsPayload
         };
 
@@ -337,6 +357,9 @@
             }
 
             // Success -> clear sessionStorage -> redirect to detail
+            if (body.data && body.data.emailWarning) {
+                await uiAlert(body.data.emailWarning, 'Thông báo');
+            }
             sessionStorage.removeItem('staffBookingSlots');
             window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
         } catch (err) {
@@ -347,15 +370,23 @@
     });
 
 
-    // ─── Helpers ───
+    // ---- Helpers ----
     function resetSubmitButton() {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
+        btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
+    }
+
+    function uiAlert(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
+            return window.StaffDialog.alert({ title: title || 'Thông báo', message: message || '' });
+        }
+        window.alert(message || '');
+        return Promise.resolve();
     }
 
     function uiConfirm(message, title) {
         if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
-            return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+            return window.StaffDialog.confirm({ title: title || 'Xác nhận', message: message || '' });
         }
         return Promise.resolve(window.confirm(message || ''));
     }
@@ -425,4 +456,3 @@
     }
 
 })();
-

@@ -1,0 +1,178 @@
+/* ================================================================
+   STAFF REFUND LIST - staff-refund-list.css
+   Prefix: srl- (staff-refund-list)
+   ================================================================ */
+
+.main-content {
+    max-width: calc(100vw - var(--sidebar-width, 260px));
+    overflow-x: hidden;
+}
+
+@media (max-width: 991.98px) {
+    .main-content {
+        max-width: 100vw;
+    }
+}
+
+.srl-results-info {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+}
+
+.srl-table-wrapper {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-height: 200px;
+}
+
+.srl-toolbar {
+    min-width: 260px;
+}
+
+.srl-search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.srl-search-group {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.srl-search-icon {
+    background: #F8FAFC;
+    border: none;
+    color: #6B7280;
+}
+
+.srl-search-input {
+    border: none;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.srl-search-input:focus {
+    box-shadow: none;
+}
+
+.srl-search-clear {
+    border: none;
+    font-weight: 600;
+    color: #065F46;
+    background: #ECFDF3;
+}
+
+.srl-search-clear:hover {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.srl-search-hint {
+    font-size: 0.75rem;
+    color: #9CA3AF;
+}
+
+.srl-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Column widths - total 100% */
+.srl-table thead th:nth-child(1) { width: 6%; }
+.srl-table thead th:nth-child(2) { width: 16%; }
+.srl-table thead th:nth-child(3) { width: 11%; }
+.srl-table thead th:nth-child(4) { width: 12%; }
+.srl-table thead th:nth-child(5) { width: 14%; }
+.srl-table thead th:nth-child(6) { width: 12%; }
+.srl-table thead th:nth-child(7) { width: 19%; }
+.srl-table thead th:nth-child(8) { width: 10%; }
+
+.srl-table thead th {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.875rem 0.75rem;
+    background: #F8FAFC;
+    border-bottom: 2px solid #E5E7EB;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.srl-table tbody td {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.875rem 0.75rem;
+    color: #374151;
+    border-bottom: 1px solid #F3F4F6;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.srl-booking-id {
+    font-weight: 700;
+    color: var(--primary-color, #064e3b);
+}
+
+.srl-money {
+    font-weight: 700;
+    color: #0F172A;
+}
+
+.srl-note {
+    color: #6B7280;
+}
+
+.srl-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: 1px solid #E5E7EB;
+    background: #F0FDF4;
+    color: #065F46;
+    cursor: pointer;
+}
+
+.srl-action-btn:hover {
+    background: #DCFCE7;
+}
+
+.srl-pagination {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    border-top: 1px solid #F3F4F6;
+}
+
+.srl-state {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+@media (max-width: 767.98px) {
+    .srl-table thead th:nth-child(3),
+    .srl-table tbody td:nth-child(3) {
+        display: none;
+    }
+    .srl-table thead th:nth-child(7),
+    .srl-table tbody td:nth-child(7) {
+        display: none;
+    }
+}

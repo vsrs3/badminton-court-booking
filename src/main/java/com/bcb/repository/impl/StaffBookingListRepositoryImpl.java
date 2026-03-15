@@ -15,7 +15,10 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
 
     @Override
     public int countBookings(StaffBookingListSearchCriteriaDTO criteria) throws Exception {
-        String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
+        String fromJoin = " FROM Booking b " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "LEFT JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
         String whereSearch = buildWhereSearch(criteria);
 
@@ -32,15 +35,19 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
     @Override
     public List<StaffBookingListItemDTO> findBookings(StaffBookingListSearchCriteriaDTO criteria, int offset, int size)
             throws Exception {
-        String fromJoin = " FROM Booking b LEFT JOIN Account a ON b.account_id = a.account_id LEFT JOIN Guest g ON b.guest_id = g.guest_id ";
+        String fromJoin = " FROM Booking b " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "LEFT JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id ";
         String whereBase = "WHERE b.facility_id = ? AND b.booking_status != 'EXPIRED'";
         String whereSearch = buildWhereSearch(criteria);
 
-        String sql = """
+        String selectBase = """
                 SELECT b.booking_id,
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
                        COALESCE(a.phone, g.phone) AS phone,
                        b.booking_date, b.booking_status, i.payment_status,
+                       b.recurring_id, rb.start_date AS recurring_start_date, rb.end_date AS recurring_end_date,
                        (SELECT COUNT(DISTINCT bs2.court_id)
                         FROM BookingSlot bs2
                         WHERE bs2.booking_id = b.booking_id
@@ -54,9 +61,67 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                        CASE WHEN EXISTS (
                            SELECT 1 FROM BookingSlot bsn
                            WHERE bsn.booking_id = b.booking_id AND bsn.slot_status = 'NO_SHOW'
-                       ) THEN 1 ELSE 0 END AS has_no_show
-                """ + fromJoin + " LEFT JOIN Invoice i ON b.booking_id = i.booking_id " + whereBase + whereSearch +
-                " ORDER BY b.created_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+                       ) THEN 1 ELSE 0 END AS has_no_show,
+                       ns.next_slot_date AS next_slot_date,
+                       ls.last_slot_date AS last_slot_date,
+                       eff.effective_next_date AS effective_next_date,
+                       eff.effective_last_date AS effective_last_date
+                """;
+
+        String joins = fromJoin +
+                " LEFT JOIN Invoice i ON b.booking_id = i.booking_id ";
+
+        String applyNext = """
+                OUTER APPLY (
+                    SELECT MIN(bs.booking_date) AS next_slot_date
+                    FROM BookingSlot bs
+                    WHERE bs.booking_id = b.booking_id
+                      AND bs.slot_status <> 'CANCELLED'
+                      AND bs.booking_date >= CAST(GETDATE() AS date)
+                ) ns
+                """;
+
+        String applyLast = """
+                OUTER APPLY (
+                    SELECT MAX(bs.booking_date) AS last_slot_date
+                    FROM BookingSlot bs
+                    WHERE bs.booking_id = b.booking_id
+                      AND bs.slot_status <> 'CANCELLED'
+                ) ls
+                """;
+
+        String applyEffective = """
+                OUTER APPLY (
+                    SELECT
+                      CASE
+                        WHEN b.recurring_id IS NULL THEN
+                          CASE WHEN b.booking_date >= CAST(GETDATE() AS date) THEN b.booking_date ELSE NULL END
+                        ELSE ns.next_slot_date
+                      END AS effective_next_date,
+                      CASE
+                        WHEN b.recurring_id IS NULL THEN b.booking_date
+                        ELSE ls.last_slot_date
+                      END AS effective_last_date
+                ) eff
+                """;
+
+        String orderBy = """
+                 ORDER BY
+                  CASE
+                    WHEN b.booking_status = 'COMPLETED' THEN 3
+                    WHEN b.booking_status = 'CANCELLED' THEN 4
+                    WHEN eff.effective_next_date IS NOT NULL AND b.booking_status = 'CONFIRMED' THEN 0
+                    WHEN eff.effective_next_date IS NOT NULL THEN 1
+                    ELSE 2
+                  END,
+                  CASE WHEN eff.effective_next_date IS NOT NULL THEN eff.effective_next_date ELSE NULL END ASC,
+                  CASE WHEN eff.effective_next_date IS NULL THEN COALESCE(eff.effective_last_date, b.created_at) ELSE NULL END DESC,
+                  b.created_at DESC
+                """;
+
+        String paging = " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        String sql = selectBase + joins + applyNext + applyLast + applyEffective + whereBase + whereSearch + orderBy + paging;
 
         List<StaffBookingListItemDTO> results = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -77,6 +142,9 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                     item.setCustomerName(rs.getString("customer_name"));
                     item.setPhone(rs.getString("phone"));
                     item.setBookingDate(rs.getString("booking_date"));
+                    item.setRecurring(rs.getObject("recurring_id") != null);
+                    item.setRecurringStartDate(rs.getString("recurring_start_date"));
+                    item.setRecurringEndDate(rs.getString("recurring_end_date"));
                     item.setBookingStatus(rs.getString("booking_status"));
                     item.setPaymentStatus(rs.getString("payment_status"));
                     item.setCourtDisplay(courtDisplay);
@@ -90,13 +158,29 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
     }
 
     private String buildWhereSearch(StaffBookingListSearchCriteriaDTO criteria) {
-        if (!criteria.isHasSearch()) {
-            return "";
+        StringBuilder where = new StringBuilder();
+        if (criteria.isHasSearch()) {
+            if (criteria.isNumericSearch()) {
+                where.append(" AND (b.booking_id = ? OR a.full_name LIKE ? OR g.guest_name LIKE ? OR a.phone LIKE ? OR g.phone LIKE ?)");
+            } else {
+                where.append(" AND (a.full_name LIKE ? OR g.guest_name LIKE ? OR a.phone LIKE ? OR g.phone LIKE ?)");
+            }
         }
-        if (criteria.isNumericSearch()) {
-            return " AND (b.booking_id = ? OR a.full_name LIKE ? OR g.guest_name LIKE ? OR a.phone LIKE ? OR g.phone LIKE ?)";
+        if (criteria.getStatus() != null) {
+            where.append(" AND b.booking_status = ?");
         }
-        return " AND (a.full_name LIKE ? OR g.guest_name LIKE ? OR a.phone LIKE ? OR g.phone LIKE ?)";
+        if (criteria.isTodayOnly()) {
+            where.append(" AND (")
+                    .append(" (b.recurring_id IS NULL AND b.booking_date = ?)")
+                    .append(" OR (b.recurring_id IS NOT NULL AND EXISTS (")
+                    .append("   SELECT 1 FROM BookingSlot bs_today")
+                    .append("   WHERE bs_today.booking_id = b.booking_id")
+                    .append("     AND bs_today.slot_status <> 'CANCELLED'")
+                    .append("     AND bs_today.booking_date = ?")
+                    .append(" ))")
+                    .append(" )");
+        }
+        return where.toString();
     }
 
     private int bindSearchParams(PreparedStatement ps, StaffBookingListSearchCriteriaDTO criteria, int startIdx)
@@ -112,7 +196,13 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
             ps.setString(idx++, criteria.getLikePattern());
             ps.setString(idx++, criteria.getLikePattern());
         }
+        if (criteria.getStatus() != null) {
+            ps.setString(idx++, criteria.getStatus());
+        }
+        if (criteria.isTodayOnly()) {
+            ps.setDate(idx++, criteria.getTodayDate());
+            ps.setDate(idx++, criteria.getTodayDate());
+        }
         return idx;
     }
 }
-

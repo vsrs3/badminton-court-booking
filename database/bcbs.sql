@@ -230,7 +230,6 @@ GO
 CREATE TABLE RecurringBooking (
     recurring_id INT IDENTITY PRIMARY KEY,
     facility_id INT NOT NULL,
-
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(20)
@@ -259,7 +258,8 @@ GO
 CREATE TABLE Guest (
     guest_id INT IDENTITY PRIMARY KEY,
     guest_name NVARCHAR(255) NOT NULL,
-    phone NVARCHAR(20) NOT NULL
+    phone NVARCHAR(20) NOT NULL,
+    email NVARCHAR(255) NULL
 );
 GO
 
@@ -304,7 +304,6 @@ CREATE TABLE BookingSlot (
     booking_id INT NOT NULL,
     court_id INT NOT NULL,        -- FIX: gắn sân tại slot
     booking_date DATE NULL,
-
     slot_id INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
 
@@ -595,6 +594,30 @@ CREATE TABLE Notification (
     is_sent BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (account_id) REFERENCES Account(account_id)
+);
+GO
+
+-- Email Queue (for async email sending)
+CREATE TABLE EmailQueue (
+    email_id INT IDENTITY PRIMARY KEY,
+    email_type VARCHAR(20) NOT NULL
+        CONSTRAINT CK_EmailQueue_EmailType CHECK (email_type IN (
+            'CREATE','CREATE_RECURRING','UPDATE','CANCEL',
+            'REMINDER_UPCOMING_24H','REMINDER_UPCOMING_2H','REMINDER_PAYMENT_12H'
+        )),
+    booking_id INT NOT NULL,
+    to_email NVARCHAR(255) NOT NULL,
+    payload_json NVARCHAR(MAX) NULL,
+    reminder_at DATETIME NULL,
+    status VARCHAR(20) NOT NULL
+        CONSTRAINT CK_EmailQueue_Status CHECK (status IN ('PENDING','SENDING','SENT','FAILED'))
+        DEFAULT 'PENDING',
+    retry_count INT NOT NULL DEFAULT 0,
+    next_attempt_at DATETIME NOT NULL DEFAULT GETDATE(),
+    last_error NVARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    sent_at DATETIME NULL,
+    FOREIGN KEY (booking_id) REFERENCES Booking(booking_id)
 );
 GO
 
