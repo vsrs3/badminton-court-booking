@@ -21,6 +21,6 @@ public interface DashboardRevenueChartRepository {
      * Show the growth or decrease of revenue in months / years
      * @return OwnerRevenueChartDTO dto
      */
-    OwnerRevenueChartDTO getRevenueTrendMonthly();
-    OwnerRevenueChartDTO getRevenueTrendYearly();
+	OwnerRevenueChartDTO getRevenueTrendYearlyPast();
+	OwnerRevenueChartDTO getRevenueTrendYearlyFuture();
 }

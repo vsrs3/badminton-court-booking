@@ -50,21 +50,43 @@ public class DashboardRevenueChartServiceImpl implements DashboardRevenueChartSe
             new ArrayList<>(map.values())
         );
     }
-
-    // Pad yearly trend — labels động theo 5 năm
-    private OwnerRevenueChartDTO padYearly(OwnerRevenueChartDTO raw) {
-    	int currentYear = java.time.Year.now().getValue();
+    
+    
+    // Pad 5 năm trước (currentYear-4 to currentYear)
+    private OwnerRevenueChartDTO padYearlyPast(OwnerRevenueChartDTO raw) {
+        int currentYear = java.time.Year.now().getValue();
         List<String> yearLabels = new ArrayList<>();
-        for (int y = currentYear; y <= currentYear + 4; y++) { 
+        for (int y = currentYear - 4; y <= currentYear; y++) {
             yearLabels.add(String.valueOf(y));
         }
         return pad(raw, yearLabels);
     }
 
-    //  Pad monthly trend — 12 tháng 
-    private OwnerRevenueChartDTO padTrendMonthly(OwnerRevenueChartDTO raw) {
-        return pad(raw, MONTH_LABELS);
+    // Pad 5 năm tới (currentYear to currentYear+4)
+    private OwnerRevenueChartDTO padYearlyFuture(OwnerRevenueChartDTO raw) {
+        int currentYear = java.time.Year.now().getValue();
+        List<String> yearLabels = new ArrayList<>();
+        for (int y = currentYear; y <= currentYear + 4; y++) {
+            yearLabels.add(String.valueOf(y));
+        }
+        return pad(raw, yearLabels);
     }
+
+    // Pad yearly trend — labels động theo 5 năm
+	/*
+	 * private OwnerRevenueChartDTO padYearly(OwnerRevenueChartDTO raw) { int
+	 * currentYear = java.time.Year.now().getValue(); List<String> yearLabels = new
+	 * ArrayList<>(); for (int y = currentYear; y <= currentYear + 4; y++) {
+	 * yearLabels.add(String.valueOf(y)); } return pad(raw, yearLabels); }
+	 */
+    
+    
+
+    //  Pad monthly trend — 12 tháng 
+	/*
+	 * private OwnerRevenueChartDTO padTrendMonthly(OwnerRevenueChartDTO raw) {
+	 * return pad(raw, MONTH_LABELS); }
+	 */
 
     @Override
     public String getRevenueChartJson() {
@@ -81,8 +103,11 @@ public class DashboardRevenueChartServiceImpl implements DashboardRevenueChartSe
 
         // Trend
         Map<String, OwnerRevenueChartDTO> trend = new LinkedHashMap<>();
-        trend.put("Monthly", padTrendMonthly(repo.getRevenueTrendMonthly())); // 12 tháng gần nhất
-        trend.put("Yearly",  padYearly(repo.getRevenueTrendYearly()));        // 5 năm gần nhất
+        trend.put("Past 5 Years",   padYearlyPast(repo.getRevenueTrendYearlyPast()));
+        trend.put("Next 5 Years",   padYearlyFuture(repo.getRevenueTrendYearlyFuture()));
+        
+        //trend.put("Monthly", padTrendMonthly(repo.getRevenueTrendMonthly())); // 12 tháng gần nhất
+        //trend.put("Yearly",  padYearly(repo.getRevenueTrendYearly()));        // 5 năm gần nhất
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("weekly", weekly);

@@ -88,7 +88,7 @@ public class DashboardRevenueChartRepositoryImpl implements DashboardRevenueChar
 									        + "ORDER BY MONTH(b.booking_date)";
 
     // Revenue Trend — Monthly
-    private static final String SQL_TREND_MONTHLY = "SELECT "
+    /** private static final String SQL_TREND_MONTHLY = "SELECT "
 						    			    + "LEFT(DATENAME(MONTH, b.booking_date), 3) AS month_label, "
 						    			    + "ISNULL(SUM(i.paid_amount), 0)            AS revenue "
 						    			    + "FROM Invoice i "
@@ -97,17 +97,29 @@ public class DashboardRevenueChartRepositoryImpl implements DashboardRevenueChar
 						    			    + "  AND YEAR(b.booking_date) = YEAR(GETDATE()) " // ← chỉ năm hiện tại
 						    			    + "GROUP BY MONTH(b.booking_date), DATENAME(MONTH, b.booking_date) "
 						    			    + "ORDER BY MONTH(b.booking_date)";
+						    			    **/
 
-    // ── Revenue Trend — Yearly (5 năm gần nhất)
-    private static final String SQL_TREND_YEARLY =  "SELECT "
-									        + "CAST(YEAR(b.booking_date) AS NVARCHAR) 		AS year_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)          		AS revenue "
-									        
+    // 5 năm trước — currentYear-4 → currentYear
+    private static final String SQL_TREND_YEARLY_PAST = "SELECT "
+									        + "CAST(YEAR(b.booking_date) AS NVARCHAR) AS year_label, "
+									        + "ISNULL(SUM(i.paid_amount), 0)          AS revenue "
 									        + "FROM Invoice i "
-									        	+ "JOIN Booking b ON i.booking_id = b.booking_id "
-									        	+ "WHERE b.booking_status = 'COMPLETED' "
-									        	+ "  AND YEAR(b.booking_date) >= YEAR(GETDATE()) - 4 "
-									        	
+									        + "JOIN Booking b ON i.booking_id = b.booking_id "
+									        + "WHERE b.booking_status = 'COMPLETED' "
+									        + "  AND YEAR(b.booking_date) >= YEAR(GETDATE()) - 4 "
+									        + "  AND YEAR(b.booking_date) <= YEAR(GETDATE()) "
+									        + "GROUP BY YEAR(b.booking_date) "
+									        + "ORDER BY YEAR(b.booking_date)";
+
+    // 5 năm tới — currentYear → currentYear+4
+    private static final String SQL_TREND_YEARLY_FUTURE = "SELECT "
+									        + "CAST(YEAR(b.booking_date) AS NVARCHAR) AS year_label, "
+									        + "ISNULL(SUM(i.paid_amount), 0)          AS revenue "
+									        + "FROM Invoice i "
+									        + "JOIN Booking b ON i.booking_id = b.booking_id "
+									        + "WHERE b.booking_status = 'COMPLETED' "
+									        + "  AND YEAR(b.booking_date) >= YEAR(GETDATE()) "
+									        + "  AND YEAR(b.booking_date) <= YEAR(GETDATE()) + 4 "
 									        + "GROUP BY YEAR(b.booking_date) "
 									        + "ORDER BY YEAR(b.booking_date)";
 
@@ -131,13 +143,25 @@ public class DashboardRevenueChartRepositoryImpl implements DashboardRevenueChar
     public OwnerRevenueChartDTO getMonthlyRevenuePreviousYear() { 
     	return query(SQL_MONTHLY_PREV_YEAR, "month_label", "revenue"); 
     }
-    @Override
-    public OwnerRevenueChartDTO getRevenueTrendMonthly() { 
-    	return query(SQL_TREND_MONTHLY, "month_label", "revenue"); 
-    }
     
     @Override
-    public OwnerRevenueChartDTO getRevenueTrendYearly() { 
-    	return query(SQL_TREND_YEARLY, "year_label", "revenue"); 
+    public OwnerRevenueChartDTO getRevenueTrendYearlyPast() {
+        return query(SQL_TREND_YEARLY_PAST, "year_label", "revenue");
     }
+
+    @Override
+    public OwnerRevenueChartDTO getRevenueTrendYearlyFuture() {
+        return query(SQL_TREND_YEARLY_FUTURE, "year_label", "revenue");
+    }
+
+    
+	/*
+	 * @Override public OwnerRevenueChartDTO getRevenueTrendMonthly() { return
+	 * query(SQL_TREND_MONTHLY, "month_label", "revenue"); }
+	 */
+    
+	/*
+	 * @Override public OwnerRevenueChartDTO getRevenueTrendYearly() { return
+	 * query(SQL_TREND_YEARLY, "year_label", "revenue"); }
+	 */
 }
