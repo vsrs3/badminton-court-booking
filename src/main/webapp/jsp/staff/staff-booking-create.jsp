@@ -2,7 +2,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <%@ include file="layout/staff-layout.jsp"%>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/staff-booking-create.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/staff-booking-create.css?v=<%= System.currentTimeMillis() %>">
 <%@ include file="layout/staff-sidebar.jsp"%>
 
 <div class="main-content">
@@ -252,6 +252,15 @@
                     </div>
                 </div>
 
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Đóng
+                </button>
+                <button type="button" class="btn btn-primary" id="btnRentalSave">
+                    <i class="bi bi-save me-1"></i>Lưu
+                </button>
             </div>
         </div>
     </div>

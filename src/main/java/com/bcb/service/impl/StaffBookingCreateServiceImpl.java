@@ -202,21 +202,13 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                 for (RentalItemDTO rental : rentals) {
                     if (rental == null) continue;
 
-                    List<Integer> matchedBookingSlotIds = new ArrayList<>();
+                    int matchedSlotCount = 0;
                     for (Integer slotId : rental.getSlotIds()) {
                         Integer bookingSlotId = bookingSlotIdByCourtAndSlot.get(
                                 buildCourtSlotKey(rental.getCourtId(), slotId)
                         );
-                        if (bookingSlotId != null) {
-                            matchedBookingSlotIds.add(bookingSlotId);
-                        }
-                    }
+                        if (bookingSlotId == null) continue;
 
-                    if (matchedBookingSlotIds.isEmpty()) {
-                        continue;
-                    }
-
-                    for (Integer bookingSlotId : matchedBookingSlotIds) {
                         repository.insertBookingRental(
                                 conn,
                                 bookingSlotId,
@@ -225,11 +217,23 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                                 rental.getUnitPrice(),
                                 "STAFF"
                         );
+                        repository.updateInventoryRentalScheduleStatus(
+                                conn,
+                                facilityId,
+                                bookingDate,
+                                rental.getCourtId(),
+                                slotId,
+                                rental.getInventoryId(),
+                                "RENTED"
+                        );
+                        matchedSlotCount++;
                     }
+
+                    if (matchedSlotCount == 0) continue;
 
                     BigDecimal lineTotal = rental.getUnitPrice()
                             .multiply(BigDecimal.valueOf(rental.getQuantity()))
-                            .multiply(BigDecimal.valueOf(matchedBookingSlotIds.size()));
+                            .multiply(BigDecimal.valueOf(matchedSlotCount));
 
                     rentalTotal = rentalTotal.add(lineTotal);
                 }

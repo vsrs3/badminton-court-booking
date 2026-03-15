@@ -502,6 +502,26 @@ CREATE TABLE RacketRentalLog (
 );
 GO
 
+CREATE TABLE InventoryRentalSchedule (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    facility_id INT NOT NULL,
+    booking_date DATE NOT NULL,
+    court_id INT NOT NULL,
+    slot_id INT NOT NULL,
+    inventory_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    availableItem INT NOT NULL CHECK (availableItem >= 0),
+    status NVARCHAR(20) NOT NULL
+        CHECK (status IN (N'RENTED', N'RENTING', N'RETURNED')),
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
+    FOREIGN KEY (court_id) REFERENCES Court(court_id),
+    FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
+    FOREIGN KEY (inventory_id) REFERENCES Inventory(inventory_id),
+    UNIQUE (facility_id, booking_date, court_id, slot_id, inventory_id)
+);
+GO
+
 -- Payment
 CREATE TABLE Payment (
     payment_id INT IDENTITY PRIMARY KEY,

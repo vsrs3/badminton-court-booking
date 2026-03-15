@@ -38,5 +38,8 @@ public interface StaffBookingCreateRepository {
                              int inventoryId, int quantity, BigDecimal unitPrice,
                              String addedBy) throws Exception;
 
+    void updateInventoryRentalScheduleStatus(Connection conn, int facilityId, java.time.LocalDate bookingDate,
+                                             int courtId, int slotId, int inventoryId, String status) throws Exception;
+
 }
 

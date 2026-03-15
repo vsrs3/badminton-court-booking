@@ -10,6 +10,7 @@ public class StaffRentalInventoryItemDTO {
     private String description;
     private BigDecimal rentalPrice;
     private int availableQuantity;
+    private int selectedQuantity;
 
     public int getFacilityInventoryId() {
         return facilityInventoryId;
@@ -65,5 +66,13 @@ public class StaffRentalInventoryItemDTO {
 
     public void setAvailableQuantity(int availableQuantity) {
         this.availableQuantity = availableQuantity;
+    }
+
+    public int getSelectedQuantity() {
+        return selectedQuantity;
+    }
+
+    public void setSelectedQuantity(int selectedQuantity) {
+        this.selectedQuantity = selectedQuantity;
     }
 }

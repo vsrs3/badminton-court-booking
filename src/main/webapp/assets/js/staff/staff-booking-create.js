@@ -1,915 +1,906 @@
-(function () {
-    'use strict';
+﻿(function () {
+'use strict';
 
-    var CTX = window.ST_CTX || '';
+var CTX = window.ST_CTX || '';
+var stateNoData = document.getElementById('stateNoData');
+var createContent = document.getElementById('createContent');
+var summaryDate = document.getElementById('summaryDate');
+var sessionsContainer = document.getElementById('sessionsContainer');
+var summaryTotal = document.getElementById('summaryTotal');
+var tabAccount = document.getElementById('tabAccount');
+var tabGuest = document.getElementById('tabGuest');
+var formAccount = document.getElementById('formAccount');
+var formGuest = document.getElementById('formGuest');
+var customerSearch = document.getElementById('customerSearch');
+var searchDropdown = document.getElementById('searchDropdown');
+var selectedCustomer = document.getElementById('selectedCustomer');
+var selName = document.getElementById('selName');
+var selPhone = document.getElementById('selPhone');
+var selEmail = document.getElementById('selEmail');
+var btnRemoveCustomer = document.getElementById('btnRemoveCustomer');
+var selectedAccountId = document.getElementById('selectedAccountId');
+var guestNameInput = document.getElementById('guestName');
+var guestPhoneInput = document.getElementById('guestPhone');
+var guestEmailInput = document.getElementById('guestEmail');
+var phoneHint = document.getElementById('phoneHint');
+var formError = document.getElementById('formError');
+var btnSubmit = document.getElementById('btnSubmit');
+var rentalGroupsContainer = document.getElementById('rentalGroupsContainer');
+var rentalFeeSummary = document.getElementById('rentalFeeSummary');
+var rentalGrandTotal = document.getElementById('rentalGrandTotal');
+var rentalSearchInput = document.getElementById('rentalSearchInput');
+var btnRentalSearch = document.getElementById('btnRentalSearch');
+var rentalInventoryTableBody = document.getElementById('rentalInventoryTableBody');
+var rentalPaginationInfo = document.getElementById('rentalPaginationInfo');
+var btnRentalPrev = document.getElementById('btnRentalPrev');
+var btnRentalNext = document.getElementById('btnRentalNext');
+var btnRentalSave = document.getElementById('btnRentalSave');
+var rentalModalContext = document.getElementById('rentalModalContext');
+var rentalInventoryEmpty = document.getElementById('rentalInventoryEmpty');
+var rentalModalElement = document.getElementById('rentalInventoryModal');
 
-    // =========================
-    // DOM
-    // =========================
-    var stateNoData = document.getElementById('stateNoData');
-    var createContent = document.getElementById('createContent');
+var customerType = 'ACCOUNT';
+var bookingData = null;
+var searchTimer = null;
+var sessions = [];
+var courtTotalPrice = 0;
+var rentalModal = null;
+var rentalState = {
+    selectedSlot: null,
+    page: 1,
+    keyword: '',
+    totalPages: 1,
+    items: [],
+    courts: [],
+    slotPagesByCourt: {},
+    draftBySlot: {},
+    draftLoadedSlots: {},
+    savedBySlot: {},
+    applyingCourtId: null
+};
 
-    var summaryDate = document.getElementById('summaryDate');
-    var sessionsContainer = document.getElementById('sessionsContainer');
-    var summaryTotal = document.getElementById('summaryTotal');
+init();
 
-    var tabAccount = document.getElementById('tabAccount');
-    var tabGuest = document.getElementById('tabGuest');
-    var formAccount = document.getElementById('formAccount');
-    var formGuest = document.getElementById('formGuest');
+function init() {
+    var raw = sessionStorage.getItem('staffBookingSlots');
+    if (!raw) {
+        showNoData();
+        return;
+    }
 
-    var customerSearch = document.getElementById('customerSearch');
-    var searchDropdown = document.getElementById('searchDropdown');
-    var selectedCustomer = document.getElementById('selectedCustomer');
-    var selName = document.getElementById('selName');
-    var selPhone = document.getElementById('selPhone');
-    var selEmail = document.getElementById('selEmail');
-    var btnRemoveCustomer = document.getElementById('btnRemoveCustomer');
-    var selectedAccountId = document.getElementById('selectedAccountId');
-
-    var guestNameInput = document.getElementById('guestName');
-    var guestPhoneInput = document.getElementById('guestPhone');
-    var guestEmailInput = document.getElementById('guestEmail');
-    var phoneHint = document.getElementById('phoneHint');
-
-    var formError = document.getElementById('formError');
-    var btnSubmit = document.getElementById('btnSubmit');
-
-    // Rental DOM
-    var rentalGroupsContainer = document.getElementById('rentalGroupsContainer');
-    var rentalFeeSummary = document.getElementById('rentalFeeSummary');
-    var rentalGrandTotal = document.getElementById('rentalGrandTotal');
-
-    var rentalSearchInput = document.getElementById('rentalSearchInput');
-    var btnRentalSearch = document.getElementById('btnRentalSearch');
-    var rentalInventoryTableBody = document.getElementById('rentalInventoryTableBody');
-    var rentalPaginationInfo = document.getElementById('rentalPaginationInfo');
-    var btnRentalPrev = document.getElementById('btnRentalPrev');
-    var btnRentalNext = document.getElementById('btnRentalNext');
-    var rentalModalContext = document.getElementById('rentalModalContext');
-    var rentalInventoryEmpty = document.getElementById('rentalInventoryEmpty');
-
-    // =========================
-    // State
-    // =========================
-    var customerType = 'ACCOUNT';
-    var bookingData = null;
-    var searchTimer = null;
-    var sessions = [];
-    var courtTotalPrice = 0;
-    var rentalModal = null;
-    var sessionKeyToBookingSlotIds = {};
-
-    var rentalState = {
-        selectedGroup: null, // { groupKey, courtId, courtName, startTime, endTime, bookingSlotIds, slotCount }
-        page: 1,
-        keyword: '',
-        totalPages: 1,
-        items: [],
-        groups: [],
-
-        // groupKey => [{ inventoryId, name, quantity, unitPrice }]
-        rentalsByGroup: {}
-    };
-
-    // =========================
-    // Init
-    // =========================
-    init();
-
-    function init() {
-        var raw = sessionStorage.getItem('staffBookingSlots');
-        if (!raw) {
+    try {
+        bookingData = JSON.parse(raw);
+        if (!bookingData || !bookingData.slots || bookingData.slots.length === 0) {
             showNoData();
             return;
         }
-
-        try {
-            bookingData = JSON.parse(raw);
-            if (!bookingData || !bookingData.slots || bookingData.slots.length === 0) {
-                showNoData();
-                return;
-            }
-        } catch (e) {
-            console.error('Invalid booking data:', e);
-            showNoData();
-            return;
-        }
-
-        createContent.classList.remove('d-none');
-
-        if (window.bootstrap && document.getElementById('rentalInventoryModal')) {
-            rentalModal = new bootstrap.Modal(document.getElementById('rentalInventoryModal'));
-        }
-
-        normalizeBookingSlots();
-        renderBookingSummary();
-        renderRentalSection();
-        bindEvents();
+    } catch (err) {
+        console.error('Invalid booking data:', err);
+        showNoData();
+        return;
     }
 
-    function showNoData() {
-        if (stateNoData) stateNoData.classList.remove('d-none');
-        if (createContent) createContent.classList.add('d-none');
+    if (window.bootstrap && rentalModalElement) {
+        rentalModal = new bootstrap.Modal(rentalModalElement);
     }
 
-    function normalizeBookingSlots() {
-        bookingData.slots = (bookingData.slots || []).map(function (s, idx) {
-            return {
-                bookingSlotId: s.bookingSlotId || s.id || null,
-                courtId: s.courtId,
-                courtName: s.courtName || ('Sân #' + s.courtId),
-                slotId: s.slotId,
-                startTime: normalizeTime(s.startTime),
-                endTime: normalizeTime(s.endTime),
-                price: Number(s.price || 0),
-                __idx: idx
-            };
-        });
-    }
+    createContent.classList.remove('d-none');
+    normalizeBookingSlots();
+    renderBookingSummary();
+    renderRentalSection();
+    bindEvents();
+}
 
-    // =========================
-    // Render summary
-    // =========================
-    function renderBookingSummary() {
-        summaryDate.textContent = formatDate(bookingData.date);
+function showNoData() {
+    if (stateNoData) stateNoData.classList.remove('d-none');
+    if (createContent) createContent.classList.add('d-none');
+}
 
-        sessions = buildSessions(bookingData.slots);
-        courtTotalPrice = 0;
-        sessionsContainer.innerHTML = '';
-
-        sessions.forEach(function (session, idx) {
-            var sessionPrice = 0;
-            session.forEach(function (s) {
-                sessionPrice += Number(s.price || 0);
-            });
-            courtTotalPrice += sessionPrice;
-
-            var sessionKey = buildSessionKey(session);
-            sessionKeyToBookingSlotIds[sessionKey] = session.map(function (s) {
-                return s.bookingSlotId;
-            }).filter(Boolean);
-
-            var div = document.createElement('div');
-            div.className = 'sbc-session';
-            div.innerHTML =
-                '<div class="sbc-session-idx">' + (idx + 1) + '</div>' +
-                '<div class="sbc-session-info">' +
-                '  <div class="sbc-session-court">' + escapeHtml(session[0].courtName) + '</div>' +
-                '  <div class="sbc-session-meta">' +
-                '    <span><i class="bi bi-clock"></i>' + escapeHtml(session[0].startTime) + ' → ' + escapeHtml(session[session.length - 1].endTime) + '</span>' +
-                '    <span><i class="bi bi-layers"></i>' + session.length + ' slot</span>' +
-                '    <span class="sbc-session-price">' + formatMoney(sessionPrice) + '</span>' +
-                '  </div>' +
-                '</div>';
-            sessionsContainer.appendChild(div);
-        });
-
-        updateGrandSummary();
-    }
-
-    function updateGrandSummary() {
-        var total = courtTotalPrice + getRentalGrandTotal();
-        summaryTotal.textContent = formatMoney(total);
-    }
-
-    // =========================
-    // Rental section
-    // =========================
-    function renderRentalSection() {
-        rentalState.groups = groupConsecutiveSlots(bookingData.slots);
-        renderRentalGroups(rentalState.groups);
-        renderRentalFeeSummary();
-    }
-
-    function groupConsecutiveSlots(rows) {
-        var groupsByCourt = {};
-        (rows || []).forEach(function (s) {
-            if (!groupsByCourt[s.courtId]) groupsByCourt[s.courtId] = [];
-            groupsByCourt[s.courtId].push(s);
-        });
-
-        var result = [];
-
-        Object.keys(groupsByCourt).forEach(function (courtId) {
-            var list = groupsByCourt[courtId].slice().sort(function (a, b) {
-                if (a.startTime === b.startTime) return Number(a.slotId || 0) - Number(b.slotId || 0);
-                return a.startTime.localeCompare(b.startTime);
-            });
-
-            if (!list.length) return;
-
-            var current = [list[0]];
-
-            for (var i = 1; i < list.length; i++) {
-                var prev = current[current.length - 1];
-                var cur = list[i];
-
-                if (prev.endTime === cur.startTime) {
-                    current.push(cur);
-                } else {
-                    result.push(buildRentalGroup(current));
-                    current = [cur];
-                }
-            }
-
-            if (current.length) {
-                result.push(buildRentalGroup(current));
-            }
-        });
-
-        result.sort(function (a, b) {
-            if (a.startTime === b.startTime) {
-                return String(a.courtName).localeCompare(String(b.courtName));
-            }
-            return a.startTime.localeCompare(b.startTime);
-        });
-
-        return result;
-    }
-
-    function buildRentalGroup(slotGroup) {
-        var first = slotGroup[0];
-        var last = slotGroup[slotGroup.length - 1];
-        var bookingSlotIds = slotGroup.map(function (x) { return x.bookingSlotId; }).filter(Boolean);
-        var groupKey = 'court_' + first.courtId + '__' + first.startTime.replace(/:/g, '') + '__' + last.endTime.replace(/:/g, '');
-
+function normalizeBookingSlots() {
+    bookingData.slots = (bookingData.slots || []).map(function (slot, idx) {
         return {
-            groupKey: groupKey,
-            courtId: first.courtId,
-            courtName: first.courtName,
-            startTime: first.startTime,
-            endTime: last.endTime,
-            slotCount: slotGroup.length,
-            bookingSlotIds: bookingSlotIds,
-            slots: slotGroup
+            bookingSlotId: slot.bookingSlotId || slot.id || null,
+            courtId: Number(slot.courtId || 0),
+            courtName: slot.courtName || ('San #' + slot.courtId),
+            slotId: Number(slot.slotId || 0),
+            startTime: normalizeTime(slot.startTime),
+            endTime: normalizeTime(slot.endTime),
+            price: Number(slot.price || 0),
+            __idx: idx
         };
-    }
+    }).sort(function (a, b) {
+        if (a.courtId === b.courtId) {
+            if (toMinutes(a.startTime) === toMinutes(b.startTime)) {
+                return Number(a.slotId || 0) - Number(b.slotId || 0);
+            }
+            return toMinutes(a.startTime) - toMinutes(b.startTime);
+        }
+        return String(a.courtName).localeCompare(String(b.courtName));
+    });
+}
 
-    function renderRentalGroups(groups) {
-        if (!rentalGroupsContainer) return;
-        if (!groups || groups.length === 0) {
-            rentalGroupsContainer.innerHTML = '<div class="text-muted">Kh\u00f4ng c\u00f3 nh\u00f3m slot \u0111\u1ec3 thu\u00ea \u0111\u1ed3.</div>';
-            return;
-        }
-        rentalGroupsContainer.innerHTML = groups.map(function (g) {
-            var selectedHtmlId = 'rental-selected-' + safeId(g.groupKey);
-            return '' +
-                '<div class="border rounded-3 p-3 mb-3">' +
-                '   <div class="fw-bold">' + escapeHtml(g.courtName) + '</div>' +
-                '   <div class="text-muted small mb-2">' + escapeHtml(g.startTime) + ' - ' + escapeHtml(g.endTime) + ' (' + g.slotCount + ' slot)</div>' +
-                buildRentalGroupActions(g) +
-                '   <div class="mt-3" id="' + selectedHtmlId + '"></div>' +
-                '</div>';
-        }).join('');
-        groups.forEach(function (g) {
-            renderSelectedRentals(g.groupKey);
-        });
-    }
-    function buildRentalGroupActions(group) {
-        var currentItems = rentalState.rentalsByGroup[group.groupKey] || [];
-        var previousSource = findPreviousConfiguredGroup(group.groupKey);
-        var modalLabel = currentItems.length ? '\u0110\u1ed3 m\u1edbi' : 'X\u00e1c nh\u1eadn';
-        var modalBtnClass = previousSource ? 'btn btn-sm btn-outline-primary' : 'btn btn-sm btn-primary';
-        var buttons = [];
-        if (previousSource) {
-            buttons.push(
-                '<button type="button" class="btn btn-sm btn-success" onclick="applyPreviousRental(\'' + jsString(group.groupKey) + '\')">' +
-                '   <i class="bi bi-check2-circle me-1"></i>\u00c1p d\u1ee5ng' +
-                '</button>'
-            );
-        }
-        buttons.push(
-            '<button type="button" class="' + modalBtnClass + '" onclick="openRentalModal(\'' + jsString(group.groupKey) + '\')">' +
-            '   <i class="bi bi-bag-plus me-1"></i>' + modalLabel +
-            '</button>'
-        );
-        return '' +
-            '<div class="d-flex flex-wrap gap-2">' + buttons.join('') + '</div>' +
-            buildRentalSourceHint(previousSource);
-    }
-    function buildRentalSourceHint(previousSource) {
-        if (!previousSource) return '';
-        return '<div class="small text-muted mt-2">\u00c1p d\u1ee5ng theo: ' +
-            escapeHtml(previousSource.courtName) + ' - ' +
-            escapeHtml(previousSource.startTime) + ' \u0111\u1ebfn ' +
-            escapeHtml(previousSource.endTime) + '</div>';
-    }
+function renderBookingSummary() {
+    if (summaryDate) summaryDate.textContent = formatDate(bookingData.date);
 
-    function renderSelectedRentals(groupKey) {
-        var el = document.getElementById('rental-selected-' + safeId(groupKey));
-        if (!el) return;
-        var items = rentalState.rentalsByGroup[groupKey] || [];
-        if (!items.length) {
-            el.innerHTML = '<div class="small text-muted">Ch\u01b0a c\u00f3 \u0111\u1ed3 thu\u00ea cho nh\u00f3m slot n\u00e0y.</div>';
-            return;
-        }
-        var html = '' +
-            '<div class="table-responsive">' +
-            '<table class="table table-sm align-middle mb-0">' +
-            '<thead>' +
-            '   <tr>' +
-            '       <th>T\u00ean \u0111\u1ed3</th>' +
-            '       <th style="width:120px;">S\u1ed1 l\u01b0\u1ee3ng</th>' +
-            '       <th style="width:140px;">\u0110\u01a1n gi\u00e1</th>' +
-            '       <th style="width:140px;">Th\u00e0nh ti\u1ec1n</th>' +
-            '   </tr>' +
-            '</thead>' +
-            '<tbody>';
-        items.forEach(function (item) {
-            var group = findGroupByKey(groupKey);
-            var lineTotal = Number(item.unitPrice || 0) * Number(item.quantity || 0) * Number(group ? group.slotCount : 1);
-            html += '' +
-                '<tr>' +
-                '   <td>' + escapeHtml(item.name) + '</td>' +
-                '   <td>' + Number(item.quantity || 0) + '</td>' +
-                '   <td>' + formatMoney(item.unitPrice || 0) + '</td>' +
-                '   <td class="fw-bold">' + formatMoney(lineTotal) + '</td>' +
-                '</tr>';
-        });
-        html += '</tbody></table></div>';
-        el.innerHTML = html;
-    }
-
-    function renderRentalFeeSummary() {
-        if (!rentalFeeSummary) return;
-        var groups = rentalState.groups || [];
-        var lines = [];
-        groups.forEach(function (g) {
-            var items = rentalState.rentalsByGroup[g.groupKey] || [];
-            if (!items.length) return;
-            var total = 0;
-            items.forEach(function (item) {
-                total += Number(item.unitPrice || 0) * Number(item.quantity || 0) * Number(g.slotCount || 1);
-            });
-            lines.push({
-                label: escapeHtml(g.courtName) + ' : ' + escapeHtml(g.startTime) + ' - ' + escapeHtml(g.endTime),
-                amount: total
-            });
-        });
-        if (!lines.length) {
-            rentalFeeSummary.innerHTML = '<div class="text-muted">Ch\u01b0a c\u00f3 ph\u00ed thu\u00ea \u0111\u1ed3.</div>';
-            if (rentalGrandTotal) rentalGrandTotal.textContent = '0\u0111';
-            updateGrandSummary();
-            return;
-        }
-        rentalFeeSummary.innerHTML = lines.map(function (line) {
-            return '' +
-                '<div class="d-flex justify-content-between align-items-start border-bottom py-2">' +
-                '   <div class="me-3">' + line.label + '</div>' +
-                '   <div class="fw-semibold text-nowrap">' + formatMoney(line.amount) + '</div>' +
-                '</div>';
-        }).join('');
-        if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(getRentalGrandTotal());
+    sessions = buildSessions(bookingData.slots || []);
+    courtTotalPrice = 0;
+    if (!sessionsContainer) {
         updateGrandSummary();
+        return;
     }
 
-    function getRentalGrandTotal() {
-        var total = 0;
-        var groups = rentalState.groups || [];
-
-        groups.forEach(function (g) {
-            var items = rentalState.rentalsByGroup[g.groupKey] || [];
-            items.forEach(function (item) {
-                total += Number(item.unitPrice || 0) * Number(item.quantity || 0) * Number(g.slotCount || 1);
-            });
+    sessionsContainer.innerHTML = '';
+    sessions.forEach(function (session, idx) {
+        var sessionPrice = 0;
+        session.forEach(function (slot) {
+            sessionPrice += Number(slot.price || 0);
         });
+        courtTotalPrice += sessionPrice;
 
-        return total;
+        var first = session[0];
+        var last = session[session.length - 1];
+        var div = document.createElement('div');
+        div.className = 'sbc-session';
+        div.innerHTML =
+            '<div class="sbc-session-idx">' + (idx + 1) + '</div>' +
+            '<div class="sbc-session-info">' +
+            '  <div class="sbc-session-court">' + escapeHtml(first.courtName) + '</div>' +
+            '  <div class="sbc-session-meta">' +
+            '    <span><i class="bi bi-clock"></i>' + escapeHtml(first.startTime) + ' - ' + escapeHtml(last.endTime) + '</span>' +
+            '    <span><i class="bi bi-layers"></i>' + session.length + ' slot</span>' +
+            '    <span class="sbc-session-price">' + formatMoney(sessionPrice) + '</span>' +
+            '  </div>' +
+            '</div>';
+        sessionsContainer.appendChild(div);
+    });
+
+    updateGrandSummary();
+}
+
+function updateGrandSummary() {
+    if (!summaryTotal) return;
+    summaryTotal.textContent = formatMoney(courtTotalPrice + getRentalGrandTotal());
+}
+
+function renderRentalSection() {
+    rentalState.courts = buildRentalCourts(bookingData.slots || []);
+
+    if (!rentalGroupsContainer) {
+        renderRentalFeeSummary();
+        return;
+    }
+    if (!rentalState.courts.length) {
+        rentalGroupsContainer.innerHTML = '<div class="text-muted">Khong co slot de cho thue do.</div>';
+        renderRentalFeeSummary();
+        return;
     }
 
-    function findGroupByKey(groupKey) {
-        var groups = rentalState.groups || [];
-        for (var i = 0; i < groups.length; i++) {
-            if (groups[i].groupKey === groupKey) return groups[i];
-        }
-        return null;
-    }
-    function findPreviousConfiguredGroup(groupKey) {
-        var groups = rentalState.groups || [];
-        var targetIndex = -1;
-        for (var i = 0; i < groups.length; i++) {
-            if (groups[i].groupKey === groupKey) {
-                targetIndex = i;
-                break;
-            }
-        }
-        if (targetIndex <= 0) return null;
-        for (var j = targetIndex - 1; j >= 0; j--) {
-            if ((rentalState.rentalsByGroup[groups[j].groupKey] || []).length > 0) {
-                return groups[j];
-            }
-        }
-        return null;
-    }
-    function cloneRentalItems(items) {
-        return (items || []).map(function (item) {
-            return {
-                inventoryId: Number(item.inventoryId),
-                name: item.name,
-                quantity: Number(item.quantity || 0),
-                unitPrice: Number(item.unitPrice || 0)
-            };
-        });
-    }
-    function refreshRentalSection() {
-        renderRentalSection();
-        if (rentalState.selectedGroup && rentalState.selectedGroup.groupKey) {
-            var refreshedGroup = findGroupByKey(rentalState.selectedGroup.groupKey);
-            if (refreshedGroup) {
-                rentalState.selectedGroup = refreshedGroup;
-            }
-            renderRentalInventoryTable();
-        }
-    }
-    async function applyPreviousRental(groupKey) {
-        var sourceGroup = findPreviousConfiguredGroup(groupKey);
-        if (!sourceGroup) {
-            showError('Chua co bo do thue truoc do de ap dung.');
-            return;
-        }
-
-        var sourceItems = rentalState.rentalsByGroup[sourceGroup.groupKey] || [];
-        if (!sourceItems.length) {
-            showError('Nhom truoc chua co do thue de ap dung.');
-            return;
-        }
-
-        var currentItems = rentalState.rentalsByGroup[groupKey] || [];
-        if (currentItems.length) {
-            var confirmed = await uiConfirm(
-                'Ap dung se ghi de bo do thue hien tai cua nhom slot nay. Tiep tuc?',
-                'Ghi de do thue'
-            );
-            if (!confirmed) {
-                return;
-            }
-        }
-
-        rentalState.rentalsByGroup[groupKey] = cloneRentalItems(sourceItems);
-        refreshRentalSection();
-        hideError();
-    }
-
-    // =========================
-    // Rental modal logic
-    // =========================
-    function loadRentalInventory() {
-        if (!rentalState.selectedGroup) return;
-
-        var url = CTX + '/api/staff/rental/inventory?page=' + encodeURIComponent(rentalState.page) +
-            '&q=' + encodeURIComponent(rentalState.keyword || '');
-
-        fetch(url, {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: { 'Accept': 'application/json' }
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (json) {
-                if (!json.success || !json.data) {
-                    throw new Error(json.message || 'Không tải được danh sách đồ thuê');
-                }
-
-                rentalState.items = json.data.items || [];
-                rentalState.totalPages = Number(json.data.totalPages || 1);
-                renderRentalInventoryTable();
-            })
-            .catch(function (err) {
-                console.error('Rental inventory load error:', err);
-                rentalInventoryTableBody.innerHTML =
-                    '<tr><td colspan="7" class="text-center text-danger">Không thể tải danh sách đồ thuê.</td></tr>';
-                if (rentalInventoryEmpty) rentalInventoryEmpty.classList.add('d-none');
-                rentalPaginationInfo.textContent = 'Lỗi tải dữ liệu';
-            });
-    }
-
-    function renderRentalInventoryTable() {
-        var items = rentalState.items || [];
-        rentalInventoryTableBody.innerHTML = '';
-
-        if (!items.length) {
-            if (rentalInventoryEmpty) rentalInventoryEmpty.classList.remove('d-none');
-            rentalInventoryTableBody.innerHTML = '';
-        } else {
-            if (rentalInventoryEmpty) rentalInventoryEmpty.classList.add('d-none');
-
-            var startIndex = ((rentalState.page - 1) * 5) + 1;
-            rentalInventoryTableBody.innerHTML = items.map(function (item, idx) {
-                return buildRentalRow(item, startIndex + idx);
-            }).join('');
-        }
-
-        rentalPaginationInfo.textContent = 'Trang ' + rentalState.page + ' / ' + rentalState.totalPages;
-        btnRentalPrev.disabled = rentalState.page <= 1;
-        btnRentalNext.disabled = rentalState.page >= rentalState.totalPages;
-    }
-
-    function buildRentalRow(item, index) {
-        var selectedGroup = rentalState.selectedGroup;
-        var groupKey = selectedGroup ? selectedGroup.groupKey : '';
-        var selectedItems = rentalState.rentalsByGroup[groupKey] || [];
-        var existed = selectedItems.find(function (x) {
-            return Number(x.inventoryId) === Number(item.inventoryId);
-        });
-
-        var actionHtml = '';
-
-        if (existed) {
-            actionHtml =
-                '<div class="d-flex flex-column gap-2">' +
-                '   <div><span class="badge bg-success">Đã thuê</span></div>' +
-                '   <div class="input-group input-group-sm">' +
-                '       <span class="input-group-text">SL</span>' +
-                '       <input type="number" min="0" max="' + Number(item.availableQuantity || 0) + '" class="form-control" ' +
-                '              id="edit_qty_' + Number(item.inventoryId) + '" value="' + Number(existed.quantity || 0) + '">' +
-                '   </div>' +
-                '   <div class="d-flex gap-2">' +
-                '       <button class="btn btn-sm btn-warning" type="button" onclick="saveRentalEdit(' + Number(item.inventoryId) + ', ' + Number(item.rentalPrice || 0) + ', \'' + jsString(item.name || '') + '\', ' + Number(item.availableQuantity || 0) + ')">' +
-                '           Lưu' +
-                '       </button>' +
-                '       <button class="btn btn-sm btn-danger" type="button" onclick="removeRentalItem(' + Number(item.inventoryId) + ')">' +
-                '           Bỏ' +
-                '       </button>' +
-                '   </div>' +
-                '</div>';
-        } else {
-            actionHtml =
-                '<div id="selectBtnWrap_' + Number(item.inventoryId) + '">' +
-                '   <button class="btn btn-sm btn-outline-primary" type="button" onclick="selectRentalItem(' + Number(item.inventoryId) + ')">' +
-                '       Chọn' +
-                '   </button>' +
-                '</div>' +
-                '<div class="mt-2 d-none" id="qtyWrap_' + Number(item.inventoryId) + '">' +
-                '   <input type="number" min="1" max="' + Number(item.availableQuantity || 0) + '" class="form-control form-control-sm mb-2" ' +
-                '          id="qty_' + Number(item.inventoryId) + '" oninput="onQtyChange(' + Number(item.inventoryId) + ', ' + Number(item.availableQuantity || 0) + ')">' +
-                '   <div class="d-flex gap-2">' +
-                '       <button class="btn btn-sm btn-success" disabled id="rentBtn_' + Number(item.inventoryId) + '" type="button" onclick="rentItem(' + Number(item.inventoryId) + ', ' + Number(item.rentalPrice || 0) + ', \'' + jsString(item.name || '') + '\')">' +
-                '           Thuê' +
-                '       </button>' +
-                '       <button class="btn btn-sm btn-secondary" type="button" onclick="cancelSelectRentalItem(' + Number(item.inventoryId) + ')">' +
-                '           Hủy' +
-                '       </button>' +
-                '   </div>' +
-                '</div>';
-        }
+    rentalGroupsContainer.innerHTML = rentalState.courts.map(function (court) {
+        var pageInfo = getCourtSlotPage(court.courtId, court.slots.length);
+        var start = (pageInfo.page - 1) * 5;
+        var pageSlots = court.slots.slice(start, start + 5);
 
         return '' +
-            '<tr>' +
-            '   <td>' + index + '</td>' +
-            '   <td>' + escapeHtml(item.name || '') + '</td>' +
-            '   <td>' + escapeHtml(item.brand || '') + '</td>' +
-            '   <td>' + escapeHtml(item.description || '') + '</td>' +
-            '   <td>' + formatMoney(item.rentalPrice || 0) + '</td>' +
-            '   <td>' + Number(item.availableQuantity || 0) + '</td>' +
-            '   <td>' + actionHtml + '</td>' +
-            '</tr>';
-    }
+            '<div class="sbc-rental-court">' +
+            '   <div class="sbc-rental-court-header">' +
+            '       <div class="sbc-rental-court-name">' + escapeHtml(court.courtName) + '</div>' +
+            '       <div class="sbc-rental-court-meta">' + court.slots.length + ' o slot</div>' +
+            '   </div>' +
+            buildCourtActionBar(court) +
+            '   <div class="sbc-rental-slot-grid">' + pageSlots.map(buildRentalSlotBox).join('') + '</div>' +
+            buildCourtSlotPagination(court.courtId, pageInfo.page, pageInfo.totalPages) +
+            buildCourtRentalSummary(court) +
+            '</div>';
+    }).join('');
 
-    function selectRentalItem(inventoryId) {
-        var wrap = document.getElementById('qtyWrap_' + inventoryId);
-        var btnWrap = document.getElementById('selectBtnWrap_' + inventoryId);
+    renderRentalFeeSummary();
+}
 
-        if (btnWrap) btnWrap.classList.add('d-none');
-        if (wrap) wrap.classList.remove('d-none');
-    }
-
-    function cancelSelectRentalItem(inventoryId) {
-        var wrap = document.getElementById('qtyWrap_' + inventoryId);
-        var btnWrap = document.getElementById('selectBtnWrap_' + inventoryId);
-        var qtyEl = document.getElementById('qty_' + inventoryId);
-        var rentBtn = document.getElementById('rentBtn_' + inventoryId);
-
-        if (wrap) wrap.classList.add('d-none');
-        if (btnWrap) btnWrap.classList.remove('d-none');
-        if (qtyEl) qtyEl.value = '';
-        if (rentBtn) rentBtn.disabled = true;
-    }
-
-    function onQtyChange(inventoryId, maxQty) {
-        var qtyEl = document.getElementById('qty_' + inventoryId);
-        var btn = document.getElementById('rentBtn_' + inventoryId);
-        if (!qtyEl || !btn) return;
-
-        var qty = parseInt(qtyEl.value || '0', 10);
-        var valid = !isNaN(qty) && qty > 0 && qty <= Number(maxQty || 0);
-
-        btn.disabled = !valid;
-    }
-
-    async function rentItem(inventoryId, unitPrice, name) {
-        var qtyEl = document.getElementById('qty_' + inventoryId);
-        var qty = parseInt((qtyEl && qtyEl.value) || '0', 10);
-
-        if (!rentalState.selectedGroup) return;
-
-        var item = (rentalState.items || []).find(function (x) {
-            return Number(x.inventoryId) === Number(inventoryId);
+function buildRentalCourts(rows) {
+    var map = {};
+    (rows || []).forEach(function (row) {
+        if (!map[row.courtId]) {
+            map[row.courtId] = { courtId: row.courtId, courtName: row.courtName, slots: [] };
+        }
+        map[row.courtId].slots.push({
+            slotKey: buildRentalSlotKey(row.courtId, row.slotId),
+            bookingSlotId: row.bookingSlotId,
+            courtId: row.courtId,
+            courtName: row.courtName,
+            slotId: row.slotId,
+            startTime: row.startTime,
+            endTime: row.endTime,
+            price: Number(row.price || 0)
         });
+    });
 
-        if (!item) {
-            showError('Không tìm thấy đồ thuê');
-            return;
-        }
-
-        if (isNaN(qty) || qty <= 0) {
-            showError('Số lượng thuê phải lớn hơn 0');
-            return;
-        }
-
-        if (qty > Number(item.availableQuantity || 0)) {
-            showError('Số lượng thuê vượt quá số lượng khả dụng');
-            return;
-        }
-
-        var groupKey = rentalState.selectedGroup.groupKey;
-        if (!rentalState.rentalsByGroup[groupKey]) {
-            rentalState.rentalsByGroup[groupKey] = [];
-        }
-
-        var existed = rentalState.rentalsByGroup[groupKey].find(function (x) {
-            return Number(x.inventoryId) === Number(inventoryId);
+    return Object.keys(map).map(function (courtId) {
+        var court = map[courtId];
+        court.slots.sort(function (a, b) {
+            if (toMinutes(a.startTime) === toMinutes(b.startTime)) {
+                return Number(a.slotId || 0) - Number(b.slotId || 0);
+            }
+            return toMinutes(a.startTime) - toMinutes(b.startTime);
         });
+        return court;
+    }).sort(function (a, b) {
+        return String(a.courtName).localeCompare(String(b.courtName));
+    });
+}
 
-        if (existed) {
-            existed.quantity = qty;
-            existed.unitPrice = Number(unitPrice);
-            existed.name = name;
-        } else {
-            rentalState.rentalsByGroup[groupKey].push({
-                inventoryId: Number(inventoryId),
-                name: name,
-                quantity: qty,
-                unitPrice: Number(unitPrice)
+function buildRentalSlotKey(courtId, slotId) {
+    return 'court_' + courtId + '__slot_' + slotId;
+}
+
+function buildRentalSlotBox(slot) {
+    var items = rentalState.savedBySlot[slot.slotKey] || [];
+    var classes = ['sbc-rental-slot-btn'];
+    var isActive = rentalState.selectedSlot && rentalState.selectedSlot.slotKey === slot.slotKey;
+    if (items.length) classes.push('is-configured');
+    if (isActive) classes.push('is-active');
+
+    return '' +
+        '<button type="button" class="' + classes.join(' ') + '" onclick="openRentalModal(\'' + jsString(slot.slotKey) + '\')">' +
+        '   <span class="sbc-rental-slot-time">' + escapeHtml(slot.startTime) + ' - ' + escapeHtml(slot.endTime) + '</span>' +
+        '   <span class="sbc-rental-slot-state">' + (items.length ? ('Da luu ' + items.length + ' mon') : 'Nhan de chon do') + '</span>' +
+        '   <span class="sbc-rental-slot-sub">' + (items.length ? (sumItemQuantities(items) + ' cai - ' + formatMoney(computeItemsTotal(items))) : '&nbsp;') + '</span>' +
+        '</button>';
+}
+
+function buildCourtSlotPagination(courtId, currentPage, totalPages) {
+    if (totalPages <= 1) return '';
+    return '' +
+        '<div class="sbc-rental-slot-pagination">' +
+            '   <button type="button" class="btn btn-outline-secondary btn-sm" ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="changeRentalSlotPage(' + Number(courtId) + ', -1)"><i class="bi bi-chevron-left"></i></button>' +
+        '   <span>Trang ' + currentPage + ' / ' + totalPages + '</span>' +
+        '   <button type="button" class="btn btn-outline-secondary btn-sm" ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="changeRentalSlotPage(' + Number(courtId) + ', 1)"><i class="bi bi-chevron-right"></i></button>' +
+        '</div>';
+}
+
+function buildCourtActionBar(court) {
+    var applyTargets = getCourtApplyTargets(court);
+    var isApplying = Number(rentalState.applyingCourtId || 0) === Number(court.courtId);
+    var buttonLabel = isApplying ? 'Dang ap dung...' : 'Ap dung toan bo';
+
+    return '' +
+        '<div class="sbc-rental-court-actions">' +
+        '   <button type="button" class="btn btn-sm btn-outline-success" ' +
+        (applyTargets.length === 0 || isApplying ? 'disabled ' : '') +
+        'onclick="applyCourtRental(' + Number(court.courtId) + ')">' +
+        '       <i class="bi bi-copy me-1"></i>' + buttonLabel +
+        '   </button>' +
+        '</div>';
+}
+
+function buildCourtRentalSummary(court) {
+    var total = getCourtRentalTotal(court);
+    return '' +
+        '<div class="sbc-rental-court-summary">' +
+        '   <div class="sbc-rental-court-summary-title">Tong tien thue do</div>' +
+        '   <div class="sbc-rental-court-summary-total">' + formatMoney(total) + '</div>' +
+        '</div>';
+}
+
+function getCourtApplyTargets(court) {
+    var targets = [];
+    var lastItems = null;
+
+    (court.slots || []).forEach(function (slot) {
+        var items = rentalState.savedBySlot[slot.slotKey] || [];
+        if (items.length) {
+            lastItems = cloneRentalItems(items);
+            return;
+        }
+
+        if (lastItems && lastItems.length) {
+            targets.push({
+                slot: slot,
+                items: cloneRentalItems(lastItems)
             });
         }
+    });
 
-        refreshRentalSection();
-        hideError();
+    return targets;
+}
+
+function getCourtRentalTotal(court) {
+    return (court.slots || []).reduce(function (sum, slot) {
+        return sum + computeItemsTotal(rentalState.savedBySlot[slot.slotKey] || []);
+    }, 0);
+}
+
+function cloneRentalItems(items) {
+    return (items || []).map(function (item) {
+        return {
+            inventoryId: Number(item.inventoryId),
+            name: item.name || '',
+            quantity: Number(item.quantity || 0),
+            unitPrice: Number(item.unitPrice || 0),
+            brand: item.brand || '',
+            description: item.description || ''
+        };
+    });
+}
+
+function getCourtSlotPage(courtId, slotCount) {
+    var totalPages = Math.max(1, Math.ceil(slotCount / 5));
+    var page = Number(rentalState.slotPagesByCourt[courtId] || 1);
+    if (page < 1) page = 1;
+    if (page > totalPages) page = totalPages;
+    rentalState.slotPagesByCourt[courtId] = page;
+    return { page: page, totalPages: totalPages };
+}
+
+function changeRentalSlotPage(courtId, delta) {
+    var court = findCourtById(courtId);
+    if (!court) return;
+    var pageInfo = getCourtSlotPage(courtId, court.slots.length);
+    var nextPage = pageInfo.page + delta;
+    if (nextPage < 1 || nextPage > pageInfo.totalPages) return;
+    rentalState.slotPagesByCourt[courtId] = nextPage;
+    renderRentalSection();
+}
+
+function findCourtById(courtId) {
+    var courts = rentalState.courts || [];
+    for (var i = 0; i < courts.length; i++) {
+        if (Number(courts[i].courtId) === Number(courtId)) return courts[i];
     }
-    async function saveRentalEdit(inventoryId, unitPrice, name, maxQty) {
-        if (!rentalState.selectedGroup) return;
+    return null;
+}
 
-        var qtyEl = document.getElementById('edit_qty_' + inventoryId);
-        var qty = parseInt((qtyEl && qtyEl.value) || '0', 10);
-
-        if (isNaN(qty) || qty < 0 || qty > Number(maxQty || 0)) {
-            showError('Số lượng sửa phải >= 0 và <= số lượng khả dụng');
-            return;
+function findSlotByKey(slotKey) {
+    var courts = rentalState.courts || [];
+    for (var i = 0; i < courts.length; i++) {
+        for (var j = 0; j < courts[i].slots.length; j++) {
+            if (courts[i].slots[j].slotKey === slotKey) return courts[i].slots[j];
         }
+    }
+    return null;
+}
 
-        if (qty === 0) {
-            removeRentalItem(inventoryId);
-            return;
-        }
+function normalizeSavedItems(items) {
+    return (items || []).map(function (item) {
+        return {
+            inventoryId: Number(item.inventoryId || 0),
+            name: item.name || '',
+            quantity: Number(item.selectedQuantity || item.quantity || 0),
+            unitPrice: Number(item.rentalPrice || item.unitPrice || 0),
+            brand: item.brand || '',
+            description: item.description || '',
+            availableItem: Number(item.availableQuantity || item.availableItem || 0)
+        };
+    }).filter(function (item) {
+        return item.inventoryId > 0 && item.quantity > 0;
+    });
+}
 
-        var groupKey = rentalState.selectedGroup.groupKey;
-        var list = rentalState.rentalsByGroup[groupKey] || [];
-        var existed = list.find(function (x) {
-            return Number(x.inventoryId) === Number(inventoryId);
+function buildDraftMap(items) {
+    var map = {};
+    (items || []).forEach(function (item) {
+        map[String(item.inventoryId)] = {
+            inventoryId: Number(item.inventoryId),
+            name: item.name || '',
+            quantity: Number(item.quantity || 0),
+            unitPrice: Number(item.unitPrice || 0),
+            brand: item.brand || '',
+            description: item.description || ''
+        };
+    });
+    return map;
+}
+
+function getDraftMap(slotKey) {
+    if (!rentalState.draftBySlot[slotKey]) {
+        rentalState.draftBySlot[slotKey] = {};
+    }
+    return rentalState.draftBySlot[slotKey];
+}
+
+function draftMapToItems(slotKey) {
+    return Object.keys(getDraftMap(slotKey)).map(function (key) {
+        return rentalState.draftBySlot[slotKey][key];
+    }).filter(function (item) {
+        return Number(item.quantity || 0) > 0;
+    }).sort(function (a, b) {
+        return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+}
+
+function renderRentalFeeSummary() {
+    if (!rentalFeeSummary) return;
+    var entries = getCourtRentalEntries();
+    if (!entries.length) {
+        rentalFeeSummary.innerHTML = '<div class="text-muted">Chua co phi thue do.</div>';
+        if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(0);
+        updateGrandSummary();
+        return;
+    }
+
+    rentalFeeSummary.innerHTML = entries.map(function (entry) {
+        return '<div class="d-flex justify-content-between align-items-start border-bottom py-2"><div class="me-3">' + escapeHtml(entry.courtName) + '</div><div class="fw-semibold text-nowrap">' + formatMoney(entry.total) + '</div></div>';
+    }).join('');
+
+    if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(getRentalGrandTotal());
+    updateGrandSummary();
+}
+
+function getRentalGrandTotal() {
+    return getCourtRentalEntries().reduce(function (sum, entry) {
+        return sum + Number(entry.total || 0);
+    }, 0);
+}
+
+function getCourtRentalEntries() {
+    return (rentalState.courts || []).map(function (court) {
+        return {
+            courtId: court.courtId,
+            courtName: court.courtName,
+            total: getCourtRentalTotal(court)
+        };
+    }).filter(function (entry) {
+        return Number(entry.total || 0) > 0;
+    }).sort(function (a, b) {
+        return String(a.courtName).localeCompare(String(b.courtName));
+    });
+}
+
+function computeItemsTotal(items) {
+    return (items || []).reduce(function (sum, item) {
+        return sum + (Number(item.unitPrice || 0) * Number(item.quantity || 0));
+    }, 0);
+}
+
+function sumItemQuantities(items) {
+    return (items || []).reduce(function (sum, item) {
+        return sum + Number(item.quantity || 0);
+    }, 0);
+}
+
+function loadRentalInventory() {
+    if (!rentalState.selectedSlot) return;
+
+    var slot = rentalState.selectedSlot;
+    var slotKey = slot.slotKey;
+    var url = CTX + '/api/staff/rental/schedule/inventory' +
+        '?bookingDate=' + encodeURIComponent(bookingData.date || '') +
+        '&courtId=' + encodeURIComponent(slot.courtId) +
+        '&slotId=' + encodeURIComponent(slot.slotId) +
+        '&page=' + encodeURIComponent(rentalState.page) +
+        '&q=' + encodeURIComponent(rentalState.keyword || '');
+
+    fetch(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+    })
+        .then(function (res) { return res.json(); })
+        .then(function (json) {
+            if (!rentalState.selectedSlot || rentalState.selectedSlot.slotKey !== slotKey) return;
+            if (!json.success || !json.data) {
+                throw new Error(json.message || 'Khong the tai danh sach do thue.');
+            }
+
+            rentalState.page = Number(json.data.page || rentalState.page || 1);
+            rentalState.items = json.data.items || [];
+            rentalState.totalPages = Math.max(1, Number(json.data.totalPages || 1));
+            rentalState.savedBySlot[slotKey] = normalizeSavedItems(json.data.selectedItems || []);
+
+            if (!rentalState.draftLoadedSlots[slotKey]) {
+                rentalState.draftBySlot[slotKey] = buildDraftMap(rentalState.savedBySlot[slotKey]);
+                rentalState.draftLoadedSlots[slotKey] = true;
+            } else if (!rentalState.draftBySlot[slotKey]) {
+                rentalState.draftBySlot[slotKey] = buildDraftMap(rentalState.savedBySlot[slotKey]);
+            }
+
+            renderRentalSection();
+            renderRentalInventoryTable();
+        })
+        .catch(function (err) {
+            console.error('Rental inventory load error:', err);
+            rentalState.items = [];
+            rentalState.totalPages = 1;
+            renderRentalInventoryTable('Khong the tai danh sach do thue.');
         });
+}
 
-        if (!existed) {
-            showError('Đồ thuê chưa tồn tại trong nhóm này');
-            return;
-        }
+function renderRentalInventoryTable(errorMessage) {
+    if (!rentalInventoryTableBody) return;
 
-        existed.quantity = qty;
-        existed.unitPrice = Number(unitPrice);
-        existed.name = name;
+    var items = rentalState.items || [];
+    rentalInventoryTableBody.innerHTML = '';
 
-        refreshRentalSection();
+    if (errorMessage) {
+        rentalInventoryTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">' + escapeHtml(errorMessage) + '</td></tr>';
+        if (rentalInventoryEmpty) rentalInventoryEmpty.classList.add('d-none');
+    } else if (!items.length) {
+        if (rentalInventoryEmpty) rentalInventoryEmpty.classList.remove('d-none');
+    } else {
+        if (rentalInventoryEmpty) rentalInventoryEmpty.classList.add('d-none');
+        var slotKey = rentalState.selectedSlot ? rentalState.selectedSlot.slotKey : '';
+        var draftMap = getDraftMap(slotKey);
+        var startIndex = ((rentalState.page - 1) * 5) + 1;
+        rentalInventoryTableBody.innerHTML = items.map(function (item, idx) {
+            return buildRentalRow(item, startIndex + idx, draftMap[String(item.inventoryId)]);
+        }).join('');
+    }
+
+    if (rentalPaginationInfo) rentalPaginationInfo.textContent = 'Trang ' + rentalState.page + ' / ' + rentalState.totalPages;
+    if (btnRentalPrev) btnRentalPrev.disabled = rentalState.page <= 1;
+    if (btnRentalNext) btnRentalNext.disabled = rentalState.page >= rentalState.totalPages;
+}
+
+function buildRentalRow(item, index, draftItem) {
+    var currentQty = draftItem ? Number(draftItem.quantity || 0) : Number(item.selectedQuantity || 0);
+    var maxQty = Math.max(0, Number(item.availableQuantity || 0));
+    var inventoryId = Number(item.inventoryId || 0);
+    if (currentQty > maxQty) currentQty = maxQty;
+
+    return '' +
+        '<tr>' +
+        '   <td>' + index + '</td>' +
+        '   <td>' + escapeHtml(item.name || '') + '</td>' +
+        '   <td>' + escapeHtml(item.brand || '') + '</td>' +
+        '   <td>' + escapeHtml(item.description || '') + '</td>' +
+        '   <td>' + formatMoney(item.rentalPrice || 0) + '</td>' +
+        '   <td><div class="fw-semibold" id="rentalRemaining_' + inventoryId + '">' + Math.max(0, maxQty - currentQty) + '</div><div class="small text-muted">Toi da: ' + maxQty + '</div></td>' +
+        '   <td><input type="number" min="0" max="' + maxQty + '" value="' + currentQty + '" class="form-control form-control-sm js-rental-qty" data-inventory-id="' + inventoryId + '" data-max-qty="' + maxQty + '"><div class="small text-muted mt-1">Nhap 0 neu khong thue mon nay.</div></td>' +
+        '</tr>';
+}
+
+function onSlotRentalQtyChange(input) {
+    if (!input || !rentalState.selectedSlot) return;
+
+    var inventoryId = Number(input.getAttribute('data-inventory-id') || 0);
+    var maxQty = Number(input.getAttribute('data-max-qty') || 0);
+    var rawValue = String(input.value || '').trim();
+    var quantity = rawValue ? parseInt(rawValue, 10) : 0;
+
+    if (isNaN(quantity) || quantity < 0) quantity = 0;
+    if (quantity > maxQty) quantity = maxQty;
+    if (rawValue !== '' && String(quantity) !== rawValue) input.value = quantity;
+
+    var item = findInventoryItemById(inventoryId);
+    if (!item) return;
+
+    var slotKey = rentalState.selectedSlot.slotKey;
+    var draftMap = getDraftMap(slotKey);
+    if (quantity > 0) {
+        draftMap[String(inventoryId)] = {
+            inventoryId: inventoryId,
+            name: item.name || '',
+            quantity: quantity,
+            unitPrice: Number(item.rentalPrice || 0),
+            brand: item.brand || '',
+            description: item.description || ''
+        };
+    } else {
+        delete draftMap[String(inventoryId)];
+    }
+
+    updateRemainingDisplay(inventoryId, maxQty, quantity);
+}
+
+function updateRemainingDisplay(inventoryId, maxQty, quantity) {
+    var remainingEl = document.getElementById('rentalRemaining_' + inventoryId);
+    if (!remainingEl) return;
+    remainingEl.textContent = Math.max(0, Number(maxQty || 0) - Number(quantity || 0));
+}
+
+function findInventoryItemById(inventoryId) {
+    var items = rentalState.items || [];
+    for (var i = 0; i < items.length; i++) {
+        if (Number(items[i].inventoryId) === Number(inventoryId)) return items[i];
+    }
+    return null;
+}
+
+async function requestSaveSlotRentalSchedule(slot, items) {
+    var res = await fetch(CTX + '/api/staff/rental/schedule/save', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+            bookingDate: bookingData.date,
+            courtId: slot.courtId,
+            slotId: slot.slotId,
+            items: (items || []).map(function (item) {
+                return {
+                    inventoryId: Number(item.inventoryId),
+                    quantity: Number(item.quantity)
+                };
+            })
+        })
+    });
+
+    var body = await res.json();
+    if (!body.success) {
+        throw new Error(body.message || 'Khong the luu lich cho thue.');
+    }
+
+    var slotKey = slot.slotKey;
+    rentalState.savedBySlot[slotKey] = normalizeSavedItems((body.data && body.data.selectedItems) || []);
+    rentalState.draftBySlot[slotKey] = buildDraftMap(rentalState.savedBySlot[slotKey]);
+    rentalState.draftLoadedSlots[slotKey] = true;
+}
+
+async function saveRentalSchedule() {
+    if (!rentalState.selectedSlot || !btnRentalSave) return;
+
+    var slot = rentalState.selectedSlot;
+    var payloadItems = draftMapToItems(slot.slotKey);
+
+    var originalHtml = btnRentalSave.innerHTML;
+    btnRentalSave.disabled = true;
+    btnRentalSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Luu';
+
+    try {
+        await requestSaveSlotRentalSchedule(slot, payloadItems);
+        renderRentalSection();
         hideError();
+        closeRentalModal();
+    } catch (err) {
+        console.error('Save rental schedule error:', err);
+        showError(err.message || 'Khong the luu lich cho thue.');
+    } finally {
+        btnRentalSave.disabled = false;
+        btnRentalSave.innerHTML = originalHtml;
+    }
+}
+
+async function applyCourtRental(courtId) {
+    var court = findCourtById(courtId);
+    if (!court) return;
+
+    var targets = getCourtApplyTargets(court);
+    if (!targets.length) {
+        showError('San nay chua co slot mau de ap dung cho cac slot sau.');
+        return;
     }
 
+    rentalState.applyingCourtId = courtId;
+    renderRentalSection();
 
-
-
-
-
-
-
-    async function removeRentalItem(inventoryId) {
-        if (!rentalState.selectedGroup) return;
-
-        var groupKey = rentalState.selectedGroup.groupKey;
-        var list = rentalState.rentalsByGroup[groupKey] || [];
-
-        rentalState.rentalsByGroup[groupKey] = list.filter(function (x) {
-            return Number(x.inventoryId) !== Number(inventoryId);
-        });
-
-        refreshRentalSection();
+    try {
+        for (var i = 0; i < targets.length; i++) {
+            await requestSaveSlotRentalSchedule(targets[i].slot, targets[i].items);
+        }
+        renderRentalSection();
         hideError();
+    } catch (err) {
+        console.error('Apply court rental error:', err);
+        showError(err.message || 'Khong the ap dung toan bo cho san nay.');
+    } finally {
+        rentalState.applyingCourtId = null;
+        renderRentalSection();
     }
-    function openRentalModal(groupKey) {
-        var group = findGroupByKey(groupKey);
-        if (!group) return;
+}
 
-        rentalState.selectedGroup = group;
-        rentalState.page = 1;
-        rentalState.keyword = '';
+function openRentalModal(slotKey) {
+    var slot = findSlotByKey(slotKey);
+    if (!slot) return;
 
-        if (rentalSearchInput) rentalSearchInput.value = '';
-        if (rentalModalContext) {
-            rentalModalContext.textContent = group.courtName + ' - ' + group.startTime + ' đến ' + group.endTime;
-        }
+    rentalState.selectedSlot = slot;
+    rentalState.page = 1;
+    rentalState.keyword = '';
+    rentalState.items = [];
+    rentalState.totalPages = 1;
 
-        loadRentalInventory();
+    if (rentalSearchInput) rentalSearchInput.value = '';
+    if (rentalModalContext) rentalModalContext.textContent = slot.courtName + ' - ' + slot.startTime + ' den ' + slot.endTime;
 
-        if (rentalModal) {
-            rentalModal.show();
-        } else {
-            var modalEl = document.getElementById('rentalInventoryModal');
-            if (modalEl) modalEl.classList.add('show');
-        }
+    loadRentalInventory();
+    if (rentalModal) {
+        rentalModal.show();
+    } else if (rentalModalElement) {
+        rentalModalElement.classList.add('show');
+        rentalModalElement.style.display = 'block';
+        rentalModalElement.removeAttribute('aria-hidden');
     }
+    renderRentalSection();
+}
 
-    // Expose for inline onclick
-    window.openRentalModal = openRentalModal;
-    window.selectRentalItem = selectRentalItem;
-    window.cancelSelectRentalItem = cancelSelectRentalItem;
-    window.onQtyChange = onQtyChange;
-    window.rentItem = rentItem;
-    window.saveRentalEdit = saveRentalEdit;
-    window.removeRentalItem = removeRentalItem;
-    window.applyPreviousRental = applyPreviousRental;
-
-    // =========================
-    // Events
-    // =========================
-    function bindEvents() {
-        bindCustomerModeEvents();
-        bindSearchEvents();
-        bindGuestPhoneEvents();
-        bindRentalEvents();
-        bindSubmitEvent();
+function closeRentalModal() {
+    if (rentalModal) {
+        rentalModal.hide();
+        return;
     }
+    if (!rentalModalElement) return;
+    rentalModalElement.classList.remove('show');
+    rentalModalElement.style.display = 'none';
+    rentalModalElement.setAttribute('aria-hidden', 'true');
+}
 
-    function bindCustomerModeEvents() {
+window.openRentalModal = openRentalModal;
+window.changeRentalSlotPage = changeRentalSlotPage;
+window.applyCourtRental = applyCourtRental;
+
+function bindEvents() {
+    bindCustomerModeEvents();
+    bindSearchEvents();
+    bindGuestPhoneEvents();
+    bindRentalEvents();
+    bindSubmitEvent();
+}
+
+function bindCustomerModeEvents() {
+    if (tabAccount) {
         tabAccount.addEventListener('click', function () {
             customerType = 'ACCOUNT';
             tabAccount.classList.add('active');
-            tabGuest.classList.remove('active');
-            formAccount.classList.remove('d-none');
-            formGuest.classList.add('d-none');
+            if (tabGuest) tabGuest.classList.remove('active');
+            if (formAccount) formAccount.classList.remove('d-none');
+            if (formGuest) formGuest.classList.add('d-none');
             hideError();
         });
+    }
 
+    if (tabGuest) {
         tabGuest.addEventListener('click', function () {
             customerType = 'GUEST';
             tabGuest.classList.add('active');
-            tabAccount.classList.remove('active');
-            formGuest.classList.remove('d-none');
-            formAccount.classList.add('d-none');
+            if (tabAccount) tabAccount.classList.remove('active');
+            if (formGuest) formGuest.classList.remove('d-none');
+            if (formAccount) formAccount.classList.add('d-none');
             hideError();
-        });
-
-        btnRemoveCustomer.addEventListener('click', function () {
-            selectedAccountId.value = '';
-            selectedCustomer.classList.add('d-none');
         });
     }
 
-    function bindSearchEvents() {
-        customerSearch.addEventListener('input', function () {
-            var q = this.value.trim();
-            if (q.length < 2) {
-                searchDropdown.classList.add('d-none');
+    if (btnRemoveCustomer) {
+        btnRemoveCustomer.addEventListener('click', function () {
+            if (selectedAccountId) selectedAccountId.value = '';
+            if (selectedCustomer) selectedCustomer.classList.add('d-none');
+        });
+    }
+}
+
+function bindSearchEvents() {
+    if (!customerSearch || !searchDropdown) return;
+    customerSearch.addEventListener('input', function () {
+        var keyword = this.value.trim();
+        if (keyword.length < 2) {
+            searchDropdown.classList.add('d-none');
+            return;
+        }
+
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+            fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(keyword), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (body) {
+                    if (!body.success) return;
+                    renderSearchResults(body.data.customers || []);
+                })
+                .catch(function (err) {
+                    console.error('Customer search error:', err);
+                });
+        }, 300);
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.sbc-search-wrap')) {
+            searchDropdown.classList.add('d-none');
+        }
+    });
+}
+
+function bindGuestPhoneEvents() {
+    if (!guestPhoneInput) return;
+    guestPhoneInput.addEventListener('input', function () {
+        var digits = this.value.replace(/[^\d]/g, '');
+        if (digits.length > 10) digits = digits.substring(0, 10);
+        this.value = digits;
+        updatePhoneHint(digits);
+    });
+
+    guestPhoneInput.addEventListener('paste', function () {
+        var self = this;
+        setTimeout(function () {
+            var digits = self.value.replace(/[^\d]/g, '');
+            if (digits.length > 10) digits = digits.substring(0, 10);
+            self.value = digits;
+            updatePhoneHint(digits);
+        }, 0);
+    });
+}
+
+function bindRentalEvents() {
+    if (btnRentalSearch) {
+        btnRentalSearch.addEventListener('click', function () {
+            rentalState.keyword = (rentalSearchInput ? rentalSearchInput.value : '').trim();
+            rentalState.page = 1;
+            loadRentalInventory();
+        });
+    }
+
+    if (rentalSearchInput) {
+        rentalSearchInput.addEventListener('keydown', function (event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            rentalState.keyword = (rentalSearchInput.value || '').trim();
+            rentalState.page = 1;
+            loadRentalInventory();
+        });
+    }
+
+    if (btnRentalPrev) {
+        btnRentalPrev.addEventListener('click', function () {
+            if (rentalState.page <= 1) return;
+            rentalState.page--;
+            loadRentalInventory();
+        });
+    }
+
+    if (btnRentalNext) {
+        btnRentalNext.addEventListener('click', function () {
+            if (rentalState.page >= rentalState.totalPages) return;
+            rentalState.page++;
+            loadRentalInventory();
+        });
+    }
+
+    if (rentalInventoryTableBody) {
+        rentalInventoryTableBody.addEventListener('input', function (event) {
+            var input = event.target.closest('.js-rental-qty');
+            if (!input) return;
+            onSlotRentalQtyChange(input);
+        });
+    }
+
+    if (btnRentalSave) {
+        btnRentalSave.addEventListener('click', function () {
+            saveRentalSchedule();
+        });
+    }
+}
+
+function bindSubmitEvent() {
+    if (!btnSubmit) return;
+    btnSubmit.addEventListener('click', async function () {
+        hideError();
+
+        if (customerType === 'ACCOUNT') {
+            if (!selectedAccountId || !selectedAccountId.value) {
+                showError('Vui long tim va chon khach hang.');
                 return;
             }
-
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function () {
-                fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                })
-                    .then(function (res) { return res.json(); })
-                    .then(function (body) {
-                        if (!body.success) return;
-                        renderSearchResults(body.data.customers || []);
-                    })
-                    .catch(function (err) {
-                        console.error('Search error:', err);
-                    });
-            }, 300);
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.sbc-search-wrap')) {
-                searchDropdown.classList.add('d-none');
+        } else {
+            if (!guestNameInput || !guestNameInput.value.trim()) {
+                showError('Vui long nhap ho ten khach.');
+                if (guestNameInput) guestNameInput.focus();
+                return;
             }
-        });
-    }
-
-    function bindGuestPhoneEvents() {
-        if (!guestPhoneInput) return;
-
-        guestPhoneInput.addEventListener('input', function () {
-            var raw = this.value.replace(/[^\d]/g, '');
-            if (raw.length > 10) raw = raw.substring(0, 10);
-            this.value = raw;
-            updatePhoneHint(raw);
-        });
-
-        guestPhoneInput.addEventListener('paste', function () {
-            var self = this;
-            setTimeout(function () {
-                var raw = self.value.replace(/[^\d]/g, '');
-                if (raw.length > 10) raw = raw.substring(0, 10);
-                self.value = raw;
-                updatePhoneHint(raw);
-            }, 0);
-        });
-    }
-
-    function bindRentalEvents() {
-        if (btnRentalSearch) {
-            btnRentalSearch.addEventListener('click', function () {
-                rentalState.keyword = (rentalSearchInput.value || '').trim();
-                rentalState.page = 1;
-                loadRentalInventory();
-            });
-        }
-
-        if (rentalSearchInput) {
-            rentalSearchInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    rentalState.keyword = (rentalSearchInput.value || '').trim();
-                    rentalState.page = 1;
-                    loadRentalInventory();
-                }
-            });
-        }
-
-        if (btnRentalPrev) {
-            btnRentalPrev.addEventListener('click', function () {
-                if (rentalState.page <= 1) return;
-                rentalState.page--;
-                loadRentalInventory();
-            });
-        }
-
-        if (btnRentalNext) {
-            btnRentalNext.addEventListener('click', function () {
-                if (rentalState.page >= rentalState.totalPages) return;
-                rentalState.page++;
-                loadRentalInventory();
-            });
-        }
-    }
-
-    function bindSubmitEvent() {
-        btnSubmit.addEventListener('click', async function () {
-            hideError();
-
-            if (customerType === 'ACCOUNT') {
-                if (!selectedAccountId.value) {
-                    showError('Vui lòng tìm và chọn khách hàng');
-                    return;
-                }
-            } else {
-                if (!guestNameInput.value.trim()) {
-                    showError('Vui lòng nhập họ tên khách');
-                    guestNameInput.focus();
-                    return;
-                }
-                if (!guestPhoneInput.value.trim()) {
-                    showError('Vui lòng nhập số điện thoại');
-                    guestPhoneInput.focus();
-                    return;
-                }
-                if (!isValidPhone(guestPhoneInput.value)) {
-                    showError('Số điện thoại phải dùng 10 chữ số và bắt đầu bằng 0');
-                    guestPhoneInput.focus();
-                    return;
-                }
+            if (!guestPhoneInput || !guestPhoneInput.value.trim()) {
+                showError('Vui long nhap so dien thoai.');
+                if (guestPhoneInput) guestPhoneInput.focus();
+                return;
             }
+            if (!isValidPhone(guestPhoneInput.value)) {
+                showError('So dien thoai phai gom 10 chu so va bat dau bang 0.');
+                guestPhoneInput.focus();
+                return;
+            }
+        }
 
-            var slotsPayload = bookingData.slots.map(function (s) {
-                return {
-                    courtId: s.courtId,
-                    slotId: s.slotId
-                };
-            });
+        var slotsPayload = (bookingData.slots || []).map(function (slot) {
+            return { courtId: slot.courtId, slotId: slot.slotId };
+        });
 
-            var rentalPayload = [];
-            Object.keys(rentalState.rentalsByGroup).forEach(function (groupKey) {
-                var group = findGroupByKey(groupKey);
-                if (!group) return;
-
-                (rentalState.rentalsByGroup[groupKey] || []).forEach(function (item) {
+        var rentalPayload = [];
+        (rentalState.courts || []).forEach(function (court) {
+            (court.slots || []).forEach(function (slot) {
+                var items = rentalState.savedBySlot[slot.slotKey] || [];
+                items.forEach(function (item) {
                     rentalPayload.push({
-                        groupKey: groupKey,
-                        courtId: group.courtId,
-                        courtName: group.courtName,
-                        startTime: group.startTime,
-                        endTime: group.endTime,
-                        slotIds: (group.slots || []).map(function (s) {
-                            return s.slotId;
-                        }),
+                        groupKey: slot.slotKey,
+                        courtId: slot.courtId,
+                        courtName: slot.courtName,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        slotIds: [slot.slotId],
                         inventoryId: item.inventoryId,
                         name: item.name,
                         quantity: item.quantity,
@@ -917,276 +908,244 @@
                     });
                 });
             });
+        });
 
-            var reqBody = {
-                date: bookingData.date,
-                customerType: customerType,
-                accountId: customerType === 'ACCOUNT' ? parseInt(selectedAccountId.value, 10) : null,
-                guestName: customerType === 'GUEST' ? guestNameInput.value.trim() : null,
-                guestPhone: customerType === 'GUEST' ? guestPhoneInput.value.trim() : null,
-                guestEmail: customerType === 'GUEST' ? (guestEmailInput ? guestEmailInput.value.trim() : null) : null,
-                slots: slotsPayload,
-                rentals: rentalPayload,
-                rentalTotal: getRentalGrandTotal(),
-                totalAmount: courtTotalPrice + getRentalGrandTotal()
-            };
+        var reqBody = {
+            date: bookingData.date,
+            customerType: customerType,
+            accountId: customerType === 'ACCOUNT' ? parseInt(selectedAccountId.value, 10) : null,
+            guestName: customerType === 'GUEST' ? guestNameInput.value.trim() : null,
+            guestPhone: customerType === 'GUEST' ? guestPhoneInput.value.trim() : null,
+            guestEmail: customerType === 'GUEST' && guestEmailInput ? guestEmailInput.value.trim() : null,
+            slots: slotsPayload,
+            rentals: rentalPayload,
+            rentalTotal: getRentalGrandTotal(),
+            totalAmount: courtTotalPrice + getRentalGrandTotal()
+        };
 
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Đang tạo booking...';
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Dang tao booking...';
 
-            try {
-                var res = await fetch(CTX + '/api/staff/booking/create', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(reqBody)
-                });
+        try {
+            var res = await fetch(CTX + '/api/staff/booking/create', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(reqBody)
+            });
 
-                var body = await res.json();
-
-                if (!body.success) {
-                    if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
-                        var confirmed = await confirmGuestPhoneMatched(body.data);
-                        if (confirmed) {
-                            switchToAccountMode(body.data);
-                            resetSubmitButton();
-                            btnSubmit.click();
-                            return;
-                        }
+            var body = await res.json();
+            if (!body.success) {
+                if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
+                    var confirmed = await confirmGuestPhoneMatched(body.data);
+                    if (confirmed) {
+                        switchToAccountMode(body.data);
+                        resetSubmitButton();
+                        btnSubmit.click();
+                        return;
                     }
-
-                    showError(body.message || 'Đặt sân thất bại');
-                    resetSubmitButton();
-                    return;
                 }
 
-                sessionStorage.removeItem('staffBookingSlots');
-                window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
-            } catch (err) {
-                console.error('Create error:', err);
-                showError('Lỗi kết nối. Vui lòng thử lại');
+                showError(body.message || 'Dat san that bai.');
                 resetSubmitButton();
+                return;
             }
-        });
-    }
 
-    // =========================
-    // Customer helpers
-    // =========================
-    function renderSearchResults(customers) {
-        searchDropdown.innerHTML = '';
-
-        if (customers.length === 0) {
-            searchDropdown.innerHTML = '<div class="sbc-search-empty">Không tìm thấy</div>';
-            searchDropdown.classList.remove('d-none');
-            return;
+            sessionStorage.removeItem('staffBookingSlots');
+            window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
+        } catch (err) {
+            console.error('Create booking error:', err);
+            showError('Loi ket noi. Vui long thu lai.');
+            resetSubmitButton();
         }
+    });
+}
 
-        customers.forEach(function (c) {
-            var item = document.createElement('div');
-            item.className = 'sbc-search-item';
-            item.innerHTML =
-                '<div class="sbc-search-name">' + escapeHtml(c.fullName) + '</div>' +
-                '<div class="sbc-search-detail">' + escapeHtml(c.phone || '') + ' · ' + escapeHtml(c.email || '') + '</div>';
-            item.addEventListener('click', function () {
-                selectCustomer(c);
-            });
-            searchDropdown.appendChild(item);
-        });
+function renderSearchResults(customers) {
+    if (!searchDropdown) return;
+    searchDropdown.innerHTML = '';
 
+    if (!customers.length) {
+        searchDropdown.innerHTML = '<div class="sbc-search-empty">Khong tim thay</div>';
         searchDropdown.classList.remove('d-none');
+        return;
     }
 
-    function selectCustomer(c) {
-        selectedAccountId.value = c.accountId;
-        selName.textContent = c.fullName;
-        selPhone.textContent = c.phone || '—';
-        selEmail.textContent = c.email || '—';
-        selectedCustomer.classList.remove('d-none');
-        customerSearch.value = '';
-        searchDropdown.classList.add('d-none');
-        hideError();
-    }
-
-    function switchToAccountMode(matched) {
-        customerType = 'ACCOUNT';
-        tabAccount.classList.add('active');
-        tabGuest.classList.remove('active');
-        formAccount.classList.remove('d-none');
-        formGuest.classList.add('d-none');
-
-        selectedAccountId.value = matched.accountId;
-        selName.textContent = matched.fullName || '—';
-        selPhone.textContent = matched.phone || '—';
-        selEmail.textContent = matched.email || '—';
-        selectedCustomer.classList.remove('d-none');
-
-        hideError();
-    }
-
-    function confirmGuestPhoneMatched(matched) {
-        var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
-            '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
-            '- ' + (matched.phone || '') + '\n\n' +
-            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục?';
-        return uiConfirm(msg, 'Trùng số điện thoại');
-    }
-
-    // =========================
-    // Generic helpers
-    // =========================
-    function resetSubmitButton() {
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
-    }
-
-    function uiConfirm(message, title) {
-        if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
-            return window.StaffDialog.confirm({
-                title: title || 'Xác nhận',
-                message: message || ''
-            });
-        }
-        return Promise.resolve(window.confirm(message || ''));
-    }
-
-    function showError(msg) {
-        formError.textContent = msg;
-        formError.classList.remove('d-none');
-    }
-
-    function hideError() {
-        formError.classList.add('d-none');
-    }
-
-    function isValidPhone(phone) {
-        var cleaned = String(phone || '').replace(/\s+/g, '');
-        return /^0\d{9}$/.test(cleaned);
-    }
-
-    function updatePhoneHint(digits) {
-        if (!phoneHint || !guestPhoneInput) return;
-
-        if (digits.length === 0) {
-            phoneHint.classList.add('d-none');
-            guestPhoneInput.classList.remove('sbc-input-error');
-            guestPhoneInput.classList.remove('sbc-input-valid');
-            return;
-        }
-
-        phoneHint.classList.remove('d-none');
-
-        if (digits.length < 10) {
-            phoneHint.textContent = 'Còn thiếu ' + (10 - digits.length) + ' số';
-            phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
-            guestPhoneInput.classList.remove('sbc-input-valid');
-            guestPhoneInput.classList.add('sbc-input-error');
-        } else if (digits.length === 10 && digits.charAt(0) === '0') {
-            phoneHint.textContent = '✓ Số điện thoại hợp lệ';
-            phoneHint.className = 'sbc-phone-hint sbc-hint-ok';
-            guestPhoneInput.classList.remove('sbc-input-error');
-            guestPhoneInput.classList.add('sbc-input-valid');
-        } else {
-            phoneHint.textContent = 'Số điện thoại phải bắt đầu bằng 0';
-            phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
-            guestPhoneInput.classList.remove('sbc-input-valid');
-            guestPhoneInput.classList.add('sbc-input-error');
-        }
-    }
-
-    function formatMoney(amount) {
-        if (amount == null || isNaN(Number(amount))) return '0đ';
-        return Number(amount).toLocaleString('vi-VN') + 'đ';
-    }
-
-    function escapeHtml(str) {
-        if (str == null) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    function jsString(str) {
-        if (str == null) return '';
-        return String(str)
-            .replace(/\\/g, '\\\\')
-            .replace(/'/g, '\\\'')
-            .replace(/"/g, '\\"')
-            .replace(/\r/g, '')
-            .replace(/\n/g, '\\n');
-    }
-
-    function safeId(str) {
-        return String(str || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-    }
-
-    function normalizeTime(timeStr) {
-        if (!timeStr) return '';
-        var s = String(timeStr).trim();
-        if (s.length >= 5) return s.substring(0, 5);
-        return s;
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return '—';
-        var d = new Date(dateStr + 'T00:00:00');
-        return String(d.getDate()).padStart(2, '0') + '/' +
-            String(d.getMonth() + 1).padStart(2, '0') + '/' +
-            d.getFullYear();
-    }
-
-    function buildSessions(slots) {
-        var groups = {};
-        slots.forEach(function (s) {
-            if (!groups[s.courtId]) groups[s.courtId] = [];
-            groups[s.courtId].push(s);
+    customers.forEach(function (customer) {
+        var item = document.createElement('div');
+        item.className = 'sbc-search-item';
+        item.innerHTML = '<div class="sbc-search-item-name">' + escapeHtml(customer.fullName) + '</div>' +
+            '<div class="sbc-search-item-meta">' + escapeHtml(customer.phone || '') + ' - ' + escapeHtml(customer.email || '') + '</div>';
+        item.addEventListener('click', function () {
+            selectCustomer(customer);
         });
+        searchDropdown.appendChild(item);
+    });
 
-        var result = [];
+    searchDropdown.classList.remove('d-none');
+}
 
-        for (var courtId in groups) {
-            if (!Object.prototype.hasOwnProperty.call(groups, courtId)) continue;
+function selectCustomer(customer) {
+    if (selectedAccountId) selectedAccountId.value = customer.accountId;
+    if (selName) selName.textContent = customer.fullName || '';
+    if (selPhone) selPhone.textContent = customer.phone || '--';
+    if (selEmail) selEmail.textContent = customer.email || '--';
+    if (selectedCustomer) selectedCustomer.classList.remove('d-none');
+    if (customerSearch) customerSearch.value = '';
+    if (searchDropdown) searchDropdown.classList.add('d-none');
+    hideError();
+}
 
-            var courtSlots = groups[courtId];
-            courtSlots.sort(function (a, b) {
-                return a.startTime.localeCompare(b.startTime);
-            });
+function switchToAccountMode(matched) {
+    customerType = 'ACCOUNT';
+    if (tabAccount) tabAccount.classList.add('active');
+    if (tabGuest) tabGuest.classList.remove('active');
+    if (formAccount) formAccount.classList.remove('d-none');
+    if (formGuest) formGuest.classList.add('d-none');
+    if (selectedAccountId) selectedAccountId.value = matched.accountId;
+    if (selName) selName.textContent = matched.fullName || '--';
+    if (selPhone) selPhone.textContent = matched.phone || '--';
+    if (selEmail) selEmail.textContent = matched.email || '--';
+    if (selectedCustomer) selectedCustomer.classList.remove('d-none');
+    hideError();
+}
 
-            var currentSession = [courtSlots[0]];
+function confirmGuestPhoneMatched(matched) {
+    var message = 'So dien thoai nay da ton tai tren tai khoan CUSTOMER:\n' +
+        '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+        '- ' + (matched.phone || '') + '\n\n' +
+        'He thong se chuyen sang luong khach co tai khoan. Tiep tuc?';
+    return uiConfirm(message, 'Trung so dien thoai');
+}
 
-            for (var i = 1; i < courtSlots.length; i++) {
-                var prev = currentSession[currentSession.length - 1];
-                var cur = courtSlots[i];
+function resetSubmitButton() {
+    if (!btnSubmit) return;
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
+}
 
-                if (prev.endTime === cur.startTime) {
-                    currentSession.push(cur);
-                } else {
-                    result.push(currentSession);
-                    currentSession = [cur];
-                }
+function uiConfirm(message, title) {
+    if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
+        return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+    }
+    return Promise.resolve(window.confirm(message || ''));
+}
+
+function showError(message) {
+    if (!formError) return;
+    formError.textContent = message || '';
+    formError.classList.remove('d-none');
+}
+
+function hideError() {
+    if (!formError) return;
+    formError.classList.add('d-none');
+}
+
+function isValidPhone(phone) {
+    var cleaned = String(phone || '').replace(/\s+/g, '');
+    return /^0\d{9}$/.test(cleaned);
+}
+
+function updatePhoneHint(digits) {
+    if (!phoneHint || !guestPhoneInput) return;
+    if (!digits.length) {
+        phoneHint.classList.add('d-none');
+        guestPhoneInput.classList.remove('sbc-input-error');
+        guestPhoneInput.classList.remove('sbc-input-valid');
+        return;
+    }
+
+    phoneHint.classList.remove('d-none');
+    if (digits.length < 10) {
+        phoneHint.textContent = 'Con thieu ' + (10 - digits.length) + ' so.';
+        phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
+        guestPhoneInput.classList.remove('sbc-input-valid');
+        guestPhoneInput.classList.add('sbc-input-error');
+        return;
+    }
+
+    if (digits.length === 10 && digits.charAt(0) === '0') {
+        phoneHint.textContent = 'So dien thoai hop le.';
+        phoneHint.className = 'sbc-phone-hint sbc-hint-ok';
+        guestPhoneInput.classList.remove('sbc-input-error');
+        guestPhoneInput.classList.add('sbc-input-valid');
+        return;
+    }
+
+    phoneHint.textContent = 'So dien thoai phai bat dau bang 0.';
+    phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
+    guestPhoneInput.classList.remove('sbc-input-valid');
+    guestPhoneInput.classList.add('sbc-input-error');
+}
+
+function formatMoney(amount) {
+    if (amount == null || isNaN(Number(amount))) return '0 VND';
+    return Number(amount).toLocaleString('vi-VN') + ' VND';
+}
+
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function jsString(str) {
+    if (str == null) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, '\\\'').replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '\\n');
+}
+
+function normalizeTime(timeStr) {
+    if (!timeStr) return '';
+    var value = String(timeStr).trim();
+    if (value.length >= 5) return value.substring(0, 5);
+    return value;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '--';
+    var date = new Date(dateStr + 'T00:00:00');
+    return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+}
+
+function buildSessions(slots) {
+    var groupedByCourt = {};
+    (slots || []).forEach(function (slot) {
+        if (!groupedByCourt[slot.courtId]) groupedByCourt[slot.courtId] = [];
+        groupedByCourt[slot.courtId].push(slot);
+    });
+
+    var result = [];
+    Object.keys(groupedByCourt).forEach(function (courtId) {
+        var courtSlots = groupedByCourt[courtId].slice().sort(function (a, b) {
+            return toMinutes(a.startTime) - toMinutes(b.startTime);
+        });
+        if (!courtSlots.length) return;
+
+        var currentSession = [courtSlots[0]];
+        for (var i = 1; i < courtSlots.length; i++) {
+            var previous = currentSession[currentSession.length - 1];
+            var current = courtSlots[i];
+            if (previous.endTime === current.startTime) {
+                currentSession.push(current);
+            } else {
+                result.push(currentSession);
+                currentSession = [current];
             }
-
-            result.push(currentSession);
         }
+        result.push(currentSession);
+    });
 
-        result.sort(function (a, b) {
-            return a[0].startTime.localeCompare(b[0].startTime);
-        });
+    result.sort(function (a, b) {
+        var timeCompare = toMinutes(a[0].startTime) - toMinutes(b[0].startTime);
+        if (timeCompare !== 0) return timeCompare;
+        return String(a[0].courtName).localeCompare(String(b[0].courtName));
+    });
+    return result;
+}
 
-        return result;
-    }
-
-    function buildSessionKey(session) {
-        if (!session || !session.length) return '';
-        return 'court_' + session[0].courtId + '__' +
-            session[0].startTime.replace(/:/g, '') + '__' +
-            session[session.length - 1].endTime.replace(/:/g, '');
-    }
-
+function toMinutes(timeText) {
+    var parts = normalizeTime(timeText).split(':');
+    if (parts.length < 2) return 0;
+    return (Number(parts[0]) * 60) + Number(parts[1]);
+}
 })();

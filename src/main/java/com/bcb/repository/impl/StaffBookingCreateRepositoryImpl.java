@@ -208,5 +208,28 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
             ps.executeUpdate();
         }
     }
+
+    @Override
+    public void updateInventoryRentalScheduleStatus(Connection conn, int facilityId, java.time.LocalDate bookingDate,
+                                                    int courtId, int slotId, int inventoryId, String status) throws Exception {
+        String sql = """
+                UPDATE InventoryRentalSchedule
+                SET status = ?
+                WHERE facility_id = ?
+                  AND booking_date = ?
+                  AND court_id = ?
+                  AND slot_id = ?
+                  AND inventory_id = ?
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setNString(1, status);
+            ps.setInt(2, facilityId);
+            ps.setDate(3, Date.valueOf(bookingDate));
+            ps.setInt(4, courtId);
+            ps.setInt(5, slotId);
+            ps.setInt(6, inventoryId);
+            ps.executeUpdate();
+        }
+    }
 }
 
