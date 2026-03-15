@@ -18,6 +18,16 @@
     var previewTotal = document.getElementById('previewTotal');
     var previewPolicy = document.getElementById('previewPolicy');
     var weeklyView = document.getElementById('weeklyView');
+    var progressEl = document.getElementById('sbrProgress');
+    var summaryCustomer = document.getElementById('sbrSummaryCustomer');
+    var summaryDate = document.getElementById('sbrSummaryDate');
+    var summaryPatterns = document.getElementById('sbrSummaryPatterns');
+    var summaryPolicy = document.getElementById('sbrSummaryPolicy');
+    var summaryTotal = document.getElementById('sbrSummaryTotal');
+    var customerTypeEl = document.getElementById('sbrCustomerType');
+    var customerNameEl = document.getElementById('sbrCustomerName');
+    var customerPhoneEl = document.getElementById('sbrCustomerPhone');
+    var customerEmailEl = document.getElementById('sbrCustomerEmail');
 
     var tabAccount = document.getElementById('tabAccount');
     var tabGuest = document.getElementById('tabGuest');
@@ -34,6 +44,13 @@
     var guestNameInput = document.getElementById('guestName');
     var guestPhoneInput = document.getElementById('guestPhone');
     var guestEmailInput = document.getElementById('guestEmail');
+    var stepPanels = document.querySelectorAll('.sbr-step-panel');
+    var btnStep1Next = document.getElementById('btnStep1Next');
+    var btnStep2Back = document.getElementById('btnStep2Back');
+    var btnStep2Next = document.getElementById('btnStep2Next');
+    var btnStep3Back = document.getElementById('btnStep3Back');
+    var btnStep3Next = document.getElementById('btnStep3Next');
+    var btnStep4Back = document.getElementById('btnStep4Back');
 
     var customerType = 'ACCOUNT';
     var searchTimer = null;
@@ -41,6 +58,7 @@
     var slots = [];
     var previewData = null;
     var selectionMap = {};
+    var currentStep = 1;
 
     init();
 
@@ -53,8 +71,47 @@
         patternsContainer.addEventListener('change', renderWeeklyView);
         startDateEl.addEventListener('change', updatePatternOptions);
         endDateEl.addEventListener('change', updatePatternOptions);
+        startDateEl.addEventListener('change', updateStepProgress);
+        endDateEl.addEventListener('change', updateStepProgress);
+        conflictPolicyEl.addEventListener('change', updateStepProgress);
+        paymentMethodEl.addEventListener('change', updateStepProgress);
+        guestNameInput.addEventListener('input', updateStepProgress);
+        guestPhoneInput.addEventListener('input', updateStepProgress);
+        guestEmailInput.addEventListener('input', updateStepProgress);
+        if (previewList) previewList.addEventListener('change', updateStepProgress);
+
+        btnStep1Next.addEventListener('click', function () {
+            if (!isCustomerReady()) {
+                showError('Vui lòng chọn khách hàng');
+                return;
+            }
+            showStep(2);
+        });
+        btnStep2Back.addEventListener('click', function () { showStep(1); });
+        btnStep2Next.addEventListener('click', function () {
+            if (!isScheduleReady()) {
+                showError('Vui lòng hoàn tất lịch định kỳ');
+                return;
+            }
+            showStep(3);
+        });
+        btnStep3Back.addEventListener('click', function () { showStep(2); });
+        btnStep3Next.addEventListener('click', function () {
+            if (!previewData) {
+                showError('Vui lòng xem trước trước khi tiếp tục');
+                return;
+            }
+            if (conflictPolicyEl.value === 'SUGGEST') {
+                var selected = collectSelectedSessions();
+                if (!selected) return;
+            }
+            showStep(4);
+        });
+        btnStep4Back.addEventListener('click', function () { showStep(3); });
         loadTimelineMeta();
         addPatternRow();
+        showStep(1);
+        updateStepProgress();
     }
 
     function setupTabs() {
@@ -64,6 +121,7 @@
             tabGuest.classList.remove('active');
             formAccount.classList.remove('d-none');
             formGuest.classList.add('d-none');
+            updateStepProgress();
         });
         tabGuest.addEventListener('click', function () {
             customerType = 'GUEST';
@@ -71,6 +129,7 @@
             tabAccount.classList.remove('active');
             formGuest.classList.remove('d-none');
             formAccount.classList.add('d-none');
+            updateStepProgress();
         });
     }
 
@@ -99,6 +158,7 @@
         btnRemoveCustomer.addEventListener('click', function () {
             selectedAccountId.value = '';
             selectedCustomer.classList.add('d-none');
+            updateStepProgress();
         });
 
         document.addEventListener('click', function (e) {
@@ -134,6 +194,7 @@
         selectedCustomer.classList.remove('d-none');
         customerSearch.value = '';
         searchDropdown.classList.add('d-none');
+        updateStepProgress();
     }
 
     function loadTimelineMeta() {
@@ -163,6 +224,7 @@
         });
         updateDayHints();
         renderWeeklyView();
+        updateStepProgress();
     }
 
     function addPatternRow() {
@@ -186,12 +248,14 @@
         row.querySelector('.sbr-remove').addEventListener('click', function () {
             row.remove();
             renderWeeklyView();
+            updateStepProgress();
         });
         patternsContainer.appendChild(row);
         fillCourtOptions(row.querySelector('.sbr-court'));
         fillTimeOptions(row.querySelector('.sbr-start'), row.querySelector('.sbr-end'));
         updateDayHints();
         renderWeeklyView();
+        updateStepProgress();
     }
 
     function fillCourtOptions(select) {
@@ -247,6 +311,7 @@
                 selectionMap = {};
                 renderPreview(body.data);
                 btnConfirm.disabled = false;
+                updateStepProgress();
             })
             .catch(function (err) {
                 showError('Lỗi kết nối: ' + err.message);
@@ -529,6 +594,7 @@
             }
             weeklyView.appendChild(col);
         });
+        updateStepProgress();
     }
 
     function collectSelectedSessions() {
@@ -598,6 +664,157 @@
                 selectedCustomer.classList.remove('d-none');
             });
         }
+    }
+
+    function updateStepProgress() {
+        if (!progressEl) return;
+        var step1Done = isCustomerReady();
+        var step2Done = isScheduleReady();
+        var step3Done = !!previewData && !previewSection.classList.contains('d-none');
+        var step4Done = step3Done && !!(paymentMethodEl && paymentMethodEl.value);
+
+        var activeStep = currentStep || 1;
+
+        setStepState(1, activeStep, step1Done);
+        setStepState(2, activeStep, step2Done);
+        setStepState(3, activeStep, step3Done);
+        setStepState(4, activeStep, step4Done);
+        updateSummary();
+        updateStepButtons(step1Done, step2Done, step3Done);
+    }
+
+    function setStepState(step, activeStep, isDone) {
+        var steps = progressEl.querySelectorAll('.sbr-step[data-step="' + step + '"]');
+        var cards = document.querySelectorAll('.sbr-step-card[data-step="' + step + '"]');
+        var isActive = activeStep === step;
+
+        steps.forEach(function (el) {
+            el.classList.toggle('is-active', isActive);
+            el.classList.toggle('is-done', isDone && !isActive);
+        });
+
+        cards.forEach(function (el) {
+            el.classList.toggle('is-active', isActive);
+            el.classList.toggle('is-done', isDone && !isActive);
+        });
+    }
+
+    function isCustomerReady() {
+        if (customerType === 'ACCOUNT') {
+            return parseInt(selectedAccountId.value || '0', 10) > 0;
+        }
+        return !!(guestNameInput.value.trim() && guestPhoneInput.value.trim());
+    }
+
+    function isScheduleReady() {
+        if (!startDateEl.value || !endDateEl.value) return false;
+        var rows = patternsContainer.querySelectorAll('.sbr-pattern-row');
+        if (!rows.length) return false;
+        for (var i = 0; i < rows.length; i++) {
+            var day = rows[i].querySelector('.sbr-day').value;
+            var court = rows[i].querySelector('.sbr-court').value;
+            var start = rows[i].querySelector('.sbr-start').value;
+            var end = rows[i].querySelector('.sbr-end').value;
+            if (!day || !court || !start || !end) return false;
+        }
+        return true;
+    }
+
+    function showStep(step) {
+        currentStep = step;
+        stepPanels.forEach(function (panel) {
+            panel.classList.toggle('is-active', parseInt(panel.getAttribute('data-step'), 10) === step);
+        });
+        updateStepProgress();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateStepButtons(step1Done, step2Done, step3Done) {
+        if (btnStep1Next) btnStep1Next.disabled = !step1Done;
+        if (btnStep2Next) btnStep2Next.disabled = !step2Done;
+        if (btnStep3Next) btnStep3Next.disabled = !isPreviewReady(step3Done);
+    }
+
+    function isPreviewReady(step3Done) {
+        if (!step3Done) return false;
+        if (conflictPolicyEl.value !== 'SUGGEST') return true;
+        var conflicts = (previewData && previewData.conflicts) ? previewData.conflicts : [];
+        for (var i = 0; i < conflicts.length; i++) {
+            var date = conflicts[i].date;
+            var selected = document.querySelector('input[name="suggest_' + date + '"]:checked');
+            if (!selected) return false;
+            if (selected.value === 'manual') {
+                var wrap = selected.closest('.sbr-manual');
+                if (!wrap) return false;
+                var startTime = wrap.querySelector('.sbr-manual-start').value;
+                var endTime = wrap.querySelector('.sbr-manual-end').value;
+                if (!toSlotIds(startTime, endTime)) return false;
+            }
+        }
+        return true;
+    }
+
+    function updateSummary() {
+        if (!summaryCustomer) return;
+        summaryCustomer.textContent = getCustomerSummary();
+        summaryDate.textContent = formatDateRange(startDateEl.value, endDateEl.value);
+        summaryPatterns.textContent = String(patternsContainer.querySelectorAll('.sbr-pattern-row').length || 0);
+        summaryPolicy.textContent = getPolicyLabel(conflictPolicyEl.value);
+        summaryTotal.textContent = previewData ? formatMoney(previewData.totalAmount || 0) : '—';
+
+        updateCustomerPanel();
+    }
+
+    function getCustomerSummary() {
+        if (customerType === 'ACCOUNT') {
+            if (parseInt(selectedAccountId.value || '0', 10) > 0) {
+                return selName.textContent || 'Khách hàng';
+            }
+            return 'Chưa chọn';
+        }
+        var name = guestNameInput.value.trim();
+        var phone = guestPhoneInput.value.trim();
+        if (!name && !phone) return 'Chưa nhập';
+        if (name && phone) return name + ' · ' + phone;
+        return name || phone;
+    }
+
+    function formatDateRange(start, end) {
+        if (!start || !end) return 'Chưa chọn';
+        return formatDate(start) + ' → ' + formatDate(end);
+    }
+
+    function getPolicyLabel(value) {
+        if (value === 'SUGGEST') return 'Gợi ý & chọn thủ công';
+        if (value === 'SKIP') return 'Bỏ qua ngày trùng';
+        return '—';
+    }
+
+    function updateCustomerPanel() {
+        if (!customerTypeEl) return;
+        customerTypeEl.textContent = customerType === 'ACCOUNT' ? 'Khách có tài khoản' : 'Khách vãng lai';
+        var data = getCustomerFields();
+        customerNameEl.textContent = data.name || '—';
+        customerPhoneEl.textContent = data.phone || '—';
+        customerEmailEl.textContent = data.email || '—';
+    }
+
+    function getCustomerFields() {
+        if (customerType === 'ACCOUNT') {
+            if (parseInt(selectedAccountId.value || '0', 10) > 0) {
+                return {
+                    name: selName.textContent || '',
+                    phone: selPhone.textContent || '',
+                    email: selEmail.textContent || ''
+                };
+            }
+            return { name: '', phone: '', email: '' };
+        }
+        return {
+            name: guestNameInput.value.trim(),
+            phone: guestPhoneInput.value.trim(),
+            email: guestEmailInput.value.trim()
+        };
     }
 
     function uiConfirm(message, title) {

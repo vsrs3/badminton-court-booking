@@ -36,7 +36,7 @@
             <%-- Task 9a: Booking proxy button --%>
             <div>
                 <button type="button" class="st-proxy-btn" id="btnProxyMode">
-                    <i class="bi bi-plus-circle me-1"></i>Đặt hộ khách
+                    <i class="bi bi-plus-circle me-1"></i>Đặt lịch lẻ
                 </button>
                 <button type="button" class="st-proxy-btn st-proxy-btn-secondary" id="btnRecurring">
                     <i class="bi bi-arrow-repeat me-1"></i>Đặt định kỳ
