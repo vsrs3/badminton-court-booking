@@ -37,9 +37,9 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
            .append("LEFT JOIN Invoice i ON b.booking_id = i.booking_id ")
            .append("LEFT JOIN FacilityImage fi ON f.facility_id = fi.facility_id AND fi.is_thumbnail = 1 ")
            .append("OUTER APPLY ( ")
-           .append("   SELECT STRING_AGG(CONCAT(c.court_name, '|', ")
+           .append("   SELECT STRING_AGG(CAST(CONCAT(c.court_name, '|', ")
            .append("          FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm'), '|', ")
-           .append("          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')), ';;') ")
+           .append("          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')) AS NVARCHAR(MAX)), ';;') ")
            .append("          WITHIN GROUP (ORDER BY c.court_name, ts.start_time) AS slot_raw ")
            .append("   FROM BookingSlot bs ")
            .append("   JOIN Court c ON bs.court_id = c.court_id ")
@@ -47,9 +47,9 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
            .append("   WHERE bs.booking_id = b.booking_id ")
            .append(") bsAgg ")
            .append("OUTER APPLY ( ")
-           .append("   SELECT STRING_AGG(CONCAT(rp.day_of_week, '|', c.court_name, '|', ")
+           .append("   SELECT STRING_AGG(CAST(CONCAT(rp.day_of_week, '|', c.court_name, '|', ")
            .append("          FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm'), '|', ")
-           .append("          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')), ';;') ")
+           .append("          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')) AS NVARCHAR(MAX)), ';;') ")
            .append("          WITHIN GROUP (ORDER BY rp.day_of_week, c.court_name, ts.start_time) AS pattern_raw ")
            .append("   FROM RecurringPattern rp ")
            .append("   JOIN Court c ON rp.court_id = c.court_id ")
@@ -168,9 +168,9 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             "LEFT JOIN Staff s ON s.facility_id = f.facility_id AND s.is_active = 1 " +
             "LEFT JOIN Account a_staff ON s.account_id = a_staff.account_id " +
             "OUTER APPLY ( " +
-            "   SELECT STRING_AGG(CONCAT(rp.day_of_week, '|', c.court_name, '|', " +
+            "   SELECT STRING_AGG(CAST(CONCAT(rp.day_of_week, '|', c.court_name, '|', " +
             "          FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm'), '|', " +
-            "          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')), ';;') " +
+            "          FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm')) AS NVARCHAR(MAX)), ';;') " +
             "          WITHIN GROUP (ORDER BY rp.day_of_week, c.court_name, ts.start_time) AS pattern_raw " +
             "   FROM RecurringPattern rp " +
             "   JOIN Court c ON rp.court_id = c.court_id " +
