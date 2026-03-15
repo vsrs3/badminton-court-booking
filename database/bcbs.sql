@@ -226,6 +226,7 @@ CREATE TABLE FacilityInventory (
 );
 GO
 
+-- Recurring Booking
 CREATE TABLE RecurringBooking (
     recurring_id INT IDENTITY PRIMARY KEY,
     facility_id INT NOT NULL,
@@ -318,7 +319,7 @@ CREATE TABLE BookingSlot (
     FOREIGN KEY (court_id) REFERENCES Court(court_id),
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-    UNIQUE (booking_id, court_id, slot_id, booking_date)
+    UNIQUE (booking_id, booking_date,court_id, slot_id)
 );
 GO
 
@@ -653,6 +654,3 @@ GO
 
 CREATE INDEX IX_VoucherUsage_Voucher ON VoucherUsage(voucher_id);
 CREATE INDEX IX_VoucherUsage_Account ON VoucherUsage(account_id);
-
-
-

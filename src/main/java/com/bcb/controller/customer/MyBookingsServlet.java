@@ -72,7 +72,7 @@ public class MyBookingsServlet extends HttpServlet {
         switch (action != null ? action : "") {
             case "cancel"        -> cancelBooking(request, response, account);
             case "retryPayment"  -> retryPayment(request, response, account);
-            case "payRemaining"  -> retryPayment(request, response, account); // same logic
+            case "payRemaining"  -> payRemaining(request, response, account);
             default              -> response.sendRedirect(request.getContextPath() + "/my-bookings");
         }
     }
@@ -203,6 +203,19 @@ public class MyBookingsServlet extends HttpServlet {
      */
     private void retryPayment(HttpServletRequest request, HttpServletResponse response,
                                Account account) throws IOException {
+        processPaymentRequest(request, response, account, false);
+    }
+
+    /**
+     * Handles pay-remaining for CONFIRMED + PARTIAL bookings.
+     */
+    private void payRemaining(HttpServletRequest request, HttpServletResponse response,
+                              Account account) throws IOException {
+        processPaymentRequest(request, response, account, true);
+    }
+
+    private void processPaymentRequest(HttpServletRequest request, HttpServletResponse response,
+                                       Account account, boolean payRemainingOnly) throws IOException {
         String idStr = request.getParameter("bookingId");
         HttpSession session = request.getSession();
 
@@ -214,8 +227,9 @@ public class MyBookingsServlet extends HttpServlet {
 
         try {
             int bookingId = Integer.parseInt(idStr);
-            PaymentCreateResult result = paymentService.retryPaymentForBooking(
-                    bookingId, account.getAccountId(), request);
+            PaymentCreateResult result = payRemainingOnly
+                    ? paymentService.payRemainingForBooking(bookingId, account.getAccountId(), request)
+                    : paymentService.retryPaymentForBooking(bookingId, account.getAccountId(), request);
 
             if (result.isSuccess()) {
                 // Redirect to VNPay payment gateway
@@ -230,7 +244,9 @@ public class MyBookingsServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/my-bookings");
         } catch (Exception e) {
             e.printStackTrace();
-            session.setAttribute("errorMessage", "Không thể tạo thanh toán. Vui lòng thử lại.");
+            session.setAttribute("errorMessage", payRemainingOnly
+                    ? "Không thể thanh toán phần còn lại. Vui lòng thử lại."
+                    : "Không thể tạo thanh toán. Vui lòng thử lại.");
             response.sendRedirect(request.getContextPath() + "/my-bookings");
         }
     }

@@ -65,5 +65,16 @@ public interface PaymentService {
      * @author AnhTN
      */
     PaymentCreateResult retryPaymentForBooking(int bookingId, int accountId, HttpServletRequest httpReq);
+
+    /**
+     * Pays remaining amount for an existing booking whose invoice is PARTIAL.
+     * Intended flow: booking CONFIRMED + invoice PARTIAL.
+     *
+     * @param bookingId the booking to pay remaining for
+     * @param accountId the authenticated user (ownership check)
+     * @param httpReq   servlet request (for client IP)
+     * @return result with paymentUrl, transactionCode
+     */
+    PaymentCreateResult payRemainingForBooking(int bookingId, int accountId, HttpServletRequest httpReq);
 }
 

@@ -18,12 +18,17 @@ public class BookingSlotRepositoryImpl implements BookingSlotRepository {
     /** {@inheritDoc} */
     @Override
     public int insertBookingSlot(Connection conn, BookingSlot bookingSlot) {
-        String sql = "INSERT INTO BookingSlot (booking_id, court_id, slot_id, price) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO BookingSlot (booking_id, court_id, booking_date, slot_id, price) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, bookingSlot.getBookingId());
             ps.setInt(2, bookingSlot.getCourtID());
-            ps.setInt(3, bookingSlot.getSlotId());
-            ps.setBigDecimal(4, bookingSlot.getPrice());
+            if (bookingSlot.getBookingDate() != null) {
+                ps.setDate(3, Date.valueOf(bookingSlot.getBookingDate()));
+            } else {
+                ps.setNull(3, Types.DATE);
+            }
+            ps.setInt(4, bookingSlot.getSlotId());
+            ps.setBigDecimal(5, bookingSlot.getPrice());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
