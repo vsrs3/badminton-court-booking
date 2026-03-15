@@ -30,7 +30,7 @@
 
 <main class="container py-5 recurring-container">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <a href="<%= ctx %>/" class="btn btn-outline-secondary btn-sm btn-lift">
+        <a href="<%= ctx %>/home" class="btn btn-outline-secondary btn-sm btn-lift">
             <i class="bi bi-chevron-left"></i> Quay lại
         </a>
         <span class="badge text-bg-light border">Recurring</span>

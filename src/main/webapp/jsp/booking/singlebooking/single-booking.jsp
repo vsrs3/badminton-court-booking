@@ -20,7 +20,7 @@
         dateParam = java.time.LocalDate.now().toString();
     }
     if (venueId == null || venueId.isEmpty()) {
-        response.sendRedirect(ctx + "/");
+        response.sendRedirect(ctx + "/home");
         return;
     }
 %>
@@ -154,7 +154,7 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
 
             <div class="d-flex align-items-center gap-3">
-                <a href="<%= ctx %>/" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+                <a href="<%= ctx %>/home" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
                     <i class="bi bi-chevron-left"></i> Quay lại
                 </a>
                 <div>
