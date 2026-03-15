@@ -18,6 +18,7 @@ import java.util.List;
 public class StaffCheckinServiceImpl implements StaffCheckinService {
 
     private static final int NO_SHOW_BUFFER_MINUTES = 15;
+    private static final int AUTO_CHECKOUT_GRACE_MINUTES = 15;
     private final StaffCheckinRepository repository = new StaffCheckinRepositoryImpl();
 
     @Override
@@ -224,6 +225,44 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         }
     }
 
+    public void runAutoCheckoutOverdueSessions() throws Exception {
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                LocalDate today = LocalDate.now();
+                LocalTime now = LocalTime.now();
+                Timestamp nowTs = new Timestamp(System.currentTimeMillis());
+
+                List<Integer> bookingIds = repository.findBookingIdsWithCheckedInSlots(conn, today);
+                for (Integer bookingId : bookingIds) {
+                    List<StaffCheckinSessionDTO> sessions = buildSessionsWithTime(conn, bookingId);
+                    boolean updatedAny = false;
+
+                    for (StaffCheckinSessionDTO session : sessions) {
+                        if (!"CHECKED_IN".equals(getSessionStatus(conn, session.getSlotIds()))) {
+                            continue;
+                        }
+                        if (isOverdueForAutoCheckout(session, today, now)) {
+                            repository.updateSlotsCheckedOut(conn, session.getSlotIds(), nowTs);
+                            updatedAny = true;
+                        }
+                    }
+
+                    if (updatedAny && isBookingFinished(conn, sessions)) {
+                        repository.updateBookingStatus(conn, bookingId, "COMPLETED");
+                    }
+                }
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
     private boolean checkAllSessionsFinished(Connection conn, List<StaffCheckinSessionDTO> sessions,
                                              int justFinishedIndex, String justFinishedAs) throws Exception {
         for (int i = 0; i < sessions.size(); i++) {
@@ -352,6 +391,25 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         if (allCheckout) return "COMPLETED";
         if (anyCheckedIn) return "CHECKED_IN";
         return "PENDING";
+    }
+
+    private boolean isOverdueForAutoCheckout(StaffCheckinSessionDTO session, LocalDate today, LocalTime now) {
+        if (session == null || session.getSessionDate() == null || session.getEndTime() == null) return false;
+        LocalDate date = session.getSessionDate();
+        if (date.isBefore(today)) return true;
+        if (!date.isEqual(today)) return false;
+        LocalTime deadline = session.getEndTime().plusMinutes(AUTO_CHECKOUT_GRACE_MINUTES);
+        return !now.isBefore(deadline);
+    }
+
+    private boolean isBookingFinished(Connection conn, List<StaffCheckinSessionDTO> sessions) throws Exception {
+        for (StaffCheckinSessionDTO session : sessions) {
+            String status = getSessionStatus(conn, session.getSlotIds());
+            if (!"COMPLETED".equals(status) && !"NO_SHOW".equals(status) && !"CANCELLED".equals(status)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String statusLabel(String status) {

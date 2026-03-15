@@ -173,5 +173,26 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
         return ids;
     }
+
+    @Override
+    public List<Integer> findBookingIdsWithCheckedInSlots(Connection conn, java.time.LocalDate upToDate) throws Exception {
+        String sql = """
+                SELECT DISTINCT b.booking_id
+                FROM Booking b
+                JOIN BookingSlot bs ON b.booking_id = bs.booking_id
+                WHERE COALESCE(bs.booking_date, b.booking_date) <= ?
+                  AND bs.slot_status = 'CHECKED_IN'
+                """;
+        List<Integer> ids = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, Date.valueOf(upToDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("booking_id"));
+                }
+            }
+        }
+        return ids;
+    }
 }
 

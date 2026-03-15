@@ -51,6 +51,8 @@
         btnPreview.addEventListener('click', onPreview);
         btnConfirm.addEventListener('click', onConfirm);
         patternsContainer.addEventListener('change', renderWeeklyView);
+        startDateEl.addEventListener('change', updatePatternOptions);
+        endDateEl.addEventListener('change', updatePatternOptions);
         loadTimelineMeta();
         addPatternRow();
     }
@@ -159,6 +161,7 @@
             fillCourtOptions(row.querySelector('.sbr-court'));
             fillTimeOptions(row.querySelector('.sbr-start'), row.querySelector('.sbr-end'));
         });
+        updateDayHints();
         renderWeeklyView();
     }
 
@@ -178,7 +181,8 @@
             '<select class="sbr-input sbr-court"></select>' +
             '<select class="sbr-input sbr-start"></select>' +
             '<select class="sbr-input sbr-end"></select>' +
-            '<button type="button" class="sbr-btn-icon sbr-remove"><i class="bi bi-trash"></i></button>';
+            '<button type="button" class="sbr-btn-icon sbr-remove"><i class="bi bi-trash"></i></button>' +
+            '<small class="sbr-day-hint d-none">Hôm nay đã hết khung giờ hợp lệ</small>';
         row.querySelector('.sbr-remove').addEventListener('click', function () {
             row.remove();
             renderWeeklyView();
@@ -186,6 +190,7 @@
         patternsContainer.appendChild(row);
         fillCourtOptions(row.querySelector('.sbr-court'));
         fillTimeOptions(row.querySelector('.sbr-start'), row.querySelector('.sbr-end'));
+        updateDayHints();
         renderWeeklyView();
     }
 
@@ -649,5 +654,55 @@
         if (!cleaned) return true;
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned);
     }
+
+    function isDateRangeIncludesToday() {
+        if (!startDateEl.value || !endDateEl.value) return false;
+        var today = new Date();
+        var start = new Date(startDateEl.value + 'T00:00:00');
+        var end = new Date(endDateEl.value + 'T23:59:59');
+        return today >= start && today <= end;
+    }
+
+    function todayPatternDay() {
+        var d = new Date().getDay();
+        return d === 0 ? 1 : d + 1;
+    }
+
+    function updateDayHints() {
+        var rows = patternsContainer.querySelectorAll('.sbr-pattern-row');
+        var showHint = shouldShowTodayHint();
+        rows.forEach(function (row) {
+            var hint = row.querySelector('.sbr-day-hint');
+            if (!hint) return;
+            var dayValue = parseInt(row.querySelector('.sbr-day').value || '0', 10);
+            if (showHint && dayValue === todayPatternDay()) {
+                hint.classList.remove('d-none');
+            } else {
+                hint.classList.add('d-none');
+            }
+        });
+    }
+
+    function shouldShowTodayHint() {
+        if (!isDateRangeIncludesToday()) return false;
+        if (!slots.length) return false;
+        var nowMinutes = timeToMinutes(new Date().toTimeString().slice(0, 5));
+        for (var i = 0; i < slots.length; i++) {
+            if (timeToMinutes(slots[i].endTime) > nowMinutes) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        var parts = timeStr.split(':');
+        var h = parseInt(parts[0] || '0', 10);
+        var m = parseInt(parts[1] || '0', 10);
+        return h * 60 + m;
+    }
 })();
+
+
 

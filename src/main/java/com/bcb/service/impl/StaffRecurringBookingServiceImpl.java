@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +37,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
     private static final Gson GSON = new Gson();
     private static final int MAX_SUGGESTIONS = 10;
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final StaffRecurringBookingRepository repository = new StaffRecurringBookingRepositoryImpl();
     private final StaffConfirmPaymentRepository paymentRepository = new StaffConfirmPaymentRepositoryImpl();
@@ -78,6 +80,9 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             String policy = normalizePolicy(req.getConflictPolicy());
 
             for (DatePlan plan : datePlans) {
+                if (isPastSession(plan.date, plan.slotIds, ctx)) {
+                    return out(400, error(buildPastSessionMessage(plan.date)));
+                }
                 Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
                 boolean conflict = isConflict(booked, plan.courtId, plan.slotIds);
 
@@ -188,6 +193,11 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     SelectedSession override = overrides.get(plan.date);
                     int courtId = override != null ? override.courtId : plan.courtId;
                     List<Integer> slotIds = override != null ? override.slotIds : plan.slotIds;
+
+                    if (isPastSession(plan.date, slotIds, ctx)) {
+                        conn.rollback();
+                        return out(400, error(buildPastSessionMessage(plan.date)));
+                    }
 
                     boolean conflict = isConflict(booked, courtId, slotIds);
                     if (conflict) {
@@ -562,6 +572,46 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
     private boolean isWeekend(LocalDate date) {
         DayOfWeek dow = date.getDayOfWeek();
         return dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
+    }
+
+    private String buildPastSessionMessage(LocalDate date) {
+        String time = LocalTime.now().format(TIME_FMT);
+        return "Bạn đang đặt lịch cho ngày " + date + ". Vui lòng chọn các khung giờ từ " + time + " trở đi.";
+    }
+
+    private boolean isPastSession(LocalDate date, List<Integer> slotIds, PlanningContext ctx) {
+        if (date == null || slotIds == null || slotIds.isEmpty()) return false;
+        LocalDate today = LocalDate.now();
+        if (date.isBefore(today)) return true;
+        if (!date.isEqual(today)) return false;
+
+        LocalTime sessionEnd = getSessionEndTime(slotIds, ctx);
+        if (sessionEnd == null) return false;
+        return !LocalTime.now().isBefore(sessionEnd);
+    }
+
+    private LocalTime getSessionStartTime(List<Integer> slotIds, PlanningContext ctx) {
+        LocalTime start = null;
+        for (Integer slotId : slotIds) {
+            LocalTime[] times = ctx.slotTimes.get(slotId);
+            if (times == null || times.length < 1 || times[0] == null) continue;
+            if (start == null || times[0].isBefore(start)) {
+                start = times[0];
+            }
+        }
+        return start;
+    }
+
+    private LocalTime getSessionEndTime(List<Integer> slotIds, PlanningContext ctx) {
+        LocalTime end = null;
+        for (Integer slotId : slotIds) {
+            LocalTime[] times = ctx.slotTimes.get(slotId);
+            if (times == null || times.length < 2 || times[1] == null) continue;
+            if (end == null || times[1].isAfter(end)) {
+                end = times[1];
+            }
+        }
+        return end;
     }
 
     private int toPatternDayOfWeek(DayOfWeek dow) {

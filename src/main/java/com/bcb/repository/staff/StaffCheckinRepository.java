@@ -26,6 +26,8 @@ public interface StaffCheckinRepository {
     void updateBookingStatus(Connection conn, int bookingId, String status) throws Exception;
 
     List<Integer> findConfirmedBookingIdsWithPendingSlots(Connection conn, LocalDate bookingDate) throws Exception;
+
+    List<Integer> findBookingIdsWithCheckedInSlots(Connection conn, LocalDate upToDate) throws Exception;
 }
 
 
