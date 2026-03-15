@@ -3,6 +3,8 @@ package com.bcb.repository.email.impl;
 import com.bcb.dto.email.BookingEmailHeaderDTO;
 import com.bcb.dto.email.BookingEmailSlotDTO;
 import com.bcb.dto.email.BookingRecipientDTO;
+import com.bcb.dto.email.BookingRecurringHeaderDTO;
+import com.bcb.dto.email.BookingRecurringPatternDTO;
 import com.bcb.repository.email.BookingEmailRepository;
 import com.bcb.utils.DBContext;
 
@@ -176,9 +178,77 @@ public class BookingEmailRepositoryImpl implements BookingEmailRepository {
         return sb.toString();
     }
 
+
+    @Override
+    public BookingRecurringHeaderDTO findRecurringHeader(int bookingId) throws Exception {
+        String sql = "SELECT b.booking_id, f.name AS facility_name, " +
+                "COALESCE(a.full_name, g.guest_name) AS customer_name, " +
+                "COALESCE(a.phone, g.phone) AS customer_phone, " +
+                "rb.start_date, rb.end_date, i.total_amount, i.paid_amount, i.payment_status " +
+                "FROM Booking b " +
+                "JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id " +
+                "JOIN Facility f ON b.facility_id = f.facility_id " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "LEFT JOIN Invoice i ON b.booking_id = i.booking_id " +
+                "WHERE b.booking_id = ?";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                BookingRecurringHeaderDTO header = new BookingRecurringHeaderDTO();
+                header.setBookingId(rs.getInt("booking_id"));
+                header.setFacilityName(rs.getString("facility_name"));
+                header.setCustomerName(rs.getString("customer_name"));
+                header.setCustomerPhone(rs.getString("customer_phone"));
+                header.setStartDate(rs.getString("start_date"));
+                header.setEndDate(rs.getString("end_date"));
+                header.setTotalAmount(rs.getBigDecimal("total_amount"));
+                header.setPaidAmount(rs.getBigDecimal("paid_amount"));
+                header.setPaymentStatus(rs.getString("payment_status"));
+                return header;
+            }
+        }
+    }
+
+    @Override
+    public List<BookingRecurringPatternDTO> findRecurringPatterns(int bookingId) throws Exception {
+        String sql = "SELECT rp.day_of_week, c.court_name, " +
+                "MIN(ts.start_time) AS start_time, MAX(ts.end_time) AS end_time " +
+                "FROM Booking b " +
+                "JOIN RecurringPattern rp ON b.recurring_id = rp.recurring_id " +
+                "JOIN Court c ON rp.court_id = c.court_id " +
+                "JOIN TimeSlot ts ON rp.slot_id = ts.slot_id " +
+                "WHERE b.booking_id = ? " +
+                "GROUP BY rp.day_of_week, c.court_name " +
+                "ORDER BY rp.day_of_week, c.court_name, MIN(ts.start_time)";
+
+        List<BookingRecurringPatternDTO> patterns = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BookingRecurringPatternDTO p = new BookingRecurringPatternDTO();
+                    p.setDayOfWeek(rs.getInt("day_of_week"));
+                    p.setCourtName(rs.getString("court_name"));
+                    p.setStartTime(fmtTime(rs.getTime("start_time")));
+                    p.setEndTime(fmtTime(rs.getTime("end_time")));
+                    patterns.add(p);
+                }
+            }
+        }
+        return patterns;
+    }
     private String fmtTime(Time t) {
         if (t == null) return null;
         String v = t.toLocalTime().toString();
         return v.length() >= 5 ? v.substring(0, 5) : v;
     }
 }
+
+
+

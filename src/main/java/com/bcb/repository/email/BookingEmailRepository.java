@@ -3,6 +3,8 @@ package com.bcb.repository.email;
 import com.bcb.dto.email.BookingEmailHeaderDTO;
 import com.bcb.dto.email.BookingEmailSlotDTO;
 import com.bcb.dto.email.BookingRecipientDTO;
+import com.bcb.dto.email.BookingRecurringHeaderDTO;
+import com.bcb.dto.email.BookingRecurringPatternDTO;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -19,4 +21,8 @@ public interface BookingEmailRepository {
     Map<Integer, String> findCourtNames(Set<Integer> courtIds) throws Exception;
 
     Map<Integer, LocalTime[]> findSlotTimes(Set<Integer> slotIds) throws Exception;
+
+    BookingRecurringHeaderDTO findRecurringHeader(int bookingId) throws Exception;
+
+    List<BookingRecurringPatternDTO> findRecurringPatterns(int bookingId) throws Exception;
 }

@@ -8,6 +8,8 @@ import com.bcb.repository.impl.StaffRecurringBookingRepositoryImpl;
 import com.bcb.repository.staff.StaffConfirmPaymentRepository;
 import com.bcb.repository.staff.StaffRecurringBookingRepository;
 import com.bcb.service.staff.StaffRecurringBookingService;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.staff.StaffAuthUtil;
 import com.google.gson.Gson;
@@ -37,6 +39,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
     private final StaffRecurringBookingRepository repository = new StaffRecurringBookingRepositoryImpl();
     private final StaffConfirmPaymentRepository paymentRepository = new StaffConfirmPaymentRepositoryImpl();
+    private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
     @Override
     public StaffRecurringBookingOutcomeDTO preview(String body, int facilityId, Integer staffId) throws Exception {
@@ -150,7 +153,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                 Integer guestId = null;
                 if ("GUEST".equals(req.getCustomerType())) {
                     guestId = repository.insertGuest(conn, req.getGuestName(),
-                            normalizePhone(req.getGuestPhone()), null);
+                            normalizePhone(req.getGuestPhone()), normalizeEmail(req.getGuestEmail()));
                 }
 
                 int bookingId = repository.insertBookingRoot(conn, facilityId, req.getAccountId(), guestId, staffId);
@@ -229,12 +232,21 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 conn.commit();
 
+                EmailQueueService.EmailEnqueueResult emailResult =
+                        emailQueueService.enqueueRecurringBookingCreated(bookingId);
+
                 Map<String, Object> data = new LinkedHashMap<>();
                 data.put("bookingId", bookingId);
                 data.put("recurringId", recurringId);
                 data.put("totalAmount", totalAmount);
                 data.put("skippedDates", skippedDates);
                 data.put("bookedDates", bookedDates);
+                if (emailResult != null) {
+                    data.put("emailQueued", emailResult.queued);
+                    if (emailResult.warning != null && !emailResult.warning.isEmpty()) {
+                        data.put("emailWarning", emailResult.warning);
+                    }
+                }
 
                 return out(200, success("Tạo đặt sân định kỳ thành công", data));
             } catch (Exception e) {
@@ -294,6 +306,10 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             }
             if (req.getGuestPhone() == null || req.getGuestPhone().trim().isEmpty()) {
                 return ValidationResult.fail(400, error("Vui lòng nhập số điện thoại"));
+            }
+            if (req.getGuestEmail() != null && !req.getGuestEmail().trim().isEmpty()
+                    && !isValidEmail(req.getGuestEmail())) {
+                return ValidationResult.fail(400, error("Email không đúng định dạng"));
             }
             StaffCustomerAccountDTO matched = repository.findActiveCustomerByPhone(normalizePhone(req.getGuestPhone()));
             if (matched != null) {
@@ -571,6 +587,18 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         return phone.replaceAll("\\s+", "").trim();
     }
 
+    private String normalizeEmail(String email) {
+        if (email == null) return null;
+        String cleaned = email.trim();
+        return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private boolean isValidEmail(String email) {
+        String cleaned = email == null ? "" : email.trim();
+        if (cleaned.isEmpty()) return true;
+        return cleaned.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    }
+
     private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
         return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"Số điện thoại đã tồn tại tài khoản khách hàng\",\"data\":{" +
                 "\"accountId\":" + account.getAccountId() + "," +
@@ -751,3 +779,8 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         }
     }
 }
+
+
+
+
+

@@ -9,6 +9,7 @@ public class StaffRecurringBookingRequestDTO {
     private Integer accountId;
     private String guestName;
     private String guestPhone;
+    private String guestEmail;
     private String conflictPolicy;
     private String paymentMethod;
     private List<PatternDTO> patterns;
@@ -26,6 +27,8 @@ public class StaffRecurringBookingRequestDTO {
     public void setGuestName(String guestName) { this.guestName = guestName; }
     public String getGuestPhone() { return guestPhone; }
     public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
+    public String getGuestEmail() { return guestEmail; }
+    public void setGuestEmail(String guestEmail) { this.guestEmail = guestEmail; }
     public String getConflictPolicy() { return conflictPolicy; }
     public void setConflictPolicy(String conflictPolicy) { this.conflictPolicy = conflictPolicy; }
     public String getPaymentMethod() { return paymentMethod; }

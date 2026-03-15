@@ -3,6 +3,8 @@ package com.bcb.service.email.impl;
 import com.bcb.dto.email.BookingEmailHeaderDTO;
 import com.bcb.dto.email.BookingEmailSlotDTO;
 import com.bcb.dto.email.BookingRecipientDTO;
+import com.bcb.dto.email.BookingRecurringHeaderDTO;
+import com.bcb.dto.email.BookingRecurringPatternDTO;
 import com.bcb.dto.email.EmailQueueItemDTO;
 import com.bcb.repository.email.BookingEmailRepository;
 import com.bcb.repository.email.EmailQueueRepository;
@@ -35,6 +37,11 @@ public class EmailQueueServiceImpl implements EmailQueueService {
     @Override
     public EmailEnqueueResult enqueueBookingCreated(int bookingId) {
         return enqueueIfPossible("CREATE", bookingId, null);
+    }
+
+    @Override
+    public EmailEnqueueResult enqueueRecurringBookingCreated(int bookingId) {
+        return enqueueIfPossible("CREATE_RECURRING", bookingId, null);
     }
 
     @Override
@@ -85,7 +92,7 @@ public class EmailQueueServiceImpl implements EmailQueueService {
             if (toEmail == null || toEmail.trim().isEmpty()) {
                 return new EmailEnqueueResult(false, "Không có email. Không xếp thông báo.");
             }
-            emailQueueRepository.enqueue(emailType, bookingId, toEmail.trim(), payloadJson);
+            emailQueueRepository.enqueue(emailType, bookingId, toEmail.trim(), payloadJson, null);
             return new EmailEnqueueResult(true, null);
         } catch (Exception e) {
             return new EmailEnqueueResult(false, "Không thể xếp email vào hàng đợi.");
@@ -116,6 +123,14 @@ public class EmailQueueServiceImpl implements EmailQueueService {
                 return buildUpdateEmail(item.getBookingId(), item.getPayloadJson());
             case "CANCEL":
                 return buildCancelEmail(item.getBookingId(), item.getPayloadJson());
+            case "CREATE_RECURRING":
+                return buildRecurringCreateEmail(item.getBookingId());
+            case "REMINDER_UPCOMING_24H":
+                return buildUpcomingReminderEmail(item.getBookingId(), 24);
+            case "REMINDER_UPCOMING_2H":
+                return buildUpcomingReminderEmail(item.getBookingId(), 2);
+            case "REMINDER_PAYMENT_12H":
+                return buildPaymentReminderEmail(item.getBookingId(), 12);
             default:
                 return null;
         }
@@ -157,7 +172,77 @@ public class EmailQueueServiceImpl implements EmailQueueService {
         return new EmailContent(subject, body.toString());
     }
 
-    private EmailContent buildUpdateEmail(int bookingId, String payloadJson) throws Exception {
+        private EmailContent buildRecurringCreateEmail(int bookingId) throws Exception {
+        BookingRecurringHeaderDTO header = bookingEmailRepository.findRecurringHeader(bookingId);
+        if (header == null) return null;
+        List<BookingRecurringPatternDTO> patterns = bookingEmailRepository.findRecurringPatterns(bookingId);
+
+        String subject = "Xác nhận đặt sân định kỳ";
+        StringBuilder body = new StringBuilder(1200);
+        body.append("<h2>").append(subject).append("</h2>");
+        body.append("<p>Mã booking: ").append(header.getBookingId()).append("</p>");
+        body.append("<p>Sân: ").append(escapeHtml(safe(header.getFacilityName()))).append("</p>");
+        body.append("<p>Khách hàng: ").append(escapeHtml(safe(header.getCustomerName()))).append("</p>");
+        if (header.getCustomerPhone() != null && !header.getCustomerPhone().isEmpty()) {
+            body.append("<p>Điện thoại: ").append(escapeHtml(header.getCustomerPhone())).append("</p>");
+        }
+        if (header.getStartDate() != null && header.getEndDate() != null) {
+            body.append("<p>Lịch định kỳ: ")
+                    .append(escapeHtml(header.getStartDate()))
+                    .append(" → ")
+                    .append(escapeHtml(header.getEndDate()))
+                    .append("</p>");
+        }
+
+        body.append("<h3>Lịch định kỳ</h3>");
+        body.append(renderRecurringPatterns(patterns));
+
+        if (header.getTotalAmount() != null) {
+            body.append("<p>Tổng tiền: ").append(escapeHtml(formatMoney(header.getTotalAmount()))).append("</p>");
+        }
+        if (header.getPaidAmount() != null) {
+            body.append("<p>Đã thanh toán: ").append(escapeHtml(formatMoney(header.getPaidAmount()))).append("</p>");
+        }
+        if (header.getPaymentStatus() != null) {
+            body.append("<p>Trạng thái thanh toán: ").append(escapeHtml(header.getPaymentStatus())).append("</p>");
+        }
+        return new EmailContent(subject, body.toString());
+    }
+
+    private String renderRecurringPatterns(List<BookingRecurringPatternDTO> patterns) {
+        if (patterns == null || patterns.isEmpty()) {
+            return "<p>Không có lịch định kỳ.</p>";
+        }
+        StringBuilder sb = new StringBuilder(512);
+        sb.append("<ul>");
+        for (BookingRecurringPatternDTO p : patterns) {
+            sb.append("<li>")
+                    .append(escapeHtml(dayOfWeekLabel(p.getDayOfWeek())))
+                    .append(" - ")
+                    .append(escapeHtml(safe(p.getCourtName())))
+                    .append(" - ")
+                    .append(escapeHtml(safe(p.getStartTime())))
+                    .append("-")
+                    .append(escapeHtml(safe(p.getEndTime())))
+                    .append("</li>");
+        }
+        sb.append("</ul>");
+        return sb.toString();
+    }
+
+    private String dayOfWeekLabel(int dow) {
+        switch (dow) {
+            case 1: return "Chủ nhật";
+            case 2: return "Thứ 2";
+            case 3: return "Thứ 3";
+            case 4: return "Thứ 4";
+            case 5: return "Thứ 5";
+            case 6: return "Thứ 6";
+            case 7: return "Thứ 7";
+            default: return "Không rõ";
+        }
+    }
+private EmailContent buildUpdateEmail(int bookingId, String payloadJson) throws Exception {
         BookingEmailHeaderDTO header = bookingEmailRepository.findHeader(bookingId);
         if (header == null) return null;
 
@@ -195,7 +280,72 @@ public class EmailQueueServiceImpl implements EmailQueueService {
         return new EmailContent(subject, body.toString());
     }
 
-    private void appendHeader(StringBuilder body, BookingEmailHeaderDTO header) {
+        private EmailContent buildUpcomingReminderEmail(int bookingId, int leadHours) throws Exception {
+        BookingEmailHeaderDTO header = bookingEmailRepository.findHeader(bookingId);
+        if (header == null) return null;
+        List<BookingEmailSlotDTO> slots = bookingEmailRepository.findSlots(bookingId);
+        List<EmailSession> sessions = buildSessionsFromSlots(slots);
+
+        String subject = leadHours == 24
+                ? "Nhắc lịch chơi sắp tới (còn 24 giờ)"
+                : "Nhắc lịch chơi sắp tới (còn 2 giờ)";
+
+        StringBuilder body = new StringBuilder(1024);
+        body.append("<h2>").append(subject).append("</h2>");
+        appendHeader(body, header);
+        String startInfo = buildStartInfo(header, sessions);
+        if (!startInfo.isEmpty()) {
+            body.append("<p>").append(startInfo).append("</p>");
+        }
+        body.append("<h3>Chi tiết phiên</h3>");
+        body.append(renderSessions(sessions));
+        appendPayment(body, header);
+        return new EmailContent(subject, body.toString());
+    }
+
+    private EmailContent buildPaymentReminderEmail(int bookingId, int leadHours) throws Exception {
+        BookingEmailHeaderDTO header = bookingEmailRepository.findHeader(bookingId);
+        if (header == null) return null;
+        List<BookingEmailSlotDTO> slots = bookingEmailRepository.findSlots(bookingId);
+        List<EmailSession> sessions = buildSessionsFromSlots(slots);
+
+        String subject = "Nhắc thanh toán (còn " + leadHours + " giờ)";
+        StringBuilder body = new StringBuilder(1024);
+        body.append("<h2>").append(subject).append("</h2>");
+        appendHeader(body, header);
+        String startInfo = buildStartInfo(header, sessions);
+        if (!startInfo.isEmpty()) {
+            body.append("<p>").append(startInfo).append("</p>");
+        }
+        body.append("<h3>Chi tiết phiên</h3>");
+        body.append(renderSessions(sessions));
+
+        BigDecimal total = header.getTotalAmount() != null ? header.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal paid = header.getPaidAmount() != null ? header.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal remain = total.subtract(paid);
+        if (remain.compareTo(BigDecimal.ZERO) < 0) remain = BigDecimal.ZERO;
+        body.append("<p>Còn phải thanh toán: ").append(escapeHtml(formatMoney(remain))).append("</p>");
+        appendPayment(body, header);
+        return new EmailContent(subject, body.toString());
+    }
+
+    private String buildStartInfo(BookingEmailHeaderDTO header, List<EmailSession> sessions) {
+        if (header == null || header.getBookingDate() == null) return "";
+        if (sessions == null || sessions.isEmpty()) return "";
+
+        LocalTime earliest = null;
+        for (EmailSession s : sessions) {
+            if (s == null || s.start == null) continue;
+            if (earliest == null || s.start.isBefore(earliest)) {
+                earliest = s.start;
+            }
+        }
+        if (earliest == null) return "";
+        String time = fmtTime(earliest);
+        if (time.isEmpty()) return "";
+        return "Lịch chơi bắt đầu lúc " + time + " ngày " + header.getBookingDate();
+    }
+private void appendHeader(StringBuilder body, BookingEmailHeaderDTO header) {
         body.append("<p>Mã booking: ").append(header.getBookingId()).append("</p>");
         body.append("<p>Sân: ").append(escapeHtml(safe(header.getFacilityName()))).append("</p>");
         body.append("<p>Ngày: ").append(escapeHtml(safe(header.getBookingDate()))).append("</p>");
@@ -529,6 +679,21 @@ public class EmailQueueServiceImpl implements EmailQueueService {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

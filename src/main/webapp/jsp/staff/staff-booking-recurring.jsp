@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <%@ include file="layout/staff-layout.jsp"%>
@@ -103,6 +103,10 @@
                         <label>Số điện thoại <span class="sbr-required">*</span></label>
                         <input type="tel" id="guestPhone" class="sbr-input" placeholder="Nhập SĐT (VD: 0912345678)">
                     </div>
+                    <div class="sbr-field">
+                        <label>Email (tuỳ chọn)</label>
+                        <input type="email" id="guestEmail" class="sbr-input" placeholder="Nhập email để gửi thông báo">
+                    </div>
                 </div>
 
                 <div class="sbr-field">
@@ -159,3 +163,4 @@
 
 </body>
 </html>
+

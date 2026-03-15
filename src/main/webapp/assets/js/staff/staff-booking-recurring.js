@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
@@ -33,6 +33,7 @@
     var selectedAccountId = document.getElementById('selectedAccountId');
     var guestNameInput = document.getElementById('guestName');
     var guestPhoneInput = document.getElementById('guestPhone');
+    var guestEmailInput = document.getElementById('guestEmail');
 
     var customerType = 'ACCOUNT';
     var searchTimer = null;
@@ -269,31 +270,60 @@
         }
         req.paymentMethod = paymentMethodEl.value;
 
+        if (req.customerType === 'GUEST') {
+            if (guestEmailInput && guestEmailInput.value.trim() && !isValidEmail(guestEmailInput.value)) {
+                showError('Email không đúng định dạng');
+                guestEmailInput.focus();
+                return;
+            }
+        }
+
         btnConfirm.disabled = true;
         btnConfirm.textContent = 'Đang xác nhận...';
 
-        fetch(CTX + '/api/staff/recurring-booking/confirm', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(req)
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (body) {
-                if (!body.success) {
-                    handleGuestPhoneMatched(body);
-                    showError(body.message || 'Xác nhận thất bại');
-                    return;
-                }
-                window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
-            })
-            .catch(function (err) {
-                showError('Lỗi kết nối: ' + err.message);
-            })
-            .finally(function () {
+        var proceed = Promise.resolve(true);
+        if (req.customerType === 'GUEST' && guestEmailInput && !guestEmailInput.value.trim()) {
+            proceed = uiConfirm(
+                'Không có email, hệ thống sẽ không gửi thông báo. Tiếp tục?',
+                'Cảnh báo'
+            );
+        }
+
+        proceed.then(function (ok) {
+            if (!ok) {
                 btnConfirm.disabled = false;
                 btnConfirm.innerHTML = '<i class="bi bi-check-circle"></i>Xác nhận thanh toán';
-            });
+                return;
+            }
+
+            fetch(CTX + '/api/staff/recurring-booking/confirm', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(req)
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (body) {
+                    if (!body.success) {
+                        handleGuestPhoneMatched(body);
+                        showError(body.message || 'Xác nhận thất bại');
+                        return;
+                    }
+                    if (body.data && body.data.emailWarning) {
+                        return uiAlert(body.data.emailWarning, 'Thông báo').then(function () {
+                            window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
+                        });
+                    }
+                    window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
+                })
+                .catch(function (err) {
+                    showError('Lỗi kết nối: ' + err.message);
+                })
+                .finally(function () {
+                    btnConfirm.disabled = false;
+                    btnConfirm.innerHTML = '<i class="bi bi-check-circle"></i>Xác nhận thanh toán';
+                });
+        });
     }
 
     function buildRequestBody() {
@@ -318,6 +348,7 @@
             accountId: customerType === 'ACCOUNT' ? parseInt(selectedAccountId.value || '0', 10) : null,
             guestName: customerType === 'GUEST' ? guestNameInput.value.trim() : null,
             guestPhone: customerType === 'GUEST' ? guestPhoneInput.value.trim() : null,
+            guestEmail: customerType === 'GUEST' && guestEmailInput ? guestEmailInput.value.trim() : null,
             conflictPolicy: conflictPolicyEl.value,
             patterns: patterns
         };
@@ -547,10 +578,10 @@
 
     function handleGuestPhoneMatched(body) {
         if (body && body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
-            var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
+            var msg = 'Số điện thoại này đã tồn tại tài khoản khách hàng:\n' +
                 '- ' + (body.data.fullName || 'Không rõ tên') + '\n' +
                 '- ' + (body.data.phone || '') + '\n\n' +
-                'Chuy?n sang kh?ch c? t?i kho?n';
+                'Chuyển sang khách có tài khoản?';
             uiConfirm(msg, 'Trùng số điện thoại').then(function (ok) {
                 if (!ok) return;
                 customerType = 'ACCOUNT';
@@ -569,6 +600,14 @@
             return window.StaffDialog.confirm({ title: title || 'Xác nhận', message: message || '' });
         }
         return Promise.resolve(window.confirm(message || ''));
+    }
+
+    function uiAlert(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
+            return window.StaffDialog.alert({ title: title || 'Thông báo', message: message || '' });
+        }
+        window.alert(message || '');
+        return Promise.resolve();
     }
 
     function showError(msg) {
@@ -604,4 +643,11 @@
         var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         return diffDays >= 28;
     }
+
+    function isValidEmail(email) {
+        var cleaned = (email || '').trim();
+        if (!cleaned) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned);
+    }
 })();
+

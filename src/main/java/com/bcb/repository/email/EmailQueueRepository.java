@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EmailQueueRepository {
-    void enqueue(String emailType, int bookingId, String toEmail, String payloadJson) throws Exception;
+    void enqueue(String emailType, int bookingId, String toEmail, String payloadJson, LocalDateTime reminderAt) throws Exception;
 
     List<EmailQueueItemDTO> findAndMarkPending(int limit) throws Exception;
 
@@ -14,4 +14,6 @@ public interface EmailQueueRepository {
 
     void markFailed(int emailId, int retryCount, LocalDateTime nextAttemptAt, String lastError, String status)
             throws Exception;
+
+    boolean existsReminder(int bookingId, String emailType, LocalDateTime reminderAt) throws Exception;
 }

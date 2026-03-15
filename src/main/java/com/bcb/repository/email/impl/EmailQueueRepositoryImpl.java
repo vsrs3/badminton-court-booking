@@ -15,8 +15,10 @@ import java.util.List;
 public class EmailQueueRepositoryImpl implements EmailQueueRepository {
 
     @Override
-    public void enqueue(String emailType, int bookingId, String toEmail, String payloadJson) throws Exception {
-        String sql = "INSERT INTO EmailQueue (email_type, booking_id, to_email, payload_json) VALUES (?, ?, ?, ?)";
+    public void enqueue(String emailType, int bookingId, String toEmail, String payloadJson, LocalDateTime reminderAt)
+            throws Exception {
+        String sql = "INSERT INTO EmailQueue (email_type, booking_id, to_email, payload_json, reminder_at) " +
+                "VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, emailType);
@@ -26,6 +28,11 @@ public class EmailQueueRepositoryImpl implements EmailQueueRepository {
                 ps.setNull(4, java.sql.Types.NVARCHAR);
             } else {
                 ps.setString(4, payloadJson);
+            }
+            if (reminderAt == null) {
+                ps.setNull(5, java.sql.Types.TIMESTAMP);
+            } else {
+                ps.setTimestamp(5, Timestamp.valueOf(reminderAt));
             }
             ps.executeUpdate();
         }
@@ -95,6 +102,20 @@ public class EmailQueueRepositoryImpl implements EmailQueueRepository {
             }
             ps.setInt(5, emailId);
             ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public boolean existsReminder(int bookingId, String emailType, LocalDateTime reminderAt) throws Exception {
+        String sql = "SELECT TOP 1 1 FROM EmailQueue WHERE booking_id = ? AND email_type = ? AND reminder_at = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setString(2, emailType);
+            ps.setTimestamp(3, Timestamp.valueOf(reminderAt));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 }

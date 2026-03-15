@@ -4,6 +4,8 @@ public interface EmailQueueService {
 
     EmailEnqueueResult enqueueBookingCreated(int bookingId);
 
+    EmailEnqueueResult enqueueRecurringBookingCreated(int bookingId);
+
     void enqueueBookingUpdated(int bookingId, String payloadJson);
 
     void enqueueBookingCancelled(int bookingId, String payloadJson);
