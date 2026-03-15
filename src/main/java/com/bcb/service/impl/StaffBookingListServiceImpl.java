@@ -11,13 +11,16 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
     private final StaffBookingListRepository repository = new StaffBookingListRepositoryImpl();
 
     @Override
-    public StaffBookingListDataDTO getBookingList(int facilityId, String search, int page, int size) throws Exception {
+    public StaffBookingListDataDTO getBookingList(int facilityId, String search, String status, boolean todayOnly, int page, int size) throws Exception {
         StaffBookingListSearchCriteriaDTO criteria = new StaffBookingListSearchCriteriaDTO();
         criteria.setFacilityId(facilityId);
         criteria.setSearch(search);
         criteria.setHasSearch(search != null);
         criteria.setNumericSearch(search != null && search.matches("\\d+"));
         criteria.setLikePattern(search != null ? "%" + search + "%" : null);
+        criteria.setStatus(status);
+        criteria.setTodayOnly(todayOnly);
+        criteria.setTodayDate(java.sql.Date.valueOf(java.time.LocalDate.now()));
 
         int totalRows = repository.countBookings(criteria);
         int totalPages = Math.max(1, (int) Math.ceil((double) totalRows / size));

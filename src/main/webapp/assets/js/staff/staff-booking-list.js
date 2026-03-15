@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
@@ -16,9 +16,12 @@
     var tableBody     = document.getElementById('tableBody');
     var paginationUl  = document.getElementById('paginationUl');
     var errorMessage  = document.getElementById('errorMessage');
+    var filterChips   = document.querySelectorAll('.sbl-chip');
 
     var currentPage = 1;
     var pageSize = 10;
+    var todayFilter = 'ALL';
+    var statusFilter = 'ALL';
 
     searchInput.addEventListener('input', function () {
         searchClear.classList.toggle('d-none', this.value.length === 0);
@@ -42,6 +45,26 @@
         }
     });
 
+    filterChips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            var type = chip.getAttribute('data-filter');
+            var value = chip.getAttribute('data-value');
+            setActiveChip(type, value);
+            currentPage = 1;
+            loadBookings();
+        });
+    });
+
+    function setActiveChip(type, value) {
+        filterChips.forEach(function (c) {
+            if (c.getAttribute('data-filter') === type) {
+                c.classList.toggle('is-active', c.getAttribute('data-value') === value);
+            }
+        });
+        if (type === 'today') todayFilter = value;
+        if (type === 'status') statusFilter = value;
+    }
+
     function showState(state) {
         stateLoading.classList.add('d-none');
         stateError.classList.add('d-none');
@@ -61,6 +84,8 @@
         var search = searchInput.value.trim();
         var url = CTX + '/api/staff/booking/list?page=' + currentPage + '&size=' + pageSize;
         if (search) url += '&search=' + encodeURIComponent(search);
+        if (todayFilter === 'TODAY') url += '&today=1';
+        if (statusFilter && statusFilter !== 'ALL') url += '&status=' + encodeURIComponent(statusFilter);
 
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (res) {
@@ -105,9 +130,10 @@
                 statusHtml += ' <span class="sbl-status sbl-status-noshow">Có vắng</span>';
             }
 
+            var dateRange = fmtRange(b.recurringStartDate, b.recurringEndDate);
             var dateHtml = b.isRecurring
-                ? '<span class="sbl-recurring-tag">Định kỳ</span> ' + fmtRange(b.recurringStartDate, b.recurringEndDate)
-                : fmtDate(b.bookingDate);
+                ? '<span class="sbl-recurring-tag sbl-recurring-tag--hover" title="' + dateRange + '">Định kỳ</span>'
+                : '<span class="sbl-date-range">' + fmtDate(b.bookingDate) + '</span>';
 
             tr.innerHTML =
                 '<td><span class="sbl-booking-id">#' + b.bookingId + '</span></td>' +
