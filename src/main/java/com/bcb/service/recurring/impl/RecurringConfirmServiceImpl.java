@@ -119,19 +119,18 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                                                      RecurringConfirmRequestDTO request,
                                                      HttpServletRequest httpReq) {
         if (request == null || request.getPreviewToken() == null || request.getPreviewToken().isBlank()) {
-            throw new RecurringValidationException("PREVIEW_TOKEN_REQUIRED", "previewToken is required.");
+            throw new RecurringValidationException("PREVIEW_TOKEN_REQUIRED", "Preview token là bắt buộc.");
         }
 
         RecurringPreviewCacheEntry preview = RecurringPreviewStore.get(request.getPreviewToken());
         if (preview == null) {
-            throw new RecurringNotFoundException("PREVIEW_NOT_FOUND", "Preview token invalid or expired. Please preview again.");
+            throw new RecurringNotFoundException("PREVIEW_NOT_FOUND", "Preview token không hợp lệ hoặc đã hết hạn. Vui lòng chọn khung giờ lại.");
         }
 
         Set<LocalDate> skipDates = parseSkipDates(request.getSkipDates(), preview.getStartDate(), preview.getEndDate());
 
         Facility facility = facilityRepo.findActiveById(preview.getFacilityId())
-                .orElseThrow(() -> new RecurringNotFoundException("NOT_FOUND",
-                        "Facility not found with id=" + preview.getFacilityId()));
+                .orElseThrow(() -> new RecurringNotFoundException("NOT_FOUND", "Không tìm thấy cơ sở với id=" + preview.getFacilityId()));
         LocalTime openTime = facility.getOpenTime() != null ? facility.getOpenTime() : LocalTime.of(6, 0);
         LocalTime closeTime = facility.getCloseTime() != null ? facility.getCloseTime() : LocalTime.of(22, 0);
 
@@ -146,15 +145,14 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                 preview.getFacilityId(), openTime, closeTime);
 
         if (runtimeSessionMap.isEmpty()) {
-            throw new RecurringValidationException("NO_SESSIONS_REMAINING", "Cannot skip all sessions.");
+            throw new RecurringValidationException("NO_SESSIONS_REMAINING", "Không thể bỏ qua tất cả các buổi.");
         }
 
         validateMinimumSessions(preview.getSessions(), skipDates, runtimeSessionMap.size());
 
         for (RuntimeSession runtime : runtimeSessionMap.values()) {
             if ("CONFLICT".equals(runtime.status)) {
-                throw new RecurringConflictException("CONFLICT_REMAINING",
-                        "Session conflict still exists on " + runtime.sessionDate + ". Please skip or modify this session.");
+                throw new RecurringConflictException("CONFLICT_REMAINING", "Xung đột vẫn tồn tại vào ngày " + runtime.sessionDate + ". Vui lòng bỏ qua hoặc chỉnh sửa buổi này.");
             }
         }
 
@@ -165,8 +163,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             for (Integer slotId : session.slotIds) {
                 Court court = courtMap.get(session.courtId);
                 if (court == null) {
-                    throw new RecurringValidationException("COURT_NOT_FOUND",
-                            "Court not found in facility: " + session.courtId);
+                    throw new RecurringValidationException("COURT_NOT_FOUND", "Không tìm thấy sân trong cơ sở: " + session.courtId);
                 }
                 BigDecimal price = resolveSlotPrice(preview.getFacilityId(), court.getCourtTypeId(), date, slotId, slotMap);
                 totalAmount = totalAmount.add(price);
@@ -226,7 +223,6 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             Booking booking = new Booking();
             booking.setRecurringId(recurringId);
             booking.setFacilityId(preview.getFacilityId());
-//            booking.setBookingDate(preview.getStartDate());
             booking.setAccountId(accountId);
             booking.setBookingStatus("PENDING");
             booking.setHoldExpiredAt(holdExpiredAt);
@@ -245,9 +241,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                     courtSlotBookingRepo.insertLock(conn, row.courtId, row.sessionDate, row.slotId, bookingSlotId);
                 } catch (DataAccessException e) {
                     conn.rollback();
-                    throw new RecurringConflictException("SLOT_CONFLICT",
-                            "Slot conflict: courtId=" + row.courtId + ", slotId=" + row.slotId
-                                    + " on " + row.sessionDate);
+                    throw new RecurringConflictException("SLOT_CONFLICT", "Xung đột slot: courtId=" + row.courtId + ", slotId=" + row.slotId + " vào ngày " + row.sessionDate);
                 }
             }
 
@@ -300,7 +294,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             throw e;
         } catch (SQLException e) {
             rollbackQuietly(conn);
-            throw new DataAccessException("Transaction failed during recurring confirm-and-pay", e);
+            throw new DataAccessException("Giao dịch thất bại trong quá trình xác nhận và thanh toán đặt lịch cố định", e);
         } catch (DataAccessException e) {
             rollbackQuietly(conn);
             throw e;
@@ -352,41 +346,36 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
         Set<String> touchedSessionIds = new HashSet<>();
         for (RecurringModifiedSessionDTO modified : modifiedSessions) {
             if (modified.getSessionId() == null || modified.getSessionId().isBlank()) {
-                throw new RecurringValidationException("INVALID_MODIFIED_SESSION", "sessionId is required.");
+                throw new RecurringValidationException("INVALID_MODIFIED_SESSION", "sessionId là bắt buộc.");
             }
             if (!touchedSessionIds.add(modified.getSessionId())) {
-                throw new RecurringValidationException("INVALID_MODIFIED_SESSION",
-                        "Duplicate modified session: " + modified.getSessionId());
+                throw new RecurringValidationException("INVALID_MODIFIED_SESSION", "Buổi chỉnh sửa bị trùng: " + modified.getSessionId());
             }
 
             RuntimeSession runtime = runtimeSessionMap.get(modified.getSessionId());
             if (runtime == null) {
-                throw new RecurringValidationException("SESSION_NOT_FOUND",
-                        "Session not found: " + modified.getSessionId());
+                throw new RecurringValidationException("SESSION_NOT_FOUND", "Không tìm thấy buổi: " + modified.getSessionId());
             }
             if (!"CONFLICT".equals(runtime.status)) {
-                throw new RecurringValidationException("INVALID_MODIFIED_SESSION",
-                        "Only conflict sessions can be modified: " + modified.getSessionId());
+                throw new RecurringValidationException("INVALID_MODIFIED_SESSION", "Chỉ các buổi xung đột mới được chỉnh sửa: " + modified.getSessionId());
             }
 
             if (modified.getNewCourtId() == null || !courtMap.containsKey(modified.getNewCourtId())) {
-                throw new RecurringValidationException("COURT_NOT_FOUND",
-                        "New court not found in facility " + facilityId + ": " + modified.getNewCourtId());
+                throw new RecurringValidationException("COURT_NOT_FOUND", "Không tìm thấy sân mới trong cơ sở " + facilityId + ": " + modified.getNewCourtId());
             }
 
             LocalTime newStart = parseTime(modified.getNewStartTime(), "newStartTime");
             LocalTime newEnd = parseTime(modified.getNewEndTime(), "newEndTime");
             if (!newEnd.isAfter(newStart)) {
-                throw new RecurringValidationException("INVALID_TIME_RANGE", "newEndTime must be after newStartTime.");
+                throw new RecurringValidationException("INVALID_TIME_RANGE", "newEndTime phải sau newStartTime.");
             }
             if (newStart.isBefore(openTime) || newEnd.isAfter(closeTime)) {
-                throw new RecurringValidationException("OUT_OF_OPERATING_HOURS",
-                        "Modified session time is outside facility operating hours.");
+                throw new RecurringValidationException("OUT_OF_OPERATING_HOURS", "Thời gian buổi chỉnh sửa nằm ngoài giờ hoạt động của cơ sở.");
             }
 
             long minutes = java.time.temporal.ChronoUnit.MINUTES.between(newStart, newEnd);
             if (minutes < 60) {
-                throw new RecurringValidationException("MIN_DURATION", "Modified session must be at least 60 minutes.");
+                throw new RecurringValidationException("MIN_DURATION", "Buổi chỉnh sửa phải tối thiểu 60 phút.");
             }
 
             List<Integer> newSlotIds = convertTimeRangeToSlots(newStart, newEnd, slots);
@@ -406,12 +395,10 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             try {
                 skipDate = LocalDate.parse(value);
             } catch (DateTimeParseException e) {
-                throw new RecurringValidationException("INVALID_SKIP_DATE",
-                        "Invalid skip date format: " + value + ". Expected YYYY-MM-DD.");
+                throw new RecurringValidationException("INVALID_SKIP_DATE", "Định dạng ngày bỏ qua không hợp lệ: " + value + ". Định dạng mong đợi YYYY-MM-DD.");
             }
             if (skipDate.isBefore(startDate) || skipDate.isAfter(endDate)) {
-                throw new RecurringValidationException("INVALID_SKIP_DATE",
-                        "Skip date outside recurring range: " + value);
+                throw new RecurringValidationException("INVALID_SKIP_DATE", "Ngày bỏ qua nằm ngoài phạm vi đặt lịch: " + value);
             }
             parsed.add(skipDate);
         }
@@ -448,8 +435,8 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
 
         throw new RecurringValidationException(
                 "MIN_SESSIONS_REQUIRED",
-                "Recurring booking must have at least " + MIN_REQUIRED_SESSIONS
-                        + " sessions. You currently have " + remainingSessions + " session(s)."
+                "Đặt lịch cố định phải có ít nhất " + MIN_REQUIRED_SESSIONS
+                        + " buổi. Hiện tại bạn chỉ còn " + remainingSessions + " buổi."
         );
     }
 
@@ -471,11 +458,10 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             }
         }
         if (matched.isEmpty()) {
-            throw new RecurringValidationException("INVALID_TIME_RANGE", "Pattern time range does not map to slots.");
+            throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian mẫu không khớp với slot.");
         }
         if (!start.equals(firstStart) || !end.equals(lastEnd)) {
-            throw new RecurringValidationException("INVALID_TIME_RANGE",
-                    "Pattern time range must align with 30-minute slot boundaries.");
+            throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian mẫu phải khớp với ranh giới slot 30 phút.");
         }
         return matched;
     }
@@ -487,7 +473,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                                         Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
         SingleBookingMatrixTimeSlotDTO slot = slotMap.get(slotId);
         if (slot == null) {
-            throw new RecurringValidationException("INVALID_SLOT", "Invalid slotId=" + slotId);
+            throw new RecurringValidationException("INVALID_SLOT", "slotId không hợp lệ=" + slotId);
         }
 
         String dayType = SingleBookingDayTypeUtil.resolve(bookingDate);
@@ -503,24 +489,22 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                 .collect(Collectors.toList());
 
         if (matching.isEmpty()) {
-            throw new RecurringValidationException("PRICE_RULE_MISSING",
-                    "No price rule for slot " + slot.getStartTime() + "-" + slot.getEndTime());
+            throw new RecurringValidationException("PRICE_RULE_MISSING", "Không có quy tắc giá cho slot " + slot.getStartTime() + "-" + slot.getEndTime());
         }
         if (matching.size() > 1) {
-            throw new RecurringValidationException("PRICE_RULE_OVERLAPPED",
-                    "Multiple price rules match slot " + slot.getStartTime() + "-" + slot.getEndTime());
+            throw new RecurringValidationException("PRICE_RULE_OVERLAPPED", "Nhiều quy tắc giá khớp với slot " + slot.getStartTime() + "-" + slot.getEndTime());
         }
         return matching.get(0).getPrice();
     }
 
     private LocalTime parseTime(String value, String field) {
         if (value == null || value.isBlank()) {
-            throw new RecurringValidationException("VALIDATION_ERROR", field + " is required.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " là bắt buộc.");
         }
         try {
             return LocalTime.parse(value, TF);
         } catch (DateTimeParseException e) {
-            throw new RecurringValidationException("VALIDATION_ERROR", field + " format invalid. Expected HH:mm.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " định dạng không hợp lệ. Định dạng mong đợi HH:mm.");
         }
     }
 
@@ -562,11 +546,4 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
         private String status;
     }
 }
-
-
-
-
-
-
-
 

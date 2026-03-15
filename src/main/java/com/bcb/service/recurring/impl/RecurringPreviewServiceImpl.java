@@ -71,38 +71,37 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
     @Override
     public RecurringPreviewResponseDTO preview(RecurringPreviewRequestDTO request) {
         if (request == null) {
-            throw new RecurringValidationException("VALIDATION_ERROR", "Request body is required.");
+            throw new RecurringValidationException("VALIDATION_ERROR", "Yêu cầu dữ liệu request body là bắt buộc.");
         }
 
         LocalDate startDate = parseDate(request.getStartDate(), "startDate");
         LocalDate endDate = parseDate(request.getEndDate(), "endDate");
 
         if (request.getFacilityId() == null) {
-            throw new RecurringValidationException("VALIDATION_ERROR", "facilityId is required.");
+            throw new RecurringValidationException("VALIDATION_ERROR", "facilityId là bắt buộc.");
         }
         if (startDate.isAfter(endDate)) {
-            throw new RecurringValidationException("INVALID_DATE_RANGE", "startDate must be before or equal to endDate.");
+            throw new RecurringValidationException("INVALID_DATE_RANGE", "startDate phải trước hoặc bằng endDate.");
         }
         if (startDate.isBefore(LocalDate.now())) {
-            throw new RecurringValidationException("PAST_DATE", "startDate cannot be in the past.");
+            throw new RecurringValidationException("PAST_DATE", "startDate không được ở trong quá khứ.");
         }
         if (ChronoUnit.WEEKS.between(startDate, endDate) > 26) {
-            throw new RecurringValidationException("DURATION_TOO_LONG", "Recurring booking cannot exceed 6 months.");
+            throw new RecurringValidationException("DURATION_TOO_LONG", "Đặt lịch cố định không được vượt quá 6 tháng.");
         }
 
         if (request.getPatterns() == null || request.getPatterns().isEmpty()) {
-            throw new RecurringValidationException("PATTERNS_REQUIRED", "At least one pattern is required.");
+            throw new RecurringValidationException("PATTERNS_REQUIRED", "Cần ít nhất một mẫu lặp lại.");
         }
 
         validateUniqueDays(request.getPatterns());
 
         Facility facility = facilityRepo.findActiveById(request.getFacilityId())
-                .orElseThrow(() -> new RecurringNotFoundException("NOT_FOUND",
-                        "Facility not found with id=" + request.getFacilityId()));
+                .orElseThrow(() -> new RecurringNotFoundException("NOT_FOUND", "Không tìm thấy cơ sở với id=" + request.getFacilityId()));
 
         List<Court> courts = courtRepo.findActiveByFacilityId(request.getFacilityId());
         if (courts.isEmpty()) {
-            throw new RecurringValidationException("COURTS_EMPTY", "No active courts found for this facility.");
+            throw new RecurringValidationException("COURTS_EMPTY", "Không tìm thấy sân hoạt động nào cho cơ sở này.");
         }
         Map<Integer, Court> courtMap = courts.stream().collect(Collectors.toMap(Court::getCourtId, c -> c));
 
@@ -202,12 +201,10 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         Set<Integer> usedDays = new HashSet<>();
         for (RecurringPatternDTO pattern : patterns) {
             if (pattern.getDayOfWeek() == null || pattern.getDayOfWeek() < 1 || pattern.getDayOfWeek() > 7) {
-                throw new RecurringValidationException("INVALID_DAY_OF_WEEK",
-                        "dayOfWeek must be between 1 (Sun) and 7 (Sat).");
+                throw new RecurringValidationException("INVALID_DAY_OF_WEEK", "dayOfWeek phải từ 1 (Chủ nhật) đến 7 (Thứ bảy).");
             }
             if (!usedDays.add(pattern.getDayOfWeek())) {
-                throw new RecurringValidationException("DUPLICATE_DAY_PATTERN",
-                        "Mỗi thứ trong tuần chỉ được cấu hình một khung giờ trong cùng recurring booking.");
+                throw new RecurringValidationException("DUPLICATE_DAY_PATTERN", "Mỗi thứ trong tuần chỉ được cấu hình một khung giờ trong cùng recurring booking.");
             }
         }
     }
@@ -219,34 +216,33 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         List<PatternPrepared> prepared = new ArrayList<>();
         for (RecurringPatternDTO pattern : patterns) {
             if (pattern.getCourtId() == null) {
-                throw new RecurringValidationException("VALIDATION_ERROR", "courtId is required in patterns.");
+                throw new RecurringValidationException("VALIDATION_ERROR", "courtId là bắt buộc trong patterns.");
             }
             if (pattern.getStartTime() == null || pattern.getEndTime() == null) {
-                throw new RecurringValidationException("VALIDATION_ERROR", "startTime/endTime are required in patterns.");
+                throw new RecurringValidationException("VALIDATION_ERROR", "startTime/endTime là bắt buộc trong patterns.");
             }
 
             Court court = courtMap.get(pattern.getCourtId());
             if (court == null) {
-                throw new RecurringValidationException("COURT_NOT_FOUND",
-                        "Court not found in this facility: " + pattern.getCourtId());
+                throw new RecurringValidationException("COURT_NOT_FOUND", "Không tìm thấy sân trong cơ sở này: " + pattern.getCourtId());
             }
 
             LocalTime start = parseTime(pattern.getStartTime(), "startTime");
             LocalTime end = parseTime(pattern.getEndTime(), "endTime");
             if (!end.isAfter(start)) {
-                throw new RecurringValidationException("INVALID_TIME_RANGE", "endTime must be after startTime.");
+                throw new RecurringValidationException("INVALID_TIME_RANGE", "endTime phải sau startTime.");
             }
             long minutes = ChronoUnit.MINUTES.between(start, end);
             if (minutes < 60) {
-                throw new RecurringValidationException("MIN_DURATION", "Each session must be at least 60 minutes.");
+                throw new RecurringValidationException("MIN_DURATION", "Mỗi buổi phải tối thiểu 60 phút.");
             }
             if (start.isBefore(facility.getOpenTime()) || end.isAfter(facility.getCloseTime())) {
-                throw new RecurringValidationException("OUT_OF_OPERATING_HOURS", "Pattern time is outside facility operating hours.");
+                throw new RecurringValidationException("OUT_OF_OPERATING_HOURS", "Khung giờ mẫu nằm ngoài giờ hoạt động của cơ sở.");
             }
 
             List<Integer> slotIds = convertTimeRangeToSlots(start, end, slots);
             if (slotIds.isEmpty()) {
-                throw new RecurringValidationException("INVALID_TIME_RANGE", "Time range does not match configured slots.");
+                throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian không khớp với các slot đã cấu hình.");
             }
 
             PatternPrepared item = new PatternPrepared();
@@ -281,8 +277,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
             return matched;
         }
         if (!start.equals(firstStart) || !end.equals(lastEnd)) {
-            throw new RecurringValidationException("INVALID_TIME_RANGE",
-                    "Time range must align with 30-minute slot boundaries.");
+            throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian phải khớp với ranh giới slot 30 phút.");
         }
 
         Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap = new HashMap<>();
@@ -294,8 +289,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
             LocalTime prevEnd = parseTime(slotMap.get(matched.get(i - 1)).getEndTime(), "slot.endTime");
             LocalTime currStart = parseTime(slotMap.get(matched.get(i)).getStartTime(), "slot.startTime");
             if (!prevEnd.equals(currStart)) {
-                throw new RecurringValidationException("INVALID_TIME_RANGE",
-                        "Time range must map to contiguous slots.");
+                throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian phải là các slot liên tiếp.");
             }
         }
         return matched;
@@ -314,7 +308,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         for (Integer slotId : slotIds) {
             SingleBookingMatrixTimeSlotDTO slot = slotMap.get(slotId);
             if (slot == null) {
-                throw new RecurringValidationException("INVALID_SLOT", "Slot not found: " + slotId);
+                throw new RecurringValidationException("INVALID_SLOT", "Không tìm thấy slot: " + slotId);
             }
             LocalTime slotStart = parseTime(slot.getStartTime(), "slot.startTime");
             LocalTime slotEnd = parseTime(slot.getEndTime(), "slot.endTime");
@@ -325,12 +319,10 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                     .collect(Collectors.toList());
 
             if (matching.isEmpty()) {
-                throw new RecurringValidationException("PRICE_RULE_MISSING",
-                        "No price rule found for slot " + slot.getStartTime() + "-" + slot.getEndTime());
+                throw new RecurringValidationException("PRICE_RULE_MISSING", "Không có quy tắc giá cho slot " + slot.getStartTime() + "-" + slot.getEndTime());
             }
             if (matching.size() > 1) {
-                throw new RecurringValidationException("PRICE_RULE_OVERLAPPED",
-                        "Multiple price rules match slot " + slot.getStartTime() + "-" + slot.getEndTime());
+                throw new RecurringValidationException("PRICE_RULE_OVERLAPPED", "Nhiều quy tắc giá khớp với slot " + slot.getStartTime() + "-" + slot.getEndTime());
             }
             total = total.add(matching.get(0).getPrice());
         }
@@ -518,24 +510,23 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
 
     private LocalDate parseDate(String value, String field) {
         if (value == null || value.isBlank()) {
-            throw new RecurringValidationException("VALIDATION_ERROR", field + " is required.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " là bắt buộc.");
         }
         try {
             return LocalDate.parse(value);
         } catch (DateTimeParseException e) {
-            throw new RecurringValidationException("VALIDATION_ERROR",
-                    field + " format invalid. Expected YYYY-MM-DD.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " định dạng không hợp lệ. Định dạng mong đợi YYYY-MM-DD.");
         }
     }
 
     private LocalTime parseTime(String value, String field) {
         if (value == null || value.isBlank()) {
-            throw new RecurringValidationException("VALIDATION_ERROR", field + " is required.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " là bắt buộc.");
         }
         try {
             return LocalTime.parse(value, TF);
         } catch (DateTimeParseException e) {
-            throw new RecurringValidationException("VALIDATION_ERROR", field + " format invalid. Expected HH:mm.");
+            throw new RecurringValidationException("VALIDATION_ERROR", field + " định dạng không hợp lệ. Định dạng mong đợi HH:mm.");
         }
     }
 
@@ -550,5 +541,4 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         private List<Integer> slotIds;
     }
 }
-
 

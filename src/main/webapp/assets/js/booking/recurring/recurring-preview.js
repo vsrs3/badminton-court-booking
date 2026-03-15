@@ -317,7 +317,7 @@
         trackedVoucherCode = '';
         if (voucherCodeInput) voucherCodeInput.value = '';
         refreshMoneySummary();
-        setVoucherStatus(message || 'Voucher da duoc bo ap dung.', 'warning');
+        setVoucherStatus(message || 'Voucher đã được bỏ áp dụng.', 'warning');
     }
 
     /** Loads courts/setup data for edit modal by facility id. */
@@ -521,7 +521,7 @@
             if (!res.ok || !json.success) {
                 const errCode = json && json.error && json.error.code;
                 if (payload.voucherCode && isVoucherErrorCode(errCode)) {
-                    clearAppliedVoucher('Voucher khong con du dieu kien. He thong da bo ap dung voucher va tiep tuc thanh toan.');
+                    clearAppliedVoucher('Voucher không còn đủ điều kiện. Hệ thống đã bỏ áp dụng voucher và tiếp tục thanh toán.');
 
                     const retryPayload = Object.assign({}, payload, { voucherCode: null });
                     res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
@@ -538,7 +538,7 @@
                         throw new Error(retryMsg);
                     }
 
-                    showInfo('Voucher khong con hop le. He thong da bo voucher va tiep tuc thanh toan voi tong tien moi.');
+                    showInfo('Voucher khng còn hợp lệ. Hệ thống đã bỏ voucher và tiếp tục thanh toán với tổng tiền mới.');
                 }
 
                 if (res.ok && json.success) {
