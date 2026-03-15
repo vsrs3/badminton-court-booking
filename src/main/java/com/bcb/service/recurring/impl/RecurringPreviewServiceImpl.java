@@ -112,6 +112,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         Map<Integer, Integer> slotIndexMap = buildSlotIndexMap(slots);
 
         List<PatternPrepared> preparedPatterns = preparePatterns(request.getPatterns(), facility, courtMap, slots);
+        validateNoPastTimeWhenStartDateIsToday(startDate, preparedPatterns);
 
         List<RecurringPreviewSessionDTO> sessions = new ArrayList<>();
         int conflictSessions = 0;
@@ -508,6 +509,32 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         return map;
     }
 
+    private void validateNoPastTimeWhenStartDateIsToday(LocalDate startDate, List<PatternPrepared> preparedPatterns) {
+        if (startDate == null || preparedPatterns == null || preparedPatterns.isEmpty()) {
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        if (!startDate.equals(today)) {
+            return;
+        }
+
+        int todayPlanDay = toPlanDayOfWeek(today);
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.MINUTES);
+        for (PatternPrepared prepared : preparedPatterns) {
+            if (prepared.dayOfWeek != todayPlanDay) {
+                continue;
+            }
+
+            LocalTime startTime = parseTime(prepared.pattern.getStartTime(), "patterns.startTime");
+            if (!startTime.isAfter(now)) {
+                String message = "Khung giờ " + prepared.pattern.getStartTime() + "-" + prepared.pattern.getEndTime()
+                        + " của " + toVietnameseDayName(todayPlanDay)
+                        + " đã ở quá khứ so với hiện tại (" + now.format(TF) + "). Vui lòng chọn giờ bắt đầu muộn hơn.";
+                throw new RecurringValidationException("PAST_TIME_SLOT", message);
+            }
+        }
+    }
+
     private LocalDate parseDate(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new RecurringValidationException("VALIDATION_ERROR", field + " là bắt buộc.");
@@ -532,6 +559,27 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
 
     private int toPlanDayOfWeek(LocalDate date) {
         return date.getDayOfWeek().getValue() % 7 + 1;
+    }
+
+    private String toVietnameseDayName(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case 1:
+                return "Chủ nhật";
+            case 2:
+                return "Thứ 2";
+            case 3:
+                return "Thứ 3";
+            case 4:
+                return "Thứ 4";
+            case 5:
+                return "Thứ 5";
+            case 6:
+                return "Thứ 6";
+            case 7:
+                return "Thứ 7";
+            default:
+                return "ngày đã chọn";
+        }
     }
 
     private static class PatternPrepared {
