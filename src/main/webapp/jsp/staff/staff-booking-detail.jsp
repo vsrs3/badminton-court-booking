@@ -49,6 +49,7 @@
                     <h1 class="fw-bold mb-1" style="font-size:1.5rem; color:#111827;">
                         <i class="bi bi-receipt me-2" style="color:var(--primary-color);"></i>
                         Booking #<span id="dBookingId"></span>
+                        <span class="sbd-tag d-none" id="dRecurringTag">Định kỳ</span>
                     </h1>
                     <p class="mb-0" style="font-size:0.8125rem; color:#9CA3AF;">
                         Chi tiết đặt sân

@@ -40,8 +40,10 @@ public class StaffRefundListApiServlet extends BaseStaffApiServlet {
         } catch (NumberFormatException ignored) {
         }
 
+        String search = request.getParameter("q");
+
         try {
-            StaffRefundListDataDTO data = staffRefundListService.getRefundList(auth.facilityId, page, size);
+            StaffRefundListDataDTO data = staffRefundListService.getRefundList(auth.facilityId, page, size, search);
             writeJson(response, buildListJson(data));
         } catch (Exception e) {
             e.printStackTrace();

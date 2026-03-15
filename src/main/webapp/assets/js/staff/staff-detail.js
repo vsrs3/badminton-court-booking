@@ -57,40 +57,42 @@ function switchTab(tab) {
    vì Staff.facility_id là FK đơn
 ══════════════════════════════════════════ */
 function renderLocList(query) {
-	
-	// Lọc danh sách cơ sở theo query (tìm trong name và addr)
+
+    // L?c danh s?ch c? s? theo query (t?m trong name v? addr)
     const q = (query || '').toLowerCase();
     const filtered = SD.allLocs.filter(l =>
         l.name.toLowerCase().includes(q) || l.addr.toLowerCase().includes(q)
     );
 
-	// Render danh sách cơ sở đã lọc, highlight những cơ sở đang được chọn
-    document.getElementById('sd-loc-list').innerHTML = filtered.length  ? filtered.map( loc => {
-		
-			// Kiểm tra facility này có đang được chọn không — SD.selLocs là mảng chứa ID đang tick xanh
+    // Render danh s?ch c? s? ?? l?c, highlight nh?ng c? s? ?ang ???c ch?n
+    document.getElementById('sd-loc-list').innerHTML = filtered.length
+        ? filtered.map(loc => {
+
+            // Ki?m tra facility n?y c? ?ang ???c ch?n kh?ng ? SD.selLocs l? m?ng ch?a ID ?ang tick xanh
             const sel = SD.selLocs.includes(String(loc.id));
 
-			return `<button type="button"
+            return `<button type="button"
                         class="sd-loc-item${sel ? ' sel' : ''}"
                         onclick="selectLoc('${loc.id}')">
-						
+
                 <div class="sd-loc-icon ${sel ? 'on' : 'off'}">
                     <i class="bi bi-building"></i>
                 </div>
-				
+
                 <div style="flex:1;min-width:0;">
                     <p class="sd-loc-name mb-0">${escHtml(loc.name)}</p>
                     <p class="sd-loc-addr mb-0">${escHtml(loc.addr)}</p>
                 </div>
-				
+
                 ${sel ? '<i class="bi bi-check-circle-fill sd-loc-check"></i>' : ''}
             </button>`;
         }).join('')
         : `<p style="font-size:.75rem;color:var(--color-gray-400);
                      text-align:center;padding:1rem 0;font-weight:600;">
-               Không tìm thấy cơ sở
+               Kh?ng t?m th?y c? s?
            </p>`;
 }
+
 
 /*  xử lý khi user click vào 1 facility */
 function selectLoc(id) {
@@ -105,7 +107,7 @@ function selectLoc(id) {
     const hidden = document.getElementById('selectedFacilityId');
     if (hidden) hidden.value = SD.selLocs[0] || '';
 
-    renderLocList(document.getElementById('sd-loc-search')?.value || '');
+    renderLocList(document.getElementById('sd-loc-search').value || '');
 }
 
 /* ══════════════════════════════════════════

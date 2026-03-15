@@ -17,6 +17,8 @@
 
     var btnProxyMode = document.getElementById('btnProxyMode');
     var btnProxyCancel = document.getElementById('btnProxyCancel');
+    var btnRecurring = document.getElementById('btnRecurring');
+    var btnBlockMode = document.getElementById('btnBlockMode');
     var legendSelected = document.getElementById('legendSelected');
     var bottomBar = document.getElementById('bottomBar');
     var bottomCount = document.getElementById('bottomCount');
@@ -29,6 +31,7 @@
     var MODE_NORMAL = 'NORMAL';
     var MODE_PROXY = 'PROXY';
     var MODE_EDIT = 'EDIT';
+    var MODE_BLOCK = 'BLOCK';
 
     var mode = MODE_NORMAL;
     var currentDate = '';
@@ -111,9 +114,12 @@
     function setMode(newMode) {
         mode = newMode;
         document.getElementById('timelineContainer').classList.toggle('st-proxy-mode', mode !== MODE_NORMAL);
+        document.getElementById('timelineContainer').classList.toggle('st-block-mode', mode === MODE_BLOCK);
 
         if (mode === MODE_PROXY) {
             btnProxyMode.classList.add('d-none');
+            if (btnBlockMode) btnBlockMode.classList.add('d-none');
+            if (btnRecurring) btnRecurring.classList.add('d-none');
             btnProxyCancel.classList.remove('d-none');
             btnProxyCancel.innerHTML = '<i class="bi bi-x-circle me-1"></i>Hủy đặt hộ';
             legendSelected.classList.remove('d-none');
@@ -121,18 +127,37 @@
             btnClearAll.innerHTML = '<i class="bi bi-trash me-1"></i>Bỏ chọn';
         } else if (mode === MODE_EDIT) {
             btnProxyMode.classList.add('d-none');
+            if (btnBlockMode) btnBlockMode.classList.add('d-none');
+            if (btnRecurring) btnRecurring.classList.add('d-none');
             btnProxyCancel.classList.remove('d-none');
             btnProxyCancel.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Thoát chỉnh sửa';
             legendSelected.classList.remove('d-none');
             btnContinue.innerHTML = '<i class="bi bi-save me-1"></i>Lưu thay đổi';
             btnClearAll.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i>Hoàn tác';
+        } else if (mode === MODE_BLOCK) {
+            btnProxyMode.classList.add('d-none');
+            if (btnRecurring) btnRecurring.classList.add('d-none');
+            if (btnBlockMode) btnBlockMode.classList.add('d-none');
+            btnProxyCancel.classList.remove('d-none');
+            btnProxyCancel.innerHTML = '<i class="bi bi-arrow-left me-1"></i>Thoát block';
+            legendSelected.classList.remove('d-none');
+            btnContinue.innerHTML = '<i class="bi bi-slash-circle me-1"></i>Block lịch';
+            btnClearAll.innerHTML = '<i class="bi bi-trash me-1"></i>Bỏ chọn';
         } else {
             btnProxyMode.classList.remove('d-none');
+            if (btnBlockMode) btnBlockMode.classList.remove('d-none');
+            if (btnRecurring) btnRecurring.classList.remove('d-none');
             btnProxyCancel.classList.add('d-none');
             legendSelected.classList.add('d-none');
             bottomBar.classList.add('d-none');
             selectedSlots = [];
         }
+    }
+
+    if (btnRecurring) {
+        btnRecurring.addEventListener('click', function () {
+            window.location.href = CTX + '/staff/booking/recurring';
+        });
     }
 
     function cellKey(courtId, slotId) {
@@ -178,7 +203,7 @@
                 });
 
                 renderGrid();
-                if (mode !== MODE_NORMAL) {
+                if (mode === MODE_PROXY || mode === MODE_EDIT) {
                     fetchPrices(dateStr, function () {
                         if (mode === MODE_EDIT) {
                             ensureEditContextLoaded();
@@ -380,10 +405,16 @@
                     reasonEl.className = 'st-cell-reason';
                     reasonEl.textContent = cell.disabledReason || 'Không khả dụng';
                     inner.appendChild(reasonEl);
+                    if (mode === MODE_BLOCK && cell.exceptionId) {
+                        inner.style.cursor = 'pointer';
+                        inner.addEventListener('click', function () {
+                            handleUnblock(cell);
+                        });
+                    }
                 } else {
                     td.classList.add('st-cell-available');
                     if (mode !== MODE_NORMAL && past) td.classList.add('st-cell-past');
-                    var noPrice = (mode !== MODE_NORMAL && !past && hasNoPrice(court.courtId, slot.slotId));
+                    var noPrice = (mode !== MODE_NORMAL && mode !== MODE_BLOCK && !past && hasNoPrice(court.courtId, slot.slotId));
                     if (noPrice) {
                         td.classList.remove('st-cell-available');
                         td.classList.add('st-cell-no-price');
@@ -424,7 +455,7 @@
 
     function findCourtName(courtId) {
         var c = courtsData.find(function (x) { return x.courtId === courtId; });
-        return c ? c.courtName : ('Sân ' + courtId);
+        return c ? c.courtName : ('S?n ' + courtId);
     }
 
     function findSlot(slotId) {
@@ -447,7 +478,7 @@
             selectedSlots.splice(idx, 1);
         } else {
             if (past) return;
-            if (hasNoPrice(courtId, slotId)) return;
+            if (mode !== MODE_BLOCK && hasNoPrice(courtId, slotId)) return;
 
             var key = cellKey(courtId, slotId);
             var cell = cellMapData[key];
@@ -458,6 +489,8 @@
                 var ownPending = !!editEditableKeySet[key];
                 if (cell && cell.state === 'BOOKED' && !ownPending) return;
                 if (cell && cell.state === 'DISABLED') return;
+            } else if (mode === MODE_BLOCK) {
+                if (cell && cell.state !== 'AVAILABLE') return;
             }
 
             selectedSlots.push({
@@ -487,6 +520,9 @@
         if (mode === MODE_PROXY) {
             bottomCount.textContent = selectedSlots.length + ' slot';
             bottomPrice.textContent = formatMoney(total);
+        } else if (mode === MODE_BLOCK) {
+            bottomCount.textContent = selectedSlots.length + ' slot';
+            bottomPrice.textContent = '—';
         } else {
             var delta = buildEditDelta();
             bottomCount.textContent = '+' + delta.addSlots.length + ' / -' + delta.removeBookingSlotIds.length + ' slot';
@@ -579,6 +615,10 @@
             return validateSessionRule(merged);
         }
 
+        if (mode === MODE_BLOCK) {
+            return selectedSlots.length > 0;
+        }
+
         return validateSessionRule(selectedSlots);
     }
 
@@ -614,7 +654,7 @@
             var firstConfirm = await uiConfirm('Bạn sắp bỏ toàn bộ slot PENDING còn lại. Booking sẽ được tính lại trạng thái theo các phiên còn lại.', 'Xác nhận thay đổi lớn');
             if (!firstConfirm) return;
 
-            var secondConfirm = await uiConfirm('Xác nhận lần 2: bạn chắc chắn muốn hủy toàn bộ slot còn lại?', 'Xác nhận lần 2');
+            var secondConfirm = await uiConfirm('X?c nh?n l?n 2: b?n ch?c ch?n mu?n h?y to?n b? slot c?n l?i', 'X?c nh?n l?n 2');
             if (!secondConfirm) return;
 
             reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');
@@ -664,6 +704,86 @@
             btnContinue.innerHTML = '<i class="bi bi-save me-1"></i>Lưu thay đổi';
         }
     }
+
+    async function blockSelectedSlots() {
+        if (!validateSelection()) {
+            uiAlert('Vui lòng chọn ít nhất 1 slot để block.', 'Dữ liệu chưa hợp lệ');
+            return;
+        }
+
+        var reason = await uiPrompt('Nhập Lý do block (không bắt buộc):', '', 'Lý do block');
+        if (reason == null) return;
+        reason = (reason || '').trim();
+        if (!reason) reason = 'Bảo trì';
+
+        btnContinue.disabled = true;
+        btnContinue.innerHTML = '<span class="sbc-spinner"></span>Đang block...';
+
+        try {
+            for (var i = 0; i < selectedSlots.length; i++) {
+                var s = selectedSlots[i];
+                var res = await fetch(CTX + '/api/staff/schedule-exception/create', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        date: currentDate,
+                        courtId: s.courtId,
+                        slotId: s.slotId,
+                        reason: reason
+                    })
+                });
+
+                var body = await res.json();
+                if (!res.ok || !body.success) {
+                    await uiAlert((body && body.message) || 'Block lịch thất bại', 'Block thất bại');
+                    return;
+                }
+            }
+
+            await uiAlert('Block lịch thành công', 'Thành công');
+            selectedSlots = [];
+            fetchTimeline(currentDate || todayStr());
+        } catch (err) {
+            console.error('Block schedule error:', err);
+            uiAlert('Lỗi kết nối. Vui lòng thử lại.', 'Lỗi');
+        } finally {
+            btnContinue.disabled = false;
+            btnContinue.innerHTML = '<i class="bi bi-slash-circle me-1"></i>Block lịch';
+        }
+    }
+
+    async function handleUnblock(cell) {
+        if (!cell || !cell.exceptionId) return;
+
+        var ok = await uiConfirm('Gỡ block slot này?', 'Xác nhận gỡ block');
+        if (!ok) return;
+
+        try {
+            var res = await fetch(CTX + '/api/staff/schedule-exception/delete', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    exceptionId: cell.exceptionId,
+                    courtId: cell.courtId,
+                    slotId: cell.slotId,
+                    date: currentDate
+                })
+            });
+            var body = await res.json();
+            if (!res.ok || !body.success) {
+                await uiAlert((body && body.message) || 'Gỡ block thất bại', 'Lỗi');
+                return;
+            }
+            await uiAlert('Gỡ block thành công', 'Thành công');
+            fetchTimeline(currentDate || todayStr());
+        } catch (err) {
+            console.error('Unblock error:', err);
+            uiAlert('Lỗi kết nối. Vui lòng thử lại.', 'Lỗi');
+        }
+    }
+
     function exitMode() {
         if (mode === MODE_EDIT && editBookingId) {
             window.location.href = CTX + '/staff/booking/detail/' + editBookingId;
@@ -732,6 +852,14 @@
         fetchTimeline(currentDate || todayStr());
     });
 
+    if (btnBlockMode) {
+        btnBlockMode.addEventListener('click', function () {
+            setMode(MODE_BLOCK);
+            selectedSlots = [];
+            fetchTimeline(currentDate || todayStr());
+        });
+    }
+
     btnProxyCancel.addEventListener('click', exitMode);
 
     btnClearAll.addEventListener('click', function () {
@@ -749,6 +877,8 @@
             saveEditChanges();
         } else if (mode === MODE_PROXY) {
             goToCreatePage();
+        } else if (mode === MODE_BLOCK) {
+            blockSelectedSlots();
         }
     });
 
@@ -767,4 +897,7 @@
         fetchTimeline(todayStr());
     }
 })();
+
+
+
 

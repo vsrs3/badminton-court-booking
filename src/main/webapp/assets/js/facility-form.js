@@ -360,10 +360,10 @@ function mapAddress(addr, data) {
 
     // Ha Noi / HCM: city_district holds quan/phuong mixed
     var pLower = province.toLowerCase();
-    if (pLower.indexOf('ha n') >= 0 || pLower.indexOf('h\u00e0 n\u1ed9i') >= 0
-            || pLower.indexOf('h\u1ed3 ch\u00ed minh') >= 0 || pLower.indexOf('ho chi minh') >= 0) {
+    if (pLower.indexOf('ha n') >= 0 || pLower.indexOf('hà nội') >= 0
+            || pLower.indexOf('hồ chí minh') >= 0 || pLower.indexOf('ho chi minh') >= 0) {
         if (addr.city_district) {
-            if (addr.city_district.indexOf('Qu\u1eadn') >= 0 || addr.city_district.indexOf('District') >= 0) {
+            if (addr.city_district.indexOf('Quận') >= 0 || addr.city_district.indexOf('District') >= 0) {
                 district = addr.city_district;
             } else {
                 ward = addr.city_district;
@@ -406,8 +406,8 @@ function mapAddress(addr, data) {
     }
 
     // Strip trailing "Ward / Phuong / District / Quan" suffixes
-    ward     = ward.replace(/(\s+Ward|\s+Ph\u01b0\u1eddng)$/i, '').trim();
-    district = district.replace(/(\s+District|\s+Qu\u1eadn)$/i, '').trim();
+    ward     = ward.replace(/(\s+Ward|\s+Phường)$/i, '').trim();
+    district = district.replace(/(\s+District|\s+Quận)$/i, '').trim();
 
     return {
         province: province.trim() || null,
