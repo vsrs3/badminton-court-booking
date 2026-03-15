@@ -101,13 +101,37 @@
                         <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
                         Thông tin đặt sân
                     </h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Ngày đặt sân</span>
-                        <span class="detail-value">
-                            <fmt:parseDate value="${d.bookingDate}" pattern="yyyy-MM-dd" var="parsedBookingDate" type="date" />
-                            <fmt:formatDate value="${parsedBookingDate}" pattern="dd/MM/yyyy" />
-                        </span>
-                    </div>
+                    <c:choose>
+                        <c:when test="${d.bookingType == 'RECURRING'}">
+                            <div class="detail-row">
+                                <span class="detail-label">Thời gian áp dụng</span>
+                                <span class="detail-value">
+                                    <c:if test="${not empty d.recurringStartDate}">
+                                        <fmt:parseDate value="${d.recurringStartDate}" pattern="yyyy-MM-dd" var="parsedRecurringStart" type="date" />
+                                        <fmt:formatDate value="${parsedRecurringStart}" pattern="dd/MM/yyyy" />
+                                    </c:if>
+                                    <c:if test="${not empty d.recurringEndDate}">
+                                        -
+                                        <fmt:parseDate value="${d.recurringEndDate}" pattern="yyyy-MM-dd" var="parsedRecurringEnd" type="date" />
+                                        <fmt:formatDate value="${parsedRecurringEnd}" pattern="dd/MM/yyyy" />
+                                    </c:if>
+                                </span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Pattern hàng tuần</span>
+                                <span class="detail-value text-gray-700" style="white-space: pre-line;">${d.recurringPatternDetails}</span>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="detail-row">
+                                <span class="detail-label">Ngày đặt sân</span>
+                                <span class="detail-value">
+                                    <fmt:parseDate value="${d.bookingDate}" pattern="yyyy-MM-dd" var="parsedBookingDate" type="date" />
+                                    <fmt:formatDate value="${parsedBookingDate}" pattern="dd/MM/yyyy" />
+                                </span>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                     <div class="detail-row">
                         <span class="detail-label">Trạng thái booking</span>
                         <span class="detail-value">
@@ -129,7 +153,7 @@
                     <c:if test="${not empty d.createdAt}">
                         <div class="detail-row">
                             <span class="detail-label">Ngày tạo</span>
-                            <span class="detail-value text-gray-500 font-normal">${d.createdAt}</span>
+                            <span class="detail-value text-gray-500 font-normal">${d.createdAtDisplay}</span>
                         </div>
                     </c:if>
                     <%-- Hold expiry info for PENDING --%>
@@ -152,6 +176,29 @@
                         Lịch đặt sân
                     </h3>
                     <c:choose>
+                        <c:when test="${d.bookingType == 'RECURRING' and not empty d.recurringSessions}">
+                            <c:forEach var="ms" items="${d.recurringSessions}">
+                                <div class="slot-row">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                                        <div>
+                                            <span class="text-xs text-gray-500">
+                                                <fmt:parseDate value="${ms.bookingDate}" pattern="yyyy-MM-dd" var="parsedSessionDate" type="date" />
+                                                <fmt:formatDate value="${parsedSessionDate}" pattern="dd/MM/yyyy" />
+                                            </span>
+                                            <span class="text-xs font-semibold text-gray-700 ml-1">${ms.courtName}</span>
+                                            <span class="text-xs text-gray-500 ml-1">${ms.startTime} - ${ms.endTime}</span>
+                                            <c:if test="${ms.slotCount > 1}">
+                                                <span class="text-xs text-gray-400 ml-1">(${ms.slotCount} slot)</span>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-700">
+                                        <fmt:formatNumber value="${ms.totalPrice}" type="number" groupingUsed="true" />đ
+                                    </span>
+                                </div>
+                            </c:forEach>
+                        </c:when>
                         <c:when test="${not empty d.mergedSlots}">
                             <c:forEach var="ms" items="${d.mergedSlots}">
                                 <div class="slot-row">
@@ -178,6 +225,12 @@
                                     <div class="flex items-center space-x-2">
                                         <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
                                         <div>
+                                            <c:if test="${not empty slot.bookingDate}">
+                                                <span class="text-xs text-gray-500">
+                                                    <fmt:parseDate value="${slot.bookingDate}" pattern="yyyy-MM-dd" var="parsedRawSessionDate" type="date" />
+                                                    <fmt:formatDate value="${parsedRawSessionDate}" pattern="dd/MM/yyyy" />
+                                                </span>
+                                            </c:if>
                                             <span class="text-xs font-semibold text-gray-700">${slot.courtName}</span>
                                             <span class="text-xs text-gray-500 ml-1">${slot.startTime} - ${slot.endTime}</span>
                                         </div>
@@ -192,7 +245,7 @@
                 </div>
 
                 <!-- Slot breakdown (toggle — chi tiết từng slot khi merged) -->
-                <c:if test="${fn:length(d.mergedSlots) < fn:length(d.slots)}">
+                <c:if test="${d.bookingType == 'SINGLE' and fn:length(d.mergedSlots) < fn:length(d.slots)}">
                     <div class="detail-section">
                         <button type="button"
                                 class="text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600 transition-colors"

@@ -136,6 +136,9 @@
     <!-- Court Detail Modal -->
     <jsp:include page="../common/court-detail.jsp" />
 
+    <!-- Location Permission Modal -->
+    <jsp:include page="../common/location-permission-modal.jsp" />
+
     <!-- Auth Modal -->
     <jsp:include page="../common/auth-modal.jsp" />
 

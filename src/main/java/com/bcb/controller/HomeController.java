@@ -12,7 +12,7 @@ import java.io.IOException;
  * Controller for home page
  * Simply forwards to the JSP view
  */
-@WebServlet(name = "HomeController", urlPatterns = {"/home", "/"})
+@WebServlet(name = "HomeController", urlPatterns = {"/home"})
 public class HomeController extends HttpServlet {
 
     @Override

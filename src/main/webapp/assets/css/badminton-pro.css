@@ -123,6 +123,22 @@ body {
     background-color: var(--color-lime-brand) !important;
 }
 
+/* Lift interaction for CTA buttons */
+.btn-lift {
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+
+.btn-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    filter: brightness(1.02);
+}
+
+.btn-lift:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--shadow-md);
+}
+
 /* Hide Scrollbar */
 .no-scrollbar::-webkit-scrollbar {
     display: none;

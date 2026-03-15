@@ -40,11 +40,16 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
     }
 
     @Override
-    public Integer insertGuest(Connection conn, String guestName, String guestPhone) throws Exception {
-        String sql = "INSERT INTO Guest (guest_name, phone) VALUES (?, ?)";
+    public Integer insertGuest(Connection conn, String guestName, String guestPhone, String guestEmail) throws Exception {
+        String sql = "INSERT INTO Guest (guest_name, phone, email) VALUES (?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setNString(1, guestName.trim());
             ps.setString(2, guestPhone.trim());
+            if (guestEmail == null || guestEmail.trim().isEmpty()) {
+                ps.setNull(3, java.sql.Types.NVARCHAR);
+            } else {
+                ps.setString(3, guestEmail.trim());
+            }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);

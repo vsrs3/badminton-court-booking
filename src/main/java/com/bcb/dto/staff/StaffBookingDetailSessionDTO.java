@@ -8,6 +8,7 @@ public class StaffBookingDetailSessionDTO {
     private int sessionIndex;
     private int courtId;
     private String courtName;
+    private String sessionDate;
     private String startTime;
     private String endTime;
     private int slotCount;
@@ -40,6 +41,14 @@ public class StaffBookingDetailSessionDTO {
 
     public void setCourtName(String courtName) {
         this.courtName = courtName;
+    }
+
+    public String getSessionDate() {
+        return sessionDate;
+    }
+
+    public void setSessionDate(String sessionDate) {
+        this.sessionDate = sessionDate;
     }
 
     public String getStartTime() {

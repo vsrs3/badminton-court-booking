@@ -6,6 +6,7 @@ public class StaffBookingDetailSlotDTO {
     private int bookingSlotId;
     private int courtId;
     private String courtName;
+    private String bookingDate;
     private int slotId;
     private String startTime;
     private String endTime;
@@ -37,6 +38,14 @@ public class StaffBookingDetailSlotDTO {
 
     public void setCourtName(String courtName) {
         this.courtName = courtName;
+    }
+
+    public String getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(String bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public int getSlotId() {

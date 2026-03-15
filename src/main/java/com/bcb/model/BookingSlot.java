@@ -1,11 +1,13 @@
 package com.bcb.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class BookingSlot {
     private Integer bookingSlotId;
     private Integer bookingId;
+    private LocalDate bookingDate;
     private Integer courtID;
     private Integer slotId;
     private BigDecimal price;
@@ -35,6 +37,14 @@ public class BookingSlot {
 
     public String getBookingStatus() {
         return bookingStatus;
+    }
+
+    public LocalDate getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(LocalDate bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public void setBookingStatus(String bookingStatus) {
