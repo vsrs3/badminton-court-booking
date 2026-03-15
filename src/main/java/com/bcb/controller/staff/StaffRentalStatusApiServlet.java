@@ -12,8 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
 
 @WebServlet(name = "StaffRentalStatusApiServlet", urlPatterns = {"/api/staff/rental/status"})
 public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
@@ -29,11 +28,14 @@ public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
         if (!auth.valid) return;
 
         try {
-            writeJson(response, JsonResponseUtil.success("Tải dữ liệu thành công",
-                    service.getRentalStatusData(auth.facilityId)));
+            LocalDate selectedDate = parseDate(request.getParameter("date"));
+            writeJson(response, JsonResponseUtil.success(
+                    "Tai du lieu thanh cong",
+                    service.getRentalStatusData(auth.facilityId, selectedDate)
+            ));
         } catch (Exception e) {
             e.printStackTrace();
-            writeError(response, 500, "Lỗi hệ thống");
+            writeError(response, 500, "Loi he thong");
         }
     }
 
@@ -46,47 +48,51 @@ public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
         AuthResult auth = StaffAuthUtil.validateStaff(request, response);
         if (!auth.valid) return;
 
-        List<Integer> rentalIds = parseRentalIds(request.getParameter("rentalIds"));
+        int scheduleId = parseInt(request.getParameter("scheduleId"));
         String status = request.getParameter("status");
 
-        if (rentalIds.isEmpty()) {
-            writeError(response, 400, "Thiếu rentalIds");
+        if (scheduleId <= 0) {
+            writeError(response, 400, "Thieu scheduleId");
             return;
         }
 
-        if (!"RENTED".equals(status) && !"RETURNED".equals(status)) {
-            writeError(response, 400, "Trạng thái không hợp lệ");
+        if (!"RENTED".equals(status) && !"RENTING".equals(status) && !"RETURNED".equals(status)) {
+            writeError(response, 400, "Trang thai khong hop le");
             return;
         }
 
         try {
             StaffRentalStatusUpdateResultDTO result =
-                    service.updateRentalStatus(auth.facilityId, rentalIds, "RETURNED".equals(status));
+                    service.updateRentalStatus(auth.facilityId, scheduleId, status);
             if (result.getUpdatedCount() <= 0) {
-                writeError(response, 404, "Không tìm thấy dữ liệu cần cập nhật");
+                writeError(response, 404, "Khong tim thay du lieu can cap nhat");
                 return;
             }
-            writeJson(response, JsonResponseUtil.success("Cập nhật trạng thái thành công", result));
+            writeJson(response, JsonResponseUtil.success("Cap nhat trang thai thanh cong", result));
+        } catch (IllegalArgumentException e) {
+            writeError(response, 400, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            writeError(response, 500, "Lỗi hệ thống");
+            writeError(response, 500, "Loi he thong");
         }
     }
 
-    private List<Integer> parseRentalIds(String csv) {
-        List<Integer> ids = new ArrayList<>();
-        if (csv == null || csv.trim().isEmpty()) {
-            return ids;
-        }
-
-        String[] parts = csv.split(",");
-        for (String part : parts) {
-            String value = part.trim();
-            if (!value.matches("\\d+")) {
-                continue;
+    private LocalDate parseDate(String rawDate) {
+        try {
+            if (rawDate == null || rawDate.trim().isEmpty()) {
+                return LocalDate.now();
             }
-            ids.add(Integer.parseInt(value));
+            return LocalDate.parse(rawDate.trim());
+        } catch (Exception e) {
+            return LocalDate.now();
         }
-        return ids;
+    }
+
+    private int parseInt(String rawValue) {
+        try {
+            return Integer.parseInt(rawValue);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

@@ -1,28 +1,31 @@
 package com.bcb.dto.staff;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public class StaffRentalStatusRawRowDTO {
-    private int rentalId;
+    private int scheduleId;
     private int courtId;
     private String courtName;
+    private int bookingId;
+    private Integer accountId;
+    private Integer guestId;
     private String customerName;
+    private int inventoryId;
     private String inventoryName;
     private int quantity;
     private LocalDate bookingDate;
     private int slotId;
     private LocalTime startTime;
     private LocalTime endTime;
-    private LocalDateTime returnedAt;
+    private String status;
 
-    public int getRentalId() {
-        return rentalId;
+    public int getScheduleId() {
+        return scheduleId;
     }
 
-    public void setRentalId(int rentalId) {
-        this.rentalId = rentalId;
+    public void setScheduleId(int scheduleId) {
+        this.scheduleId = scheduleId;
     }
 
     public int getCourtId() {
@@ -41,12 +44,44 @@ public class StaffRentalStatusRawRowDTO {
         this.courtName = courtName;
     }
 
+    public int getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(int bookingId) {
+        this.bookingId = bookingId;
+    }
+
+    public Integer getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Integer accountId) {
+        this.accountId = accountId;
+    }
+
+    public Integer getGuestId() {
+        return guestId;
+    }
+
+    public void setGuestId(Integer guestId) {
+        this.guestId = guestId;
+    }
+
     public String getCustomerName() {
         return customerName;
     }
 
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
+    }
+
+    public int getInventoryId() {
+        return inventoryId;
+    }
+
+    public void setInventoryId(int inventoryId) {
+        this.inventoryId = inventoryId;
     }
 
     public String getInventoryName() {
@@ -97,11 +132,11 @@ public class StaffRentalStatusRawRowDTO {
         this.endTime = endTime;
     }
 
-    public LocalDateTime getReturnedAt() {
-        return returnedAt;
+    public String getStatus() {
+        return status;
     }
 
-    public void setReturnedAt(LocalDateTime returnedAt) {
-        this.returnedAt = returnedAt;
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

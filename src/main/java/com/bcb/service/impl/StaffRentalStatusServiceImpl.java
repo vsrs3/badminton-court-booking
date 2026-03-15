@@ -1,120 +1,134 @@
 package com.bcb.service.impl;
 
+import com.bcb.dto.staff.StaffRentalStatusCellDTO;
 import com.bcb.dto.staff.StaffRentalStatusCourtDTO;
 import com.bcb.dto.staff.StaffRentalStatusDataDTO;
+import com.bcb.dto.staff.StaffRentalStatusItemDTO;
 import com.bcb.dto.staff.StaffRentalStatusRawRowDTO;
-import com.bcb.dto.staff.StaffRentalStatusRowDTO;
 import com.bcb.dto.staff.StaffRentalStatusUpdateResultDTO;
+import com.bcb.dto.staff.StaffTimelineFacilityDTO;
 import com.bcb.repository.impl.StaffRentalStatusRepositoryImpl;
-import com.bcb.repository.staff.StaffRentalStatusRepository;
+import com.bcb.repository.impl.StaffTimelineRepositoryImpl;
 import com.bcb.service.staff.StaffRentalStatusService;
+import com.bcb.utils.DBContext;
 
-import java.time.LocalTime;
+import java.sql.Connection;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class StaffRentalStatusServiceImpl implements StaffRentalStatusService {
 
     private static final String STATUS_RENTED = "RENTED";
+    private static final String STATUS_RENTING = "RENTING";
     private static final String STATUS_RETURNED = "RETURNED";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("H:mm");
 
-    private final StaffRentalStatusRepository repository = new StaffRentalStatusRepositoryImpl();
+    private final StaffRentalStatusRepositoryImpl repository = new StaffRentalStatusRepositoryImpl();
+    private final StaffTimelineRepositoryImpl timelineRepository = new StaffTimelineRepositoryImpl();
 
     @Override
-    public StaffRentalStatusDataDTO getRentalStatusData(int facilityId) throws Exception {
-        List<StaffRentalStatusCourtDTO> courts = repository.findCourtsByFacility(facilityId);
-        Map<Integer, StaffRentalStatusCourtDTO> courtMap = new LinkedHashMap<>();
-        Map<Integer, Map<String, StaffRentalStatusRowDTO>> lastRowByCourt = new HashMap<>();
-        for (StaffRentalStatusCourtDTO court : courts) {
-            courtMap.put(court.getCourtId(), court);
+    public StaffRentalStatusDataDTO getRentalStatusData(int facilityId, LocalDate bookingDate) throws Exception {
+        List<StaffRentalStatusCourtDTO> courts;
+        List<StaffRentalStatusRawRowDTO> rawRows;
+        List<com.bcb.dto.staff.StaffTimelineSlotDTO> slots;
+        List<com.bcb.dto.staff.StaffRentalInventoryStockDTO> inventoryItems;
+
+        try (Connection conn = DBContext.getConnection()) {
+            StaffTimelineFacilityDTO facility = timelineRepository.findFacilityInfo(conn, facilityId);
+            String openTime = facility.getOpenTime() != null ? facility.getOpenTime() : "00:00";
+            String closeTime = facility.getCloseTime() != null ? facility.getCloseTime() : "23:59";
+
+            courts = repository.findCourtsByFacility(conn, facilityId);
+            rawRows = repository.findRentalStatusRows(conn, facilityId, bookingDate);
+            slots = timelineRepository.findSlotsWithinHours(conn, openTime, closeTime);
+            inventoryItems = repository.findInventoryStocks(conn, facilityId);
         }
 
-        for (StaffRentalStatusRawRowDTO raw : repository.findRentalStatusRows(facilityId)) {
-            StaffRentalStatusCourtDTO court = courtMap.get(raw.getCourtId());
-            if (court == null) {
-                court = new StaffRentalStatusCourtDTO();
-                court.setCourtId(raw.getCourtId());
-                court.setCourtName(raw.getCourtName());
-                courtMap.put(raw.getCourtId(), court);
+        Map<String, StaffRentalStatusCellDTO> cellMap = new LinkedHashMap<>();
+        for (StaffRentalStatusRawRowDTO raw : rawRows) {
+            String cellKey = buildCellKey(raw.getCourtId(), raw.getSlotId());
+            StaffRentalStatusCellDTO cell = cellMap.get(cellKey);
+            if (cell == null) {
+                cell = new StaffRentalStatusCellDTO();
+                cell.setCourtId(raw.getCourtId());
+                cell.setSlotId(raw.getSlotId());
+                cell.setBookingId(raw.getBookingId());
+                cell.setCustomerName(defaultString(raw.getCustomerName()));
+                cell.setCustomerKey(buildCustomerKey(raw));
+                cell.setStatus(raw.getStatus());
+                cellMap.put(cellKey, cell);
             }
 
-            Map<String, StaffRentalStatusRowDTO> rowGroupMap =
-                    lastRowByCourt.computeIfAbsent(raw.getCourtId(), key -> new HashMap<>());
-            List<StaffRentalStatusRowDTO> rows = court.getRows();
-            String rowGroupKey = buildRowGroupKey(raw);
-            StaffRentalStatusRowDTO current = rowGroupMap.get(rowGroupKey);
-            if (canMerge(current, raw)) {
-                current.getRentalIds().add(raw.getRentalId());
-                current.setEndTime(formatTime(raw.getEndTime()));
-                current.setSlotLabel(buildSlotLabel(current.getStartTime(), current.getEndTime()));
-            } else {
-                StaffRentalStatusRowDTO row = new StaffRentalStatusRowDTO();
-                row.setCustomerName(defaultString(raw.getCustomerName()));
-                row.setInventoryName(defaultString(raw.getInventoryName()));
-                row.setQuantity(raw.getQuantity());
-                row.setCourtName(defaultString(raw.getCourtName()));
-                row.setBookingDate(raw.getBookingDate() != null ? raw.getBookingDate().format(DATE_FORMAT) : "");
-                row.setStartTime(formatTime(raw.getStartTime()));
-                row.setEndTime(formatTime(raw.getEndTime()));
-                row.setSlotLabel(buildSlotLabel(row.getStartTime(), row.getEndTime()));
-                row.setStatus(raw.getReturnedAt() == null ? STATUS_RENTED : STATUS_RETURNED);
-                row.getRentalIds().add(raw.getRentalId());
-                rows.add(row);
-                rowGroupMap.put(rowGroupKey, row);
-            }
+            StaffRentalStatusItemDTO item = new StaffRentalStatusItemDTO();
+            item.setScheduleId(raw.getScheduleId());
+            item.setInventoryId(raw.getInventoryId());
+            item.setInventoryName(defaultString(raw.getInventoryName()));
+            item.setQuantity(raw.getQuantity());
+            item.setStatus(raw.getStatus());
+            cell.getItems().add(item);
+
+            cell.setItemCount(cell.getItems().size());
+            cell.setTotalQuantity(cell.getTotalQuantity() + raw.getQuantity());
+            cell.setStatus(mergeStatus(cell.getStatus(), raw.getStatus()));
         }
+
+        List<StaffRentalStatusCellDTO> cells = new ArrayList<>(cellMap.values());
+        for (StaffRentalStatusCellDTO cell : cells) {
+            cell.getItems().sort(Comparator.comparing(StaffRentalStatusItemDTO::getInventoryName));
+        }
+
+        cells.sort(Comparator
+                .comparingInt(StaffRentalStatusCellDTO::getCourtId)
+                .thenComparingInt(StaffRentalStatusCellDTO::getSlotId));
 
         StaffRentalStatusDataDTO data = new StaffRentalStatusDataDTO();
-        data.setCourts(List.copyOf(courtMap.values()));
+        data.setSelectedDate(bookingDate.format(DATE_FORMAT));
+        data.setCourts(courts);
+        data.setSlots(slots);
+        data.setCells(cells);
+        data.setInventoryItems(inventoryItems);
         return data;
     }
 
     @Override
-    public StaffRentalStatusUpdateResultDTO updateRentalStatus(int facilityId, List<Integer> rentalIds, boolean returned)
+    public StaffRentalStatusUpdateResultDTO updateRentalStatus(int facilityId, int scheduleId, String nextStatus)
             throws Exception {
-        int updatedCount = repository.updateReturnedStatus(facilityId, rentalIds, returned);
+        int updatedCount = repository.updateScheduleStatus(facilityId, scheduleId, nextStatus);
 
         StaffRentalStatusUpdateResultDTO result = new StaffRentalStatusUpdateResultDTO();
-        result.setReturned(returned);
-        result.setStatus(returned ? STATUS_RETURNED : STATUS_RENTED);
+        result.setReturned(STATUS_RETURNED.equals(nextStatus));
+        result.setStatus(nextStatus);
         result.setUpdatedCount(updatedCount);
         return result;
     }
 
-    private boolean canMerge(StaffRentalStatusRowDTO current, StaffRentalStatusRawRowDTO raw) {
-        if (current == null) {
-            return false;
+    private String buildCellKey(int courtId, int slotId) {
+        return courtId + "_" + slotId;
+    }
+
+    private String buildCustomerKey(StaffRentalStatusRawRowDTO raw) {
+        if (raw.getAccountId() != null) {
+            return "ACCOUNT_" + raw.getAccountId();
         }
-        return Objects.equals(current.getCustomerName(), defaultString(raw.getCustomerName()))
-                && Objects.equals(current.getInventoryName(), defaultString(raw.getInventoryName()))
-                && current.getQuantity() == raw.getQuantity()
-                && Objects.equals(current.getCourtName(), defaultString(raw.getCourtName()))
-                && Objects.equals(current.getBookingDate(), raw.getBookingDate() != null ? raw.getBookingDate().format(DATE_FORMAT) : "")
-                && Objects.equals(current.getStatus(), raw.getReturnedAt() == null ? STATUS_RENTED : STATUS_RETURNED)
-                && Objects.equals(current.getEndTime(), formatTime(raw.getStartTime()));
+        if (raw.getGuestId() != null) {
+            return "GUEST_" + raw.getGuestId();
+        }
+        return defaultString(raw.getCustomerName());
     }
 
-    private String buildRowGroupKey(StaffRentalStatusRawRowDTO raw) {
-        return raw.getCourtId() + "|"
-                + defaultString(raw.getCustomerName()) + "|"
-                + defaultString(raw.getInventoryName()) + "|"
-                + raw.getQuantity() + "|"
-                + (raw.getBookingDate() != null ? raw.getBookingDate().format(DATE_FORMAT) : "") + "|"
-                + (raw.getReturnedAt() == null ? STATUS_RENTED : STATUS_RETURNED);
-    }
-
-    private String formatTime(LocalTime time) {
-        return time == null ? "" : time.format(TIME_FORMAT);
-    }
-
-    private String buildSlotLabel(String startTime, String endTime) {
-        return startTime + " - " + endTime;
+    private String mergeStatus(String current, String next) {
+        if (STATUS_RENTING.equals(current) || STATUS_RENTING.equals(next)) {
+            return STATUS_RENTING;
+        }
+        if (STATUS_RENTED.equals(current) || STATUS_RENTED.equals(next)) {
+            return STATUS_RENTED;
+        }
+        return STATUS_RETURNED;
     }
 
     private String defaultString(String value) {
