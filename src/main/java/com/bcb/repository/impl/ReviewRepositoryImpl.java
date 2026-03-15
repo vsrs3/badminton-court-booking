@@ -2,6 +2,7 @@ package com.bcb.repository.impl;
 
 import java.sql.Timestamp;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,9 +11,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.bcb.dto.ReviewDTO;
+import com.bcb.dto.review.ReviewDTO;
+import com.bcb.dto.review.ReviewUserListDTO;
 import com.bcb.exception.DataAccessException;
 import com.bcb.model.Review;
 import com.bcb.repository.ReviewRepository;
@@ -37,10 +40,12 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 			return review;
 
 		} catch (Exception e) {
-			throw new DataAccessException("Failed to view review", e);
+			throw new DataAccessException("Không thể xem đánh giá", e);
 		}
 	}
 
+	
+	
 	@Override
 	public boolean editReview(Integer bookingId, Integer accountId, Integer rating, String comment) {
 
@@ -58,15 +63,19 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 			return rs > 0;
 
 		} catch (Exception e) {
-			throw new DataAccessException("Failed to edit review", e);
+			throw new DataAccessException("Không thể chỉnh sửa đánh giá", e);
 
 		}
 	}
 
+	
+	
 	@Override
 	public List<Review> listLocationReview(Integer facilityId) {
 
-		String sql = "Select * from Review Where facility_id = ?";
+		String sql = "Select r.* from Review r "
+				+ "JOIN Booking b ON r.booking_id = b.booking_id "
+				+ "WHERE b.facility_id = ?";
 
 		List<Review> listReview = new ArrayList<Review>();
 		try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -79,32 +88,90 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 			return listReview;
 
 		} catch (Exception e) {
-			throw new DataAccessException("Failed to view the list of reviewing location", e);
+			throw new DataAccessException("không thể hiển thị danh sách đánh giá", e);
 		}
 	}
 
-	@Override
-	public boolean addReview(Integer bookingId, Integer facilityId, Integer accountId, Integer rating, String comment) {
+	
 
-		String sql = "Insert Into Review " + "(booking_id, facility_id, account_id, rating, comment, created_at) "
-				+ "Values " + "(?, ?, ?, ?, ?, GETDATE())";
+	@Override
+	public List<ReviewUserListDTO> listUserReview(Integer accountId, LocalDate dateFrom, LocalDate dateTo) {
+		
+		StringBuilder sql = new StringBuilder(
+		        "SELECT r.review_id, r.booking_id, r.rating, r.comment, r.created_at, " +
+		        "f.name, f.province, f.district, f.ward, f.address " +
+		        "FROM Review r " +
+		        "LEFT JOIN Booking b ON r.booking_id = b.booking_id " +
+		        "LEFT JOIN Facility f ON b.facility_id = f.facility_id " +
+		        "WHERE r.account_id = ? "
+		    );
+
+		    if (dateFrom != null) sql.append("AND CAST(r.created_at AS DATE) >= ? ");
+		    if (dateTo   != null) sql.append("AND CAST(r.created_at AS DATE) <= ? ");
+
+		    sql.append("ORDER BY r.created_at DESC");
+		
+		    List<ReviewUserListDTO> listUserReview = new ArrayList<>();
+		    try (Connection conn = DBContext.getConnection();
+		         PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+		        int index = 1;
+		        ps.setInt(index++, accountId);
+		        if (dateFrom != null) ps.setDate(index++, Date.valueOf(dateFrom));
+		        if (dateTo   != null) ps.setDate(index++, Date.valueOf(dateTo));
+
+		        ResultSet rs = ps.executeQuery();
+		        while (rs.next()) {
+		        	
+		            ReviewUserListDTO dto = new ReviewUserListDTO(accountId, dateFrom, dateTo);
+		            dto.setBookingId(rs.getInt("booking_id"));
+		            dto.setRating(rs.getInt("rating"));
+		            dto.setComment(rs.getString("comment"));
+
+		            Timestamp ts = rs.getTimestamp("created_at");
+		            if (ts != null) dto.setCreatedAt(ts.toLocalDateTime());
+
+		            dto.setName(rs.getString("name"));
+		            dto.setProvince(rs.getString("province"));
+		            dto.setDistrict(rs.getString("district"));
+		            dto.setWard(rs.getString("ward"));
+		            dto.setAddress(rs.getString("address"));
+
+		            listUserReview.add(dto);
+		        }
+			
+			
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Không thể truy vấn từ Database");
+		}
+		return listUserReview;
+	}
+	
+	
+	
+	@Override
+	public boolean addReview(Integer bookingId, Integer accountId, Integer rating, String comment) {
+
+		String sql = "Insert Into Review " + "(booking_id, account_id, rating, comment, created_at) "
+				+ "Values " + "(?, ?, ?, ?, GETDATE())";
 
 		try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setInt(1, bookingId);
-			ps.setInt(2, facilityId);
-			ps.setInt(3, accountId);
-			ps.setInt(4, rating);
-			ps.setString(5, comment);
+			ps.setInt(2, accountId);
+			ps.setInt(3, rating);
+			ps.setString(4, comment);
 
 			int rs = ps.executeUpdate();
 			return rs > 0;
 
 		} catch (Exception e) {
-			throw new DataAccessException("Failed to create review", e);
+			throw new DataAccessException("Không thể tạo đánh giá", e);
 		}
 	}
 
+	
+	
 	@Override
 	public Set<Integer> getReviewedBookingIds(Integer accountId) {
 
@@ -126,6 +193,8 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 		}
 	}
 
+	
+	
 	@Override
 	public Optional<Integer> getFacilityId(Integer accountId, Integer bookingId) {
 		String sql = "Select r.facility_id From Booking r " + "Where account_id = ? And booking_id = ? ";
@@ -146,11 +215,13 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 		return Optional.empty();
 	}
 
+	
+	
 	private Review mapResultSetToReview(ResultSet rs) throws SQLException {
 		Review review = new Review();
 
+		review.setReviewId(rs.getInt("review_id"));
 		review.setBookingId(rs.getInt("booking_id"));
-		review.setFacilityId(rs.getInt("facility_id"));
 		review.setAccountId(rs.getInt("account_id"));
 		review.setRating(rs.getInt("rating"));
 		review.setComment(rs.getString("comment"));
@@ -162,6 +233,8 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 
 		return review;
 	}
+	
+	
 
 	@Override
 	public boolean deleteReview(Integer bookingId, Integer accountId) {
@@ -179,5 +252,6 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 			throw new DataAccessException("Failed to delete review", e);
 		}
 	}
+
 
 }

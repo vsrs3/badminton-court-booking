@@ -194,17 +194,31 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
-    @Override
+        @Override
+    public java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT created_at FROM Booking WHERE booking_id = ?")) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getTimestamp("created_at") != null) {
+                    return rs.getTimestamp("created_at").toLocalDateTime();
+                }
+                return null;
+            }
+        }
+    }
+
+@Override
     public void updateInvoiceAfterRecalc(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal refundDue,
-                                         String refundStatus, String refundNote) throws Exception {
-        String sql = "UPDATE Invoice SET total_amount = ?, refund_due = ?, refund_status = ?, refund_note = ? WHERE booking_id = ?";
+                                         String refundStatus, String refundNote, String paymentStatus) throws Exception {
+        String sql = "UPDATE Invoice SET total_amount = ?, refund_due = ?, refund_status = ?, refund_note = ?, payment_status = ? WHERE booking_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setBigDecimal(1, totalAmount);
             ps.setBigDecimal(2, refundDue);
             ps.setString(3, refundStatus);
             if (refundNote == null) ps.setNull(4, java.sql.Types.NVARCHAR);
             else ps.setString(4, refundNote);
-            ps.setInt(5, bookingId);
+            ps.setString(5, paymentStatus);
+            ps.setInt(6, bookingId);
             ps.executeUpdate();
         }
     }
@@ -293,4 +307,5 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 }
+
 

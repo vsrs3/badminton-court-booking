@@ -72,18 +72,27 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                                <label class="form-label">
+                                    Địa chỉ <span class="text-danger">*</span>
+                                    <span id="locationStatusBadge" class="badge bg-secondary ms-2 align-middle">
+                                        <i class="bi bi-geo me-1"></i>Chưa xác định vị trí
+                                    </span>
+                                </label>
                                 <div class="input-group">
                                     <input type="text"
                                            class="form-control"
                                            id="address"
                                            name="address"
                                            required
+                                           placeholder="Số nhà, tên đường..."
                                            value="${requestScope.facility.address}">
-                                    <button type="button" class="btn btn-outline-secondary" onclick="openMapModal()">
-                                        <i class="bi bi-geo-alt"></i>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="openMapModal()"
+                                            title="Chọn vị trí trên bản đồ">
+                                        <i class="bi bi-geo-alt"></i> Chọn trên bản đồ
                                     </button>
                                 </div>
+                                <%-- Inline geocode hint (shown/hidden by JS) --%>
+                                <div id="geocodeHint" class="form-text" style="display:none;"></div>
                             </div>
 
                             <input type="hidden" id="latitude" name="latitude"

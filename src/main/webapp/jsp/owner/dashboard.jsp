@@ -1,290 +1,288 @@
-<!-- dashboard.jsp -->
-
+<%-- dashboard.jsp --%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ include file="layout/layout.jsp"%>
 <%@ include file="layout/sidebar.jsp"%>
 
+<link rel="stylesheet"
+    href="${pageContext.request.contextPath}/assets/css/owner/dashboard.css">
+<style>
+.content-area { padding: 0 !important; }
+</style>
+
 <div class="main-content">
-	<%@ include file="layout/header.jsp"%>
+    <%@ include file="layout/header.jsp"%>
 
-	<div class="content-area">
+    <div class="dov-wrap">
 
-		<%-- ===== PAGE HEADER ROW ===== --%>
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<div>
-				<h1 class="fw-black mb-1" style="font-size:1.75rem;color:var(--color-gray-900);letter-spacing:-0.02em;">Dashboard</h1>
-				<p class="text-secondary mb-0" style="font-size:0.875rem;">Performance summary of all locations</p>
-			</div>
-			<a href="${pageContext.request.contextPath}/owner/export"
-				class="btn btn-brand d-flex align-items-center gap-2 fw-bold rounded-3"
-				style="padding:0.625rem 1.25rem;box-shadow:0 4px 14px rgba(6,78,59,0.25);">
-				<i class="bi bi-download"></i> Export Data
-			</a>
-		</div>
+        <%-- ============================================================
+             ERROR ALERT
+        ============================================================ --%>	
+        <c:if test="${not empty requestScope.error}">
+            <div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                <span class="fw-semibold">${requestScope.error}</span>
+            </div>
+        </c:if>
 
-		<%-- ===== ERROR ALERT ===== --%>
-		<c:if test="${not empty requestScope.error}">
-			<div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
-				<i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-				<span class="fw-semibold">${requestScope.error}</span>
-			</div>
-		</c:if>
+        <%-- ============================================================
+             STAT CARDS
+        ============================================================ --%>
+        <div class="dov-stats-grid">
 
-		<%-- ===== STAT CARDS ===== --%>
-		<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-4">
+            <%-- Daily Revenue --%>
+            <div class="dov-card dov-fadein dov-d1">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        ${sessionScope.dailyRevenue.changePercent != null ? sessionScope.dailyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">Doanh thu hàng ngày</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.dailyRevenue.currentAmount != null ? sessionScope.dailyRevenue.formattedAmount : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Total Locations --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-600);box-shadow:0 6px 16px rgba(22,163,74,0.3);">
-								<i class="bi bi-building fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 12%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Total Locations</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.totalLocations != null ? requestScope.totalLocations : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- Weekly Revenue --%>
+            <div class="dov-card dov-fadein dov-d2">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        ${sessionScope.weeklyRevenue.changePercent != null ? sessionScope.weeklyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">Doanh thu hàng tuần</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.weeklyRevenue.currentAmount != null ? sessionScope.weeklyRevenue.formattedAmount : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Total Customers --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-blue-500);box-shadow:0 6px 16px rgba(59,130,246,0.28);">
-								<i class="bi bi-people fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:#EFF6FF;color:#1D4ED8;">↓ 1</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Total Customers</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.totalCourts != null ? requestScope.totalCourts : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- Monthly Revenue --%>
+            <div class="dov-card dov-fadein dov-d3">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        ${sessionScope.monthlyRevenue.changePercent != null ? sessionScope.monthlyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">Doanh thu hàng tháng</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.monthlyRevenue.currentAmount != null ? sessionScope.monthlyRevenue.formattedAmount : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Monthly Revenue --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-600);box-shadow:0 6px 16px rgba(22,163,74,0.3);">
-								<i class="bi bi-cash-stack fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 8%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Monthly Revenue</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.activeCourts != null ? requestScope.activeCourts : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+            <%-- Yearly Revenue --%>
+            <div class="dov-card dov-fadein dov-d4">
+                <div class="dov-stat-top">
+                    <div class="dov-stat-icon dov-stat-icon--green">
+                        <i class="bi bi-currency-dollar fs-5"></i>
+                    </div>
+                    <span class="dov-stat-badge dov-stat-badge--up">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        ${sessionScope.yearlyRevenue.changePercent != null ? sessionScope.yearlyRevenue.formattedPercent : 'null'}
+                    </span>
+                </div>
+                <p class="dov-stat-label">Doanh thu hàng năm</p>
+                <p class="dov-stat-value">
+                    ${sessionScope.yearlyRevenue.currentAmount != null ? sessionScope.yearlyRevenue.formattedAmount : 'null'}
+                </p>
+            </div>
 
-			<%-- Card: Monthly Bookings --%>
-			<div class="col">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start justify-content-between mb-3">
-							<div class="rounded-3 d-flex align-items-center justify-content-center text-white"
-								style="width:48px;height:48px;background:var(--color-green-brand);box-shadow:0 6px 16px rgba(6,78,59,0.25);">
-								<i class="bi bi-calendar-check fs-5"></i>
-							</div>
-							<span class="badge rounded-pill fw-bold" style="background:var(--color-green-100);color:var(--color-green-700);">↑ 24%</span>
-						</div>
-						<p class="text-uppercase fw-black mb-1" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Monthly Bookings</p>
-						<p class="fw-black mb-0" style="font-size:1.875rem;color:var(--color-gray-900);">
-							${requestScope.monthlyBookings != null ? requestScope.monthlyBookings : 0}
-						</p>
-					</div>
-				</div>
-			</div>
+        </div><%-- end dov-stats-grid --%>
 
-		</div>
+        <%-- ============================================================
+             ROW 2: Booking Status + Occupancy Rate
+        ============================================================ --%>
+        <div class="dov-two-col">
 
-		<%-- ===== CHARTS ROW ===== --%>
-		<div class="row g-4 mb-4">
+            <%-- Booking Status --%>
+            <div class="dov-card dov-fadein dov-d5">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Trạng thái đặt lịch (%)</h3>
+                    <div class="dov-tabs" id="bookingTabs">
+                        <button class="dov-tab" data-tab="booking" data-period="Day">Hôm nay</button>
+                        <button class="dov-tab" data-tab="booking" data-period="Week">Tuần này</button>
+                        <button class="dov-tab is-active" data-tab="booking" data-period="Month">Tháng này</button>
+                        <button class="dov-tab" data-tab="booking" data-period="Year">Năm nay</button>
+                    </div>
+                </div>
+                <div class="dov-status-list" id="bookingStatusList"></div>
+            </div>
 
-			<%-- Revenue Trends --%>
-			<div class="col-12 col-lg-6">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-center gap-2 mb-4">
-							<i class="bi bi-graph-up" style="color:var(--color-gray-400);"></i>
-							<p class="text-uppercase fw-black mb-0" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Revenue Trends</p>
-						</div>
-						<div style="height:240px;position:relative;">
-							<canvas id="revenueChart"></canvas>
-						</div>
-					</div>
-				</div>
-			</div>
+            <%-- Occupancy Rate --%>
+            <div class="dov-card dov-fadein dov-d6">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Tỉ lệ lấp đầy địa điểm (%)</h3>
+                    <div class="dov-tabs" id="occupancyTabs">
+                        <button class="dov-tab" data-tab="occupancy" data-period="Day">Hôm nay</button>
+                        <button class="dov-tab" data-tab="occupancy" data-period="Week">Tuần này</button>
+                        <button class="dov-tab is-active" data-tab="occupancy" data-period="Month">Tháng này</button>
+                        <button class="dov-tab" data-tab="occupancy" data-period="Year">Năm nay</button>
+                    </div>
+                </div>
+                <div class="dov-occupancy-body">
+                    <div class="dov-occ-legend">
+                        <div class="dov-occ-item">
+                            <div class="dov-occ-dot-row">
+                                <div class="dov-occ-dot dov-occ-dot--lime"></div>
+                                <span class="dov-occ-tag">Khung giờ lấp đầy</span>
+                            </div>
+                            <p class="dov-occ-value" id="occpctOccupied">65%</p>
+                        </div>
+                        <div class="dov-occ-item">
+                            <div class="dov-occ-dot-row">
+                                <div class="dov-occ-dot dov-occ-dot--gray"></div>
+                                <span class="dov-occ-tag">Khung giờ còn trống</span>
+                            </div>
+                            <p class="dov-occ-value" id="occpctAvailable">35%</p>
+                        </div>
+                    </div>
+                    <svg class="dov-donut-svg" width="176" height="176" viewBox="0 0 176 176">
+                        <circle class="dov-donut-track" cx="88" cy="88" r="68"/>
+                        <circle class="dov-donut-arc"   cx="88" cy="88" r="68"
+                                id="donutArc" transform="rotate(-90 88 88)"
+                                stroke-dasharray="0 427.26"/>
+                        <text class="dov-donut-pct"   x="88" y="83"  text-anchor="middle" id="donutpctText">65%</text>
+                        <text class="dov-donut-label" x="88" y="102" text-anchor="middle">Đã lấp đầy</text>
+                    </svg>
+                </div>
+            </div>
 
-			<%-- Daily Bookings --%>
-			<div class="col-12 col-lg-6">
-				<div class="card border-0 rounded-4 h-100" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-center gap-2 mb-4">
-							<i class="bi bi-bar-chart" style="color:var(--color-gray-400);"></i>
-							<p class="text-uppercase fw-black mb-0" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Daily Bookings</p>
-						</div>
-						<div style="height:240px;position:relative;">
-							<canvas id="bookingsChart"></canvas>
-						</div>
-					</div>
-				</div>
-			</div>
+        </div><%-- end row 2 --%>
 
-		</div>
+        <%-- ============================================================
+             ROW 3: Weekly + Yearly Revenue Charts
+        ============================================================ --%>
+        <div class="dov-two-col">
 
-		<%-- ===== QUICK ACTIONS ===== --%>
-		<div class="card border-0 rounded-4" style="box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-			<div class="card-body p-4">
-				<p class="text-uppercase fw-black mb-3" style="font-size:0.625rem;letter-spacing:0.15em;color:var(--color-gray-400);">Quick Actions</p>
-				<div class="d-flex flex-wrap gap-3">
-					<a href="${pageContext.request.contextPath}/owner/facility/list"
-						class="btn btn-brand d-flex align-items-center gap-2 fw-bold rounded-3"
-						style="padding:0.625rem 1.25rem;box-shadow:0 4px 14px rgba(6,78,59,0.2);">
-						<i class="bi bi-plus-circle"></i> Manage Locations
-					</a>
-					
-					
-					<a href="${pageContext.request.contextPath}/owner/inventory"
-       class="btn btn-outline-success d-flex align-items-center gap-2 fw-bold rounded-3"
-       style="padding:0.625rem 1.25rem;">
-        <i class="bi bi-box-seam"></i> Manage Inventory
-    </a>
-    
-					<a href="#"
-						class="btn btn-outline-secondary d-flex align-items-center gap-2 fw-bold rounded-3"
-						style="padding:0.625rem 1.25rem;">
-						<i class="bi bi-gear"></i> System Settings
-					</a>
-				</div>
-			</div>
-		</div>
+            <div class="dov-card dov-fadein dov-d7">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Doanh thu trong tuần</h3>
+                    <div class="dov-tabs">
+                        <button class="dov-tab is-active" data-tab="weekly" data-period="This Week">Tuần này</button>
+                        <button class="dov-tab"            data-tab="weekly" data-period="Previous Week">Tuần trước</button>
+                    </div>
+                </div>
+                <div class="dov-chart-wrap"><canvas id="weeklyChart"></canvas></div>
+            </div>
 
-	</div><%-- end content-area --%>
+            <div class="dov-card dov-fadein dov-d8">
+                <div class="dov-card-header">
+                    <h3 class="dov-card-title">Doanh thu trong năm</h3>
+                    <div class="dov-tabs">
+                        <button class="dov-tab is-active" data-tab="yearly" data-period="This Year">Năm nay</button>
+                        <button class="dov-tab"            data-tab="yearly" data-period="Previous Year">Năm trước</button>
+                    </div>
+                </div>
+                <div class="dov-chart-wrap"><canvas id="yearlyChart"></canvas></div>
+            </div>
 
-	<%-- ===== CHART.JS — giữ nguyên toàn bộ logic ===== --%>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-	<script>
-		Chart.defaults.font.family = "'Inter', sans-serif";
-		Chart.defaults.color = '#9CA3AF';
+        </div><%-- end row 3 --%>
 
-		const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        <%-- ============================================================
+             ROW 4: Peak Hours
+        ============================================================ --%>
+        <div class="dov-card dov-fadein dov-d10">
+            <div class="dov-card-header">
+                <h3 class="dov-card-title">Phân tích giờ cao điểm (30 ngày gần nhất)</h3>
+            </div>
 
-		const crosshairPlugin = {
-			id: 'crosshair',
-			afterDraw(chart) {
-				if (chart.tooltip._active && chart.tooltip._active.length) {
-					const ctx = chart.ctx;
-					const x = chart.tooltip._active[0].element.x;
-					const topY = chart.scales.y.top;
-					const bottomY = chart.scales.y.bottom;
-					ctx.save();
-					ctx.beginPath();
-					ctx.moveTo(x, topY);
-					ctx.lineTo(x, bottomY);
-					ctx.lineWidth = 1.5;
-					ctx.strokeStyle = '#064E3B';
-					ctx.setLineDash([4, 4]);
-					ctx.stroke();
-					ctx.restore();
-				}
-			}
-		};
+            <%-- 3 stat cards với icon bi-clock --%>
+            <div class="dov-peak-stats">
 
-		const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-		const greenGradient = revenueCtx.createLinearGradient(0, 0, 0, 240);
-		greenGradient.addColorStop(0, 'rgba(22,163,74,0.20)');
-		greenGradient.addColorStop(1, 'rgba(22,163,74,0.00)');
+                <%-- Giờ cao điểm — icon màu #064E3B --%>
+                <div class="dov-peak-stat dov-peak-stat--peak">
+                    <div class="dov-peak-stat-icon">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="dov-peak-stat-body">
+                        <p class="dov-peak-stat-label">Giờ cao điểm</p>
+                        <p class="dov-peak-stat-value" id="peakSlotTime">—</p>
+                        <p class="dov-peak-stat-sub"   id="peakSlotPct">—</p>
+                    </div>
+                </div>
 
-		new Chart(revenueCtx, {
-			type: 'line',
-			plugins: [crosshairPlugin],
-			data: {
-				labels: days,
-				datasets: [{
-					data: [2800, 2600, 2200, 3100, 4800, 6300, 5900],
-					borderColor: '#064E3B',
-					borderWidth: 2.5,
-					backgroundColor: greenGradient,
-					fill: true,
-					tension: 0.45,
-					pointRadius: 0,
-					pointHoverRadius: 5,
-					pointHoverBackgroundColor: '#064E3B',
-					pointHoverBorderColor: '#fff',
-					pointHoverBorderWidth: 2
-				}]
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				interaction: { mode: 'index', intersect: false },
-				plugins: {
-					legend: { display: false },
-					tooltip: {
-						backgroundColor: '#fff',
-						titleColor: '#111827',
-						bodyColor: '#374151',
-						borderColor: '#E5E7EB',
-						borderWidth: 1,
-						padding: 10,
-						cornerRadius: 8,
-						callbacks: { label: ctx => ' revenue : ' + ctx.parsed.y.toLocaleString() }
-					}
-				},
-				scales: {
-					x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' } } },
-					y: { grid: { color: '#F3F4F6', lineWidth: 1 }, border: { display: false, dash: [4,4] }, ticks: { font: { size: 11 } } }
-				}
-			}
-		});
+                <%-- Giờ bình thường — icon màu #9CA3AF --%>
+                <div class="dov-peak-stat dov-peak-stat--normal">
+                    <div class="dov-peak-stat-icon">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="dov-peak-stat-body">
+                        <p class="dov-peak-stat-label">Giờ bình thường</p>
+                        <p class="dov-peak-stat-value" id="normalSlotTime">—</p>
+                        <p class="dov-peak-stat-sub"   id="normalSlotPct">—</p>
+                    </div>
+                </div>
 
-		new Chart(document.getElementById('bookingsChart').getContext('2d'), {
-			type: 'bar',
-			data: {
-				labels: days,
-				datasets: [{
-					data: [40, 50, 38, 72, 90, 125, 110],
-					backgroundColor: '#A3E635',
-					hoverBackgroundColor: '#84CC16',
-					borderRadius: 8,
-					borderSkipped: false
-				}]
-			},
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				plugins: {
-					legend: { display: false },
-					tooltip: {
-						backgroundColor: '#064E3B',
-						titleColor: '#A3E635',
-						bodyColor: '#fff',
-						padding: 10,
-						cornerRadius: 8,
-						callbacks: { label: ctx => ' ' + ctx.parsed.y + ' bookings' }
-					}
-				},
-				scales: {
-					x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11, weight: '600' } } },
-					y: { grid: { color: '#F3F4F6' }, border: { display: false }, beginAtZero: true, ticks: { font: { size: 11 } } }
-				}
-			}
-		});
-	</script>
+                <%-- Giờ thấp điểm — icon màu #A3E635 --%>
+                <div class="dov-peak-stat dov-peak-stat--low">
+                    <div class="dov-peak-stat-icon">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div class="dov-peak-stat-body">
+                        <p class="dov-peak-stat-label">Giờ thấp điểm</p>
+                        <p class="dov-peak-stat-value" id="lowSlotTime">—</p>
+                        <p class="dov-peak-stat-sub"   id="lowSlotPct">—</p>
+                    </div>
+                </div>
+
+            </div><%-- end dov-peak-stats --%>
+
+            <%-- Heatmap --%>
+            <div class="dov-heatmap-wrap" id="peakHeatmap"></div>
+            <%-- Legend được JS inject ngay sau #peakHeatmap --%>
+
+        </div><%-- end peak card --%>
+
+        <%-- ============================================================
+             ROW 5: Revenue Trend
+        ============================================================ --%>
+        <div class="dov-card dov-fadein dov-d9">
+            <div class="dov-card-header">
+                <h3 class="dov-card-title">Xu hướng doanh thu</h3>
+                <div class="dov-tabs">
+                    <button class="dov-tab is-active" data-tab="trend" data-period="Past 5 Years">5 năm trước</button>
+                    <button class="dov-tab"            data-tab="trend" data-period="Next 5 Years">5 năm tới</button>
+                </div>
+            </div>
+            <div class="dov-chart-wrap--lg"><canvas id="trendChart"></canvas></div>
+        </div>
+
+    </div><%-- end dov-wrap --%>
+
+    <%-- ── JSON data cho JS đọc ─────────────────────────────────── --%>
+    <script type="application/json" id="bookingStatusRaw">
+        ${not empty bookingStatusJson ? bookingStatusJson : '{"Day":[],"Week":[],"Month":[],"Year":[]}'}
+    </script>
+
+    <script type="application/json" id="revenueChartRaw">
+        ${not empty revenueChartJson ? revenueChartJson : '{"weekly":{},"yearly":{},"trend":{}}'}
+    </script>
+
+    <script type="application/json" id="facilityStartDateRaw">
+        "${not empty facilityStartDate ? facilityStartDate : ''}"
+    </script>
+
+    <script type="application/json" id="occupancyRaw">
+        ${not empty occupancyJson ? occupancyJson : '{"Day":0,"Week":0,"Month":0,"Year":0}'}
+    </script>
+
+    <script id="peakHourRaw" type="application/json">
+        ${not empty peakHourJson ? peakHourJson : '{"heatmap":[],"peakSlots":[],"lowSlots":[],"normalTimeRange":""}'}
+    </script>
+
+    <%-- Scripts --%>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/owner/dashboard.js"></script>
 
 </div><%-- end main-content --%>

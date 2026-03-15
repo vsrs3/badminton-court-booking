@@ -19,15 +19,6 @@
 <body>
 
 <div class="auth-page">
-    <% if (request.getAttribute("error") != null) { %>
-    <div style="margin-top: 1rem; padding: 0.875rem; background-color: #FEE2E2;">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span>
-        <%= request.getAttribute("error") %>
-    </span>
-    </div>
-    <% } %>
-
     <!-- Back to Home Button -->
     <div class="back-to-home">
         <a href="${pageContext.request.contextPath}/" class="back-btn">
@@ -189,10 +180,6 @@
         const emailError = document.getElementById('emailError');
         const passwordError = document.getElementById('passwordError');
 
-        // Show server-side error if exists
-        <% if (request.getAttribute("error") != null) { %>
-        alert('<%= request.getAttribute("error") %>');
-        <% } %>
         // ============================================
         // PASSWORD TOGGLE
         // ============================================

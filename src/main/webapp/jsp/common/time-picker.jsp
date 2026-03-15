@@ -1,4 +1,7 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- NOTE:
+     Do not add page contentType directive in this include file.
+     Parent JSP pages already define contentType, and duplicated directives may cause compile error.
+--%>
 
 <!-- Custom Time Picker Component -->
 <style>
@@ -112,9 +115,28 @@ class CustomTimePicker {
             minutes: ['00', '30'],
             defaultHour: '00',
             defaultMinute: '00',
-            placeholder: 'Chọn thời gian',
-            required: options.required || false
+            placeholder: 'Ch\u1ecdn th\u1eddi gian',
+            required: !!options.required,
+            allowedTimes: Array.isArray(options.allowedTimes) && options.allowedTimes.length
+                ? options.allowedTimes
+                : null
         };
+
+        if (Array.isArray(options.hours) && options.hours.length) {
+            this.options.hours = options.hours;
+        }
+        if (Array.isArray(options.minutes) && options.minutes.length) {
+            this.options.minutes = options.minutes;
+        }
+        if (options.placeholder) {
+            this.options.placeholder = options.placeholder;
+        }
+        if (options.defaultHour) {
+            this.options.defaultHour = options.defaultHour;
+        }
+        if (options.defaultMinute) {
+            this.options.defaultMinute = options.defaultMinute;
+        }
 
         this.selectedHour = this.options.defaultHour;
         this.selectedMinute = this.options.defaultMinute;
@@ -163,11 +185,19 @@ class CustomTimePicker {
         const columns = document.createElement('div');
         columns.className = 'time-picker-columns';
 
+        if (this.options.allowedTimes) {
+            const timeColumn = this.createColumn('Th\u1eddi gian', this.options.allowedTimes, 'time');
+            columns.appendChild(timeColumn);
+            this.dropdown.appendChild(columns);
+            this.display.parentNode.insertBefore(this.dropdown, this.display.nextSibling);
+            return;
+        }
+
         // Hour column
-        const hourColumn = this.createColumn('Giờ', this.options.hours, 'hour');
+        const hourColumn = this.createColumn('Gi\u1edd', this.options.hours, 'hour');
 
         // Minute column
-        const minuteColumn = this.createColumn('Phút', this.options.minutes, 'minute');
+        const minuteColumn = this.createColumn('Ph\u00fat', this.options.minutes, 'minute');
 
         columns.appendChild(hourColumn);
         columns.appendChild(minuteColumn);
@@ -208,7 +238,14 @@ class CustomTimePicker {
     }
 
     selectItem(type, value, element) {
-        if (type === 'hour') {
+        if (type === 'time') {
+            const parts = value.split(':');
+            this.selectedHour = parts[0];
+            this.selectedMinute = parts[1] || '00';
+            element.parentNode.querySelectorAll('.time-picker-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+        } else if (type === 'hour') {
             this.selectedHour = value;
             // Remove selected class from all hour items
             element.parentNode.querySelectorAll('.time-picker-item').forEach(el => {
@@ -258,8 +295,29 @@ class CustomTimePicker {
         if (parts.length === 2) {
             this.selectedHour = parts[0].padStart(2, '0');
             this.selectedMinute = parts[1].padStart(2, '0');
+
+            if (this.options.allowedTimes) {
+                const normalized = this.selectedHour + ':' + this.selectedMinute;
+                if (this.options.allowedTimes.indexOf(normalized) === -1) {
+                    return;
+                }
+            }
+
             this.updateValue();
             this.updateDisplay();
+
+            if (this.dropdown) {
+                this.dropdown.querySelectorAll('.time-picker-item').forEach(el => {
+                    const selected = this.options.allowedTimes
+                        ? el.dataset.value === (this.selectedHour + ':' + this.selectedMinute)
+                        : (el.dataset.value === this.selectedHour || el.dataset.value === this.selectedMinute);
+                    if (selected) {
+                        el.classList.add('selected');
+                    } else {
+                        el.classList.remove('selected');
+                    }
+                });
+            }
         }
     }
 
@@ -301,8 +359,15 @@ function initializeTimePicker(displayId, inputId, required = false) {
     const display = document.getElementById(displayId);
     const input = document.getElementById(inputId);
 
+    let options = {};
+    if (typeof required === 'object' && required !== null) {
+        options = required;
+    } else {
+        options.required = !!required;
+    }
+
     if (display && input) {
-        return new CustomTimePicker(display, input, { required: required });
+        return new CustomTimePicker(display, input, options);
     }
     return null;
 }

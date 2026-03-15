@@ -18,6 +18,9 @@ public class MyBookingListDTO {
     private String bookingStatus;       // PENDING, CONFIRMED, EXPIRED, CANCELLED, COMPLETED
     private String bookingType;         // SINGLE or RECURRING
     private String slotDetails;         // merged consecutive slots, e.g. "Sân A1: 17:00-19:00"
+    private LocalDate recurringStartDate;
+    private LocalDate recurringEndDate;
+    private String recurringPatternDetails;
     private BigDecimal totalAmount;
     private BigDecimal paidAmount;      // amount already paid (for PARTIAL status)
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
@@ -49,6 +52,15 @@ public class MyBookingListDTO {
 
     public String getSlotDetails() { return slotDetails; }
     public void setSlotDetails(String slotDetails) { this.slotDetails = slotDetails; }
+
+    public LocalDate getRecurringStartDate() { return recurringStartDate; }
+    public void setRecurringStartDate(LocalDate recurringStartDate) { this.recurringStartDate = recurringStartDate; }
+
+    public LocalDate getRecurringEndDate() { return recurringEndDate; }
+    public void setRecurringEndDate(LocalDate recurringEndDate) { this.recurringEndDate = recurringEndDate; }
+
+    public String getRecurringPatternDetails() { return recurringPatternDetails; }
+    public void setRecurringPatternDetails(String recurringPatternDetails) { this.recurringPatternDetails = recurringPatternDetails; }
 
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }

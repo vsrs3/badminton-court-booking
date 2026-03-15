@@ -174,5 +174,36 @@ public class FacilityPriceRuleRepositoryImpl implements FacilityPriceRuleReposit
             throw new DataAccessException("Failed to delete price rule", e);
         }
     }
+
+    @Override
+    public void deleteAllByFacilityId(Connection conn, int facilityId) {
+        String sql = "DELETE FROM FacilityPriceRule WHERE facility_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, facilityId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to delete all price rules for facility " + facilityId, e);
+        }
+    }
+
+    @Override
+    public void insertBatch(Connection conn, List<FacilityPriceRule> rules) {
+        String sql = "INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (FacilityPriceRule rule : rules) {
+                pstmt.setInt(1, rule.getFacilityId());
+                pstmt.setInt(2, rule.getCourtTypeId());
+                pstmt.setString(3, rule.getDayType());
+                pstmt.setTime(4, Time.valueOf(rule.getStartTime()));
+                pstmt.setTime(5, Time.valueOf(rule.getEndTime()));
+                pstmt.setBigDecimal(6, rule.getPrice());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to batch insert price rules", e);
+        }
+    }
 }
 

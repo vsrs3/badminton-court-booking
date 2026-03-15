@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <%@ include file="layout/staff-layout.jsp"%>
@@ -44,6 +44,23 @@
             </button>
         </div>
 
+        <%-- Quick filters --%>
+        <div class="sbl-filters">
+            <div class="sbl-filter-group" aria-label="Lọc theo ngày">
+                <span class="sbl-filter-label">Ngày</span>
+                <button type="button" class="sbl-chip is-active" data-filter="today" data-value="ALL">Tất cả</button>
+                <button type="button" class="sbl-chip" data-filter="today" data-value="TODAY">Hôm nay</button>
+            </div>
+            <div class="sbl-filter-group" aria-label="Lọc theo trạng thái">
+                <span class="sbl-filter-label">Trạng thái</span>
+                <button type="button" class="sbl-chip is-active" data-filter="status" data-value="ALL">Tất cả</button>
+                <button type="button" class="sbl-chip" data-filter="status" data-value="CONFIRMED">Đã xác nhận</button>
+                <button type="button" class="sbl-chip" data-filter="status" data-value="PENDING">Chờ</button>
+                <button type="button" class="sbl-chip" data-filter="status" data-value="COMPLETED">Hoàn thành</button>
+                <button type="button" class="sbl-chip" data-filter="status" data-value="CANCELLED">Đã hủy</button>
+            </div>
+        </div>
+
         <%-- Results info --%>
         <div class="sbl-results-info d-none" id="resultsInfo">
             <span id="resultsText"></span>
@@ -54,8 +71,15 @@
 
             <%-- Loading --%>
             <div class="sbd-state" id="stateLoading">
-                <div class="st-spinner"></div>
-                <p>Đang tải danh sách...</p>
+                <div class="sbl-loading-card">
+                    <div class="sbl-loading-icon">
+                        <div class="st-spinner"></div>
+                    </div>
+                    <div class="sbl-loading-text">
+                        <h4>Đang tải danh sách</h4>
+                        <p>Vui lòng chờ trong giây lát...</p>
+                    </div>
+                </div>
             </div>
 
             <%-- Error --%>
@@ -69,8 +93,15 @@
 
             <%-- Empty --%>
             <div class="sbd-state d-none" id="stateEmpty">
-                <i class="bi bi-inbox" style="font-size:2.5rem; color:#D1D5DB;"></i>
-                <p>Không tìm thấy booking nào.</p>
+                <div class="sbl-empty-card">
+                    <div class="sbl-empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <div class="sbl-empty-text">
+                        <h4>Không tìm thấy booking nào</h4>
+                        <p>Thử thay đổi từ khóa hoặc bộ lọc để xem kết quả.</p>
+                    </div>
+                </div>
             </div>
 
             <%-- Table --%>

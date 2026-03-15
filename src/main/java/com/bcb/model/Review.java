@@ -3,7 +3,7 @@ package com.bcb.model;
 import java.time.LocalDateTime;
 
 public class Review {
-	private Integer reviewId, bookingId, facilityId, accountId, rating;
+	private Integer reviewId, bookingId, accountId, rating;
 	private String comment;
 	private LocalDateTime createdAt;	
 	
@@ -11,24 +11,15 @@ public class Review {
 		super();
 	}
 
-	public Review(Integer reviewId, Integer bookingId, Integer facilityId, Integer accountId, Integer rating, String comment,
+	public Review(Integer reviewId, Integer bookingId, Integer accountId, Integer rating, String comment,
 			LocalDateTime createdAt) {
 		super();
 		this.reviewId = reviewId;
 		this.bookingId = bookingId;
-		this.facilityId = facilityId;
 		this.accountId = accountId;
 		this.rating = rating;
 		this.comment = comment;
 		this.createdAt = createdAt;
-	}
-
-	public Integer getFacilityId() {
-		return facilityId;
-	}
-
-	public void setFacilityId(Integer facilityId) {
-		this.facilityId = facilityId;
 	}
 
 	public Integer getReviewId() {

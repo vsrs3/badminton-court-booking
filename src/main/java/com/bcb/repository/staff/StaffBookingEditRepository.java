@@ -35,8 +35,10 @@ public interface StaffBookingEditRepository {
 
     BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception;
 
+    java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception;
+
     void updateInvoiceAfterRecalc(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal refundDue,
-                                  String refundStatus, String refundNote) throws Exception;
+                                  String refundStatus, String refundNote, String paymentStatus) throws Exception;
 
     List<StaffBookingEditStatusCountDTO> findSlotStatusCounts(Connection conn, int bookingId) throws Exception;
 
