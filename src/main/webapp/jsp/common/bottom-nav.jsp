@@ -18,9 +18,9 @@
 
         <!-- Center Button: Community -->
         <div class="nav-center">
-            <button class="nav-center-btn" data-tab="booking">
+            <a class="nav-center-btn" href="${pageContext.request.contextPath}/blogs" style="text-decoration: none">
                 <i class="bi bi-people-fill"></i>
-            </button>
+            </a>
             <div class="nav-center-indicator"></div>
             <span class="nav-center-text">Cộng đồng</span>
         </div>
