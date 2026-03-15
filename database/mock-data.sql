@@ -785,6 +785,9 @@ SELECT invoice_id, 180000, GETDATE(),
     'FULL', 'CASH', 'SUCCESS', @staff1Id, GETDATE()
 FROM Invoice WHERE booking_id = @bk9;
 
+-- Voucher
+INSERT INTO Voucher (code,name,description,discount_type,discount_value,min_order_amount,max_discount_amount,valid_from,valid_to,usage_limit,per_user_limit,applicable_booking_type,is_active) VALUES (N'PROSTART',N'Voucher khởi đầu PRO',N'Giảm 20% cho người dùng mới','PERCENTAGE',20.00,0,NULL,GETDATE(),DATEADD(YEAR,5,GETDATE()),NULL,1,'BOTH',1);
+
 -- ============================================================
 PRINT N'';
 PRINT N'============================================================';

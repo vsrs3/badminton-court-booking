@@ -123,7 +123,7 @@ public class OwnerFacilityController extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             }
         } catch (ValidationException e) {
-            request.setAttribute("error", "Validation error occurred");
+            request.setAttribute("error", "Đã xảy ra lỗi xác thực dữ liệu");
             setBreadcrumbForForm(request, "update".equals(action));
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);

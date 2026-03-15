@@ -81,7 +81,7 @@ public class FacilityServiceImpl implements FacilityService {
     public Facility findById(int facilityId) throws BusinessException {
         return facilityRepository.findById(facilityId)
                                  .orElseThrow(() -> new BusinessException("FACILITY_NOT_FOUND",
-                                         "Facility not found with ID: " + facilityId));
+                                         "Không tìm thấy địa điểm với ID: " + facilityId));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class FacilityServiceImpl implements FacilityService {
             return facilityRepository.insert(facility);
         } catch (Exception e) {
             throw new BusinessException("FACILITY_CREATE_ERROR",
-                    "Failed to create facility: " + e.getMessage(), e);
+                    "Tạo địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -111,18 +111,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facility.getFacilityId()).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facility.getFacilityId());
+                    "Không tìm thấy địa điểm với ID: " + facility.getFacilityId());
         }
 
         try {
             int rowsAffected = facilityRepository.update(facility);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_UPDATE_ERROR",
-                        "No rows affected during update");
+                        "Không có bản ghi nào được cập nhật");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_UPDATE_ERROR",
-                    "Failed to update facility: " + e.getMessage(), e);
+                    "Cập nhật địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -223,7 +223,7 @@ public class FacilityServiceImpl implements FacilityService {
             }
 
             throw new BusinessException(
-                    "Update facility failed. All changes rolled back.", e
+                    "Cập nhật địa điểm thất bại. Tất cả thay đổi đã được hoàn tác.", e
             );
         }
     }
@@ -233,18 +233,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facilityId).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facilityId);
+                    "Không tìm thấy địa điểm với ID: " + facilityId);
         }
 
         try {
             int rowsAffected = facilityRepository.softDelete(facilityId);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_DELETE_ERROR",
-                        "No rows affected during delete");
+                        "Không có bản ghi nào được xóa");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_DELETE_ERROR",
-                    "Failed to delete facility: " + e.getMessage(), e);
+                    "Xóa địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -334,7 +334,7 @@ public class FacilityServiceImpl implements FacilityService {
             }
 
             throw new BusinessException(
-                    "Create facility failed. All changes rolled back.", e
+                    "Tạo địa điểm thất bại. Tất cả thay đổi đã được hoàn tác.", e
             );
         }
     }

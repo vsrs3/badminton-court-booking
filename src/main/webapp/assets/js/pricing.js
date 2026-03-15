@@ -15,15 +15,15 @@ document.addEventListener('DOMContentLoaded', function () {
 /* ===================== CREATE/EDIT MODAL ===================== */
 
 function openCreateModal() {
-    if (typeof bootstrap === 'undefined') { alert('Bootstrap chua duoc tai.'); return; }
+    if (typeof bootstrap === 'undefined') { alert('Bootstrap chưa được tải.'); return; }
     var modalElement = document.getElementById('priceRuleModal');
-    if (!modalElement) { alert('Modal khong ton tai.'); return; }
+    if (!modalElement) { alert('Modal không tồn tại.'); return; }
 
     var modal = new bootstrap.Modal(modalElement);
     var form  = document.getElementById('priceRuleForm');
     var ctx   = window.pricingContext;
 
-    document.getElementById('priceRuleModalTitle').textContent = 'Them khoang gia moi';
+    document.getElementById('priceRuleModalTitle').textContent = 'Thêm khoảng giá mới';
     form.action = ctx.contextPath + '/owner/prices/create';
     form.reset();
     document.getElementById('modalFacilityId').value  = ctx.facilityId;
@@ -38,7 +38,7 @@ function openEditModal(priceId, startTime, endTime, price) {
     var form  = document.getElementById('priceRuleForm');
     var ctx   = window.pricingContext;
 
-    document.getElementById('priceRuleModalTitle').textContent = 'Chinh sua khoang gia';
+    document.getElementById('priceRuleModalTitle').textContent = 'Chỉnh sửa khoảng giá';
     form.action = ctx.contextPath + '/owner/prices/update';
     form.reset();
     document.getElementById('modalFacilityId').value  = ctx.facilityId;
@@ -56,9 +56,9 @@ function handleFormSubmit(e) {
     var startTime = document.getElementById('modalStartTime').value;
     var endTime   = document.getElementById('modalEndTime').value;
     var price     = document.getElementById('modalPrice').value;
-    if (!startTime || !endTime || !price) { e.preventDefault(); alert('Vui long dien day du thong tin'); return false; }
-    if (endTime <= startTime)             { e.preventDefault(); alert('Thoi gian ket thuc phai sau bat dau'); return false; }
-    if (parseFloat(price) <= 0)           { e.preventDefault(); alert('Gia phai lon hon 0'); return false; }
+    if (!startTime || !endTime || !price) { e.preventDefault(); alert('Vui lòng điền đầy đủ thông tin'); return false; }
+    if (endTime <= startTime)             { e.preventDefault(); alert('Thời gian kết thúc phải sau bắt đầu'); return false; }
+    if (parseFloat(price) <= 0)           { e.preventDefault(); alert('Giá phải lớn hơn 0'); return false; }
     showLoading(true);
     return true;
 }
@@ -135,7 +135,7 @@ function smartPriceAddRow(startVal, endVal) {
     tdStart.innerHTML =
         '<div class="time-picker-wrapper">'
         + '<div id="spStartDisplay_' + idx + '" class="time-picker-display sp-start-display" tabindex="0">'
-        +   '<span class="text-muted">Chon gio</span>'
+        +   '<span class="text-muted">Chọn giờ</span>'
         +   '<i class="bi bi-clock time-picker-icon"></i>'
         + '</div>'
         + '<input type="hidden" id="spStart_' + idx + '" class="sp-start-hidden">'
@@ -147,7 +147,7 @@ function smartPriceAddRow(startVal, endVal) {
     tdEnd.innerHTML =
         '<div class="time-picker-wrapper">'
         + '<div id="spEndDisplay_' + idx + '" class="time-picker-display sp-end-display" tabindex="0">'
-        +   '<span class="text-muted">Chon gio</span>'
+        +   '<span class="text-muted">Chọn giờ</span>'
         +   '<i class="bi bi-clock time-picker-icon"></i>'
         + '</div>'
         + '<input type="hidden" id="spEnd_' + idx + '" class="sp-end-hidden">'
@@ -164,7 +164,7 @@ function smartPriceAddRow(startVal, endVal) {
         var td = document.createElement('td');
         td.className = 'p-1';
         td.innerHTML = '<input type="number" class="form-control form-control-sm ' + f.cls + '"'
-            + ' placeholder="Nhap gia..." min="0" step="1000">';
+            + ' placeholder="Nhập giá..." min="0" step="1000">';
         return td;
     });
 
@@ -172,7 +172,7 @@ function smartPriceAddRow(startVal, endVal) {
     var tdDel = document.createElement('td');
     tdDel.className = 'p-1 text-center';
     tdDel.innerHTML = '<button type="button" class="btn btn-sm btn-outline-danger sp-del-btn btn-lift"'
-        + ' onclick="smartPriceDeleteRow(' + idx + ')" title="Xoa dong"><i class="bi bi-trash"></i></button>';
+        + ' onclick="smartPriceDeleteRow(' + idx + ')" title="Xóa dòng"><i class="bi bi-trash"></i></button>';
 
     tr.appendChild(tdStart);
     tr.appendChild(tdEnd);
@@ -241,7 +241,7 @@ function smartPriceConfirmedSave() {
     var saveBtn = document.querySelector('.smart-btn-save');
     if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Dang luu...';
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
     }
 
     fetch(ctx.contextPath + '/owner/prices/smart-config', {
@@ -253,29 +253,29 @@ function smartPriceConfirmedSave() {
     .then(function(data) {
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Luu cau hinh';
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Lưu cấu hình';
         }
         if (data.success) {
             var mainModal = bootstrap.Modal.getInstance(document.getElementById('smartPriceModal'));
             if (mainModal) mainModal.hide();
             window.location.reload();
         } else {
-            _showSmartError(data.message || 'Loi khong xac dinh');
+            _showSmartError(data.message || 'Lỗi không xác định');
         }
     })
     .catch(function(err) {
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Luu cau hinh';
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Lưu cấu hình';
         }
-        _showSmartError('Loi ket noi server: ' + err.message);
+        _showSmartError('Lỗi kết nối server: ' + err.message);
     });
 }
 
 /** Collect + validate all rows. Returns array or null on validation error. */
 function _collectSmartRows() {
     var trs = document.querySelectorAll('#smartPriceTableBody tr.sp-row');
-    if (trs.length === 0) { _showSmartError('Vui long them it nhat mot khung gio'); return null; }
+    if (trs.length === 0) { _showSmartError('Vui lòng thêm ít nhất một khung giờ'); return null; }
 
     var rows   = [];
     var times  = [];
@@ -308,26 +308,26 @@ function _collectSmartRows() {
         var rowErrors = [];
 
         if (!start) {
-            rowErrors.push({ field: '.sp-start-display', msg: 'Gio bat dau' });
+            rowErrors.push({ field: '.sp-start-display', msg: 'Giờ bắt đầu' });
         }
         if (!end) {
-            rowErrors.push({ field: '.sp-end-display', msg: 'Gio ket thuc' });
+            rowErrors.push({ field: '.sp-end-display', msg: 'Giờ kết thúc' });
         }
         if (start && end && start >= end) {
-            rowErrors.push({ field: '.sp-start-display', msg: 'Gio bat dau phai nho hon gio ket thuc' });
+            rowErrors.push({ field: '.sp-start-display', msg: 'Giờ bắt đầu phải nhỏ hơn giờ kết thúc' });
         }
 
-        if (nw === '') rowErrors.push({ field: '.sp-nw', msg: 'Gia san thuong trong tuan' });
-        else if (parseFloat(nw) < 0) rowErrors.push({ field: '.sp-nw', msg: 'Gia phai >= 0' });
+        if (nw === '') rowErrors.push({ field: '.sp-nw', msg: 'Giá sân thường trong tuần' });
+        else if (parseFloat(nw) < 0) rowErrors.push({ field: '.sp-nw', msg: 'Giá phải >= 0' });
 
-        if (ne === '') rowErrors.push({ field: '.sp-ne', msg: 'Gia san thuong cuoi tuan' });
-        else if (parseFloat(ne) < 0) rowErrors.push({ field: '.sp-ne', msg: 'Gia phai >= 0' });
+        if (ne === '') rowErrors.push({ field: '.sp-ne', msg: 'Giá sân thường cuối tuần' });
+        else if (parseFloat(ne) < 0) rowErrors.push({ field: '.sp-ne', msg: 'Giá phải >= 0' });
 
-        if (vw === '') rowErrors.push({ field: '.sp-vw', msg: 'Gia san VIP trong tuan' });
-        else if (parseFloat(vw) < 0) rowErrors.push({ field: '.sp-vw', msg: 'Gia phai >= 0' });
+        if (vw === '') rowErrors.push({ field: '.sp-vw', msg: 'Giá sân VIP trong tuần' });
+        else if (parseFloat(vw) < 0) rowErrors.push({ field: '.sp-vw', msg: 'Giá phải >= 0' });
 
-        if (ve === '') rowErrors.push({ field: '.sp-ve', msg: 'Gia san VIP cuoi tuan' });
-        else if (parseFloat(ve) < 0) rowErrors.push({ field: '.sp-ve', msg: 'Gia phai >= 0' });
+        if (ve === '') rowErrors.push({ field: '.sp-ve', msg: 'Giá sân VIP cuối tuần' });
+        else if (parseFloat(ve) < 0) rowErrors.push({ field: '.sp-ve', msg: 'Giá phải >= 0' });
 
         if (rowErrors.length > 0) {
             tr.classList.add('table-danger');
@@ -335,7 +335,7 @@ function _collectSmartRows() {
                 var el = tr.querySelector(e.field);
                 if (el) el.classList.add('is-invalid');
             });
-            errors.push('Dong ' + rowNum + ': ' + rowErrors.map(function(e){ return e.msg; }).join(', '));
+            errors.push('Dòng ' + rowNum + ': ' + rowErrors.map(function(e){ return e.msg; }).join(', '));
         } else {
             times.push({ rowNum: rowNum, start: start, end: end, tr: tr });
             rows.push({
@@ -358,8 +358,8 @@ function _collectSmartRows() {
         if (cur.start < prev.end) {
             prev.tr.classList.add('table-danger');
             cur.tr.classList.add('table-danger');
-            _showSmartError('Khung gio ' + prev.start + '-' + prev.end
-                + ' bi trung voi ' + cur.start + '-' + cur.end);
+            _showSmartError('Khung giờ ' + prev.start + '-' + prev.end
+                + ' bị trùng với ' + cur.start + '-' + cur.end);
             return null;
         }
     }

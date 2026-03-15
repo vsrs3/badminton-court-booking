@@ -120,13 +120,13 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
         try {
             SmartPriceConfigRequestDTO dto = parseSmartConfigJson(request);
             facilityPriceRuleService.saveSmartPriceConfig(dto);
-            writeJson(response, true, "Cau hinh gia da duoc luu thanh cong");
+            writeJson(response, true, "Cấu hình giá đã được lưu thành công");
         } catch (BusinessException e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             writeJson(response, false, e.getMessage());
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            writeJson(response, false, "Loi server: " + e.getMessage());
+            writeJson(response, false, "Lỗi server: " + e.getMessage());
         }
     }
 
@@ -144,12 +144,12 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
         SmartPriceConfigRequestDTO dto = new SmartPriceConfigRequestDTO();
 
         String facilityIdStr = extractJsonValue(body, "facilityId");
-        if (facilityIdStr == null) throw new BusinessException("facilityId is required");
+        if (facilityIdStr == null) throw new BusinessException("Thiếu facilityId");
         dto.setFacilityId(Integer.parseInt(facilityIdStr.trim()));
 
         int arrayStart = body.indexOf("[");
         int arrayEnd   = body.lastIndexOf("]");
-        if (arrayStart < 0 || arrayEnd < 0) throw new BusinessException("priceConfigs array is required");
+        if (arrayStart < 0 || arrayEnd < 0) throw new BusinessException("Thiếu mảng priceConfigs");
 
         String arrayContent = body.substring(arrayStart + 1, arrayEnd).trim();
         List<SmartPriceConfigRowDTO> rows = new ArrayList<>();
@@ -229,7 +229,7 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
         PriceRuleRequestDTO dto = buildRequestDTO(request, null);
         facilityPriceRuleService.createPriceRule(dto);
-        request.getSession().setAttribute("flashSuccess", "Tao cau hinh gia thanh cong");
+        request.getSession().setAttribute("flashSuccess", "Tạo cấu hình giá thành công");
         response.sendRedirect(request.getContextPath() + "/owner/prices?facilityId=" + dto.getFacilityId()
                 + "&courtTypeId=" + dto.getCourtTypeId()
                 + "&dayType=" + dto.getDayType());
@@ -240,7 +240,7 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
         String priceIdStr = request.getParameter("priceId");
         if (priceIdStr == null || priceIdStr.isEmpty()) {
-            throw new BusinessException("Price ID is required");
+            throw new BusinessException("Thiếu Price ID");
         }
 
         Integer priceId = Integer.parseInt(priceIdStr);
@@ -261,7 +261,7 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
 
         String priceIdStr = request.getParameter("priceId");
         if (priceIdStr == null || priceIdStr.isEmpty()) {
-            throw new BusinessException("Price ID is required");
+            throw new BusinessException("Thiếu Price ID");
         }
 
         int priceId = Integer.parseInt(priceIdStr);
@@ -296,7 +296,7 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
             String priceStr = request.getParameter("price");
 
             if (startTimeStr == null || endTimeStr == null || priceStr == null) {
-                throw new BusinessException("Start time, end time, and price are required");
+                throw new BusinessException("Giờ bắt đầu, giờ kết thúc và giá là bắt buộc");
             }
 
             // Validate time inputs
@@ -311,11 +311,11 @@ public class OwnerFacilityPriceRuleController extends HttpServlet {
             dto.setPricePerHour(new BigDecimal(priceStr));
 
         } catch (NumberFormatException e) {
-            throw new BusinessException("Invalid number format");
+            throw new BusinessException("Sai định dạng số");
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            throw new BusinessException("Invalid input: " + e.getMessage());
+            throw new BusinessException("Dữ liệu không hợp lệ: " + e.getMessage());
         }
 
         return dto;

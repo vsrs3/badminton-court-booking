@@ -29,54 +29,54 @@ public class FacilityValidator {
         List<String> errors = new ArrayList<>();
 
         if (facility == null) {
-            errors.add("Facility cannot be null");
+            errors.add("Địa điểm không được để trống");
             return errors;
         }
 
         // Validate name (required, length)
         if (facility.getName() == null || facility.getName().trim().isEmpty()) {
-            errors.add("Facility name is required");
+            errors.add("Tên địa điểm là bắt buộc");
         } else if (facility.getName().length() > MAX_NAME_LENGTH) {
-            errors.add("Facility name cannot exceed " + MAX_NAME_LENGTH + " characters");
+            errors.add("Tên địa điểm không được vượt quá " + MAX_NAME_LENGTH + " ký tự");
         }
 
         // Validate address (required, length)
         if (facility.getAddress() == null || facility.getAddress().trim().isEmpty()) {
-            errors.add("Address is required");
+            errors.add("Địa chỉ là bắt buộc");
         } else if (facility.getAddress().length() > MAX_ADDRESS_LENGTH) {
-            errors.add("Address cannot exceed " + MAX_ADDRESS_LENGTH + " characters");
+            errors.add("Địa chỉ không được vượt quá " + MAX_ADDRESS_LENGTH + " ký tự");
         }
 
         // Validate province (optional, length)
         if (facility.getProvince() != null && facility.getProvince().length() > MAX_PROVINCE_LENGTH) {
-            errors.add("Province cannot exceed " + MAX_PROVINCE_LENGTH + " characters");
+            errors.add("Tỉnh/Thành phố không được vượt quá " + MAX_PROVINCE_LENGTH + " ký tự");
         }
 
         // Validate district (optional, length)
         if (facility.getDistrict() != null && facility.getDistrict().length() > MAX_DISTRICT_LENGTH) {
-            errors.add("District cannot exceed " + MAX_DISTRICT_LENGTH + " characters");
+            errors.add("Quận/Huyện không được vượt quá " + MAX_DISTRICT_LENGTH + " ký tự");
         }
 
         // Validate ward (optional, length)
         if (facility.getWard() != null && facility.getWard().length() > MAX_WARD_LENGTH) {
-            errors.add("Ward cannot exceed " + MAX_WARD_LENGTH + " characters");
+            errors.add("Phường/Xã không được vượt quá " + MAX_WARD_LENGTH + " ký tự");
         }
 
         // Validate open time (required)
         if (facility.getOpenTime() == null) {
-            errors.add("Open time is required");
+            errors.add("Giờ mở cửa là bắt buộc");
         }
 
         // Validate close time (required)
         if (facility.getCloseTime() == null) {
-            errors.add("Close time is required");
+            errors.add("Giờ đóng cửa là bắt buộc");
         }
 
         // Validate time range (close time must be after open time)
         if (facility.getOpenTime() != null && facility.getCloseTime() != null) {
             if (facility.getCloseTime().isBefore(facility.getOpenTime()) ||
                     facility.getCloseTime().equals(facility.getOpenTime())) {
-                errors.add("Close time must be after open time");
+                errors.add("Giờ đóng cửa phải sau giờ mở cửa");
             }
         }
 
