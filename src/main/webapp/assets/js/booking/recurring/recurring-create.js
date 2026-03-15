@@ -262,6 +262,20 @@
         });
     }
 
+    /** Sync preview button UI state (disabled + loading text/icon). */
+    function setPreviewButtonLoading(isLoading) {
+        if (!previewBtn) return;
+        previewBtn.disabled = isLoading;
+
+        const label = previewBtn.querySelector('.preview-btn-label');
+        const loading = previewBtn.querySelector('.preview-btn-loading');
+        const icon = previewBtn.querySelector('i');
+
+        if (label) label.classList.toggle('d-none', isLoading);
+        if (loading) loading.classList.toggle('d-none', !isLoading);
+        if (icon) icon.classList.toggle('d-none', isLoading);
+    }
+
     /** Calls recurring preview API and stores response for preview screen. */
     async function previewRecurring() {
         clearError();
@@ -274,16 +288,24 @@
         };
 
         try {
+            // Only enter loading state when client-side validation has passed.
             validatePayload(payload);
-            previewBtn.disabled = true;
+            setPreviewButtonLoading(true);
 
             const res = await fetch(CTX + '/api/recurring/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const json = await res.json();
-            if (!res.ok || !json.success) {
+
+            let json = null;
+            try {
+                json = await res.json();
+            } catch (e) {
+                // Keep null; handled by generic error below when response is not usable.
+            }
+
+            if (!res.ok || !json || !json.success) {
                 const msg = (json && json.error && json.error.message) || 'Preview không thành công.';
                 throw new Error(msg);
             }
@@ -293,8 +315,7 @@
             window.location.href = CTX + '/jsp/booking/recurring/preview.jsp';
         } catch (err) {
             showError(err.message || 'Không thể tạo preview recurring.');
-        } finally {
-            previewBtn.disabled = false;
+            setPreviewButtonLoading(false);
         }
     }
 
@@ -385,5 +406,4 @@
 
     init();
 })();
-
 

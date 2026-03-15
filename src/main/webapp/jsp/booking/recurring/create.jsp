@@ -95,7 +95,8 @@
 
         <div class="d-flex justify-content-end mt-4">
             <button id="previewBtn" type="button" class="btn btn-success btn-lg px-5 py-3 btn-lift">
-                Tiếp tục xem trước
+                <span class="preview-btn-label">Tiếp tục xem trước</span>
+                <span class="preview-btn-loading d-none"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang tải...</span>
                 <i class="bi bi-arrow-right ms-2"></i>
             </button>
         </div>
