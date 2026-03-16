@@ -21,6 +21,7 @@ public class EmailReminderServiceImpl implements EmailReminderService {
     public void runUpcomingReminders() {
         runUpcomingReminderType(24, "REMINDER_UPCOMING_24H");
         runUpcomingReminderType(2, "REMINDER_UPCOMING_2H");
+        runCustomerUpcomingReminderType(24, "REMINDER_CUS_24H");
     }
 
     @Override
@@ -49,6 +50,19 @@ public class EmailReminderServiceImpl implements EmailReminderService {
 
         try {
             List<EmailReminderCandidateDTO> candidates = reminderRepository.findPaymentCandidates(from, to);
+            enqueueCandidates(candidates, emailType);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void runCustomerUpcomingReminderType(int leadHours, String emailType) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime target = now.plusHours(leadHours);
+        LocalDateTime from = target.minusMinutes(WINDOW_MINUTES);
+        LocalDateTime to = target.plusMinutes(WINDOW_MINUTES);
+
+        try {
+            List<EmailReminderCandidateDTO> candidates = reminderRepository.findUpcomingCustomerCandidates(from, to);
             enqueueCandidates(candidates, emailType);
         } catch (Exception ignored) {
         }

@@ -10,6 +10,10 @@ public interface EmailQueueService {
 
     void enqueueBookingCancelled(int bookingId, String payloadJson);
 
+    EmailEnqueueResult enqueueCustomerPaymentSuccess(int bookingId, String paymentType);
+
+    EmailEnqueueResult enqueueCustomerRemainingPaid(int bookingId);
+
     void processPendingEmails();
 
     class EmailEnqueueResult {

@@ -12,6 +12,8 @@ import com.bcb.repository.booking.impl.BookingRepositoryImpl;
 import com.bcb.repository.booking.impl.InvoiceRepositoryImpl;
 import com.bcb.repository.payment.PaymentRepository;
 import com.bcb.repository.payment.impl.PaymentRepositoryImpl;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.service.payment.PaymentService;
 import com.bcb.service.payment.VNPayService;
 import com.bcb.utils.DBContext;
@@ -45,6 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepository invoiceRepo;
     private final BookingRepository bookingRepo;
     private final VNPayService vnPayService;
+    private final EmailQueueService emailQueueService;
 
     /** Default constructor wiring concrete implementations. */
     public PaymentServiceImpl() {
@@ -52,6 +55,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.invoiceRepo = new InvoiceRepositoryImpl();
         this.bookingRepo = new BookingRepositoryImpl();
         this.vnPayService = new VNPayServiceImpl();
+        this.emailQueueService = new EmailQueueServiceImpl();
     }
 
     /** {@inheritDoc} */
@@ -175,6 +179,10 @@ public class PaymentServiceImpl implements PaymentService {
         // Attach bookingId for frontend redirect
         Optional<Invoice> optInv = invoiceRepo.findById(payment.getInvoiceId());
         optInv.ifPresent(inv -> dto.setBookingId(inv.getBookingId()));
+
+        if ("SUCCESS".equals(newStatus) && optInv.isPresent()) {
+            enqueueCustomerPaymentEmailAfterSuccess(optInv.get().getBookingId(), payment.getPaymentType());
+        }
 
         return dto;
     }
@@ -427,6 +435,19 @@ public class PaymentServiceImpl implements PaymentService {
             }
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed to update booking after payment success", e);
+        }
+    }
+
+    private void enqueueCustomerPaymentEmailAfterSuccess(int bookingId, String paymentType) {
+        try {
+            String normalizedType = paymentType == null ? "" : paymentType.trim().toUpperCase();
+            if ("REMAINING".equals(normalizedType)) {
+                emailQueueService.enqueueCustomerRemainingPaid(bookingId);
+            } else {
+                emailQueueService.enqueueCustomerPaymentSuccess(bookingId, normalizedType);
+            }
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Failed to enqueue customer payment email for bookingId=" + bookingId, e);
         }
     }
 
