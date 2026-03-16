@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -111,6 +112,10 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 .collect(Collectors.toMap(SingleBookingMatrixTimeSlotDTO::getSlotId, s -> s));
         Map<Integer, Integer> slotIndexMap = buildSlotIndexMap(slots);
 
+        // Request-scope caches to reduce repeated price-rule reads and suggestion price recompute.
+        Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache = new HashMap<>();
+        Map<String, BigDecimal> suggestionPriceCache = new HashMap<>();
+
         List<PatternPrepared> preparedPatterns = preparePatterns(request.getPatterns(), facility, courtMap, slots);
         validateNoPastTimeWhenStartDateIsToday(startDate, preparedPatterns);
 
@@ -134,7 +139,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                         prepared.court.getCourtTypeId(),
                         current,
                         prepared.slotIds,
-                        slotMap
+                        slotMap,
+                        priceRuleCache
                 );
 
                 List<Integer> conflictSlots = extractConflictSlots(bookedByCourt, prepared.court.getCourtId(), prepared.slotIds);
@@ -161,7 +167,9 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                             bookedByCourt,
                             slots,
                             slotMap,
-                            slotIndexMap
+                            slotIndexMap,
+                            priceRuleCache,
+                            suggestionPriceCache
                     ));
                 } else {
                     session.setSuggestions(Collections.emptyList());
@@ -300,10 +308,14 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                                              int courtTypeId,
                                              LocalDate bookingDate,
                                              List<Integer> slotIds,
-                                             Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
+                                             Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap,
+                                             Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache) {
         String dayType = SingleBookingDayTypeUtil.resolve(bookingDate);
-        List<FacilityPriceRule> rules =
-                priceRuleRepo.findByFacilityAndCourtTypeAndDayType(facilityId, courtTypeId, dayType);
+        PriceRuleCacheKey cacheKey = new PriceRuleCacheKey(facilityId, courtTypeId, dayType);
+        List<FacilityPriceRule> rules = priceRuleCache.computeIfAbsent(
+                cacheKey,
+                k -> priceRuleRepo.findByFacilityAndCourtTypeAndDayType(k.facilityId, k.courtTypeId, k.dayType)
+        );
 
         BigDecimal total = BigDecimal.ZERO;
         for (Integer slotId : slotIds) {
@@ -354,7 +366,9 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                                                                  Map<Integer, List<Integer>> bookedByCourt,
                                                                  List<SingleBookingMatrixTimeSlotDTO> allSlots,
                                                                  Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap,
-                                                                 Map<Integer, Integer> slotIndexMap) {
+                                                                 Map<Integer, Integer> slotIndexMap,
+                                                                 Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache,
+                                                                 Map<String, BigDecimal> suggestionPriceCache) {
         if (prepared.slotIds == null || prepared.slotIds.isEmpty()) {
             return Collections.emptyList();
         }
@@ -377,7 +391,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 continue;
             }
             addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_SAME_TIME",
-                    court, bookingDate, prepared.slotIds, bookedByCourt, facilityId, slotMap);
+                    court, bookingDate, prepared.slotIds, bookedByCourt, facilityId, slotMap,
+                    priceRuleCache, suggestionPriceCache);
         }
 
         // 2) Then: same court, nearest valid time blocks with same duration.
@@ -388,7 +403,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 hasCandidate = true;
                 List<Integer> plusSlots = sliceSlotIds(allSlots, plusStart, slotCount);
                 addSuggestionIfAvailable(uniqueKeys, suggestions, "SAME_COURT_NEAREST_TIME",
-                        prepared.court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap);
+                        prepared.court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap,
+                        priceRuleCache, suggestionPriceCache);
             }
 
             int minusStart = firstIndex - shift;
@@ -396,7 +412,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 hasCandidate = true;
                 List<Integer> minusSlots = sliceSlotIds(allSlots, minusStart, slotCount);
                 addSuggestionIfAvailable(uniqueKeys, suggestions, "SAME_COURT_NEAREST_TIME",
-                        prepared.court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap);
+                        prepared.court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap,
+                        priceRuleCache, suggestionPriceCache);
             }
 
             if (!hasCandidate) {
@@ -420,7 +437,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                     hasCandidate = true;
                     List<Integer> plusSlots = sliceSlotIds(allSlots, plusStart, slotCount);
                     addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_NEAREST_TIME",
-                            court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap);
+                            court, bookingDate, plusSlots, bookedByCourt, facilityId, slotMap,
+                            priceRuleCache, suggestionPriceCache);
                 }
 
                 int minusStart = firstIndex - shift;
@@ -428,7 +446,8 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                     hasCandidate = true;
                     List<Integer> minusSlots = sliceSlotIds(allSlots, minusStart, slotCount);
                     addSuggestionIfAvailable(uniqueKeys, suggestions, "OTHER_COURT_NEAREST_TIME",
-                            court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap);
+                            court, bookingDate, minusSlots, bookedByCourt, facilityId, slotMap,
+                            priceRuleCache, suggestionPriceCache);
                 }
 
                 if (!hasCandidate) {
@@ -448,7 +467,9 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                                           List<Integer> slotIds,
                                           Map<Integer, List<Integer>> bookedByCourt,
                                           int facilityId,
-                                          Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
+                                          Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap,
+                                          Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache,
+                                          Map<String, BigDecimal> suggestionPriceCache) {
         if (slotIds == null || slotIds.isEmpty()) {
             return;
         }
@@ -460,13 +481,15 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
             return;
         }
 
-        BigDecimal price = calculateSessionPrice(
+        String priceKey = buildSuggestionPriceKey(court.getCourtId(), bookingDate, slotIds);
+        BigDecimal price = suggestionPriceCache.computeIfAbsent(priceKey, k -> calculateSessionPrice(
                 facilityId,
                 court.getCourtTypeId(),
                 bookingDate,
                 slotIds,
-                slotMap
-        );
+                slotMap,
+                priceRuleCache
+        ));
 
         RecurringSessionSuggestionDTO suggestion = new RecurringSessionSuggestionDTO();
         suggestion.setType(type);
@@ -499,6 +522,10 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
             ids.add(slots.get(startIndex + i).getSlotId());
         }
         return ids;
+    }
+
+    private String buildSuggestionPriceKey(Integer courtId, LocalDate bookingDate, List<Integer> slotIds) {
+        return courtId + "|" + bookingDate + "|" + slotIds;
     }
 
     private Map<Integer, Integer> buildSlotIndexMap(List<SingleBookingMatrixTimeSlotDTO> slots) {
@@ -588,5 +615,34 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         private Court court;
         private List<Integer> slotIds;
     }
-}
 
+    private static final class PriceRuleCacheKey {
+        private final int facilityId;
+        private final int courtTypeId;
+        private final String dayType;
+
+        private PriceRuleCacheKey(int facilityId, int courtTypeId, String dayType) {
+            this.facilityId = facilityId;
+            this.courtTypeId = courtTypeId;
+            this.dayType = dayType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof PriceRuleCacheKey that)) {
+                return false;
+            }
+            return facilityId == that.facilityId
+                    && courtTypeId == that.courtTypeId
+                    && Objects.equals(dayType, that.dayType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(facilityId, courtTypeId, dayType);
+        }
+    }
+}
