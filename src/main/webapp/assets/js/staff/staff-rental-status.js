@@ -18,6 +18,7 @@
     var inventoryCurrentTime = document.getElementById('inventoryCurrentTime');
     var inventoryCurrentSlot = document.getElementById('inventoryCurrentSlot');
     var inventorySearchInput = document.getElementById('inventorySearchInput');
+    var inventorySearchButton = document.getElementById('inventorySearchButton');
     var inventoryTableBody = document.getElementById('inventoryTableBody');
     var inventoryPagination = document.getElementById('inventoryPagination');
     var rentalDetailContext = document.getElementById('rentalDetailContext');
@@ -38,6 +39,8 @@
         inventorySearchTerm: '',
         inventoryCurrentPage: 1,
         inventoryPageSize: 5,
+        inventoryTotal: 0,
+        inventoryTotalPages: 0,
         cellMap: Object.create(null),
         modalCellKey: null,
         reopenCellKey: null,
@@ -84,10 +87,17 @@
         }
 
         if (inventorySearchInput) {
-            inventorySearchInput.addEventListener('input', function () {
-                state.inventorySearchTerm = this.value || '';
-                state.inventoryCurrentPage = 1;
-                renderInventoryTable();
+            inventorySearchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitInventorySearch();
+                }
+            });
+        }
+
+        if (inventorySearchButton) {
+            inventorySearchButton.addEventListener('click', function () {
+                submitInventorySearch();
             });
         }
 
@@ -104,7 +114,7 @@
                 }
 
                 state.inventoryCurrentPage = nextPage;
-                renderInventoryTable();
+                loadInventoryTableData(nextPage);
             });
         }
 
@@ -175,9 +185,9 @@
                 hydrateState(body.data || {});
                 renderRealtimePanels();
                 maybeShowCurrentSlotNotice();
-                renderInventoryTable();
                 renderTimelineGrid();
                 reopenModalIfNeeded();
+                loadInventoryTableData(state.inventoryCurrentPage);
             })
             .catch(function (error) {
                 console.error('Rental status load error:', error);
@@ -185,7 +195,7 @@
                     errorMessage.textContent = error.message || 'Không thể tải dữ liệu.';
                 }
                 renderRealtimePanels();
-                renderInventoryTable();
+                loadInventoryTableData(state.inventoryCurrentPage);
                 showState('error');
                 closeDetailModal();
             });
@@ -196,7 +206,6 @@
         state.courts = Array.isArray(data.courts) ? data.courts : [];
         state.slots = Array.isArray(data.slots) ? data.slots : [];
         state.cells = Array.isArray(data.cells) ? data.cells : [];
-        state.inventoryItems = Array.isArray(data.inventoryItems) ? data.inventoryItems : [];
         state.cellMap = Object.create(null);
 
         state.cells.forEach(function (cell) {
@@ -324,18 +333,71 @@
         }
     }
 
+    function submitInventorySearch() {
+        state.inventorySearchTerm = inventorySearchInput ? String(inventorySearchInput.value || '').trim() : '';
+        state.inventoryCurrentPage = 1;
+        loadInventoryTableData(1);
+    }
+
+    function loadInventoryTableData(page) {
+        var nextPage = Math.max(1, Number(page || 1));
+        state.inventoryCurrentPage = nextPage;
+        state.inventorySearchTerm = inventorySearchInput ? String(inventorySearchInput.value || '').trim() : state.inventorySearchTerm;
+
+        renderInventoryLoading();
+
+        var params = new URLSearchParams();
+        params.set('page', String(nextPage));
+        if (state.inventorySearchTerm) {
+            params.set('q', state.inventorySearchTerm);
+        }
+
+        fetch(CTX + '/api/staff/rental/inventory?' + params.toString(), {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+            .then(handleJsonResponse)
+            .then(function (body) {
+                if (!body.success) {
+                    throw new Error(body.message || 'Không thể tải danh sách kho đồ.');
+                }
+
+                var data = body.data || {};
+                state.inventoryItems = Array.isArray(data.items) ? data.items.map(mapInventoryItem) : [];
+                state.inventoryCurrentPage = Number(data.page || nextPage);
+                state.inventoryPageSize = Number(data.pageSize || state.inventoryPageSize || 5);
+                state.inventoryTotal = Number(data.total || 0);
+                state.inventoryTotalPages = Number(data.totalPages || 0);
+
+                renderInventoryTable();
+            })
+            .catch(function (error) {
+                console.error('Inventory load error:', error);
+                renderInventoryError(error.message || 'Không thể tải danh sách kho đồ.');
+            });
+    }
+
+    function mapInventoryItem(item) {
+        return {
+            facilityInventoryId: Number(item.facilityInventoryId || 0),
+            inventoryId: Number(item.inventoryId || 0),
+            inventoryName: item.name || '',
+            totalQuantity: Number(item.totalQuantity || 0),
+            availableQuantity: Number(item.availableQuantity || 0)
+        };
+    }
+
     function renderInventoryTable() {
         if (!inventoryTableBody) {
             return;
         }
 
-        var filteredItems = getFilteredInventoryItems();
-        var totalItems = filteredItems.length;
-        var totalPages = Math.max(1, Math.ceil(totalItems / state.inventoryPageSize));
+        var totalItems = Number(state.inventoryTotal || 0);
+        var totalPages = Number(state.inventoryTotalPages || 0);
 
-        state.inventoryCurrentPage = Math.min(Math.max(state.inventoryCurrentPage, 1), totalPages);
-
-        if (!totalItems) {
+        if (!state.inventoryItems.length) {
             inventoryTableBody.innerHTML =
                 '<tr><td colspan="4" class="text-center text-muted py-4">' +
                 (state.inventorySearchTerm
@@ -347,9 +409,8 @@
         }
 
         var startIndex = (state.inventoryCurrentPage - 1) * state.inventoryPageSize;
-        var visibleItems = filteredItems.slice(startIndex, startIndex + state.inventoryPageSize);
 
-        inventoryTableBody.innerHTML = visibleItems.map(function (item, index) {
+        inventoryTableBody.innerHTML = state.inventoryItems.map(function (item, index) {
             return '' +
                 '<tr>' +
                 '   <td>' + (startIndex + index + 1) + '</td>' +
@@ -363,7 +424,7 @@
             totalItems,
             totalPages,
             startIndex + 1,
-            startIndex + visibleItems.length
+            startIndex + state.inventoryItems.length
         );
     }
 
@@ -421,17 +482,6 @@
             '</button>';
     }
 
-    function getFilteredInventoryItems() {
-        var keyword = normalizeSearch(state.inventorySearchTerm);
-        if (!keyword) {
-            return state.inventoryItems.slice();
-        }
-
-        return state.inventoryItems.filter(function (item) {
-            return normalizeSearch(item.inventoryName).indexOf(keyword) !== -1;
-        });
-    }
-
     function renderInventoryLoading() {
         if (!inventoryTableBody) {
             return;
@@ -439,6 +489,19 @@
 
         inventoryTableBody.innerHTML =
             '<tr><td colspan="4" class="text-center text-muted py-4">Đang tải dữ liệu kho đồ...</td></tr>';
+
+        if (inventoryPagination) {
+            inventoryPagination.innerHTML = '';
+        }
+    }
+
+    function renderInventoryError(message) {
+        if (!inventoryTableBody) {
+            return;
+        }
+
+        inventoryTableBody.innerHTML =
+            '<tr><td colspan="4" class="text-center text-danger py-4">' + esc(message) + '</td></tr>';
 
         if (inventoryPagination) {
             inventoryPagination.innerHTML = '';
@@ -899,14 +962,6 @@
             return null;
         }
         return String(value);
-    }
-
-    function normalizeSearch(value) {
-        return String(value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
     }
 
     function getOffsetDateStr(offsetDays) {

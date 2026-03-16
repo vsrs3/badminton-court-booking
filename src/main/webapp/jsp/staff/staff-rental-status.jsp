@@ -139,6 +139,9 @@
                            placeholder="Tìm kiếm theo tên đồ"
                            aria-label="Tìm kiếm theo tên đồ">
                 </div>
+                <button type="button" class="btn btn-success rounded-pill px-4" id="inventorySearchButton">
+                    Tìm kiếm
+                </button>
             </div>
 
             <div class="table-responsive srs-inventory-wrap">

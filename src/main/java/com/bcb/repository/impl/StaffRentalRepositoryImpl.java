@@ -28,6 +28,7 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
                     i.brand,
                     i.description,
                     i.rental_price,
+                    fi.total_quantity,
                     fi.available_quantity
                 FROM FacilityInventory fi
                 JOIN Inventory i ON i.inventory_id = fi.inventory_id
@@ -36,8 +37,6 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
                   AND (
                         ? IS NULL
                         OR i.name LIKE ?
-                        OR i.brand LIKE ?
-                        OR i.description LIKE ?
                   )
                 ORDER BY i.name ASC
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
@@ -52,10 +51,8 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
             ps.setInt(1, facilityId);
             ps.setString(2, kw);
             ps.setString(3, kw);
-            ps.setString(4, kw);
-            ps.setString(5, kw);
-            ps.setInt(6, offset);
-            ps.setInt(7, pageSize);
+            ps.setInt(4, offset);
+            ps.setInt(5, pageSize);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -66,6 +63,7 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
                     dto.setBrand(rs.getString("brand"));
                     dto.setDescription(rs.getString("description"));
                     dto.setRentalPrice(rs.getBigDecimal("rental_price"));
+                    dto.setTotalQuantity(rs.getInt("total_quantity"));
                     dto.setAvailableQuantity(rs.getInt("available_quantity"));
                     list.add(dto);
                 }
@@ -86,8 +84,6 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
                   AND (
                         ? IS NULL
                         OR i.name LIKE ?
-                        OR i.brand LIKE ?
-                        OR i.description LIKE ?
                   )
                 """;
 
@@ -99,8 +95,6 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
             ps.setInt(1, facilityId);
             ps.setString(2, kw);
             ps.setString(3, kw);
-            ps.setString(4, kw);
-            ps.setString(5, kw);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);

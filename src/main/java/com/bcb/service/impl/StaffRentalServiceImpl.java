@@ -13,13 +13,14 @@ public class StaffRentalServiceImpl implements com.bcb.service.staff.StaffRental
 
     @Override
     public String getInventoryJson(int facilityId, String keyword, int page, int pageSize) throws Exception {
-        List<StaffRentalInventoryItemDTO> items = repo.findRentalItems(facilityId, keyword, page, pageSize);
         int total = repo.countRentalItems(facilityId, keyword);
-        int totalPages = (int) Math.ceil(total * 1.0 / pageSize);
+        int totalPages = total <= 0 ? 0 : (int) Math.ceil(total * 1.0 / pageSize);
+        int normalizedPage = totalPages == 0 ? 1 : Math.min(Math.max(page, 1), totalPages);
+        List<StaffRentalInventoryItemDTO> items = repo.findRentalItems(facilityId, keyword, normalizedPage, pageSize);
 
         StringBuilder sb = new StringBuilder();
         sb.append("{\"success\":true,\"data\":{");
-        sb.append("\"page\":").append(page).append(",");
+        sb.append("\"page\":").append(normalizedPage).append(",");
         sb.append("\"pageSize\":").append(pageSize).append(",");
         sb.append("\"total\":").append(total).append(",");
         sb.append("\"totalPages\":").append(totalPages).append(",");
@@ -35,6 +36,7 @@ public class StaffRentalServiceImpl implements com.bcb.service.staff.StaffRental
             sb.append("\"brand\":\"").append(escape(it.getBrand())).append("\",");
             sb.append("\"description\":\"").append(escape(it.getDescription())).append("\",");
             sb.append("\"rentalPrice\":").append(it.getRentalPrice()).append(",");
+            sb.append("\"totalQuantity\":").append(it.getTotalQuantity()).append(",");
             sb.append("\"availableQuantity\":").append(it.getAvailableQuantity());
             sb.append("}");
         }

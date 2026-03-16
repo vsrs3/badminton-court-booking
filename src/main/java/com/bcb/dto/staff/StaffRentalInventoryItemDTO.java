@@ -9,6 +9,7 @@ public class StaffRentalInventoryItemDTO {
     private String brand;
     private String description;
     private BigDecimal rentalPrice;
+    private int totalQuantity;
     private int availableQuantity;
     private int selectedQuantity;
 
@@ -58,6 +59,14 @@ public class StaffRentalInventoryItemDTO {
 
     public void setRentalPrice(BigDecimal rentalPrice) {
         this.rentalPrice = rentalPrice;
+    }
+
+    public int getTotalQuantity() {
+        return totalQuantity;
+    }
+
+    public void setTotalQuantity(int totalQuantity) {
+        this.totalQuantity = totalQuantity;
     }
 
     public int getAvailableQuantity() {

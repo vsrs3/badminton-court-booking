@@ -331,13 +331,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
     gap: 1rem;
     padding: 0 1.25rem 1rem;
 }
 
 .srs-search-input-wrap {
     position: relative;
-    width: 100%;
+    flex: 1 1 320px;
     max-width: 360px;
 }
 
