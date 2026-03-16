@@ -1,6 +1,7 @@
 package com.bcb.service;
 
 import com.bcb.model.FacilityInventory;
+
 import java.util.List;
 
 public interface FacilityInventoryService {
@@ -11,7 +12,11 @@ public interface FacilityInventoryService {
 
     void assignToFacility(int facilityId, int inventoryId, int totalQuantity);
 
+    int assignAllToFacility(int facilityId, int totalQuantity, String keyword);
+
     void updateQuantity(int facilityInventoryId, int totalQuantity);
+
+    void updateAllQuantitiesByFacility(int facilityId, int totalQuantity);
 
     void removeById(int facilityInventoryId);
 
