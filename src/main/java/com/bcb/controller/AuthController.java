@@ -44,7 +44,7 @@ public class AuthController extends HttpServlet {
                 HttpSession session = request.getSession(false);
                 if (session != null && session.getAttribute("account") != null) {
                     // Already logged in, redirect to home
-                    response.sendRedirect(request.getContextPath() + "/");
+                    response.sendRedirect(request.getContextPath() + "/home");
                     return;
                 }
 
@@ -151,7 +151,7 @@ public class AuthController extends HttpServlet {
                     redirectUrl = request.getContextPath() + "/staff/dashboard";
                     break;
                 case "CUSTOMER":
-                    redirectUrl = request.getContextPath() + "/";
+                    redirectUrl = request.getContextPath() + "/home";
                     break;
                 default:
                     // Unknown role - treat as customer

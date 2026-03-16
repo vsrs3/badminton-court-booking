@@ -265,10 +265,14 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
 
     @Override
     public Map<Integer, List<Integer>> findBookedSlots(Connection conn, int facilityId, LocalDate bookingDate) throws Exception {
-        String sql = "SELECT csb.court_id, csb.slot_id " +
-                "FROM CourtSlotBooking csb " +
-                "INNER JOIN Court c ON csb.court_id = c.court_id " +
-                "WHERE c.facility_id = ? AND csb.booking_date = ?";
+        String sql = "SELECT bs.court_id, bs.slot_id " +
+                "FROM BookingSlot bs " +
+                "JOIN Booking b ON bs.booking_id = b.booking_id " +
+                "JOIN Court c ON bs.court_id = c.court_id " +
+                "WHERE c.facility_id = ? " +
+                "  AND COALESCE(bs.booking_date, b.booking_date) = ? " +
+                "  AND b.booking_status NOT IN ('EXPIRED','CANCELLED') " +
+                "  AND bs.slot_status <> 'CANCELLED'";
         Map<Integer, List<Integer>> map = new LinkedHashMap<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, facilityId);
