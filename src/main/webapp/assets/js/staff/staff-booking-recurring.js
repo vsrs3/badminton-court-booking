@@ -58,6 +58,8 @@
     var slots = [];
     var previewData = null;
     var selectionMap = {};
+    var previewRefreshTimer = null;
+    var isRenderingPreview = false;
     var currentStep = 1;
 
     init();
@@ -66,19 +68,25 @@
         setupTabs();
         setupCustomerSearch();
         btnAddPattern.addEventListener('click', addPatternRow);
-        btnPreview.addEventListener('click', onPreview);
+        btnPreview.addEventListener('click', function () { onPreview(false); });
         btnConfirm.addEventListener('click', onConfirm);
-        patternsContainer.addEventListener('change', renderWeeklyView);
-        startDateEl.addEventListener('change', updatePatternOptions);
-        endDateEl.addEventListener('change', updatePatternOptions);
+        patternsContainer.addEventListener('change', onScheduleInputChanged);
+        startDateEl.addEventListener('change', onScheduleInputChanged);
+        endDateEl.addEventListener('change', onScheduleInputChanged);
         startDateEl.addEventListener('change', updateStepProgress);
         endDateEl.addEventListener('change', updateStepProgress);
-        conflictPolicyEl.addEventListener('change', updateStepProgress);
+        conflictPolicyEl.addEventListener('change', function () {
+            markPreviewDirty();
+            updateStepProgress();
+        });
         paymentMethodEl.addEventListener('change', updateStepProgress);
         guestNameInput.addEventListener('input', updateStepProgress);
         guestPhoneInput.addEventListener('input', updateStepProgress);
         guestEmailInput.addEventListener('input', updateStepProgress);
-        if (previewList) previewList.addEventListener('change', updateStepProgress);
+        if (previewList) previewList.addEventListener('change', function () {
+            updateStepProgress();
+            onPreviewSelectionChanged();
+        });
 
         btnStep1Next.addEventListener('click', function () {
             if (!isCustomerReady()) {
@@ -93,12 +101,19 @@
                 showError('Vui lòng hoàn tất lịch định kỳ');
                 return;
             }
+            if (!validateScheduleForNext()) {
+                return;
+            }
             showStep(3);
         });
         btnStep3Back.addEventListener('click', function () { showStep(2); });
         btnStep3Next.addEventListener('click', function () {
             if (!previewData) {
                 showError('Vui lòng xem trước trước khi tiếp tục');
+                return;
+            }
+            if (hasUnresolvedConflicts()) {
+                showError('Vui lòng xử lý trùng lịch và xem trước lại để cập nhật tổng tiền');
                 return;
             }
             if (conflictPolicyEl.value === 'SUGGEST') {
@@ -227,6 +242,13 @@
         updateStepProgress();
     }
 
+    function onScheduleInputChanged() {
+        markPreviewDirty();
+        updateDayHints();
+        renderWeeklyView();
+        updateStepProgress();
+    }
+
     function addPatternRow() {
         var row = document.createElement('div');
         row.className = 'sbr-pattern-row';
@@ -247,6 +269,7 @@
             '<small class="sbr-day-hint d-none">Hôm nay đã hết khung giờ hợp lệ</small>';
         row.querySelector('.sbr-remove').addEventListener('click', function () {
             row.remove();
+            markPreviewDirty();
             renderWeeklyView();
             updateStepProgress();
         });
@@ -254,6 +277,7 @@
         fillCourtOptions(row.querySelector('.sbr-court'));
         fillTimeOptions(row.querySelector('.sbr-start'), row.querySelector('.sbr-end'));
         updateDayHints();
+        markPreviewDirty();
         renderWeeklyView();
         updateStepProgress();
     }
@@ -286,10 +310,19 @@
         });
     }
 
-    function onPreview() {
+    function onPreview(includeSelections) {
         hideError();
         var req = buildRequestBody();
         if (!req) return;
+
+        if (includeSelections) {
+            updateSelectionMapFromUI();
+            var selected = buildSelectedSessionsFromMap();
+            if (selected == null) return;
+            if (selected.length) {
+                req.selectedSessions = selected;
+            }
+        }
 
         btnPreview.disabled = true;
         btnPreview.textContent = 'Đang xem trước...';
@@ -308,7 +341,6 @@
                     return;
                 }
                 previewData = body.data;
-                selectionMap = {};
                 renderPreview(body.data);
                 btnConfirm.disabled = false;
                 updateStepProgress();
@@ -336,7 +368,9 @@
         if (policy === 'SUGGEST') {
             var selected = collectSelectedSessions();
             if (!selected) return;
-            req.selectedSessions = selected;
+            var selectedFromMap = buildSelectedSessionsFromMap();
+            if (selectedFromMap == null) return;
+            req.selectedSessions = selectedFromMap;
         }
         req.paymentMethod = paymentMethodEl.value;
 
@@ -407,9 +441,17 @@
             showError('Thời gian định kỳ phải tối thiểu 4 tuần');
             return null;
         }
+        if (isStartDateInPast(startDate)) {
+            showError('Không thể đặt cho ngày trong quá khứ');
+            return null;
+        }
 
         var patterns = collectPatterns();
         if (!patterns) return null;
+        if (hasPastSessionToday(patterns)) {
+            showError(buildPastSessionMessage());
+            return null;
+        }
 
         var req = {
             startDate: startDate,
@@ -483,6 +525,7 @@
     }
 
     function renderPreview(data) {
+        isRenderingPreview = true;
         previewSection.classList.remove('d-none');
         previewTotal.textContent = formatMoney(data.totalAmount || 0);
         previewPolicy.textContent = data.policy || '';
@@ -538,10 +581,13 @@
 
                 fillCourtOptions(manual.querySelector('.sbr-manual-court'));
                 fillTimeOptions(manual.querySelector('.sbr-manual-start'), manual.querySelector('.sbr-manual-end'));
+
+                applySelectionForConflict(s.date, suggestWrap);
             }
 
             previewList.appendChild(item);
         });
+        isRenderingPreview = false;
     }
 
     function renderWeeklyView() {
@@ -629,6 +675,28 @@
                     slotIds: slotIds
                 });
             }
+        }
+        return result;
+    }
+
+    function buildSelectedSessionsFromMap() {
+        var result = [];
+        var dates = Object.keys(selectionMap || {});
+        for (var i = 0; i < dates.length; i++) {
+            var date = dates[i];
+            var item = selectionMap[date];
+            if (!item || !item.courtId) continue;
+            if (item.mode === 'manual') {
+                if (!item.slotIds || item.slotIds.length < 2) {
+                    showError('Khung giờ thủ công không hợp lệ cho ngày ' + formatDate(date));
+                    return null;
+                }
+            }
+            result.push({
+                date: date,
+                courtId: item.courtId,
+                slotIds: item.slotIds || []
+            });
         }
         return result;
     }
@@ -737,6 +805,7 @@
 
     function isPreviewReady(step3Done) {
         if (!step3Done) return false;
+        if (hasUnresolvedConflicts()) return false;
         if (conflictPolicyEl.value !== 'SUGGEST') return true;
         var conflicts = (previewData && previewData.conflicts) ? previewData.conflicts : [];
         for (var i = 0; i < conflicts.length; i++) {
@@ -910,6 +979,192 @@
             }
         }
         return true;
+    }
+
+    function markPreviewDirty() {
+        if (!previewData) return;
+        previewData = null;
+        selectionMap = {};
+        previewSection.classList.add('d-none');
+        btnConfirm.disabled = true;
+        updateStepProgress();
+    }
+
+    function onPreviewSelectionChanged() {
+        if (isRenderingPreview) return;
+        if (!previewData) return;
+        if (conflictPolicyEl.value !== 'SUGGEST') return;
+        updateSelectionMapFromUI();
+        schedulePreviewRefresh();
+    }
+
+    function schedulePreviewRefresh() {
+        clearTimeout(previewRefreshTimer);
+        if (btnStep3Next) btnStep3Next.disabled = true;
+        previewRefreshTimer = setTimeout(function () {
+            onPreview(true);
+        }, 300);
+    }
+
+    function updateSelectionMapFromUI() {
+        var conflicts = (previewData && previewData.conflicts) ? previewData.conflicts : [];
+        for (var i = 0; i < conflicts.length; i++) {
+            var date = conflicts[i].date;
+            var selected = document.querySelector('input[name="suggest_' + date + '"]:checked');
+            if (!selected) continue;
+
+            if (selected.value === 'manual') {
+                var wrap = selected.closest('.sbr-manual');
+                var courtId = parseInt(wrap.querySelector('.sbr-manual-court').value, 10);
+                var startTime = wrap.querySelector('.sbr-manual-start').value;
+                var endTime = wrap.querySelector('.sbr-manual-end').value;
+                var slotIds = toSlotIds(startTime, endTime);
+                selectionMap[date] = {
+                    mode: 'manual',
+                    courtId: courtId,
+                    slotIds: slotIds || [],
+                    startTime: startTime,
+                    endTime: endTime
+                };
+            } else {
+                var line = selected.closest('label');
+                var slotIdsStr = line.dataset.slotIds || '';
+                var slotIds = slotIdsStr ? slotIdsStr.split(',').map(function (x) { return parseInt(x, 10); }) : [];
+                selectionMap[date] = {
+                    mode: 'suggestion',
+                    courtId: parseInt(line.dataset.courtId, 10),
+                    slotIds: slotIds
+                };
+            }
+        }
+    }
+
+    function applySelectionForConflict(date, suggestWrap) {
+        var saved = selectionMap[date];
+        if (!saved) return;
+
+        if (saved.mode === 'suggestion') {
+            var options = suggestWrap.querySelectorAll('label.sbr-suggest-item');
+            for (var i = 0; i < options.length; i++) {
+                var courtId = parseInt(options[i].dataset.courtId || '0', 10);
+                var slotIds = (options[i].dataset.slotIds || '').split(',').filter(Boolean).map(function (x) { return parseInt(x, 10); });
+                if (courtId === saved.courtId && arraysEqual(slotIds, saved.slotIds || [])) {
+                    var input = options[i].querySelector('input[type="radio"]');
+                    if (input) input.checked = true;
+                    return;
+                }
+            }
+        }
+
+        if (saved.mode === 'manual') {
+            var manualRadio = suggestWrap.querySelector('input[value="manual"]');
+            if (manualRadio) manualRadio.checked = true;
+            var manualWrap = suggestWrap.querySelector('.sbr-manual');
+            if (!manualWrap) return;
+            var startSelect = manualWrap.querySelector('.sbr-manual-start');
+            var endSelect = manualWrap.querySelector('.sbr-manual-end');
+            var courtSelect = manualWrap.querySelector('.sbr-manual-court');
+            if (saved.courtId && courtSelect) courtSelect.value = String(saved.courtId);
+            if (saved.startTime && startSelect) startSelect.value = saved.startTime;
+            if (saved.endTime && endSelect) endSelect.value = saved.endTime;
+            if ((!saved.startTime || !saved.endTime) && saved.slotIds && saved.slotIds.length) {
+                var range = getTimeRangeFromSlotIds(saved.slotIds);
+                if (range && startSelect && endSelect) {
+                    startSelect.value = range.startTime;
+                    endSelect.value = range.endTime;
+                }
+            }
+        }
+    }
+
+    function arraysEqual(a, b) {
+        if (!a || !b) return false;
+        if (a.length !== b.length) return false;
+        for (var i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
+    }
+
+    function getTimeRangeFromSlotIds(slotIds) {
+        if (!slotIds || !slotIds.length) return null;
+        var startTime = null;
+        var endTime = null;
+        for (var i = 0; i < slotIds.length; i++) {
+            var slot = findSlotById(slotIds[i]);
+            if (!slot) continue;
+            if (!startTime || timeToMinutes(slot.startTime) < timeToMinutes(startTime)) {
+                startTime = slot.startTime;
+            }
+            if (!endTime || timeToMinutes(slot.endTime) > timeToMinutes(endTime)) {
+                endTime = slot.endTime;
+            }
+        }
+        if (!startTime || !endTime) return null;
+        return { startTime: startTime, endTime: endTime };
+    }
+
+    function findSlotById(slotId) {
+        for (var i = 0; i < slots.length; i++) {
+            if (slots[i].slotId === slotId) return slots[i];
+        }
+        return null;
+    }
+
+    function validateScheduleForNext() {
+        hideError();
+        var req = buildRequestBody();
+        if (!req) return false;
+        return true;
+    }
+
+    function isStartDateInPast(startDate) {
+        var today = new Date();
+        var start = new Date(startDate + 'T00:00:00');
+        today.setHours(0, 0, 0, 0);
+        return start < today;
+    }
+
+    function hasPastSessionToday(patterns) {
+        if (!patterns || !patterns.length) return false;
+        if (!isDateRangeIncludesToday()) return false;
+        var todayDay = todayPatternDay();
+        var nowMinutes = timeToMinutes(new Date().toTimeString().slice(0, 5));
+        for (var i = 0; i < patterns.length; i++) {
+            if (patterns[i].dayOfWeek !== todayDay) continue;
+            var endTime = getSessionEndTimeFromSlotIds(patterns[i].slotIds);
+            if (endTime && timeToMinutes(endTime) <= nowMinutes) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getSessionEndTimeFromSlotIds(slotIds) {
+        var endTime = null;
+        for (var i = 0; i < slotIds.length; i++) {
+            var slot = findSlotById(slotIds[i]);
+            if (!slot) continue;
+            if (!endTime || timeToMinutes(slot.endTime) > timeToMinutes(endTime)) {
+                endTime = slot.endTime;
+            }
+        }
+        return endTime;
+    }
+
+    function buildPastSessionMessage() {
+        var nowStr = new Date().toTimeString().slice(0, 5);
+        return 'Bạn đang đặt lịch cho hôm nay. Vui lòng chọn các khung giờ từ ' + nowStr + ' trở đi.';
+    }
+
+    function hasUnresolvedConflicts() {
+        if (!previewData || !previewData.sessions) return false;
+        for (var i = 0; i < previewData.sessions.length; i++) {
+            if (previewData.sessions[i].status === 'CONFLICT') {
+                return true;
+            }
+        }
+        return false;
     }
 
     function timeToMinutes(timeStr) {
