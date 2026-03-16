@@ -12,6 +12,8 @@
     <%@ include file="layout/staff-header.jsp"%>
 
     <div class="content-area">
+        <div class="srs-screen-alert d-none" id="rentalStatusScreenAlert" role="alert" aria-live="polite"></div>
+
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div>
                 <h1 class="fw-bold mb-1" style="font-size:1.75rem; color:#111827; letter-spacing:-0.02em;">
@@ -115,20 +117,27 @@
                     <h2 class="srs-section-title">
                         <i class="bi bi-box-seam me-2"></i>Kho Đồ
                     </h2>
-                    <p class="srs-section-subtitle">Số lượng tổng và số lượng khả dụng được cập nhật khi trạng thái thuê thay đổi.</p>
+                    <div class="srs-realtime-panel mt-3">
+                        <div class="srs-realtime-pill">
+                            <span class="srs-realtime-label">Thời gian hiện tại</span>
+                            <strong class="srs-realtime-value" id="inventoryCurrentTime">--:--</strong>
+                        </div>
+                        <div class="srs-realtime-pill">
+                            <span class="srs-realtime-label">Slot hiện tại</span>
+                            <strong class="srs-realtime-value" id="inventoryCurrentSlot">Slot không khả dụng</strong>
+                        </div>
+                    </div>
                 </div>
-                <div class="srs-realtime-panel">
-                    <div class="srs-realtime-pill">
-                        <span class="srs-realtime-label">Thời gian hiện tại</span>
-                        <strong class="srs-realtime-value" id="inventoryCurrentTime">--:--</strong>
-                    </div>
-                    <div class="srs-realtime-pill">
-                        <span class="srs-realtime-label">Slot hiện tại</span>
-                        <strong class="srs-realtime-value" id="inventoryCurrentSlot">Chưa xác định</strong>
-                    </div>
-                    <div class="srs-realtime-note" id="inventoryRealtimeHint">
-                        Chỉ slot đang chứa thời gian hiện tại của ngày hôm nay mới được cập nhật trạng thái.
-                    </div>
+            </div>
+
+            <div class="srs-inventory-toolbar">
+                <div class="srs-search-input-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           id="inventorySearchInput"
+                           class="form-control"
+                           placeholder="Tìm kiếm theo tên đồ"
+                           aria-label="Tìm kiếm theo tên đồ">
                 </div>
             </div>
 
@@ -145,6 +154,8 @@
                     <tbody id="inventoryTableBody"></tbody>
                 </table>
             </div>
+
+            <div class="srs-inventory-pagination" id="inventoryPagination"></div>
         </section>
     </div>
 </div>

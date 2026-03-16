@@ -14,10 +14,12 @@
     var gridHeaderRow = document.getElementById('gridHeaderRow');
     var gridBody = document.getElementById('gridBody');
     var errorMessage = document.getElementById('errorMessage');
+    var screenAlert = document.getElementById('rentalStatusScreenAlert');
     var inventoryCurrentTime = document.getElementById('inventoryCurrentTime');
     var inventoryCurrentSlot = document.getElementById('inventoryCurrentSlot');
-    var inventoryRealtimeHint = document.getElementById('inventoryRealtimeHint');
+    var inventorySearchInput = document.getElementById('inventorySearchInput');
     var inventoryTableBody = document.getElementById('inventoryTableBody');
+    var inventoryPagination = document.getElementById('inventoryPagination');
     var rentalDetailContext = document.getElementById('rentalDetailContext');
     var rentalDetailModeHint = document.getElementById('rentalDetailModeHint');
     var rentalDetailBody = document.getElementById('rentalDetailBody');
@@ -25,6 +27,7 @@
     var rentalDetailModalEl = document.getElementById('rentalDetailModal');
     var detailModal = null;
     var liveClockTimerId = null;
+    var screenAlertTimerId = null;
 
     var state = {
         selectedDate: getTodayStr(),
@@ -32,9 +35,13 @@
         slots: [],
         cells: [],
         inventoryItems: [],
+        inventorySearchTerm: '',
+        inventoryCurrentPage: 1,
+        inventoryPageSize: 5,
         cellMap: Object.create(null),
         modalCellKey: null,
-        reopenCellKey: null
+        reopenCellKey: null,
+        lastScreenNoticeKey: null
     };
 
     window.loadRentalStatus = loadRentalStatus;
@@ -73,6 +80,31 @@
                 if (nextDate) {
                     loadRentalStatus(nextDate);
                 }
+            });
+        }
+
+        if (inventorySearchInput) {
+            inventorySearchInput.addEventListener('input', function () {
+                state.inventorySearchTerm = this.value || '';
+                state.inventoryCurrentPage = 1;
+                renderInventoryTable();
+            });
+        }
+
+        if (inventoryPagination) {
+            inventoryPagination.addEventListener('click', function (event) {
+                var button = event.target.closest('[data-role="inventory-page"]');
+                if (!button || button.disabled) {
+                    return;
+                }
+
+                var nextPage = Number(button.getAttribute('data-page') || 0);
+                if (!nextPage || nextPage === state.inventoryCurrentPage) {
+                    return;
+                }
+
+                state.inventoryCurrentPage = nextPage;
+                renderInventoryTable();
             });
         }
 
@@ -142,6 +174,7 @@
                 }
                 hydrateState(body.data || {});
                 renderRealtimePanels();
+                maybeShowCurrentSlotNotice();
                 renderInventoryTable();
                 renderTimelineGrid();
                 reopenModalIfNeeded();
@@ -296,22 +329,107 @@
             return;
         }
 
-        var items = state.inventoryItems || [];
-        if (!items.length) {
+        var filteredItems = getFilteredInventoryItems();
+        var totalItems = filteredItems.length;
+        var totalPages = Math.max(1, Math.ceil(totalItems / state.inventoryPageSize));
+
+        state.inventoryCurrentPage = Math.min(Math.max(state.inventoryCurrentPage, 1), totalPages);
+
+        if (!totalItems) {
             inventoryTableBody.innerHTML =
-                '<tr><td colspan="4" class="text-center text-muted py-4">Không có dữ liệu kho đồ.</td></tr>';
+                '<tr><td colspan="4" class="text-center text-muted py-4">' +
+                (state.inventorySearchTerm
+                    ? 'Không tìm thấy đồ nào phù hợp với từ khóa.'
+                    : 'Không có dữ liệu kho đồ.') +
+                '</td></tr>';
+            renderInventoryPagination(totalItems, totalPages, 0, 0);
             return;
         }
 
-        inventoryTableBody.innerHTML = items.map(function (item, index) {
+        var startIndex = (state.inventoryCurrentPage - 1) * state.inventoryPageSize;
+        var visibleItems = filteredItems.slice(startIndex, startIndex + state.inventoryPageSize);
+
+        inventoryTableBody.innerHTML = visibleItems.map(function (item, index) {
             return '' +
                 '<tr>' +
-                '   <td>' + (index + 1) + '</td>' +
+                '   <td>' + (startIndex + index + 1) + '</td>' +
                 '   <td>' + esc(item.inventoryName) + '</td>' +
                 '   <td>' + formatNumber(item.totalQuantity) + '</td>' +
                 '   <td class="srs-stock-available">' + formatNumber(item.availableQuantity) + '</td>' +
                 '</tr>';
         }).join('');
+
+        renderInventoryPagination(
+            totalItems,
+            totalPages,
+            startIndex + 1,
+            startIndex + visibleItems.length
+        );
+    }
+
+    function renderInventoryPagination(totalItems, totalPages, fromItem, toItem) {
+        if (!inventoryPagination) {
+            return;
+        }
+
+        if (!totalItems) {
+            inventoryPagination.innerHTML = '';
+            return;
+        }
+
+        var pages = buildPageWindow(totalPages, state.inventoryCurrentPage);
+        var buttons = [];
+
+        buttons.push(buildPageButton('Trước', state.inventoryCurrentPage - 1, state.inventoryCurrentPage === 1, false));
+        for (var i = 0; i < pages.length; i++) {
+            buttons.push(buildPageButton(String(pages[i]), pages[i], false, pages[i] === state.inventoryCurrentPage));
+        }
+        buttons.push(buildPageButton('Sau', state.inventoryCurrentPage + 1, state.inventoryCurrentPage === totalPages, false));
+
+        inventoryPagination.innerHTML = '' +
+            '<div class="srs-inventory-page-info">Hiển thị ' + fromItem + ' - ' + toItem + ' trên ' + totalItems + ' đồ</div>' +
+            '<div class="srs-inventory-page-list">' + buttons.join('') + '</div>';
+    }
+
+    function buildPageWindow(totalPages, currentPage) {
+        var pages = [];
+        if (totalPages <= 5) {
+            for (var i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+            return pages;
+        }
+
+        var start = Math.max(1, currentPage - 2);
+        var end = Math.min(totalPages, start + 4);
+        start = Math.max(1, end - 4);
+
+        for (var page = start; page <= end; page++) {
+            pages.push(page);
+        }
+        return pages;
+    }
+
+    function buildPageButton(label, page, disabled, active) {
+        return '' +
+            '<button type="button"' +
+            ' class="srs-inventory-page-btn' + (active ? ' active' : '') + '"' +
+            ' data-role="inventory-page"' +
+            ' data-page="' + page + '"' +
+            (disabled ? ' disabled' : '') + '>' +
+            esc(label) +
+            '</button>';
+    }
+
+    function getFilteredInventoryItems() {
+        var keyword = normalizeSearch(state.inventorySearchTerm);
+        if (!keyword) {
+            return state.inventoryItems.slice();
+        }
+
+        return state.inventoryItems.filter(function (item) {
+            return normalizeSearch(item.inventoryName).indexOf(keyword) !== -1;
+        });
     }
 
     function renderInventoryLoading() {
@@ -321,14 +439,13 @@
 
         inventoryTableBody.innerHTML =
             '<tr><td colspan="4" class="text-center text-muted py-4">Đang tải dữ liệu kho đồ...</td></tr>';
+
+        if (inventoryPagination) {
+            inventoryPagination.innerHTML = '';
+        }
     }
 
     function renderRealtimePanels() {
-        renderInventoryRealtimeInfo();
-        refreshOpenModal();
-    }
-
-    function renderInventoryRealtimeInfo() {
         if (inventoryCurrentTime) {
             inventoryCurrentTime.textContent = getCurrentTimeLabel();
         }
@@ -337,28 +454,48 @@
         if (inventoryCurrentSlot) {
             inventoryCurrentSlot.textContent = currentSlot
                 ? (currentSlot.startTime + ' - ' + currentSlot.endTime)
-                : 'Hiện tại không nằm trong slot nào';
+                : 'Slot không khả dụng';
         }
 
-        if (inventoryRealtimeHint) {
-            inventoryRealtimeHint.textContent = buildInventoryRealtimeHint(currentSlot);
-        }
+        refreshOpenModal();
     }
 
-    function buildInventoryRealtimeHint(currentSlot) {
-        if (state.selectedDate === getTodayStr()) {
-            if (currentSlot) {
-                return 'Slot hiện tại ' + currentSlot.startTime + ' - ' + currentSlot.endTime +
-                    ' của hôm nay có thể cập nhật trạng thái thuê đồ.';
+    function maybeShowCurrentSlotNotice() {
+        var currentSlot = getCurrentRuntimeSlot();
+        var noticeKey = '';
+
+        if (state.selectedDate === getTodayStr() && !currentSlot) {
+            noticeKey = 'today-no-slot-' + state.selectedDate;
+            if (state.lastScreenNoticeKey !== noticeKey) {
+                state.lastScreenNoticeKey = noticeKey;
+                showScreenAlert('Hiện tại không nằm trong slot nào nên bạn chỉ có thể xem thông tin thuê đồ.');
             }
-            return 'Hiện tại không nằm trong slot nào nên bạn chỉ có thể xem thông tin thuê đồ.';
+            return;
         }
 
-        if (state.selectedDate > getTodayStr()) {
-            return 'Ngày đang xem nằm trong tương lai nên chỉ có thể xem thông tin thuê đồ.';
+        if (state.selectedDate !== getTodayStr()) {
+            state.lastScreenNoticeKey = 'view-only-' + state.selectedDate;
+            return;
         }
 
-        return 'Ngày đang xem đã qua nên chỉ có thể xem lại thông tin thuê đồ.';
+        state.lastScreenNoticeKey = '';
+    }
+
+    function showScreenAlert(message) {
+        if (!screenAlert) {
+            return;
+        }
+
+        screenAlert.textContent = message;
+        screenAlert.classList.remove('d-none');
+
+        if (screenAlertTimerId) {
+            window.clearTimeout(screenAlertTimerId);
+        }
+
+        screenAlertTimerId = window.setTimeout(function () {
+            screenAlert.classList.add('d-none');
+        }, 10000);
     }
 
     function openDetailModal(cellKey) {
@@ -439,9 +576,7 @@
             var status = normalizeStatus(item.status);
             return '' +
                 '<tr data-schedule-id="' + Number(item.scheduleId || 0) + '">' +
-                '   <td>' +
-                '       <div class="srs-detail-name">' + esc(item.inventoryName || '') + '</div>' +
-                '   </td>' +
+                '   <td><div class="srs-detail-name">' + esc(item.inventoryName || '') + '</div></td>' +
                 '   <td>' + formatNumber(item.quantity) + '</td>' +
                 '   <td>' + buildStatusControl(item.scheduleId, status, editable) + '</td>' +
                 '</tr>';
@@ -764,6 +899,14 @@
             return null;
         }
         return String(value);
+    }
+
+    function normalizeSearch(value) {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
     }
 
     function getOffsetDateStr(offsetDays) {
