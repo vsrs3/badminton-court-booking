@@ -156,6 +156,20 @@ public class AccountManagementServiceImpl implements AccountManagementService {
         if (accountId == null) {
             throw new IllegalArgumentException("Account ID cannot be null");
         }
+
+        Optional<Account> opt = repo.findById(accountId);
+
+        if (opt.isEmpty()) {
+            return false;
+        }
+
+        Account account = opt.get();
+
+        // Không cho xóa ADMIN
+        if ("ADMIN".equalsIgnoreCase(account.getRole())) {
+            return false;
+        }
+
         return repo.deleteAccount(accountId);
     }
 }

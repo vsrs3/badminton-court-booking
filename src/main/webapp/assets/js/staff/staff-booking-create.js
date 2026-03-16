@@ -38,6 +38,32 @@ var btnRentalSave = document.getElementById('btnRentalSave');
 var rentalModalContext = document.getElementById('rentalModalContext');
 var rentalInventoryEmpty = document.getElementById('rentalInventoryEmpty');
 var rentalModalElement = document.getElementById('rentalInventoryModal');
+    var CTX = window.ST_CTX || '';
+
+    // DOM
+    var stateNoData       = document.getElementById('stateNoData');
+    var createContent     = document.getElementById('createContent');
+    var summaryDate       = document.getElementById('summaryDate');
+    var sessionsContainer = document.getElementById('sessionsContainer');
+    var summaryTotal      = document.getElementById('summaryTotal');
+    var tabAccount        = document.getElementById('tabAccount');
+    var tabGuest          = document.getElementById('tabGuest');
+    var formAccount       = document.getElementById('formAccount');
+    var formGuest         = document.getElementById('formGuest');
+    var customerSearch    = document.getElementById('customerSearch');
+    var searchDropdown    = document.getElementById('searchDropdown');
+    var selectedCustomer  = document.getElementById('selectedCustomer');
+    var selName           = document.getElementById('selName');
+    var selPhone          = document.getElementById('selPhone');
+    var selEmail          = document.getElementById('selEmail');
+    var btnRemoveCustomer = document.getElementById('btnRemoveCustomer');
+    var selectedAccountId = document.getElementById('selectedAccountId');
+    var guestNameInput    = document.getElementById('guestName');
+    var guestPhoneInput   = document.getElementById('guestPhone');
+    var guestEmailInput   = document.getElementById('guestEmail');
+    var phoneHint         = document.getElementById('phoneHint');
+    var formError         = document.getElementById('formError');
+    var btnSubmit         = document.getElementById('btnSubmit');
 
 var customerType = 'ACCOUNT';
 var bookingData = null;
@@ -62,6 +88,7 @@ var rentalState = {
 init();
 
 function init() {
+    // ---- Init: load from sessionStorage ----
     var raw = sessionStorage.getItem('staffBookingSlots');
     if (!raw) {
         showNoData();
@@ -70,8 +97,8 @@ function init() {
 
     try {
         bookingData = JSON.parse(raw);
-        if (!bookingData || !bookingData.slots || bookingData.slots.length === 0) {
-            showNoData();
+        if (!bookingData.slots || bookingData.slots.length === 0) {
+            stateNoData.classList.remove('d-none');
             return;
         }
     } catch (err) {
@@ -118,6 +145,8 @@ function normalizeBookingSlots() {
         return String(a.courtName).localeCompare(String(b.courtName));
     });
 }
+    // ---- Render summary ----
+    summaryDate.textContent = formatDate(bookingData.date);
 
 function renderBookingSummary() {
     if (summaryDate) summaryDate.textContent = formatDate(bookingData.date);
@@ -507,6 +536,15 @@ function loadRentalInventory() {
 function renderRentalInventoryTable(errorMessage) {
     if (!rentalInventoryTableBody) return;
 
+    // ---- Tab switching ----
+    tabAccount.addEventListener('click', function () {
+        customerType = 'ACCOUNT';
+        tabAccount.classList.add('active');
+        tabGuest.classList.remove('active');
+        formAccount.classList.remove('d-none');
+        formGuest.classList.add('d-none');
+        hideError();
+    });
     var items = rentalState.items || [];
     rentalInventoryTableBody.innerHTML = '';
 
@@ -735,6 +773,29 @@ function bindCustomerModeEvents() {
         });
     }
 
+    tabGuest.addEventListener('click', function () {
+        customerType = 'GUEST';
+        tabGuest.classList.add('active');
+        tabAccount.classList.remove('active');
+        formGuest.classList.remove('d-none');
+        formAccount.classList.add('d-none');
+        hideError();
+    });
+
+    function switchToAccountMode(matched) {
+        customerType = 'ACCOUNT';
+        tabAccount.classList.add('active');
+        tabGuest.classList.remove('active');
+        formAccount.classList.remove('d-none');
+        formGuest.classList.add('d-none');
+
+        selectedAccountId.value = matched.accountId;
+        selName.textContent = matched.fullName || '—';
+        selPhone.textContent = matched.phone || '—';
+        selEmail.textContent = matched.email || '—';
+        selectedCustomer.classList.remove('d-none');
+
+        hideError();
     if (tabGuest) {
         tabGuest.addEventListener('click', function () {
             customerType = 'GUEST';
@@ -751,9 +812,16 @@ function bindCustomerModeEvents() {
             if (selectedAccountId) selectedAccountId.value = '';
             if (selectedCustomer) selectedCustomer.classList.add('d-none');
         });
+    function confirmGuestPhoneMatched(matched) {
+        var msg = 'Số điện thoại này đã tồn tại tài khoản CUSTOMER:\n' +
+            '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
+            '- ' + (matched.phone || '') + '\n\n' +
+            'Hệ thống sẽ chuyển sang luồng Khách có tài khoản. Tiếp tục';
+        return uiConfirm(msg, 'Trùng số điện thoại');
     }
 }
 
+    // ---- Customer search (ACCOUNT) ----
 function bindSearchEvents() {
     if (!customerSearch || !searchDropdown) return;
     customerSearch.addEventListener('input', function () {
@@ -795,6 +863,34 @@ function bindGuestPhoneEvents() {
         this.value = digits;
         updatePhoneHint(digits);
     });
+    // ---- Phone validation helper ----
+    function isValidPhone(phone) {
+        // Vietnamese phone: exactly 10 digits, starts with 0
+        var cleaned = phone.replace(/\s+/g, '');
+        return /^0\d{9}$/.test(cleaned);
+    }
+
+    function isValidEmail(email) {
+        var cleaned = (email || '').trim();
+        if (!cleaned) return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleaned);
+    }
+
+    // ---- Real-time phone validation on input ----
+    if (guestPhoneInput) {
+        // Only allow digits
+        guestPhoneInput.addEventListener('input', function () {
+            // Strip non-digit characters
+            var raw = this.value.replace(/[^\d]/g, '');
+            // Limit to 10 digits
+            if (raw.length > 10) {
+                raw = raw.substring(0, 10);
+            }
+            this.value = raw;
+
+            // Show real-time hint
+            updatePhoneHint(raw);
+        });
 
     guestPhoneInput.addEventListener('paste', function () {
         var self = this;
@@ -859,6 +955,7 @@ function bindRentalEvents() {
 
 function bindSubmitEvent() {
     if (!btnSubmit) return;
+    // ---- Submit ----
     btnSubmit.addEventListener('click', async function () {
         hideError();
 
@@ -882,6 +979,18 @@ function bindSubmitEvent() {
                 showError('So dien thoai phai gom 10 chu so va bat dau bang 0.');
                 guestPhoneInput.focus();
                 return;
+            }
+            if (guestEmailInput && guestEmailInput.value.trim() && !isValidEmail(guestEmailInput.value)) {
+                showError('Email không đúng định dạng');
+                guestEmailInput.focus();
+                return;
+            }
+            if (guestEmailInput && !guestEmailInput.value.trim()) {
+                var proceed = await uiConfirm(
+                    'Không có email, hệ thống sẽ không gửi thông báo. Tiếp tục?',
+                    'Cảnh báo'
+                );
+                if (!proceed) return;
             }
         }
 
@@ -921,6 +1030,8 @@ function bindSubmitEvent() {
             rentals: rentalPayload,
             rentalTotal: getRentalGrandTotal(),
             totalAmount: courtTotalPrice + getRentalGrandTotal()
+            guestEmail: customerType === 'GUEST' && guestEmailInput ? guestEmailInput.value.trim() : null,
+            slots: slotsPayload
         };
 
         btnSubmit.disabled = true;
@@ -951,6 +1062,10 @@ function bindSubmitEvent() {
                 return;
             }
 
+            // Success -> clear sessionStorage -> redirect to detail
+            if (body.data && body.data.emailWarning) {
+                await uiAlert(body.data.emailWarning, 'Thông báo');
+            }
             sessionStorage.removeItem('staffBookingSlots');
             window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
         } catch (err) {
@@ -1023,7 +1138,26 @@ function resetSubmitButton() {
     btnSubmit.disabled = false;
     btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
 }
+    // ---- Helpers ----
+    function resetSubmitButton() {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
+    }
 
+    function uiAlert(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
+            return window.StaffDialog.alert({ title: title || 'Thông báo', message: message || '' });
+        }
+        window.alert(message || '');
+        return Promise.resolve();
+    }
+
+    function uiConfirm(message, title) {
+        if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
+            return window.StaffDialog.confirm({ title: title || 'Xác nhận', message: message || '' });
+        }
+        return Promise.resolve(window.confirm(message || ''));
+    }
 function uiConfirm(message, title) {
     if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
         return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });

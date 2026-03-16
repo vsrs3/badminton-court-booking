@@ -1,4 +1,4 @@
-/**
+﻿/**
  * staff-booking-detail.js — Task 8 v2 + Payment + NO_SHOW
  */
 (function () {
@@ -57,7 +57,7 @@
     var pathParts = window.location.pathname.split('/');
     var bookingId = pathParts[pathParts.length - 1];
     if (!bookingId || isNaN(bookingId)) {
-        showError('Booking ID kh\u00f4ng h\u1ee3p l\u1ec7.');
+        showError('Booking ID không hợp lệ.');
         return;
     }
 
@@ -109,7 +109,7 @@
             })
             .catch(function (err) {
                 console.error('Detail error:', err);
-                showError(err.message || 'Kh\u00f4ng th\u1ec3 t\u1ea3i d\u1eef li\u1ec7u.');
+                showError(err.message || 'Không thể tải dữ liệu.');
             });
     }
 
@@ -135,7 +135,14 @@
 
         setText('dBookingId', d.bookingId);
         setText('dBookingIdField', '#' + d.bookingId);
-        setText('dBookingDate', formatDate(d.bookingDate));
+        var recurringTag = document.getElementById('dRecurringTag');
+        if (d.isRecurring) {
+            if (recurringTag) recurringTag.classList.remove('d-none');
+            setText('dBookingDate', formatRange(d.recurringStartDate, d.recurringEndDate));
+        } else {
+            if (recurringTag) recurringTag.classList.add('d-none');
+            setText('dBookingDate', formatDate(d.bookingDate));
+        }
         setText('dCreatedAt', d.createdAt || '—');
 
         // Status badge
@@ -150,7 +157,7 @@
 
         setText('dCustomerName', d.customerName || '—');
         setText('dCustomerPhone', d.customerPhone || '—');
-        setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'T\u00e0i kho\u1ea3n' : 'Kh\u00e1ch v\u00e3ng lai');
+        setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'Tài khoản' : 'Khách vãng lai');
 
         renderInvoice(d);
         renderRentalRows(d.rentalRows || []);
@@ -178,7 +185,7 @@
     }
 
     function renderEditActions(d) {
-        var canEdit = d.bookingStatus === 'CONFIRMED';
+        var canEdit = d.bookingStatus === 'CONFIRMED' && !d.isRecurring;
 
         if (btnEditBooking) {
             btnEditBooking.classList.toggle('d-none', !canEdit);
@@ -253,6 +260,8 @@
 
         if (sessions.length === 0) {
             if (sessionProgress) sessionProgress.textContent = '';
+            sessionsContainer.innerHTML = '<div class="sbd-no-data">Không có phiên chơi</div>';
+            sessionProgress.textContent = '';
             return;
         }
 
@@ -273,6 +282,86 @@
         if (cancelledCount > 0) {
             progressText += ' (' + cancelledCount + ' hủy)';
         }
+        sessionProgress.textContent = progressText;
+
+        var isConfirmed = (d.bookingStatus === 'CONFIRMED');
+
+        sessions.forEach(function (s, i) {
+            var sessionDate = s.sessionDate || d.bookingDate;
+            var isToday = (sessionDate === todayStr());
+            var canPlayActions = isToday && isConfirmed;
+            var row = document.createElement('div');
+            row.className = 'sbd-session sbd-ss-' + s.sessionStatus.toLowerCase();
+            row.id = 'session-' + i;
+
+            // ─ Index badge ─
+            var idxEl = document.createElement('div');
+            idxEl.className = 'sbd-session-idx';
+            if (s.sessionStatus === 'COMPLETED') {
+                idxEl.innerHTML = '<i class="bi bi-check-lg"></i>';
+            } else if (s.sessionStatus === 'CHECKED_IN') {
+                idxEl.innerHTML = '<i class="bi bi-play-fill"></i>';
+            } else if (s.sessionStatus === 'NO_SHOW') {
+                idxEl.innerHTML = '<i class="bi bi-person-x-fill"></i>';
+            } else if (s.sessionStatus === 'CANCELLED') {
+                idxEl.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+            } else {
+                idxEl.textContent = i + 1;
+            }
+            row.appendChild(idxEl);
+
+            // ─ Info block ─
+            var infoEl = document.createElement('div');
+            infoEl.className = 'sbd-session-info';
+
+            var courtEl = document.createElement('div');
+            courtEl.className = 'sbd-session-court';
+            courtEl.textContent = s.courtName;
+            infoEl.appendChild(courtEl);
+
+            var metaEl = document.createElement('div');
+            metaEl.className = 'sbd-session-meta';
+            var dateHtml = '';
+            if (d.isRecurring && sessionDate) {
+                dateHtml = '<span><i class="bi bi-calendar3"></i>' + formatDate(sessionDate) + '</span>';
+            }
+            metaEl.innerHTML =
+                dateHtml +
+                '<span><i class="bi bi-clock"></i>' + s.startTime + ' → ' + s.endTime + '</span>' +
+                '<span><i class="bi bi-layers"></i>' + s.slotCount + ' slot</span>' +
+                '<span class="sbd-session-price">' + formatMoney(s.totalPrice) + '</span>';
+            infoEl.appendChild(metaEl);
+
+            // Time info
+            if (s.checkinTime || s.checkoutTime) {
+                var timeInfoEl = document.createElement('div');
+                timeInfoEl.className = 'sbd-session-time-info';
+                var parts = [];
+                if (s.checkinTime) parts.push('In: ' + s.checkinTime);
+                if (s.checkoutTime) parts.push('Out: ' + s.checkoutTime);
+                timeInfoEl.textContent = parts.join(' · ');
+                infoEl.appendChild(timeInfoEl);
+            }
+
+            row.appendChild(infoEl);
+
+            // ─ Action area ─
+            var actionEl = document.createElement('div');
+            actionEl.className = 'sbd-session-action';
+            actionEl.id = 'session-action-' + i;
+
+            if (canPlayActions || hasReleasableSlot(s)) {
+                renderSessionAction(actionEl, s, i, d, canPlayActions);
+            } else {
+                var labelEl = document.createElement('span');
+                labelEl.className = 'sbd-session-status ' + sessionStatusLabelClass(s.sessionStatus);
+                labelEl.textContent = sessionStatusLabel(s.sessionStatus);
+                actionEl.appendChild(labelEl);
+            }
+
+            row.appendChild(actionEl);
+            sessionsContainer.appendChild(row);
+        });
 
         if (sessionProgress) {
             sessionProgress.textContent = progressText;
@@ -280,6 +369,7 @@
     }
 
     function hasReleasableSlot(session) {
+        if (isSessionEnded(session)) return false;
         var slots = session.bookingSlots || [];
         for (var i = 0; i < slots.length; i++) {
             var slotStatus = slots[i].slotStatus;
@@ -310,7 +400,7 @@
         if (session.sessionStatus === 'COMPLETED') {
             var label = document.createElement('span');
             label.className = 'sbd-session-status sbd-ss-label-completed';
-            label.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Ho\u00e0n th\u00e0nh';
+            label.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Hoàn thành';
             container.appendChild(label);
             return;
         }
@@ -319,7 +409,7 @@
         if (session.sessionStatus === 'NO_SHOW') {
             var nsLabel = document.createElement('span');
             nsLabel.className = 'sbd-session-status sbd-ss-label-no_show';
-            nsLabel.innerHTML = '<i class="bi bi-person-x-fill me-1"></i>V\u1eafng m\u1eb7t';
+            nsLabel.innerHTML = '<i class="bi bi-person-x-fill me-1"></i>Vắng mặt';
             container.appendChild(nsLabel);
             if (hasReleasableSlot(session)) {
                 appendReleaseButton(container, idx);
@@ -331,7 +421,7 @@
         if (session.sessionStatus === 'CANCELLED') {
             var cLabel = document.createElement('span');
             cLabel.className = 'sbd-session-status sbd-ss-label-cancelled';
-            cLabel.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>\u0110\u00e3 h\u1ee7y';
+            cLabel.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Đã hủy';
             container.appendChild(cLabel);
             return;
         }
@@ -380,7 +470,7 @@
             if (!hasCheckinableSlot(session)) {
                 var releasedLabel = document.createElement('span');
                 releasedLabel.className = 'sbd-session-status sbd-ss-label-completed';
-                releasedLabel.textContent = '\u0110\u00e3 gi\u1ea3i ph\u00f3ng';
+                releasedLabel.textContent = 'Đã giải phóng';
                 container.appendChild(releasedLabel);
                 return;
             }
@@ -401,7 +491,7 @@
             if (isSessionPastDue(session)) {
                 var btnNs = document.createElement('button');
                 btnNs.className = 'sbd-btn sbd-btn-noshow';
-                btnNs.innerHTML = '<i class="bi bi-person-x me-1"></i>\u0110\u00e1nh d\u1ea5u v\u1eafng';
+                btnNs.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
                 btnNs.addEventListener('click', function () {
                     handleNoShow(idx);
                 });
@@ -414,7 +504,7 @@
         } else {
             var waitBtn = document.createElement('span');
             waitBtn.className = 'sbd-btn sbd-btn-waiting';
-            waitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Ch\u1edd phi\u00ean tr\u01b0\u1edbc';
+            waitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Chờ phiên trước';
             container.appendChild(waitBtn);
             if (hasReleasableSlot(session)) {
                 appendReleaseButton(container, idx);
@@ -425,7 +515,7 @@
     function appendReleaseButton(container, sessionIndex) {
         var btnRelease = document.createElement('button');
         btnRelease.className = 'sbd-btn sbd-btn-release';
-        btnRelease.innerHTML = '<i class="bi bi-unlock me-1"></i>Gi\u1ea3i ph\u00f3ng slot';
+        btnRelease.innerHTML = '<i class="bi bi-unlock me-1"></i>Giải phóng slot';
         btnRelease.addEventListener('click', function () {
             handleReleaseSession(sessionIndex);
         });
@@ -452,6 +542,28 @@
         return nowMinutes > deadlineMinutes;
     }
 
+    function isSessionEnded(session) {
+        if (!bookingData || !bookingData.bookingDate || !session.endTime) return false;
+
+        var dateStr = bookingData.bookingDate;
+        var now = new Date();
+        var todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+
+        if (dateStr < todayStr) return true;
+        if (dateStr > todayStr) return false;
+
+        var parts = session.endTime.split(':');
+        var h = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return false;
+
+        var endMinutes = h * 60 + m;
+        var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+        return nowMinutes > endMinutes;
+    }
+
     // ═══════════════════════════════════════════
     // PAYMENT MODAL (unchanged)
     // ═══════════════════════════════════════════
@@ -470,7 +582,7 @@
         paymentAmountInput.value = remaining > 0 ? String(Math.round(remaining)) : '';
         paymentAmountInput.max = String(Math.max(remaining, 0));
         if (paymentMethodSelect) paymentMethodSelect.value = 'CASH';
-        paymentInputHint.textContent = 'Nh\u1eadp \u0111\u00fang ' + formatMoney(remaining) + ' \u0111\u1ec3 ho\u00e0n t\u1ea5t thanh to\u00e1n';
+        paymentInputHint.textContent = 'Nhập đúng ' + formatMoney(remaining) + ' để hoàn tất thanh toán';
 
         hideModalError();
         paymentModal.classList.remove('d-none');
@@ -503,7 +615,7 @@
         var inputVal = paymentAmountInput.value.trim();
 
         if (!inputVal || isNaN(inputVal)) {
-            showModalError('Vui l\u00f2ng nh\u1eadp s\u1ed1 ti\u1ec1n h\u1ee3p l\u1ec7.');
+            showModalError('Vui lòng nhập số tiền hợp lệ.');
             return;
         }
         var amount = parseFloat(inputVal);
@@ -513,6 +625,8 @@
         }
         if (!isSameMoney(amount, remaining)) {
             showModalError('S\u1ed1 ti\u1ec1n kh\u00f4ng h\u1ee3p l\u1ec7. C\u1ea7n thu th\u00eam \u0111\u00fang ' + formatMoney(remaining) + ' để đủ tổng tiền.');
+        if (amount !== remaining) {
+            showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiền.');
             return;
         }
 
@@ -523,7 +637,7 @@
         }
 
         paymentModalConfirm.disabled = true;
-        paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> \u0110ang x\u1eed l\u00fd...';
+        paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
 
         fetch(CTX + '/api/staff/payment/confirm', {
             method: 'POST',
@@ -534,7 +648,7 @@
             .then(function (res) { return res.json(); })
             .then(function (body) {
                 if (!body.success) {
-                    showModalError(body.message || 'X\u00e1c nh\u1eadn thanh to\u00e1n th\u1ea5t b\u1ea1i.');
+                    showModalError(body.message || 'Xác nhận thanh toán thất bại.');
                     resetConfirmButton();
                     return;
                 }
@@ -545,6 +659,7 @@
                     bookingData.grandTotal = body.data.totalAmount;
                 }
                 showToast('X\u00e1c nh\u1eadn thanh to\u00e1n th\u00e0nh c\u00f4ng!', 'success');
+                showToast('Xác nhận thanh toán thành công!', 'success');
                 closePaymentModal();
                 resetConfirmButton();
                 renderInvoice(bookingData);
@@ -562,14 +677,14 @@
             })
             .catch(function (err) {
                 console.error('Payment confirm error:', err);
-                showModalError('Lỗi kết nối. Vui l\u00f2ng th\u1eed l\u1ea1i.');
+                showModalError('Lỗi kết nối. Vui lòng thử lại.');
                 resetConfirmButton();
             });
     }
 
     function resetConfirmButton() {
         paymentModalConfirm.disabled = false;
-        paymentModalConfirm.innerHTML = '<i class="bi bi-check-lg me-1"></i>X\u00e1c nh\u1eadn';
+        paymentModalConfirm.innerHTML = '<i class="bi bi-check-lg me-1"></i>Xác nhận';
     }
 
     // ═══════════════════════════════════════════
@@ -578,14 +693,14 @@
 
     async function handleCheckin(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        var confirmMsg = 'X\u00e1c nh\u1eadn CHECK-IN phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')';
-        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn check-in'))) return;
+        var confirmMsg = 'Xác nhận CHECK-IN phiên ' + (sessionIndex + 1) + '\n' +
+            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')';
+        if (!(await uiConfirm(confirmMsg, 'Xác nhận check-in'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-checkin');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="sbd-btn-spinner"></span> \u0110ang x\u1eed l\u00fd...';
+            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
         fetch(CTX + '/api/staff/checkin', {
@@ -619,9 +734,9 @@
                     }
                 }
 
-                var msg = 'Check-in phi\u00ean ' + (sessionIndex + 1) + ' th\u00e0nh c\u00f4ng!';
+                var msg = 'Check-in phiên ' + (sessionIndex + 1) + ' thành công!';
                 if (autoCount > 0) {
-                    msg += ' (' + autoCount + ' phi\u00ean tr\u01b0\u1edbc \u0111\u00e1nh d\u1ea5u v\u1eafng)';
+                    msg += ' (' + autoCount + ' phiên trước đánh dấu vắng)';
                 }
                 showToast(msg, 'success');
 
@@ -629,7 +744,7 @@
             })
             .catch(function (err) {
                 console.error('Checkin error:', err);
-                showToast('Lỗi kết nối. Vui l\u00f2ng th\u1eed l\u1ea1i.', 'error');
+                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Check-in';
@@ -639,14 +754,14 @@
 
     async function handleCheckout(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        var confirmMsg = 'X\u00e1c nh\u1eadn CHECK-OUT phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')';
-        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn check-out'))) return;
+        var confirmMsg = 'Xác nhận CHECK-OUT phiên ' + (sessionIndex + 1) + '\n' +
+            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')';
+        if (!(await uiConfirm(confirmMsg, 'Xác nhận check-out'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="sbd-btn-spinner"></span> \u0110ang x\u1eed l\u00fd...';
+            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
         fetch(CTX + '/api/staff/checkout', {
@@ -666,7 +781,7 @@
                     return;
                 }
 
-                showToast('Check-out phi\u00ean ' + (sessionIndex + 1) + ' th\u00e0nh c\u00f4ng!', 'success');
+                showToast('Check-out phiên ' + (sessionIndex + 1) + ' thành công!', 'success');
                 bookingData.sessions[sessionIndex].sessionStatus = 'COMPLETED';
                 bookingData.sessions[sessionIndex].checkoutTime = body.data.checkoutTime;
 
@@ -678,7 +793,7 @@
             })
             .catch(function (err) {
                 console.error('Checkout error:', err);
-                showToast('Lỗi kết nối. Vui l\u00f2ng th\u1eed l\u1ea1i.', 'error');
+                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-box-arrow-right me-1"></i>Check-out';
@@ -688,15 +803,15 @@
 
     async function handleNoShow(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
-        var confirmMsg = '\u0110\u00e1nh d\u1ea5u V\u1eaeNG M\u1eb6T phi\u00ean ' + (sessionIndex + 1) + '?\n' +
-            session.courtName + ' (' + session.startTime + ' \u2192 ' + session.endTime + ')\n\n' +
-            'H\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c.';
-        if (!(await uiConfirm(confirmMsg, 'X\u00e1c nh\u1eadn no-show'))) return;
+        var confirmMsg = 'Đánh dấu VẮNG MẶT phiên ' + (sessionIndex + 1) + '\n' +
+            session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')\n\n' +
+            'Hành động này không thể hoàn tác.';
+        if (!(await uiConfirm(confirmMsg, 'Xác nhận no-show'))) return;
 
         var btn = document.querySelector('#session-action-' + sessionIndex + ' .sbd-btn-noshow');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="sbd-btn-spinner"></span> \u0110ang x\u1eed l\u00fd...';
+            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
         fetch(CTX + '/api/staff/noshow', {
@@ -708,15 +823,15 @@
             .then(function (res) { return res.json(); })
             .then(function (body) {
                 if (!body.success) {
-                    showToast(body.message || '\u0110\u00e1nh d\u1ea5u v\u1eafng th\u1ea5t b\u1ea1i', 'error');
+                    showToast(body.message || 'Đánh dấu vắng thất bại', 'error');
                     if (btn) {
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-person-x me-1"></i>\u0110\u00e1nh d\u1ea5u v\u1eafng';
+                        btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
                     }
                     return;
                 }
 
-                showToast('Phi\u00ean ' + (sessionIndex + 1) + ' \u0111\u00e3 \u0111\u00e1nh d\u1ea5u v\u1eafng m\u1eb7t', 'warning');
+                showToast('Phiên ' + (sessionIndex + 1) + ' đã đánh dấu vắng mặt', 'warning');
                 bookingData.sessions[sessionIndex].sessionStatus = 'NO_SHOW';
 
                 if (body.data.bookingCompleted) {
@@ -727,10 +842,10 @@
             })
             .catch(function (err) {
                 console.error('No-show error:', err);
-                showToast('Lỗi kết nối. Vui l\u00f2ng th\u1eed l\u1ea1i.', 'error');
+                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-person-x me-1"></i>\u0110\u00e1nh d\u1ea5u v\u1eafng';
+                    btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
                 }
             });
     }
@@ -746,7 +861,7 @@
         statusEl.innerHTML = '<span class="sbd-status-badge sbd-status-completed" style="font-size:0.6875rem;padding:0.2rem 0.6rem;">' +
             bookingStatusLabel('COMPLETED') + '</span>';
 
-        showToast('Booking \u0111\u00e3 COMPLETED!', 'success');
+        showToast('Booking đã COMPLETED!', 'success');
     }
 
     // ═══════════════════════════════════════════
@@ -755,25 +870,29 @@
 
     async function handleReleaseSession(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
+        if (isSessionEnded(session)) {
+            showToast('Phiên đã quá giờ, không thể giải phóng slot', 'warning');
+            return;
+        }
         var bookingSlots = (session.bookingSlots || []).filter(function (slot) {
             return !slot.released && slot.slotStatus === 'NO_SHOW';
         });
 
         if (!bookingSlots.length) {
-            showToast('Kh\u00f4ng c\u00f2n slot NO_SHOW \u0111\u1ec3 gi\u1ea3i ph\u00f3ng', 'warning');
+            showToast('Không còn slot NO_SHOW để giải phóng', 'warning');
             return;
         }
 
-        if (!(await uiConfirm('Gi\u1ea3i ph\u00f3ng to\u00e0n b\u1ed9 slot NO_SHOW c\u1ee7a phi\u00ean ' + (sessionIndex + 1) + '?', 'X\u00e1c nh\u1eadn gi\u1ea3i ph\u00f3ng'))) return;
+        if (!(await uiConfirm('Giải phóng toàn bộ slot NO_SHOW của phiên ' + (sessionIndex + 1), 'Xác nhận giải phóng'))) return;
 
-        var reason = await uiPrompt('Nh\u1eadp l\u00fd do gi\u1ea3i ph\u00f3ng slot NO_SHOW (kh\u00f4ng b\u1eaft bu\u1ed9c):', '', 'L\u00fd do gi\u1ea3i ph\u00f3ng');
+        var reason = await uiPrompt('Nhập lý do giải phóng slot NO_SHOW (không bắt buộc):', '', 'Lý do giải phóng');
         if (reason == null) return;
         reason = reason || '';
         var idx = 0;
 
         function releaseNext() {
             if (idx >= bookingSlots.length) {
-                showToast('Gi\u1ea3i ph\u00f3ng slot th\u00e0nh c\u00f4ng', 'success');
+                showToast('Giải phóng slot thành công', 'success');
                 loadDetail();
                 return;
             }
@@ -799,15 +918,15 @@
                         if (rs.body && rs.body.data && rs.body.data.currentEtag) {
                             bookingData.etag = rs.body.data.currentEtag;
                         }
-                        throw new Error((rs.body && rs.body.message) || 'Gi\u1ea3i ph\u00f3ng slot th\u1ea5t b\u1ea1i');
+                        throw new Error((rs.body && rs.body.message) || 'Giải phóng slot thất bại');
                     }
-                    bookingData.etag = rs.body.data && rs.body.data.etag ? rs.body.data.etag : bookingData.etag;
+                    bookingData.etag = (rs.body.data && rs.body.data.etag) ? rs.body.data.etag : bookingData.etag;
                     idx++;
                     releaseNext();
                 })
                 .catch(function (err) {
                     console.error('Release slot error:', err);
-                    showToast(err.message || 'Gi\u1ea3i ph\u00f3ng slot th\u1ea5t b\u1ea1i', 'error');
+                    showToast(err.message || 'Giải phóng slot thất bại', 'error');
                 });
         }
 
@@ -816,12 +935,12 @@
 
     async function handleCancelRemaining() {
         if (!bookingData || bookingData.bookingStatus !== 'CONFIRMED') return;
-        if (!(await uiConfirm('H\u1ee7y to\u00e0n b\u1ed9 c\u00e1c slot c\u00f2n l\u1ea1i c\u1ee7a booking n\u00e0y?', 'X\u00e1c nh\u1eadn h\u1ee7y ph\u1ea7n c\u00f2n l\u1ea1i'))) return;
+        if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này', 'Xác nhận hủy phần còn lại'))) return;
 
-        var reason = await uiPrompt('Nh\u1eadp l\u00fd do h\u1ee7y (b\u1eaft bu\u1ed9c):', '', 'L\u00fd do h\u1ee7y');
+        var reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');
         if (reason == null) return;
         if (!reason || !reason.trim()) {
-            showToast('Vui l\u00f2ng nh\u1eadp l\u00fd do h\u1ee7y', 'error');
+            showToast('Vui lòng nhập lý do hủy', 'error');
             return;
         }
 
@@ -846,14 +965,14 @@
                     if (rs.body && rs.body.data && rs.body.data.currentEtag) {
                         bookingData.etag = rs.body.data.currentEtag;
                     }
-                    throw new Error((rs.body && rs.body.message) || 'H\u1ee7y booking th\u1ea5t b\u1ea1i');
+                    throw new Error((rs.body && rs.body.message) || 'Hủy booking thất bại');
                 }
-                showToast('\u0110\u00e3 h\u1ee7y c\u00e1c slot c\u00f2n l\u1ea1i', 'warning');
+                showToast('Đã hủy các slot còn lại', 'warning');
                 loadDetail();
             })
             .catch(function (err) {
                 console.error('Cancel remaining error:', err);
-                showToast(err.message || 'H\u1ee7y booking th\u1ea5t b\u1ea1i', 'error');
+                showToast(err.message || 'Hủy booking thất bại', 'error');
             });
     }
 
@@ -861,7 +980,7 @@
 
     function uiAlert(message, title) {
         if (window.StaffDialog && typeof window.StaffDialog.alert === 'function') {
-            return window.StaffDialog.alert({ title: title || 'Thong bao', message: message || '' });
+            return window.StaffDialog.alert({ title: title || 'Thông báo', message: message || '' });
         }
         alert(message || '');
         return Promise.resolve();
@@ -869,7 +988,7 @@
 
     function uiConfirm(message, title) {
         if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
-            return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+            return window.StaffDialog.confirm({ title: title || 'Xác nhận', message: message || '' });
         }
         return Promise.resolve(confirm(message || ''));
     }
@@ -877,7 +996,7 @@
     function uiPrompt(message, defaultValue, title) {
         if (window.StaffDialog && typeof window.StaffDialog.prompt === 'function') {
             return window.StaffDialog.prompt({
-                title: title || 'Nhap thong tin',
+                title: title || 'Nhập thông tin',
                 message: message || '',
                 defaultValue: defaultValue || ''
             });
@@ -920,6 +1039,11 @@
             String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
     }
 
+    function formatRange(start, end) {
+        if (!start || !end) return '—';
+        return formatDate(start) + ' – ' + formatDate(end);
+    }
+
     function formatMoney(amount) {
         if (amount == null) return '—';
         return Number(amount).toLocaleString('vi-VN') + 'đ';
@@ -944,12 +1068,12 @@
     }
 
     function bookingStatusLabel(s) {
-        var m = { PENDING: 'Ch\u1edd x\u00e1c nh\u1eadn', CONFIRMED: '\u0110\u00e3 x\u00e1c nh\u1eadn', COMPLETED: 'Ho\u00e0n th\u00e0nh', CANCELLED: '\u0110\u00e3 h\u1ee7y', EXPIRED: 'Hết hạn' };
+        var m = { PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy', EXPIRED: 'Hết hạn' };
         return m[s] || s;
     }
 
     function sessionStatusLabel(s) {
-        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Ho\u00e0n th\u00e0nh', NO_SHOW: 'Vắng mặt', CANCELLED: '\u0110\u00e3 h\u1ee7y' };
+        var m = { PENDING: 'Chờ check-in', CHECKED_IN: 'Đang chơi', COMPLETED: 'Hoàn thành', NO_SHOW: 'Vắng mặt', CANCELLED: 'Đã hủy' };
         return m[s] || s;
     }
 
@@ -965,9 +1089,14 @@
     }
 
     function paymentLabel(s) {
-        var m = { UNPAID: 'Ch\u01b0a thanh to\u00e1n', PARTIAL: 'Thanh to\u00e1n m\u1ed9t ph\u1ea7n', PAID: '\u0110\u00e3 thanh to\u00e1n' };
+        var m = { UNPAID: 'Chưa thanh toán', PARTIAL: 'Thanh toán một phần', PAID: 'Đã thanh toán' };
         return m[s] || s;
     }
 
 })();
+
+
+
+
+
 

@@ -1,0 +1,349 @@
+/* =================================================================
+   dashboard-overview.css
+   BCB Owner Dashboard – Overview Page
+   Palette: brand #064E3B · lime #A3E635 · gray scale
+   ================================================================= */
+
+/* ── Keyframes ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes barGrow {
+  from { width: 0; }
+}
+
+/* ── Layout wrapper ─────────────────────────────────────────────── */
+.dov-wrap {
+  padding: 1.5rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Animated entry ────────────────────────────────────────────── */
+.dov-fadein { animation: fadeUp .4s ease both; }
+.dov-d1  { animation-delay: .05s; }
+.dov-d2  { animation-delay: .10s; }
+.dov-d3  { animation-delay: .15s; }
+.dov-d4  { animation-delay: .20s; }
+.dov-d5  { animation-delay: .25s; }
+.dov-d6  { animation-delay: .30s; }
+.dov-d7  { animation-delay: .35s; }
+.dov-d8  { animation-delay: .40s; }
+.dov-d9  { animation-delay: .45s; }
+.dov-d10 { animation-delay: .50s; }
+
+/* ── Card ──────────────────────────────────────────────────────── */
+.dov-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #F3F4F6;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ── Spacing giữa các row ───────────────────────────────────────── */
+.dov-wrap > .dov-card,
+.dov-wrap > .dov-two-col,
+.dov-wrap > .dov-stats-grid {
+  margin-bottom: 1.5rem;
+}
+.dov-wrap > *:last-child { margin-bottom: 0; }
+
+/* ── Stat grid ──────────────────────────────────────────────────── */
+.dov-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* ── Stat card internals ────────────────────────────────────────── */
+.dov-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+.dov-stat-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.25rem; flex-shrink: 0;
+}
+.dov-stat-icon--green {
+  background: #16A34A;
+  box-shadow: 0 6px 16px rgba(22,163,74,.30);
+}
+.dov-stat-icon--blue {
+  background: #3B82F6;
+  box-shadow: 0 6px 16px rgba(59,130,246,.28);
+}
+.dov-stat-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 12px; font-weight: 700;
+}
+.dov-stat-badge--up   { color: #16A34A; }
+.dov-stat-badge--down { color: #EF4444; }
+.dov-stat-label {
+  font-size: 13px; color: #6B7280; font-weight: 500; margin: 0 0 6px;
+}
+.dov-stat-value {
+  font-size: 26px; font-weight: 900;
+  color: #111827; letter-spacing: -.02em; margin: 0;
+}
+
+/* ── Two-col grid ───────────────────────────────────────────────── */
+.dov-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* ── Card header ────────────────────────────────────────────────── */
+.dov-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.dov-card-title {
+  font-size: 15px; font-weight: 700; color: #111827; margin: 0;
+}
+
+/* ── Tab group ──────────────────────────────────────────────────── */
+.dov-tabs { display: flex; gap: 4px; }
+.dov-tab {
+  padding: 4px 12px; border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+  border: 1px solid #E5E7EB;
+  background: #fff; color: #6B7280;
+  cursor: pointer; transition: all .15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.dov-tab:hover { border-color: #9CA3AF; color: #374151; }
+.dov-tab.is-active {
+  background: #111827; border-color: #111827; color: #fff;
+}
+
+/* ── Booking status bars ────────────────────────────────────────── */
+.dov-status-list {
+  display: flex; flex-direction: column; gap: 1.1rem;
+}
+.dov-status-row {
+  display: flex; align-items: center; gap: 1rem;
+}
+.dov-status-name {
+  min-width: 82px; font-size: 13px; color: #6B7280; font-weight: 500;
+}
+.dov-status-track {
+  flex: 1; height: 10px;
+  background: #F3F4F6; border-radius: 999px; overflow: hidden;
+}
+.dov-status-bar {
+  height: 100%; border-radius: 999px;
+  animation: barGrow .6s ease both;
+  transition: width .5s ease;
+}
+.dov-status-pct {
+  min-width: 44px; text-align: right;
+  font-size: 13px; font-weight: 700; color: #111827;
+}
+
+/* ── Occupancy card body ────────────────────────────────────────── */
+.dov-occupancy-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 1rem;
+}
+.dov-occ-legend { display: flex; flex-direction: column; gap: 1.5rem; }
+.dov-occ-dot-row {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 6px;
+}
+.dov-occ-dot { width: 9px; height: 9px; border-radius: 50%; }
+.dov-occ-dot--lime { background: #A3E635; }
+.dov-occ-dot--gray { background: #E5E7EB; }
+.dov-occ-tag {
+  font-size: 10px; font-weight: 800; color: #9CA3AF;
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.dov-occ-value {
+  font-size: 22px; font-weight: 900; color: #111827; margin: 0;
+}
+
+/* ── SVG donut ──────────────────────────────────────────────────── */
+.dov-donut-svg    { flex-shrink: 0; }
+.dov-donut-track  { fill: none; stroke: #E5E7EB; stroke-width: 14; }
+.dov-donut-arc    {
+  fill: none; stroke: #A3E635; stroke-width: 14;
+  stroke-linecap: round;
+  transition: stroke-dasharray .6s ease;
+}
+.dov-donut-pct    {
+  font-size: 28px; font-weight: 900; fill: #111827;
+  font-family: 'Inter', sans-serif;
+}
+.dov-donut-label  {
+  font-size: 10px; font-weight: 700; fill: #6B7280;
+  letter-spacing: .08em; text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Chart canvas wrappers ──────────────────────────────────────── */
+.dov-chart-wrap     { height: 220px; position: relative; width: 100%; }
+.dov-chart-wrap--lg { height: 250px; position: relative; width: 100%; }
+
+/* =================================================================
+   PEAK HOUR — 3 STAT CARDS
+   ================================================================= */
+.dov-peak-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.dov-peak-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 12px;
+  padding: 16px 18px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  transition: box-shadow .15s;
+}
+.dov-peak-stat:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,.07);
+}
+
+.dov-peak-stat-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+
+/* Giữ nguyên — stat cards KHÔNG thay đổi */
+.dov-peak-stat--peak .dov-peak-stat-icon {
+  background: rgba(6,78,59,.10);
+  color: #064E3B;
+}
+.dov-peak-stat--low .dov-peak-stat-icon {
+  background: rgba(163,230,53,.18);
+  color: #4d7c0f;
+}
+.dov-peak-stat--normal .dov-peak-stat-icon {
+  background: rgba(0,0,0,.18);
+  color: #111827;
+}
+
+.dov-peak-stat-body { flex: 1; min-width: 0; }
+.dov-peak-stat-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: #9CA3AF; margin: 0 0 3px;
+}
+.dov-peak-stat-value {
+  font-size: 16px; font-weight: 800;
+  margin: 0 0 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dov-peak-stat-sub { font-size: 11px; color: #9CA3AF; margin: 0; }
+
+.dov-peak-stat--peak   .dov-peak-stat-value { color: #064E3B; }
+.dov-peak-stat--low    .dov-peak-stat-value { color: #4d7c0f; }
+.dov-peak-stat--normal .dov-peak-stat-value { color: #111827; }
+
+/* =================================================================
+   PEAK HOUR — HEATMAP
+   ================================================================= */
+.dov-heatmap-wrap { width: 100%; overflow-x: auto; }
+
+.dov-heatmap {
+  display: grid;
+  grid-template-columns: 54px repeat(7, 1fr);
+  width: 100%; min-width: 480px;
+}
+
+.dov-heatmap-row  { display: contents; }
+.dov-heatmap-cell {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; box-sizing: border-box;
+}
+
+.dov-heatmap-time {
+  justify-content: flex-start; padding-right: 8px;
+  color: #9CA3AF; font-size: 10px; font-weight: 600; height: 34px;
+}
+.dov-heatmap-day {
+  font-weight: 700; color: #374151; font-size: 11px; height: 32px;
+}
+.dov-heatmap-data {
+  height: 34px; border-radius: 5px; margin: 1.5px; cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.dov-heatmap-data:hover {
+  transform: scale(1.06);
+  box-shadow: 0 3px 10px rgba(0,0,0,.18);
+  z-index: 2; filter: brightness(0.93);
+}
+.dov-cell-time {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: -.01em; line-height: 1;
+  pointer-events: none; user-select: none;
+}
+
+/* =================================================================
+   PEAK HOUR — LEGEND
+   ================================================================= */
+.dov-peak-legend {
+  display: flex; align-items: center;
+  gap: 6px 20px; margin-top: 16px;
+  flex-wrap: wrap; padding-top: 14px;
+  border-top: 1px solid #F3F4F6;
+}
+.dov-peak-legend-title {
+  font-size: 10px; font-weight: 700; color: #9CA3AF;
+  text-transform: uppercase; letter-spacing: .08em;
+  flex-shrink: 0; margin-right: 4px;
+}
+.dov-peak-legend-item {
+  display: flex; align-items: center;
+  gap: 7px; font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.dov-peak-legend-swatch {
+  width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
+}
+
+/* ── Override content-area ──────────────────────────────────────── */
+.content-area:has(.dov-wrap) { padding: 0 !important; }
+.content-area > .dov-wrap    { margin: 0; }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .dov-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .dov-two-col    { grid-template-columns: 1fr; }
+  .dov-peak-stats { grid-template-columns: 1fr; gap: 10px; }
+}
+@media (max-width: 600px) {
+  .dov-stats-grid     { grid-template-columns: 1fr; }
+  .dov-wrap           { padding: 1rem; }
+  .dov-card-header    { flex-direction: column; align-items: flex-start; }
+  .dov-occupancy-body { flex-direction: column; gap: 1.5rem; }
+  .dov-peak-legend    { gap: 8px; }
+  .dov-heatmap        { grid-template-columns: 40px repeat(7, 1fr); }
+  .dov-heatmap-data   { height: 26px; }
+  .dov-cell-time      { font-size: 7px; }
+}

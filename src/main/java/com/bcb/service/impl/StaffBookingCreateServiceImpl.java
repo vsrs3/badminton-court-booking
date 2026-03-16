@@ -7,6 +7,8 @@ import com.bcb.dto.staff.StaffBookingCreateSlotDTO;
 import com.bcb.dto.staff.StaffCustomerAccountDTO;
 import com.bcb.repository.impl.StaffBookingCreateRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingCreateRepository;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.service.staff.StaffBookingCreateService;
 import com.bcb.utils.DBContext;
 import com.bcb.utils.staff.StaffAuthUtil;
@@ -26,6 +28,7 @@ import java.util.Map;
 public class StaffBookingCreateServiceImpl implements StaffBookingCreateService {
 
     private final StaffBookingCreateRepository repository = new StaffBookingCreateRepositoryImpl();
+    private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
     @Override
     public StaffBookingCreateOutcomeDTO createBooking(String body, int facilityId, Integer staffId) throws Exception {
@@ -38,6 +41,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         String accountIdStr = extractString(body, "accountId");
         String guestName = extractString(body, "guestName");
         String guestPhone = normalizePhone(extractString(body, "guestPhone"));
+        String guestEmail = normalizeEmail(extractString(body, "guestEmail"));
 
         List<StaffBookingCreateSlotDTO> slots = parseSlots(body);
         List<RentalItemDTO> rentals = parseRentals(body);
@@ -96,7 +100,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         }
 
         if (hasExpiredSlotForToday(bookingDate, slots)) {
-            return out(400, jsonError("Đã quá giờ kết thúc của một hoặc nhiều slot. Vui long chon slot khac."));
+            return out(400, jsonError("Đã quá giờ kết thúc của một hoặc nhiều slot. Vui lòng chọn slot khác."));
         }
 
         if (!validateRentals(rentals)) {
@@ -118,6 +122,13 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
             return out(200, "{\"success\":true,\"message\":\"Đặt sân thành công\",\"data\":{\"bookingId\":" + bookingId + "}}");
         } catch (SlotConflictException e) {
+                try {
+            int bookingId = createBookingTransaction(facilityId, bookingDate, customerType,
+                    accountId, guestName, guestPhone, guestEmail, staffId, slots);
+            EmailQueueService.EmailEnqueueResult emailResult =
+                    emailQueueService.enqueueBookingCreated(bookingId);
+            String json = buildSuccessJson(bookingId, emailResult);
+            return out(200, json);        } catch (SlotConflictException e) {
             return out(409, jsonError("Slot đã được đặt bởi người khác. Vui lòng chọn lại."));
         } catch (Exception e) {
             return out(500, jsonError("Lỗi hệ thống: " + e.getMessage()));
@@ -128,7 +139,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
      * Giữ nguyên chữ ký cũ để không ảnh hưởng logic cũ nếu nơi khác còn gọi.
      */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
-                                         Integer accountId, String guestName, String guestPhone,
+                                         Integer accountId, String guestName, String guestPhone, String guestEmail,
                                          int staffId, List<StaffBookingCreateSlotDTO> slots) throws Exception {
         return createBookingTransaction(
                 facilityId,
@@ -159,7 +170,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             try {
                 Integer guestId = null;
                 if ("GUEST".equals(customerType)) {
-                    guestId = repository.insertGuest(conn, guestName, guestPhone);
+                    guestId = repository.insertGuest(conn, guestName, guestPhone, guestEmail);
                 }
 
                 int bookingId = "ACCOUNT".equals(customerType)
@@ -536,12 +547,30 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
         return phone.replaceAll("\\s+", "").trim();
     }
 
+    private String normalizeEmail(String email) {
+        if (email == null) return null;
+        String v = email.trim();
+        return v.isEmpty() ? null : v;
+    }
+
+    private String buildSuccessJson(int bookingId, EmailQueueService.EmailEnqueueResult emailResult) {
+        StringBuilder data = new StringBuilder(96);
+        data.append("\"bookingId\":").append(bookingId);
+        if (emailResult != null) {
+            data.append(",\"emailQueued\":").append(emailResult.queued);
+            if (emailResult.warning != null && !emailResult.warning.isEmpty()) {
+                data.append(",\"emailWarning\":").append(StaffAuthUtil.escapeJson(emailResult.warning));
+            }
+        }
+        return "{\"success\":true,\"message\":\"Đặt sân thành công\",\"data\":{" + data + "}}";
+    }
+
     private String buildCourtSlotKey(Integer courtId, Integer slotId) {
         return courtId + "_" + slotId;
     }
 
     private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
-        return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"So dien thoai da ton tai tai khoan khach hang\",\"data\":{" +
+        return "{\"success\":false,\"code\":\"GUEST_PHONE_MATCHED_ACCOUNT\",\"message\":\"Số điện thoại đã tồn tại tài khoản khách hàng\",\"data\":{" +
                 "\"accountId\":" + account.getAccountId() + "," +
                 "\"fullName\":" + StaffAuthUtil.escapeJson(account.getFullName()) + "," +
                 "\"phone\":" + StaffAuthUtil.escapeJson(account.getPhone()) + "," +
@@ -567,4 +596,9 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
 }
+
+
+
+
+
 

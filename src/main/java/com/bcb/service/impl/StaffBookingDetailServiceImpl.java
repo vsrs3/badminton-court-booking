@@ -35,6 +35,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             StaffBookingDetailDataDTO data = new StaffBookingDetailDataDTO();
             data.setBookingId(header.getBookingId());
             data.setBookingDate(header.getBookingDate());
+            data.setRecurring(header.isRecurring());
+            data.setRecurringStartDate(header.getRecurringStartDate());
+            data.setRecurringEndDate(header.getRecurringEndDate());
             data.setBookingStatus(header.getBookingStatus());
             data.setCreatedAt(header.getCreatedAt());
             data.setCustomerName(header.getCustomerName());
@@ -106,6 +109,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         dto.setSessionIndex(index);
         dto.setCourtId(first.getCourtId());
         dto.setCourtName(first.getCourtName());
+        dto.setSessionDate(first.getBookingDate());
         dto.setStartTime(first.getStartTime());
         dto.setEndTime(last.getEndTime());
         dto.setSlotCount(displaySlotCount);
@@ -233,8 +237,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
 
             boolean sameCourt = prev.getCourtId() == curr.getCourtId();
             boolean consecutive = prev.getEndTime().equals(curr.getStartTime());
+            boolean sameDate = safeDate(prev.getBookingDate()).equals(safeDate(curr.getBookingDate()));
 
-            if (sameCourt && consecutive) {
+            if (sameCourt && consecutive && sameDate) {
                 current.add(curr);
             } else {
                 sessions.add(current);
@@ -244,8 +249,18 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         }
         sessions.add(current);
 
-        sessions.sort((a, b) -> a.get(0).getStartTime().compareTo(b.get(0).getStartTime()));
+        sessions.sort((a, b) -> {
+            String da = safeDate(a.get(0).getBookingDate());
+            String db = safeDate(b.get(0).getBookingDate());
+            int cmp = da.compareTo(db);
+            if (cmp != 0) return cmp;
+            return a.get(0).getStartTime().compareTo(b.get(0).getStartTime());
+        });
         return sessions;
+    }
+
+    private String safeDate(String date) {
+        return date == null ? "" : date;
     }
 
     private String deriveSessionStatus(List<StaffBookingDetailSlotDTO> session) {

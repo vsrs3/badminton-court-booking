@@ -233,7 +233,7 @@
 			<%-- EDIT PANEL --%>
 			<div id="sd-panel-ed" class="d-none">
 				<div class="sd-card">
-					<form
+					<form id="sd-edit-form"
 						action="${pageContext.request.contextPath}/owner/staffs/update"
 						method="POST">
 

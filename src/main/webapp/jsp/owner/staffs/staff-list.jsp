@@ -3,14 +3,14 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
+<%@ include file="../layout/layout.jsp"%>
+<%@ include file="../layout/sidebar.jsp"%>
+
 <!-- CSS -->
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/assets/css/staff-list.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/assets/css/reset-password.css">
-
-<%@ include file="../layout/layout.jsp"%>
-<%@ include file="../layout/sidebar.jsp"%>
 
 <div class="main-content">
 	<%@ include file="../layout/header.jsp"%>

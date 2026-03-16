@@ -1,10 +1,12 @@
 package com.bcb.dto.staff;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class StaffCheckinSessionSlotRowDTO {
     private int bookingSlotId;
     private int courtId;
+    private LocalDate sessionDate;
     private LocalTime startTime;
     private LocalTime endTime;
 
@@ -22,6 +24,14 @@ public class StaffCheckinSessionSlotRowDTO {
 
     public void setCourtId(int courtId) {
         this.courtId = courtId;
+    }
+
+    public LocalDate getSessionDate() {
+        return sessionDate;
+    }
+
+    public void setSessionDate(LocalDate sessionDate) {
+        this.sessionDate = sessionDate;
     }
 
     public LocalTime getStartTime() {

@@ -3,8 +3,62 @@
    Synced with badminton-pro design system
    ============================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500&display=swap');
+
+.booking-card,
+.history-header,
+.history-filter-row,
+.filter-btn,
+.badge,
+.btn-review,
+.btn-detail,
+.cancel-btn,
+.btn-search,
+.btn-clear-filter,
+.booking-info-row,
+.history-count,
+.booking-facility-name,
+.booking-facility-address,
+.notification {
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 /* ============================================
-   BOOKING CARD  (mirrors .court-card)
+   BACK BUTTON
+   ============================================ */
+
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0.5rem 0.625rem;
+    background-color: #F0FDF4;
+    color: #064E3B;
+    border: 1.5px solid #A3E635;
+    border-radius: 9999px;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+                color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.btn-back-home:hover {
+    background-color: #A3E635;
+    border-color: #A3E635;
+    color: #064E3B;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(6, 78, 59, 0.2);
+}
+.btn-back-home:hover i,
+.btn-back-home:hover svg { color: #064E3B; transform: translateX(-3px); }
+.btn-back-home:active     { transform: scale(0.97); box-shadow: none; }
+
+/* ============================================
+   BOOKING CARD
    ============================================ */
 
 .booking-card {
@@ -23,7 +77,7 @@
 }
 
 /* ============================================
-   STATUS BADGES  (pill system)
+   STATUS BADGES
    ============================================ */
 
 .badge {
@@ -34,7 +88,7 @@
     font-size: 0.625rem;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.08em;        /* matches home badge rhythm */
+    letter-spacing: 0.08em;
 }
 
 /* Booking type */
@@ -85,14 +139,14 @@
 .pay-paid    { color: #059669;               font-weight: 700; }
 
 /* ============================================
-   SEARCH INPUTS  (mirrors home .search-input)
+   SEARCH INPUTS
    ============================================ */
 
 .search-input {
     border: 1px solid var(--color-gray-200);
     border-radius: var(--radius-xl);
     padding: 0.625rem 1rem;
-    font-family: var(--font-family);
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-gray-800);
@@ -106,7 +160,7 @@
 }
 
 /* ============================================
-   FILTER STATUS TABS  (mirrors .filter-distance-btn)
+   FILTER STATUS TABS
    ============================================ */
 
 .filter-btn {
@@ -259,8 +313,7 @@
     color: white;
     border: 1px solid #064E3B;
     border-radius: var(--radius-md);
-    /* ── font giống hệt btn-review ── */
-    font-family: inherit;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.6875rem;
     font-weight: 900;
     text-transform: uppercase;
@@ -288,7 +341,7 @@
 }
 
 /* ============================================
-   EMPTY STATE  (mirrors .no-results)
+   EMPTY STATE
    ============================================ */
 
 .history-empty {
@@ -351,11 +404,21 @@
     box-shadow: var(--shadow-md);
     transition: all var(--transition-fast);
 }
-.btn-history-cta:hover {
-    filter: brightness(1.08);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+.btn-history-cta:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+.btn-book-now {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-top: 2rem; padding: 0.875rem 2.5rem; background-color: #A3E635;
+    color: #064E3B; border: 2px solid #A3E635; border-radius: 9999px;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem; font-weight: 900; font-style: normal;
+    text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(163, 230, 53, 0.35);
+    transition: background-color 0.2s ease, color 0.2s ease,
+                border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
+.btn-book-now:hover { background-color: #064E3B; border-color: #064E3B; color: #ffffff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(6, 78, 59, 0.28); }
+.btn-book-now:active { transform: scale(0.97); box-shadow: none; }
 
 /* ============================================
    RESULT COUNT LABEL  (mirrors .profile-section-label)
@@ -369,12 +432,10 @@
     color: var(--color-gray-400);
     padding: 0.5rem 0;
 }
-.history-count strong {
-    color: var(--color-green-brand);
-}
+.history-count strong { color: var(--color-green-brand); }
 
 /* ============================================
-   BOOKING INFO BLOCK (date/time inside card)
+   BOOKING INFO BLOCK
    ============================================ */
 
 .booking-info-block {
@@ -423,14 +484,8 @@
     to   { opacity: 1; transform: translateY(0);   }
 }
 
-
-
-
-
-
-
 /* ============================================
-   NOTIFICATION BANNERS — đồng bộ customer_view
+   NOTIFICATION BANNERS
    ============================================ */
 
 .notification {
@@ -454,7 +509,7 @@
 }
 
 /* ============================================
-   BOOKING CARD — INNER ELEMENTS
+   BOOKING CARD INNER ELEMENTS
    ============================================ */
 
 /* Booking ID tag */
@@ -517,24 +572,31 @@
     margin-bottom: 1.25rem;
 }
 
-
+.review-title-group { display: flex; align-items: center; gap: 8px; }
+.review-page-title {
+    font-size: 1.125rem; font-weight: 900; font-style: normal;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    text-transform: uppercase; letter-spacing: 0.04em; color: #064E3B; margin: 0; line-height: 1;
+}
+.review-title-icon { color: #A3E635; flex-shrink: 0; }
 
 /* ============================================
-   FILTER ROW — tất cả cùng chiều cao 44px
+   FILTER ROW
    ============================================ */
 
 .history-filter-row {
     display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
 }
 
-/* Wrapper cho label + input date */
+/* ── DATE GROUP: label LEFT of input, same row ── */
 .history-date-group {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
 }
 
 .history-date-label {
@@ -543,15 +605,17 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #6B7280;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    white-space: nowrap;          /* prevent label from wrapping */
 }
 
-/* Date picker */
+/* ── SIZE SYNC to match review-history (40px) ── */
 .history-date-input {
-    height: 44px;
+    height: 40px;                 /* CHANGED: was 44px */
     border: 1px solid #D1D5DB;
     border-radius: 10px;
-    padding: 0 14px;
-    font-family: inherit;
+    padding: 0 12px;              /* CHANGED: was 0 14px */
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
     font-size: 0.875rem;
     font-weight: 500;
     color: #1F2937;
@@ -571,22 +635,24 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    height: 44px;
-    padding: 0 20px;
+    height: 40px;                 /* CHANGED: was 44px */
+    padding: 0 18px;              /* CHANGED: was 0 20px */
     background-color: #064E3B;
     color: white;
     border: none;
     border-radius: 10px;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;         /* CHANGED: was 0.875rem */
+    font-weight: 700;             /* CHANGED: was 600 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-decoration: none;
     transition: background-color 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
-.btn-search:hover  { background-color: #065F46; }
+.btn-search:hover  { background-color: #A3E635; color: #064E3B; }  /* CHANGED: hover sync */
 .btn-search:active { transform: scale(0.97); }
 
 /* Button Xóa bộ lọc */
@@ -594,20 +660,54 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 44px;
-    padding: 0 20px;
-    background-color: #A3E635;
+    height: 40px;                 /* CHANGED: was 44px */
+    padding: 0 18px;              /* CHANGED: was 0 20px */
+    background-color: white;      /* CHANGED: was #A3E635 */
     color: #064E3B;
-    border: none;
+    border: 1.5px solid #A3E635;  /* CHANGED: added border */
     border-radius: 10px;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
+    font-family: 'Be Vietnam Pro', 'Inter', -apple-system, sans-serif;
+    font-size: 0.8125rem;         /* CHANGED: was 0.875rem */
+    font-weight: 700;             /* CHANGED: was 600 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-decoration: none;
-    transition: background-color 0.2s ease, transform 0.15s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
-.btn-clear-filter:hover  { background-color: #84CC16; color: #064E3B; }
+.btn-clear-filter:hover  { background-color: #A3E635; color: #064E3B; }
 .btn-clear-filter:active { transform: scale(0.97); }
+
+/* ============================================
+   TOP BAR LAYOUT — title+dates left, back+actions right
+   ============================================ */
+
+.history-top-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.history-top-left {
+    display: flex;
+    flex-direction: column;
+}
+
+/* RIGHT column: back button on top, action buttons below */
+.history-top-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.625rem;          /* khoảng cách giữa back button và 2 nút */
+    flex-shrink: 0;
+}
+
+/* Action buttons row: Tìm kiếm + Xóa bộ lọc */
+.history-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

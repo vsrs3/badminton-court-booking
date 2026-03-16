@@ -11,7 +11,7 @@ import java.util.Map;
 public interface StaffBookingCreateRepository {
     StaffCustomerAccountDTO findActiveCustomerByPhone(String phone) throws Exception;
 
-    Integer insertGuest(Connection conn, String guestName, String guestPhone) throws Exception;
+    Integer insertGuest(Connection conn, String guestName, String guestPhone, String guestEmail) throws Exception;
 
     int insertBookingForAccount(Connection conn, int facilityId, java.time.LocalDate bookingDate,
                                 int accountId, int staffId) throws Exception;

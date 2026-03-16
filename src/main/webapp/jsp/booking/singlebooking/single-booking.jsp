@@ -20,7 +20,7 @@
         dateParam = java.time.LocalDate.now().toString();
     }
     if (venueId == null || venueId.isEmpty()) {
-        response.sendRedirect(ctx + "/");
+        response.sendRedirect(ctx + "/home");
         return;
     }
 %>
@@ -118,6 +118,13 @@
             justify-content: center; font-size: .83rem; border-radius: .4rem;
             cursor: pointer; user-select: none; transition: background .1s;
         }
+        .cal-weekdays,
+        #calDays {
+            display: grid;
+            grid-template-columns: repeat(7, 2rem);
+            justify-content: space-between;
+            row-gap: .25rem;
+        }
         .cal-day:hover:not(.past-day):not(.empty-day) { background: #f1f5f9; }
         .cal-day.selected-day { background: #10b981 !important; color: #fff; font-weight: 700; }
         .cal-day.today-day    { border: 2px solid #6ee7b7; color: #059669; font-weight: 700; }
@@ -147,7 +154,7 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
 
             <div class="d-flex align-items-center gap-3">
-                <a href="<%= ctx %>/" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+                <a href="<%= ctx %>/home" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
                     <i class="bi bi-chevron-left"></i> Quay lại
                 </a>
                 <div>
@@ -174,12 +181,12 @@
                         <span class="fw-bold small" id="calMonthYear"></span>
                         <button class="btn btn-sm btn-link p-1 text-dark" id="calNext"><i class="bi bi-chevron-right"></i></button>
                     </div>
-                    <div class="d-flex justify-content-between mb-1">
+                    <div class="cal-weekdays mb-1">
                         <% for (String wd : new String[]{"CN","T2","T3","T4","T5","T6","T7"}) { %>
                         <div class="cal-day text-muted fw-bold" style="cursor:default;font-size:.72rem;"><%= wd %></div>
                         <% } %>
                     </div>
-                    <div id="calDays" class="d-flex flex-wrap"></div>
+                    <div id="calDays"></div>
                 </div>
             </div>
         </div>
@@ -405,7 +412,7 @@
         const today       = new Date(); today.setHours(0,0,0,0);
 
         calDaysEl.innerHTML = '';
-        for (let i=0; i<firstDow; i++) {
+        for (let i=1; i<firstDow; i++) {
             const b = document.createElement('div');
             b.className = 'cal-day empty-day';
             calDaysEl.appendChild(b);

@@ -1,0 +1,1 @@
+package com.bcb.service.staff;import com.bcb.dto.staff.StaffRefundConfirmResultDTO;public interface StaffRefundConfirmService {    StaffRefundConfirmResultDTO confirmRefund(int bookingId, int facilityId, int staffId, String note) throws Exception;}

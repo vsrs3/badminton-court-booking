@@ -20,12 +20,14 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
     public StaffBookingDetailHeaderDTO findBookingHeader(Connection conn, int bookingId) throws Exception {
         String sql = """
                 SELECT b.booking_id, b.booking_date, b.booking_status, b.created_at, b.facility_id,
+                       b.recurring_id, rb.start_date AS recurring_start_date, rb.end_date AS recurring_end_date,
                        COALESCE(a.full_name, g.guest_name) AS customer_name,
                        COALESCE(a.phone, g.phone) AS customer_phone,
                        CASE WHEN b.account_id IS NOT NULL THEN 'ACCOUNT' ELSE 'GUEST' END AS customer_type
                 FROM Booking b
                 LEFT JOIN Account a ON b.account_id = a.account_id
                 LEFT JOIN Guest g   ON b.guest_id = g.guest_id
+                LEFT JOIN RecurringBooking rb ON b.recurring_id = rb.recurring_id
                 WHERE b.booking_id = ?
                 """;
 
@@ -37,6 +39,9 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                 StaffBookingDetailHeaderDTO header = new StaffBookingDetailHeaderDTO();
                 header.setBookingId(rs.getInt("booking_id"));
                 header.setBookingDate(rs.getString("booking_date"));
+                header.setRecurring(rs.getObject("recurring_id") != null);
+                header.setRecurringStartDate(rs.getString("recurring_start_date"));
+                header.setRecurringEndDate(rs.getString("recurring_end_date"));
                 header.setBookingStatus(rs.getString("booking_status"));
                 header.setCreatedAt(tsToStr(rs.getTimestamp("created_at")));
                 header.setFacilityId(rs.getInt("facility_id"));
@@ -51,14 +56,14 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
     @Override
     public List<StaffBookingDetailSlotDTO> findBookingSlots(Connection conn, int bookingId) throws Exception {
         String sql = """
-                SELECT bs.booking_slot_id, bs.court_id, c.court_name,
+                SELECT bs.booking_slot_id, bs.court_id, c.court_name, bs.booking_date,
                        bs.slot_id, ts.start_time, ts.end_time,
                        bs.price, bs.slot_status, bs.is_released, bs.checkin_time, bs.checkout_time
                 FROM BookingSlot bs
                 JOIN Court c     ON bs.court_id = c.court_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
                 WHERE bs.booking_id = ?
-                ORDER BY c.court_name, ts.start_time
+                ORDER BY bs.booking_date, c.court_name, ts.start_time
                 """;
 
         List<StaffBookingDetailSlotDTO> slots = new ArrayList<>();
@@ -70,6 +75,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                     slot.setBookingSlotId(rs.getInt("booking_slot_id"));
                     slot.setCourtId(rs.getInt("court_id"));
                     slot.setCourtName(rs.getString("court_name"));
+                    slot.setBookingDate(rs.getString("booking_date"));
                     slot.setSlotId(rs.getInt("slot_id"));
                     slot.setStartTime(fmtTime(rs.getTime("start_time")));
                     slot.setEndTime(fmtTime(rs.getTime("end_time")));

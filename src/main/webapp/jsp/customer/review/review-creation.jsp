@@ -1,39 +1,9 @@
 <!-- review-creation.jsp -->
-         
+
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-review-adding.css" />
-
-<style>
-    /* ── CSS-only star rating ── */
-    .stars-row {
-        display: flex;
-        flex-direction: row-reverse;
-        justify-content: flex-end;
-        gap: 4px;
-        margin-top: 8px;
-    }
-    .stars-row input[type="radio"] {
-        display: none;
-    }
-    .stars-row label {
-        font-size: 2rem;
-        color: #ccc;
-        cursor: pointer;
-        transition: color 0.15s;
-        user-select: none;
-    }
-    /* Hover: tô sao đang hover và tất cả sao sau nó (flex-reverse trick) */
-    .stars-row label:hover,
-    .stars-row label:hover ~ label {
-        color: #f59e0b;
-    }
-    /* Đã chọn: tô sao được chọn và tất cả sao sau nó */
-    .stars-row input[type="radio"]:checked ~ label {
-        color: #f59e0b;
-    }
-</style>
 
 <div class="review-page">
 
@@ -55,33 +25,41 @@
         <!-- REVIEW FORM CARD -->
         <div class="review-card">
             <form id="reviewForm" method="POST"
-                  action="${pageContext.request.contextPath}/reviews">
+                  action="${pageContext.request.contextPath}/reviews"
+                  onsubmit="var rating=this.querySelector('input[name=\'rating\']:checked');var comment=document.getElementById('reviewComment');var commentErr=document.getElementById('commentError');var ratingErr=document.getElementById('ratingError');var val=comment?comment.value.trim():'';if(comment&&comment.dataset.invalid==='true'){comment.focus();return false;}if(val.length>0&&val.length<5){if(commentErr)commentErr.style.display='block';return false;}if(commentErr)commentErr.style.display='none';if(!rating){if(ratingErr){ratingErr.style.display='block';ratingErr.scrollIntoView({behavior:'smooth',block:'center'});}return false;}return true;">
 
                 <input type="hidden" name="action"    value="add" />
                 <input type="hidden" name="bookingId" value="${sessionScope.bookingId}" />
 
                 <div class="review-content">
 
-                    <!-- Star Rating: radio inputs + CSS thuần, KHÔNG cần JS -->
+                    <!-- Star Rating -->
                     <div class="review-section">
                         <span class="review-section-label">
                             <i data-lucide="star" class="icon-xs"></i>
                             Đánh giá của bạn <span style="color:red">*</span>
                         </span>
-                        <!-- flex-direction: row-reverse → đặt input theo thứ tự 5 → 1 -->
                         <div class="stars-row">
-                            <input type="radio" id="star5" name="rating" value="5" />
+                            <input type="radio" id="star5" name="rating" value="5"
+                                   onchange="document.getElementById('ratingError').style.display='none'" />
                             <label for="star5" title="Xuất sắc!">&#9733;</label>
-                            <input type="radio" id="star4" name="rating" value="4" />
+                            <input type="radio" id="star4" name="rating" value="4"
+                                   onchange="document.getElementById('ratingError').style.display='none'" />
                             <label for="star4" title="Tốt">&#9733;</label>
-                            <input type="radio" id="star3" name="rating" value="3" />
+                            <input type="radio" id="star3" name="rating" value="3"
+                                   onchange="document.getElementById('ratingError').style.display='none'" />
                             <label for="star3" title="Bình thường">&#9733;</label>
-                            <input type="radio" id="star2" name="rating" value="2" />
+                            <input type="radio" id="star2" name="rating" value="2"
+                                   onchange="document.getElementById('ratingError').style.display='none'" />
                             <label for="star2" title="Tệ">&#9733;</label>
-                            <input type="radio" id="star1" name="rating" value="1" />
+                            <input type="radio" id="star1" name="rating" value="1"
+                                   onchange="document.getElementById('ratingError').style.display='none'" />
                             <label for="star1" title="Rất tệ">&#9733;</label>
                         </div>
-                        <p class="star-hint" id="starHint">Nhấn để chọn số sao</p>
+                        <p class="star-hint">Nhấn để chọn số sao</p>
+                        <p class="error-msg" id="ratingError" style="display:none">
+                            Vui lòng chọn số sao trước khi gửi.
+                        </p>
                     </div>
 
                     <!-- Textarea -->
@@ -92,12 +70,27 @@
                         </span>
                         <div class="textarea-wrap">
                             <textarea id="reviewComment" name="comment"
-                                      class="review-textarea" maxlength="500"
-                                      placeholder="Chia sẻ trải nghiệm của bạn về sân (không vượt quá 500 kí tự)..."></textarea>
+                                      class="review-textarea"
+                                      placeholder="Chia sẻ trải nghiệm của bạn về sân (không vượt quá 500 kí tự)..."
+                                      oninput="
+                                        var len = this.value.length;
+                                        var trimLen = this.value.trim().length;
+                                        var el = document.getElementById('charCount');
+                                        var errEl = document.getElementById('commentError');
+                                        if (el) {
+                                            el.textContent = len;
+                                            el.style.color = len > 500 ? '#EF4444' : (len > 450 ? '#F59E0B' : '#6B7280');
+                                        }
+                                        this.dataset.invalid = len > 500 ? 'true' : 'false';
+                                        if (errEl) errEl.style.display = (trimLen > 0 && trimLen < 5) ? 'block' : 'none';
+                                      "></textarea>
                         </div>
-                        <p class="error-msg" id="commentError" style="display:none">
-                            Nhận xét cần ít nhất 5 ký tự (hoặc để trống).
-                        </p>
+                        <div class="char-counter-row">
+                            <p class="error-msg" id="commentError" style="display:none">
+                                Nhận xét cần ít nhất 5 ký tự (hoặc để trống).
+                            </p>
+                            <span class="char-counter"><span id="charCount">0</span>/500</span>
+                        </div>
                     </div>
 
                 </div>
@@ -107,7 +100,16 @@
                         <i data-lucide="send" class="icon-sm"></i>
                         <span>Gửi đánh giá</span>
                     </button>
-                    <button type="button" class="btn-reset-review">
+                    <button type="button" class="btn-reset-review"
+                            onclick="
+                              document.querySelectorAll('input[name=\'rating\']').forEach(function(r){ r.checked=false; });
+                              var c = document.getElementById('reviewComment');
+                              var cc = document.getElementById('charCount');
+                              if (c)  { c.value=''; c.dataset.invalid='false'; }
+                              if (cc) { cc.textContent='0'; cc.style.color='#6B7280'; }
+                              document.getElementById('commentError').style.display='none';
+                              document.getElementById('ratingError').style.display='none';
+                            ">
                         <i data-lucide="refresh-cw" class="icon-sm"></i>
                         <span>Đặt lại</span>
                     </button>
@@ -181,40 +183,4 @@
     </div>
 </div>
 
-<!-- JS -->
-<script>
-    // Dùng event delegation → hoạt động dù inject qua innerHTML
-    document.addEventListener('submit', function(e) {
-        if (e.target && e.target.id === 'reviewForm') {
-            var rating  = document.querySelector('input[name="rating"]:checked');
-            var comment = document.getElementById('reviewComment');
-            var errEl   = document.getElementById('commentError');
-            var val     = comment ? comment.value.trim() : '';
-
-            if (val.length > 0 && val.length < 5) {
-                if (errEl) errEl.style.display = 'block';
-                e.preventDefault();
-                return;
-            }
-            if (errEl) errEl.style.display = 'none';
-
-            if (!rating) {
-                alert('Vui lòng chọn số sao trước khi gửi.');
-                e.preventDefault();
-                return;
-            }
-        }
-    });
-
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.closest('[onclick*="resetReview"]')) {
-            document.querySelectorAll('input[name="rating"]').forEach(function(r) {
-                r.checked = false;
-            });
-            var comment = document.getElementById('reviewComment');
-            var errEl   = document.getElementById('commentError');
-            if (comment) comment.value = '';
-            if (errEl)   errEl.style.display = 'none';
-        }
-    });
-</script>
+ 

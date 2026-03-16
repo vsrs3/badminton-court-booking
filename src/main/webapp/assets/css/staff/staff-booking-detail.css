@@ -111,6 +111,20 @@
     color: #DC2626;
 }
 
+.sbd-tag {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #EEF2FF;
+    color: #3730A3;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 /* Status badge (large) */
 .sbd-status-badge {
     display: inline-flex;

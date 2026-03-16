@@ -47,3 +47,82 @@
 
 .italic { font-style: italic; }
 .uppercase { text-transform: uppercase; }
+
+/* ======================================================
+   LIFT EFFECT – applied to ALL action buttons via .btn-lift
+   ====================================================== */
+.btn-lift {
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+}
+.btn-lift:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.btn-lift:active {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ======================================================
+   SMART PRICE CONFIG TABLE UX
+   ====================================================== */
+
+/* Row hover highlight */
+#smartPriceTable tbody tr.sp-row {
+    transition: background-color 0.15s ease;
+}
+#smartPriceTable tbody tr.sp-row:hover {
+    background-color: rgba(6, 78, 59, 0.04);
+}
+
+/* Input focus glow (theme colour) */
+#smartPriceTable .form-control:focus,
+#smartPriceTable .time-picker-display:focus {
+    border-color: var(--primary-color, #064E3B);
+    box-shadow: 0 0 0 0.2rem rgba(6, 78, 59, 0.18);
+    outline: none;
+}
+
+/* Delete icon hover → red tint */
+.sp-del-btn:hover i {
+    color: #dc3545;
+}
+
+/* Allow time-picker dropdown to overflow table cells */
+#smartPriceTable,
+#smartPriceTable tbody,
+#smartPriceTable tr,
+#smartPriceTable td {
+    overflow: visible;
+}
+/* But keep the outer scroll wrapper clipping only horizontally */
+#smartPriceTable .table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+/* Hide number input spinners in the smart table */
+#smartPriceTable input[type=number]::-webkit-outer-spin-button,
+#smartPriceTable input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#smartPriceTable input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Time-picker display inside smart table – full width */
+#smartPriceTable .time-picker-display {
+    min-width: 120px;
+}
+
+/* Allow TimePicker dropdown to escape scrollable modal body */
+#smartPriceModal .modal-body {
+    overflow: visible !important;
+}
+#smartPriceModal .modal-content {
+    overflow: visible;
+}
+
+
+
