@@ -117,6 +117,19 @@
                     </h2>
                     <p class="srs-section-subtitle">Số lượng tổng và số lượng khả dụng được cập nhật khi trạng thái thuê thay đổi.</p>
                 </div>
+                <div class="srs-realtime-panel">
+                    <div class="srs-realtime-pill">
+                        <span class="srs-realtime-label">Thời gian hiện tại</span>
+                        <strong class="srs-realtime-value" id="inventoryCurrentTime">--:--</strong>
+                    </div>
+                    <div class="srs-realtime-pill">
+                        <span class="srs-realtime-label">Slot hiện tại</span>
+                        <strong class="srs-realtime-value" id="inventoryCurrentSlot">Chưa xác định</strong>
+                    </div>
+                    <div class="srs-realtime-note" id="inventoryRealtimeHint">
+                        Chỉ slot đang chứa thời gian hiện tại của ngày hôm nay mới được cập nhật trạng thái.
+                    </div>
+                </div>
             </div>
 
             <div class="table-responsive srs-inventory-wrap">
@@ -143,10 +156,11 @@
                 <h5 class="modal-title" id="rentalDetailModalLabel">
                     <i class="bi bi-bag-check me-2"></i>Chi Tiết Thuê Đồ
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="srs-modal-context" id="rentalDetailContext"></div>
+                <div class="srs-modal-note d-none" id="rentalDetailModeHint"></div>
 
                 <div class="table-responsive">
                     <table class="table srs-detail-table">

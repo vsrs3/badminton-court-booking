@@ -14,6 +14,7 @@ import com.bcb.utils.DBContext;
 
 import java.sql.Connection;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -98,6 +99,8 @@ public class StaffRentalStatusServiceImpl implements StaffRentalStatusService {
     @Override
     public StaffRentalStatusUpdateResultDTO updateRentalStatus(int facilityId, int scheduleId, String nextStatus)
             throws Exception {
+        validateCurrentSlotForStatusUpdate(facilityId, scheduleId);
+
         int updatedCount = repository.updateScheduleStatus(facilityId, scheduleId, nextStatus);
 
         StaffRentalStatusUpdateResultDTO result = new StaffRentalStatusUpdateResultDTO();
@@ -129,6 +132,32 @@ public class StaffRentalStatusServiceImpl implements StaffRentalStatusService {
             return STATUS_RENTED;
         }
         return STATUS_RETURNED;
+    }
+
+    private void validateCurrentSlotForStatusUpdate(int facilityId, int scheduleId) throws Exception {
+        try (Connection conn = DBContext.getConnection()) {
+            StaffRentalStatusRawRowDTO schedule = repository.findScheduleRowById(conn, facilityId, scheduleId);
+
+            if (schedule == null) {
+                throw new IllegalArgumentException("Không tìm thấy lịch thuê đồ cần cập nhật.");
+            }
+
+            if (!LocalDate.now().equals(schedule.getBookingDate())) {
+                throw new IllegalArgumentException("Chỉ được cập nhật trạng thái cho lịch thuê đồ của ngày hôm nay.");
+            }
+
+            LocalTime startTime = schedule.getStartTime();
+            LocalTime endTime = schedule.getEndTime();
+            if (startTime == null || endTime == null) {
+                throw new IllegalArgumentException("Không xác định được khung giờ của lịch thuê đồ.");
+            }
+
+            LocalTime now = LocalTime.now();
+            boolean inCurrentSlot = !now.isBefore(startTime) && now.isBefore(endTime);
+            if (!inCurrentSlot) {
+                throw new IllegalArgumentException("Chỉ slot đang chứa thời gian hiện tại mới được cập nhật trạng thái.");
+            }
+        }
     }
 
     private String defaultString(String value) {

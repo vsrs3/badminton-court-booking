@@ -211,6 +211,10 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
         }
     }
 
+    public StaffRentalStatusRawRowDTO findScheduleRowById(Connection conn, int facilityId, int scheduleId) throws Exception {
+        return loadScheduleRowForUpdate(conn, facilityId, scheduleId);
+    }
+
     private StaffRentalStatusRawRowDTO loadScheduleRowForUpdate(Connection conn, int facilityId, int scheduleId) throws Exception {
         String sql = """
                 SELECT
@@ -218,10 +222,14 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
                     irs.booking_date,
                     irs.court_id,
                     irs.slot_id,
+                    ts.start_time,
+                    ts.end_time,
                     irs.inventory_id,
                     irs.quantity,
                     irs.status
                 FROM InventoryRentalSchedule irs WITH (UPDLOCK, ROWLOCK)
+                JOIN TimeSlot ts
+                    ON ts.slot_id = irs.slot_id
                 WHERE irs.facility_id = ?
                   AND irs.id = ?
                 """;
@@ -238,6 +246,8 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
                 row.setBookingDate(rs.getDate("booking_date").toLocalDate());
                 row.setCourtId(rs.getInt("court_id"));
                 row.setSlotId(rs.getInt("slot_id"));
+                row.setStartTime(rs.getTime("start_time").toLocalTime());
+                row.setEndTime(rs.getTime("end_time").toLocalTime());
                 row.setInventoryId(rs.getInt("inventory_id"));
                 row.setQuantity(rs.getInt("quantity"));
                 row.setStatus(rs.getString("status"));
@@ -272,10 +282,10 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
 
         try (PreparedStatement ps = conn.prepareStatement(selectSql)) {
             ps.setInt(1, facilityId);
-            ps.setInt(2, inventoryId);
+                ps.setInt(2, inventoryId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    throw new IllegalArgumentException("Khong tim thay ton kho cua do thue.");
+                    throw new IllegalArgumentException("Không tìm thấy tồn kho của đồ thuê.");
                 }
                 totalQuantity = rs.getInt("total_quantity");
                 availableQuantity = rs.getInt("available_quantity");
@@ -284,10 +294,10 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
 
         int nextAvailable = availableQuantity + delta;
         if (nextAvailable < 0) {
-            throw new IllegalArgumentException("So luong kha dung khong du de chuyen sang trang thai dang thue.");
+            throw new IllegalArgumentException("Số lượng khả dụng không đủ để chuyển sang trạng thái đang thuê.");
         }
         if (nextAvailable > totalQuantity) {
-            throw new IllegalArgumentException("So luong kha dung khong the vuot qua tong so luong trong kho.");
+            throw new IllegalArgumentException("Số lượng khả dụng không thể vượt quá tổng số lượng trong kho.");
         }
 
         String updateSql = """
@@ -322,7 +332,7 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
                 }
             }
         }
-        throw new IllegalArgumentException("Khong tim thay ton kho cua do thue.");
+        throw new IllegalArgumentException("Không tìm thấy tồn kho của đồ thuê.");
     }
 
     private int updateScheduleRow(Connection conn, int facilityId, int scheduleId, String nextStatus, int latestAvailable) throws Exception {

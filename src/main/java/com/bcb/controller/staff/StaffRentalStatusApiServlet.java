@@ -30,12 +30,12 @@ public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
         try {
             LocalDate selectedDate = parseDate(request.getParameter("date"));
             writeJson(response, JsonResponseUtil.success(
-                    "Tai du lieu thanh cong",
+                    "Tải dữ liệu thành công",
                     service.getRentalStatusData(auth.facilityId, selectedDate)
             ));
         } catch (Exception e) {
             e.printStackTrace();
-            writeError(response, 500, "Loi he thong");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 
@@ -52,12 +52,12 @@ public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
         String status = request.getParameter("status");
 
         if (scheduleId <= 0) {
-            writeError(response, 400, "Thieu scheduleId");
+            writeError(response, 400, "Thiếu scheduleId.");
             return;
         }
 
         if (!"RENTED".equals(status) && !"RENTING".equals(status) && !"RETURNED".equals(status)) {
-            writeError(response, 400, "Trang thai khong hop le");
+            writeError(response, 400, "Trạng thái không hợp lệ.");
             return;
         }
 
@@ -65,15 +65,15 @@ public class StaffRentalStatusApiServlet extends BaseStaffApiServlet {
             StaffRentalStatusUpdateResultDTO result =
                     service.updateRentalStatus(auth.facilityId, scheduleId, status);
             if (result.getUpdatedCount() <= 0) {
-                writeError(response, 404, "Khong tim thay du lieu can cap nhat");
+                writeError(response, 404, "Không tìm thấy dữ liệu cần cập nhật.");
                 return;
             }
-            writeJson(response, JsonResponseUtil.success("Cap nhat trang thai thanh cong", result));
+            writeJson(response, JsonResponseUtil.success("Cập nhật trạng thái thành công", result));
         } catch (IllegalArgumentException e) {
             writeError(response, 400, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            writeError(response, 500, "Loi he thong");
+            writeError(response, 500, "Lỗi hệ thống");
         }
     }
 

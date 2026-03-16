@@ -2,7 +2,6 @@
     'use strict';
 
     var CTX = window.ST_CTX || '';
-    var TODAY_STR = formatDateInput(new Date());
 
     var btnToday = document.getElementById('btnToday');
     var btnTomorrow = document.getElementById('btnTomorrow');
@@ -15,15 +14,20 @@
     var gridHeaderRow = document.getElementById('gridHeaderRow');
     var gridBody = document.getElementById('gridBody');
     var errorMessage = document.getElementById('errorMessage');
+    var inventoryCurrentTime = document.getElementById('inventoryCurrentTime');
+    var inventoryCurrentSlot = document.getElementById('inventoryCurrentSlot');
+    var inventoryRealtimeHint = document.getElementById('inventoryRealtimeHint');
     var inventoryTableBody = document.getElementById('inventoryTableBody');
     var rentalDetailContext = document.getElementById('rentalDetailContext');
+    var rentalDetailModeHint = document.getElementById('rentalDetailModeHint');
     var rentalDetailBody = document.getElementById('rentalDetailBody');
     var rentalDetailEmpty = document.getElementById('rentalDetailEmpty');
     var rentalDetailModalEl = document.getElementById('rentalDetailModal');
     var detailModal = null;
+    var liveClockTimerId = null;
 
     var state = {
-        selectedDate: TODAY_STR,
+        selectedDate: getTodayStr(),
         courts: [],
         slots: [],
         cells: [],
@@ -43,16 +47,17 @@
         }
 
         bindEvents();
+        startLiveClock();
 
         var params = new URLSearchParams(window.location.search);
-        var initialDate = normalizeDate(params.get('date')) || TODAY_STR;
+        var initialDate = normalizeDate(params.get('date')) || getTodayStr();
         loadRentalStatus(initialDate);
     }
 
     function bindEvents() {
         if (btnToday) {
             btnToday.addEventListener('click', function () {
-                loadRentalStatus(TODAY_STR);
+                loadRentalStatus(getTodayStr());
             });
         }
 
@@ -83,6 +88,24 @@
         }
     }
 
+    function startLiveClock() {
+        renderRealtimePanels();
+
+        if (liveClockTimerId) {
+            window.clearInterval(liveClockTimerId);
+        }
+
+        liveClockTimerId = window.setInterval(function () {
+            renderRealtimePanels();
+
+            if (state.selectedDate === getTodayStr() && gridScroll && !gridScroll.classList.contains('d-none')) {
+                renderTimelineGrid();
+            }
+
+            refreshOpenModal();
+        }, 30000);
+    }
+
     function showState(mode) {
         toggleHidden(stateLoading, mode !== 'loading');
         toggleHidden(stateError, mode !== 'error');
@@ -91,7 +114,7 @@
     }
 
     function loadRentalStatus(dateStr, reopenCellKey) {
-        var nextDate = normalizeDate(dateStr) || state.selectedDate || TODAY_STR;
+        var nextDate = normalizeDate(dateStr) || state.selectedDate || getTodayStr();
 
         state.selectedDate = nextDate;
         state.reopenCellKey = reopenCellKey || null;
@@ -101,6 +124,7 @@
         }
 
         updateDateControls(nextDate);
+        renderRealtimePanels();
         showState('loading');
         renderInventoryLoading();
         updateUrl(nextDate);
@@ -117,6 +141,7 @@
                     throw new Error(body.message || 'Không thể tải dữ liệu.');
                 }
                 hydrateState(body.data || {});
+                renderRealtimePanels();
                 renderInventoryTable();
                 renderTimelineGrid();
                 reopenModalIfNeeded();
@@ -126,6 +151,7 @@
                 if (errorMessage) {
                     errorMessage.textContent = error.message || 'Không thể tải dữ liệu.';
                 }
+                renderRealtimePanels();
                 renderInventoryTable();
                 showState('error');
                 closeDetailModal();
@@ -133,7 +159,7 @@
     }
 
     function hydrateState(data) {
-        state.selectedDate = normalizeDate(data.selectedDate) || state.selectedDate || TODAY_STR;
+        state.selectedDate = normalizeDate(data.selectedDate) || state.selectedDate || getTodayStr();
         state.courts = Array.isArray(data.courts) ? data.courts : [];
         state.slots = Array.isArray(data.slots) ? data.slots : [];
         state.cells = Array.isArray(data.cells) ? data.cells : [];
@@ -297,6 +323,44 @@
             '<tr><td colspan="4" class="text-center text-muted py-4">Đang tải dữ liệu kho đồ...</td></tr>';
     }
 
+    function renderRealtimePanels() {
+        renderInventoryRealtimeInfo();
+        refreshOpenModal();
+    }
+
+    function renderInventoryRealtimeInfo() {
+        if (inventoryCurrentTime) {
+            inventoryCurrentTime.textContent = getCurrentTimeLabel();
+        }
+
+        var currentSlot = getCurrentRuntimeSlot();
+        if (inventoryCurrentSlot) {
+            inventoryCurrentSlot.textContent = currentSlot
+                ? (currentSlot.startTime + ' - ' + currentSlot.endTime)
+                : 'Hiện tại không nằm trong slot nào';
+        }
+
+        if (inventoryRealtimeHint) {
+            inventoryRealtimeHint.textContent = buildInventoryRealtimeHint(currentSlot);
+        }
+    }
+
+    function buildInventoryRealtimeHint(currentSlot) {
+        if (state.selectedDate === getTodayStr()) {
+            if (currentSlot) {
+                return 'Slot hiện tại ' + currentSlot.startTime + ' - ' + currentSlot.endTime +
+                    ' của hôm nay có thể cập nhật trạng thái thuê đồ.';
+            }
+            return 'Hiện tại không nằm trong slot nào nên bạn chỉ có thể xem thông tin thuê đồ.';
+        }
+
+        if (state.selectedDate > getTodayStr()) {
+            return 'Ngày đang xem nằm trong tương lai nên chỉ có thể xem thông tin thuê đồ.';
+        }
+
+        return 'Ngày đang xem đã qua nên chỉ có thể xem lại thông tin thuê đồ.';
+    }
+
     function openDetailModal(cellKey) {
         var cell = state.cellMap[cellKey];
         if (!cell) {
@@ -311,16 +375,8 @@
         state.modalCellKey = cellKey;
         state.reopenCellKey = cellKey;
 
-        if (rentalDetailContext) {
-            var court = findCourt(cell.courtId);
-            rentalDetailContext.innerHTML = '' +
-                '<strong>' + esc(court ? court.courtName : ('Sân ' + cell.courtId)) + '</strong>' +
-                '<span>' + esc(slot.startTime + ' - ' + slot.endTime) + '</span>' +
-                '<span>' + esc(formatDisplayDate(state.selectedDate)) + '</span>' +
-                '<span>' + esc(cell.customerName || 'Khách thuê') + '</span>';
-        }
-
-        renderDetailItems(cell);
+        renderDetailContext(cell, slot);
+        renderDetailItems(cell, slot);
 
         if (detailModal) {
             detailModal.show();
@@ -332,6 +388,19 @@
             rentalDetailModalEl.style.display = 'block';
             rentalDetailModalEl.removeAttribute('aria-hidden');
         }
+    }
+
+    function renderDetailContext(cell, slot) {
+        if (!rentalDetailContext) {
+            return;
+        }
+
+        var court = findCourt(cell.courtId);
+        rentalDetailContext.innerHTML = '' +
+            '<strong>' + esc(court ? court.courtName : ('Sân ' + cell.courtId)) + '</strong>' +
+            '<span>' + esc(slot.startTime + ' - ' + slot.endTime) + '</span>' +
+            '<span>' + esc(formatDisplayDate(state.selectedDate)) + '</span>' +
+            '<span>' + esc(cell.customerName || 'Khách thuê') + '</span>';
     }
 
     function closeDetailModal() {
@@ -349,12 +418,16 @@
         }
     }
 
-    function renderDetailItems(cell) {
+    function renderDetailItems(cell, slot) {
         if (!rentalDetailBody || !rentalDetailEmpty) {
             return;
         }
 
         var items = Array.isArray(cell.items) ? cell.items : [];
+        var editable = canEditSlot(slot);
+
+        renderDetailModeHint(slot, editable);
+
         if (!items.length) {
             rentalDetailBody.innerHTML = '';
             rentalDetailEmpty.classList.remove('d-none');
@@ -370,13 +443,32 @@
                 '       <div class="srs-detail-name">' + esc(item.inventoryName || '') + '</div>' +
                 '   </td>' +
                 '   <td>' + formatNumber(item.quantity) + '</td>' +
-                '   <td>' + buildStatusSelect(item.scheduleId, status) + '</td>' +
+                '   <td>' + buildStatusControl(item.scheduleId, status, editable) + '</td>' +
                 '</tr>';
         }).join('');
     }
 
-    function buildStatusSelect(scheduleId, status) {
+    function renderDetailModeHint(slot, editable) {
+        if (!rentalDetailModeHint) {
+            return;
+        }
+
+        if (editable) {
+            rentalDetailModeHint.classList.add('d-none');
+            rentalDetailModeHint.textContent = '';
+            return;
+        }
+
+        rentalDetailModeHint.classList.remove('d-none');
+        rentalDetailModeHint.textContent = buildReadonlyMessage(slot);
+    }
+
+    function buildStatusControl(scheduleId, status, editable) {
         var normalized = normalizeStatus(status);
+        if (!editable) {
+            return buildReadonlyStatusBadge(normalized);
+        }
+
         return '' +
             '<select class="form-select form-select-sm srs-status-select srs-status-select-' + normalized.toLowerCase() + '"' +
             ' data-role="detail-status"' +
@@ -388,9 +480,27 @@
             '</select>';
     }
 
+    function buildReadonlyStatusBadge(status) {
+        var normalized = normalizeStatus(status);
+        return '' +
+            '<span class="srs-status-badge srs-status-badge-' + normalized.toLowerCase() + '">' +
+            esc(statusLabel(normalized)) +
+            '</span>';
+    }
+
     function handleStatusChange(event) {
         var select = event.target.closest('[data-role="detail-status"]');
         if (!select) {
+            return;
+        }
+
+        var modalCell = state.modalCellKey ? state.cellMap[state.modalCellKey] : null;
+        var modalSlot = modalCell ? findSlot(modalCell.slotId) : null;
+        if (!canEditSlot(modalSlot)) {
+            var lockedStatus = normalizeStatus(select.getAttribute('data-prev-status'));
+            select.value = lockedStatus;
+            refreshStatusSelectClass(select, lockedStatus);
+            window.alert(buildReadonlyMessage(modalSlot));
             return;
         }
 
@@ -469,6 +579,22 @@
         openDetailModal(cellKey);
     }
 
+    function refreshOpenModal() {
+        if (!state.modalCellKey) {
+            return;
+        }
+
+        var cell = state.cellMap[state.modalCellKey];
+        var slot = cell ? findSlot(cell.slotId) : null;
+        if (!cell || !slot || isPastSlot(slot)) {
+            closeDetailModal();
+            return;
+        }
+
+        renderDetailContext(cell, slot);
+        renderDetailItems(cell, slot);
+    }
+
     function refreshStatusSelectClass(select, status) {
         select.classList.remove(
             'srs-status-select-rented',
@@ -476,6 +602,58 @@
             'srs-status-select-returned'
         );
         select.classList.add('srs-status-select-' + normalizeStatus(status).toLowerCase());
+    }
+
+    function canEditSlot(slot) {
+        if (!slot || state.selectedDate !== getTodayStr()) {
+            return false;
+        }
+
+        var currentSlot = getCurrentRuntimeSlot();
+        return !!currentSlot && Number(currentSlot.slotId) === Number(slot.slotId);
+    }
+
+    function buildReadonlyMessage(slot) {
+        if (state.selectedDate > getTodayStr()) {
+            return 'Ngày được chọn nằm trong tương lai nên bạn chỉ có thể xem thông tin thuê đồ.';
+        }
+
+        if (state.selectedDate < getTodayStr()) {
+            return 'Ngày được chọn đã qua nên bạn chỉ có thể xem lại thông tin thuê đồ.';
+        }
+
+        var currentSlot = getCurrentRuntimeSlot();
+        if (!currentSlot) {
+            return 'Hiện tại không nằm trong slot nào nên bạn chỉ có thể xem thông tin thuê đồ.';
+        }
+
+        if (!slot || Number(slot.slotId) !== Number(currentSlot.slotId)) {
+            return 'Chỉ slot hiện tại ' + currentSlot.startTime + ' - ' + currentSlot.endTime +
+                ' của hôm nay mới được cập nhật trạng thái.';
+        }
+
+        return '';
+    }
+
+    function getCurrentRuntimeSlot() {
+        if (!Array.isArray(state.slots) || !state.slots.length) {
+            return null;
+        }
+
+        var nowMinutes = getCurrentMinutes();
+        for (var i = 0; i < state.slots.length; i++) {
+            var slot = state.slots[i];
+            var startMinutes = toMinutes(slot.startTime);
+            var endMinutes = toMinutes(slot.endTime);
+            if (startMinutes == null || endMinutes == null) {
+                continue;
+            }
+            if (nowMinutes >= startMinutes && nowMinutes < endMinutes) {
+                return slot;
+            }
+        }
+
+        return null;
     }
 
     function buildCellMeta(cell) {
@@ -522,27 +700,25 @@
             return false;
         }
 
-        if (state.selectedDate < TODAY_STR) {
+        var todayStr = getTodayStr();
+        if (state.selectedDate < todayStr) {
             return true;
         }
-        if (state.selectedDate > TODAY_STR) {
+        if (state.selectedDate > todayStr) {
             return false;
         }
 
-        var endParts = String(slot.endTime || '').split(':');
-        if (endParts.length < 2) {
+        var slotEndMinutes = toMinutes(slot.endTime);
+        if (slotEndMinutes == null) {
             return false;
         }
 
-        var slotEndMinutes = (Number(endParts[0]) * 60) + Number(endParts[1]);
-        var now = new Date();
-        var nowMinutes = (now.getHours() * 60) + now.getMinutes();
-        return nowMinutes >= slotEndMinutes;
+        return getCurrentMinutes() >= slotEndMinutes;
     }
 
     function updateDateControls(dateStr) {
         if (btnToday) {
-            btnToday.classList.toggle('active', dateStr === TODAY_STR);
+            btnToday.classList.toggle('active', dateStr === getTodayStr());
         }
         if (btnTomorrow) {
             btnTomorrow.classList.toggle('active', dateStr === getOffsetDateStr(1));
@@ -594,6 +770,28 @@
         var date = new Date();
         date.setDate(date.getDate() + Number(offsetDays || 0));
         return formatDateInput(date);
+    }
+
+    function getTodayStr() {
+        return formatDateInput(new Date());
+    }
+
+    function getCurrentMinutes() {
+        var now = new Date();
+        return (now.getHours() * 60) + now.getMinutes();
+    }
+
+    function getCurrentTimeLabel() {
+        var now = new Date();
+        return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    }
+
+    function toMinutes(timeStr) {
+        var parts = String(timeStr || '').split(':');
+        if (parts.length < 2) {
+            return null;
+        }
+        return (Number(parts[0]) * 60) + Number(parts[1]);
     }
 
     function formatDateInput(date) {
