@@ -18,11 +18,18 @@ import java.util.Optional;
  * JDBC implementation of {@link MyBookingRepository}.
  */
 public class MyBookingRepositoryImpl implements MyBookingRepository {
-
     /** {@inheritDoc} */
     @Override
     public List<MyBookingListDTO> findMyBookings(int accountId, String status,
-                                                  LocalDate dateFrom, LocalDate dateTo) {
+                                                 LocalDate dateFrom, LocalDate dateTo,
+                                                 int offset, int limit) {
+        return findMyBookingsInternal(accountId, status, dateFrom, dateTo,
+                Math.max(0, offset), Math.max(1, limit));
+    }
+
+    private List<MyBookingListDTO> findMyBookingsInternal(int accountId, String status,
+                                                           LocalDate dateFrom, LocalDate dateTo,
+                                                           Integer offset, Integer limit) {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT b.booking_id, f.name AS facility_name, ")
            .append("       CONCAT(f.address, ', ', f.ward, ', ', f.district, ', ', f.province) AS full_address, ")
@@ -79,7 +86,14 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             params.add(Date.valueOf(dateTo));
         }
 
-        sql.append("ORDER BY b.created_at DESC");
+        sql.append("ORDER BY b.created_at DESC ");
+
+        boolean usePaging = offset != null && limit != null;
+        if (usePaging) {
+            sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+            params.add(offset);
+            params.add(limit);
+        }
 
         List<MyBookingListDTO> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
@@ -276,6 +290,102 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to find slots by booking ID", e);
+        }
+        return list;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<LocalDate> findBookingDates(int bookingId, LocalDate pivotDate,
+                                            boolean pastDates, int limit) {
+        String comparator = pastDates ? "<" : ">=";
+        String ordering = pastDates ? "DESC" : "ASC";
+
+        String sql =
+            "SELECT TOP (?) bs.booking_date " +
+            "FROM BookingSlot bs " +
+            "WHERE bs.booking_id = ? AND bs.booking_date " + comparator + " ? " +
+            "GROUP BY bs.booking_date " +
+            "ORDER BY bs.booking_date " + ordering;
+
+        List<LocalDate> dates = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, Math.max(1, limit));
+            ps.setInt(2, bookingId);
+            ps.setDate(3, Date.valueOf(pivotDate));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Date d = rs.getDate("booking_date");
+                    if (d != null) {
+                        dates.add(d.toLocalDate());
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find booking dates", e);
+        }
+        return dates;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<BookingSlotDetailDTO> findSlotsByBookingIdAndDates(int bookingId,
+                                                                    List<LocalDate> bookingDates,
+                                                                    boolean ascendingDate) {
+        if (bookingDates == null || bookingDates.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < bookingDates.size(); i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+
+        String order = ascendingDate ? "ASC" : "DESC";
+        String sql =
+            "SELECT bs.booking_slot_id, bs.booking_date, c.court_name, " +
+            "       FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm') AS start_time, " +
+            "       FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm') AS end_time, " +
+            "       bs.price, bs.slot_status " +
+            "FROM BookingSlot bs " +
+            "JOIN Court c ON bs.court_id = c.court_id " +
+            "JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
+            "WHERE bs.booking_id = ? AND bs.booking_date IN (" + placeholders + ") " +
+            "ORDER BY bs.booking_date " + order + ", ts.start_time, c.court_name";
+
+        List<BookingSlotDetailDTO> list = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int idx = 1;
+            ps.setInt(idx++, bookingId);
+            for (LocalDate bookingDate : bookingDates) {
+                ps.setDate(idx++, Date.valueOf(bookingDate));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BookingSlotDetailDTO dto = new BookingSlotDetailDTO();
+                    dto.setBookingSlotId(rs.getInt("booking_slot_id"));
+                    dto.setCourtName(rs.getString("court_name"));
+                    dto.setStartTime(rs.getString("start_time"));
+                    dto.setEndTime(rs.getString("end_time"));
+                    dto.setPrice(rs.getBigDecimal("price"));
+                    dto.setSlotStatus(rs.getString("slot_status"));
+
+                    Date bookingDate = rs.getDate("booking_date");
+                    if (bookingDate != null) {
+                        dto.setBookingDate(bookingDate.toLocalDate());
+                    }
+                    list.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find slots by booking dates", e);
         }
         return list;
     }
