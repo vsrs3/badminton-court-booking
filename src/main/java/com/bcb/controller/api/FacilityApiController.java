@@ -149,6 +149,7 @@ public class FacilityApiController extends HttpServlet {
         String keyword = trimToNull(request.getParameter("q"));
         String province = trimToNull(request.getParameter("province"));
         String district = trimToNull(request.getParameter("district"));
+        Double maxDistance = getDoubleParameter(request, "maxDistance");
         boolean favoritesOnly = "true".equalsIgnoreCase(request.getParameter("favoritesOnly"));
 
         Integer accountId = getSessionAccountId(request);
@@ -162,13 +163,15 @@ public class FacilityApiController extends HttpServlet {
                 pageSize,
                 userLat,
                 userLng,
+                maxDistance,
                 accountId,
                 keyword,
                 province,
                 district,
                 favoritesOnly
         );
-        int totalCount = facilityService.getTotalCount(keyword, province, district, accountId, favoritesOnly);
+        int totalCount = facilityService.getTotalCount(keyword, province, district, accountId, favoritesOnly,
+                userLat, userLng, maxDistance);
 
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
         boolean hasMore = (page + 1) < totalPages;
