@@ -28,7 +28,7 @@
                 </div>
                 <div class="d-flex gap-2">
                     <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs/manage/list" style="font-weight: 900; text-transform: uppercase;">Danh sách</a>
-                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem public</a>
+                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem bài viết </a>
                 </div>
             </div>
 
@@ -54,11 +54,6 @@
                     <div class="col-12">
                         <label class="form-label" style="font-weight: 800;">Tóm tắt</label>
                         <textarea class="form-control" name="summary" rows="2" maxlength="500">${fn:escapeXml(post.summary)}</textarea>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label" style="font-weight: 800;">Thumbnail path</label>
-                        <input class="form-control" name="thumbnailPath" value="${fn:escapeXml(post.thumbnailPath)}" placeholder="assets/images/... hoặc upload path" />
                     </div>
 
                     <div class="col-12 col-md-4">

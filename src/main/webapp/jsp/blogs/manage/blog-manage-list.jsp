@@ -27,7 +27,7 @@
                     <div style="color: #64748B; font-weight: 700;">ADMIN / OWNER / STAFF</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem public</a>
+                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem bài viết</a>
                     <a class="btn btn-success" href="${pageContext.request.contextPath}/blogs/manage/create" style="font-weight: 900; text-transform: uppercase;">Tạo bài viết</a>
                 </div>
             </div>
@@ -89,7 +89,7 @@
                             <td style="font-weight: 800;"><c:out value="${p.title}" /></td>
                             <td><c:out value="${p.authorName}" /></td>
                             <td><span class="badge bg-secondary"><c:out value="${p.status}" /></span></td>
-                            <td><c:out value="${p.createdAt}" /></td>
+                            <td><c:out value="${p.createdAtFormatted}" /></td>
                             <td>
                                 <a class="btn btn-sm btn-success" href="${pageContext.request.contextPath}/blogs/manage/edit?id=${p.postId}">Sửa</a>
                                 <a class="btn btn-sm btn-outline-danger" href="${pageContext.request.contextPath}/blogs/manage/delete?id=${p.postId}" onclick="return confirm('Xóa bài viết?');">Xóa</a>
@@ -103,18 +103,20 @@
                 </table>
             </div>
 
-            <c:set var="pageSize" value="${filter.pageSize}" />
             <c:set var="page" value="${filter.page}" />
-            <c:set var="totalPages" value="${(total + pageSize - 1) / pageSize}" />
 
             <nav class="mt-4" aria-label="pagination">
                 <ul class="pagination justify-content-center">
                     <li class="page-item <c:if test='${page <= 1}'>disabled</c:if>">
-                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page-1}&pageSize=${pageSize}">Trước</a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page-1}&pageSize=${filter.pageSize}">
+                            <i class="bi bi-chevron-left"></i> Trước
+                        </a>
                     </li>
-                    <li class="page-item disabled"><span class="page-link">${page} / ${totalPages}</span></li>
+                    <li class="page-item disabled"><span class="page-link" style="font-weight: 700;">Trang ${page} / ${totalPages}</span></li>
                     <li class="page-item <c:if test='${page >= totalPages}'>disabled</c:if>">
-                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page+1}&pageSize=${pageSize}">Sau</a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page+1}&pageSize=${filter.pageSize}">
+                            Sau <i class="bi bi-chevron-right"></i>
+                        </a>
                     </li>
                 </ul>
             </nav>
