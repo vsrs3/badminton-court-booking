@@ -340,14 +340,28 @@ public class FacilityServiceImpl implements FacilityService {
     }
     //    ============= VUONGPD =============
     @Override
-    public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
+    public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Double maxDistance, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
         Integer favoriteAccountId = favoritesOnly ? accountId : null;
         if (favoritesOnly && favoriteAccountId == null) {
             return new ArrayList<>();
         }
 
-        int offset = page * pageSize;
-        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
+        boolean useDistanceFilter = maxDistance != null && maxDistance > 0 && userLat != null && userLng != null;
+        List<Facility> facilities;
+        if (useDistanceFilter) {
+            facilities = facilityRepository.findForHomeAll(keyword, province, district, favoriteAccountId);
+            facilities = applyDistanceFilter(facilities, userLat, userLng, maxDistance);
+
+            int fromIndex = page * pageSize;
+            if (fromIndex >= facilities.size()) {
+                return new ArrayList<>();
+            }
+            int toIndex = Math.min(fromIndex + pageSize, facilities.size());
+            facilities = facilities.subList(fromIndex, toIndex);
+        } else {
+            int offset = page * pageSize;
+            facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
+        }
 
         Set<Integer> favoriteFacilityIds = new HashSet<>();
         if (accountId != null) {
@@ -385,12 +399,38 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
-    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly) {
+    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly,
+                             Double userLat, Double userLng, Double maxDistance) {
         Integer favoriteAccountId = favoritesOnly ? accountId : null;
         if (favoritesOnly && favoriteAccountId == null) {
             return 0;
         }
-        return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
+        boolean useDistanceFilter = maxDistance != null && maxDistance > 0 && userLat != null && userLng != null;
+        if (!useDistanceFilter) {
+            return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
+        }
+
+        List<Facility> facilities = facilityRepository.findForHomeAll(keyword, province, district, favoriteAccountId);
+        return applyDistanceFilter(facilities, userLat, userLng, maxDistance).size();
+    }
+
+    private List<Facility> applyDistanceFilter(List<Facility> facilities, double userLat, double userLng, double maxDistanceKm) {
+        List<Facility> filtered = new ArrayList<>();
+        for (Facility facility : facilities) {
+            if (facility.getLatitude() == null || facility.getLongitude() == null) {
+                filtered.add(facility);
+                continue;
+            }
+            double distance = calculateDistance(
+                    userLat, userLng,
+                    facility.getLatitude().doubleValue(),
+                    facility.getLongitude().doubleValue()
+            );
+            if (distance <= maxDistanceKm) {
+                filtered.add(facility);
+            }
+        }
+        return filtered;
     }
 
     @Override

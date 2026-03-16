@@ -1,4 +1,5 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+﻿<%@ page import="com.bcb.model.Account"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -35,8 +36,37 @@
             <a href="#reviews" class="text-decoration-none text-muted fw-semibold">Đánh giá</a>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <%
+                Account currentUser = (Account) session.getAttribute("account");
+                if (currentUser != null && "CUSTOMER".equals(currentUser.getRole())) {
+            %>
+            <a href="${pageContext.request.contextPath}/my-bookings" class="customer-profile-link">
+                <div class="customer-avatar">
+                    <%
+                        String avatarPath = currentUser.getAvatarPath();
+                        if (avatarPath != null && !avatarPath.isEmpty()) {
+                    %>
+                    <img src="${currentUser.getAvatarPath()}/${currentUser.getAvatarPath()}" alt="Avatar">
+                    <%
+                        } else {
+                            String fullName = currentUser.getFullName();
+                            String firstLetter = fullName != null && !fullName.isEmpty() ? fullName.substring(0, 1).toUpperCase() : "U";
+                    %>
+                    <div class="avatar-placeholder"><%=firstLetter%></div>
+                    <%
+                        }
+                    %>
+                </div>
+                <span class="customer-name"><%=currentUser.getFullName()%></span>
+            </a>
+            <%
+                } else {
+            %>
             <a href="${pageContext.request.contextPath}/auth/login" class="btn-auth btn-login text-decoration-none">Đăng nhập</a>
             <a href="${pageContext.request.contextPath}/jsp/auth/register.jsp" class="btn-auth btn-register text-decoration-none">Đăng ký</a>
+            <%
+                }
+            %>
         </div>
     </div>
 </nav>
