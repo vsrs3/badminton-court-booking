@@ -147,6 +147,7 @@
                            id="fullName"
                            name="fullName"
                            value="${oldFullName != null ? oldFullName : ''}"
+                           maxlength="6"
                            required>
                     <div class="text-danger small" id="nameError"></div>
                 </div>
@@ -194,6 +195,32 @@
         icon.classList.toggle("bi-eye-slash-fill");
     }
 
+    const fullNameInput = document.getElementById("fullName");
+    const nameError = document.getElementById("nameError");
+
+    function sanitizeFullName(value) {
+        return value
+            .replace(/[^A-Za-zÀ-ỹ\s]/g, "")
+            .replace(/\s+/g, " ")
+            .replace(/^\s+/, "")
+            .slice(0, 6)
+            .trimEnd();
+    }
+
+    function syncFullNameInput() {
+        const sanitizedName = sanitizeFullName(fullNameInput.value);
+
+        if (fullNameInput.value !== sanitizedName) {
+            fullNameInput.value = sanitizedName;
+        }
+
+        nameError.innerText = "";
+        return sanitizedName;
+    }
+
+    fullNameInput.addEventListener("input", syncFullNameInput);
+    syncFullNameInput();
+
     function validateForm() {
 
         let valid = true;
@@ -201,7 +228,7 @@
         const email = document.getElementById("email").value.trim();
         const pw = document.getElementById("password").value;
         const repw = document.getElementById("repassword").value;
-        const name = document.getElementById("fullName").value.trim();
+        const name = syncFullNameInput().trim();
         const phone = document.getElementById("phone").value.trim();
 
         const pwRules = document.getElementById("pwRules");
@@ -210,12 +237,17 @@
         const ruleNumber = document.getElementById("ruleNumber");
         const ruleSpecial = document.getElementById("ruleSpecial");
         const rePwError = document.getElementById("rePwError");
+        const emailError = document.getElementById("emailError");
+        const phoneError = document.getElementById("phoneError");
 
         pwRules.style.display = "none";
         rePwError.innerText = "";
+        emailError.innerText = "";
+        nameError.innerText = "";
+        phoneError.innerText = "";
 
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            document.getElementById("emailError").innerText = "Email không hợp lệ";
+            emailError.innerText = "Email không hợp lệ";
             valid = false;
         }
 
@@ -241,12 +273,12 @@
         }
 
         if (name === "") {
-            document.getElementById("nameError").innerText = "Họ tên không được để trống";
+            nameError.innerText = "Họ tên chỉ được chứa chữ cái và tối đa 6 ký tự";
             valid = false;
         }
 
         if (!/^[0-9]{10}$/.test(phone)) {
-            document.getElementById("phoneError").innerText = "Số điện thoại phải gồm 10 chữ số";
+            phoneError.innerText = "Số điện thoại phải gồm 10 chữ số";
             valid = false;
         }
 

@@ -7,7 +7,6 @@
     var CTX = window.ST_CTX || '';
     var NO_SHOW_BUFFER_MINUTES = 15;
 
-
     // DOM
     var stateLoading      = document.getElementById('stateLoading');
     var stateError        = document.getElementById('stateError');
@@ -15,11 +14,10 @@
     var detailContent     = document.getElementById('detailContent');
     var backLink          = document.getElementById('backLink');
     var backLinkError     = document.getElementById('backLinkError');
-    var sessionsTableBody = document.getElementById('sessionsTableBody');
+    var sessionsContainer = document.getElementById('sessionsContainer');
     var sessionProgress   = document.getElementById('sessionProgress');
     var btnEditBooking    = document.getElementById('btnEditBooking');
     var btnCancelRemaining = document.getElementById('btnCancelRemaining');
-
 
     // Payment DOM
     var confirmPaymentBtnWrap = document.getElementById('confirmPaymentBtnWrap');
@@ -160,30 +158,9 @@
         setText('dCustomerType', d.customerType === 'ACCOUNT' ? 'Tài khoản' : 'Khách vãng lai');
 
         renderInvoice(d);
-        renderRentalRows(d.rentalRows || []);
         renderSessions(d);
         renderEditActions(d);
     }
-
-    function renderRentalRows(rentalRows) {
-        if (!sessionsTableBody) return;
-
-        if (!rentalRows || rentalRows.length === 0) {
-            sessionsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Không có dữ liệu phiên chơi / đồ thuê</td></tr>';
-            return;
-        }
-
-        sessionsTableBody.innerHTML = rentalRows.map(function (row) {
-            return '' +
-                '<tr>' +
-                '   <td>' + escapeHtml(row.courtName || '') + '</td>' +
-                '   <td>' + escapeHtml(row.startTime || '') + ' - ' + escapeHtml(row.endTime || '') + '</td>' +
-                '   <td>' + escapeHtml(row.rentalItemsText || '') + '</td>' +
-                '   <td>' + formatMoney(row.rentalTotal || 0) + '</td>' +
-                '</tr>';
-        }).join('');
-    }
-
     function renderEditActions(d) {
         var canEdit = d.bookingStatus === 'CONFIRMED' && !d.isRecurring;
 
@@ -205,10 +182,11 @@
 
     // ─── Render Invoice ───
     function renderInvoice(d) {
+        var courtAmount = toMoneyNumber(d.courtTotal);
+        var rentalAmount = toMoneyNumber(d.rentalTotal);
+
         if (d.invoice) {
-            var courtAmount = toMoneyNumber(d.courtTotal);
-            var rentalAmount = toMoneyNumber(d.rentalTotal);
-            var totalAmount = toMoneyNumber(d.grandTotal);
+            var totalAmount = d.invoice.totalAmount != null ? toMoneyNumber(d.invoice.totalAmount) : toMoneyNumber(d.grandTotal);
             var paidAmount = toMoneyNumber(d.invoice.paidAmount);
             var remaining = Math.max(0, totalAmount - paidAmount);
             var isPaid = d.invoice.paymentStatus === 'PAID';
@@ -243,10 +221,10 @@
                 paymentWarningBanner.classList.add('d-none');
             }
         } else {
-            setText('dCourtAmount', '—');
-            setText('dRentalAmount', formatMoney(d.rentalTotal || 0));
-            setText('dTotalAmount', formatMoney(d.grandTotal || 0));
-            setText('dPaidAmount', '—');
+            setText('dCourtAmount', formatMoney(courtAmount));
+            setText('dRentalAmount', formatMoney(rentalAmount));
+            setText('dTotalAmount', formatMoney(toMoneyNumber(d.grandTotal)));
+            setText('dPaidAmount', formatMoney(0));
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
             confirmPaymentBtnWrap.classList.add('d-none');
@@ -256,19 +234,19 @@
 
     // ─── Render Sessions (with NO_SHOW support) ───
     function renderSessions(d) {
+        sessionsContainer.innerHTML = '';
         var sessions = d.sessions || [];
 
         if (sessions.length === 0) {
-            if (sessionProgress) sessionProgress.textContent = '';
             sessionsContainer.innerHTML = '<div class="sbd-no-data">Không có phiên chơi</div>';
             sessionProgress.textContent = '';
             return;
         }
 
+        // Progress: count finished (COMPLETED or NO_SHOW)
         var finishedCount = 0;
         var noShowCount = 0;
         var cancelledCount = 0;
-
         sessions.forEach(function (s) {
             if (s.sessionStatus === 'COMPLETED' || s.sessionStatus === 'NO_SHOW') finishedCount++;
             if (s.sessionStatus === 'NO_SHOW') noShowCount++;
@@ -343,6 +321,8 @@
                 infoEl.appendChild(timeInfoEl);
             }
 
+            appendRentalInfo(infoEl, s, d.rentalRows || []);
+
             row.appendChild(infoEl);
 
             // ─ Action area ─
@@ -362,10 +342,6 @@
             row.appendChild(actionEl);
             sessionsContainer.appendChild(row);
         });
-
-        if (sessionProgress) {
-            sessionProgress.textContent = progressText;
-        }
     }
 
     function hasReleasableSlot(session) {
@@ -522,6 +498,41 @@
         container.appendChild(btnRelease);
     }
 
+    function appendRentalInfo(infoEl, session, rentalRows) {
+        var matchedRows = findRentalRowsForSession(session, rentalRows);
+        if (!matchedRows.length) return;
+
+        var rentalEl = document.createElement('div');
+        rentalEl.className = 'sbd-session-time-info';
+        rentalEl.textContent = 'Đồ thuê: ' + matchedRows.map(function (row) {
+            var label = row.rentalItemsText || 'Đã chọn đồ thuê';
+            var sameWindow = row.startTime === session.startTime && row.endTime === session.endTime;
+
+            if (!sameWindow) {
+                label = row.startTime + ' - ' + row.endTime + ': ' + label;
+            }
+
+            return label + ' (' + formatMoney(row.rentalTotal || 0) + ')';
+        }).join(' · ');
+        infoEl.appendChild(rentalEl);
+    }
+
+    function findRentalRowsForSession(session, rentalRows) {
+        var sessionStart = toMinutes(session.startTime);
+        var sessionEnd = toMinutes(session.endTime);
+
+        return (rentalRows || []).filter(function (row) {
+            if (!row) return false;
+            if (row.courtName !== session.courtName) return false;
+
+            var rowStart = toMinutes(row.startTime);
+            var rowEnd = toMinutes(row.endTime);
+            if (rowStart == null || rowEnd == null) return false;
+
+            return rowStart >= sessionStart && rowEnd <= sessionEnd;
+        });
+    }
+
     /**
      * Check if a session is past due (now > startTime + 15 min buffer).
      * startTime is "HH:mm" format from API.
@@ -543,9 +554,10 @@
     }
 
     function isSessionEnded(session) {
-        if (!bookingData || !bookingData.bookingDate || !session.endTime) return false;
+        if (!bookingData || !session.endTime) return false;
 
-        var dateStr = bookingData.bookingDate;
+        var dateStr = session.sessionDate || bookingData.bookingDate;
+        if (!dateStr) return false;
         var now = new Date();
         var todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
             String(now.getDate()).padStart(2, '0');
@@ -571,7 +583,7 @@
     function openPaymentModal() {
         if (!bookingData || !bookingData.invoice) return;
         var inv = bookingData.invoice;
-        var totalAmount = toMoneyNumber(bookingData.grandTotal);
+        var totalAmount = inv.totalAmount != null ? toMoneyNumber(inv.totalAmount) : toMoneyNumber(bookingData.grandTotal);
         var paidAmount = toMoneyNumber(inv.paidAmount);
         var remaining = Math.max(0, totalAmount - paidAmount);
 
@@ -611,7 +623,8 @@
     function handleConfirmPayment() {
         hideModalError();
         var inv = bookingData.invoice;
-        var remaining = Math.max(0, toMoneyNumber(bookingData.grandTotal) - toMoneyNumber(inv.paidAmount));
+        var totalAmount = inv.totalAmount != null ? toMoneyNumber(inv.totalAmount) : toMoneyNumber(bookingData.grandTotal);
+        var remaining = Math.max(0, totalAmount - toMoneyNumber(inv.paidAmount));
         var inputVal = paymentAmountInput.value.trim();
 
         if (!inputVal || isNaN(inputVal)) {
@@ -624,8 +637,6 @@
             return;
         }
         if (!isSameMoney(amount, remaining)) {
-            showModalError('S\u1ed1 ti\u1ec1n kh\u00f4ng h\u1ee3p l\u1ec7. C\u1ea7n thu th\u00eam \u0111\u00fang ' + formatMoney(remaining) + ' để đủ tổng tiền.');
-        if (amount !== remaining) {
             showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiền.');
             return;
         }
@@ -658,12 +669,10 @@
                     bookingData.invoice.totalAmount = body.data.totalAmount;
                     bookingData.grandTotal = body.data.totalAmount;
                 }
-                showToast('X\u00e1c nh\u1eadn thanh to\u00e1n th\u00e0nh c\u00f4ng!', 'success');
                 showToast('Xác nhận thanh toán thành công!', 'success');
                 closePaymentModal();
                 resetConfirmButton();
                 renderInvoice(bookingData);
-                renderRentalRows(bookingData.rentalRows || []);
                 renderSessions(bookingData);
 
                 if (pendingAction) {
@@ -1048,6 +1057,7 @@
         if (amount == null) return '—';
         return Number(amount).toLocaleString('vi-VN') + 'đ';
     }
+
     function toMoneyNumber(value) {
         var num = Number(value);
         return isFinite(num) ? num : 0;
@@ -1057,14 +1067,16 @@
         return Math.abs(toMoneyNumber(a) - toMoneyNumber(b)) < 0.01;
     }
 
-    function escapeHtml(str) {
-        if (str == null) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    function toMinutes(timeText) {
+        if (!timeText) return null;
+        var parts = String(timeText).split(':');
+        if (parts.length < 2) return null;
+
+        var hours = parseInt(parts[0], 10);
+        var minutes = parseInt(parts[1], 10);
+        if (isNaN(hours) || isNaN(minutes)) return null;
+
+        return (hours * 60) + minutes;
     }
 
     function bookingStatusLabel(s) {
@@ -1094,9 +1106,5 @@
     }
 
 })();
-
-
-
-
 
 

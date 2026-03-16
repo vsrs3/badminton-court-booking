@@ -109,35 +109,19 @@
                         </div>
                     </div>
 
-                    <%-- Card: Phiên chơi dạng bảng --%>
+                    <%-- Card: Phiên chơi (Sessions) — rendered by JS --%>
                     <div class="card sbd-card">
                         <div class="card-header sbd-card-header">
                             <i class="bi bi-controller me-2"></i>Phiên chơi
                             <span class="sbd-session-progress" id="sessionProgress"></span>
                         </div>
-
                         <%-- Payment warning banner (shown by JS when not PAID) --%>
                         <div id="paymentWarningBanner" class="sbd-payment-warning d-none">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             <span>Chưa thanh toán đủ — Vui lòng xác nhận thanh toán trước khi check-in/check-out</span>
                         </div>
-
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th>Sân</th>
-                                        <th>Slot chơi</th>
-                                        <th>Đồ thuê</th>
-                                        <th>Tiền thuê đồ</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="sessionsTableBody">
-                                    <%-- JS render rows here --%>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="card-body p-0" id="sessionsContainer">
+                            <%-- JS will render session rows here --%>
                         </div>
                     </div>
 
@@ -173,37 +157,30 @@
                             <i class="bi bi-credit-card me-2"></i>Thanh toán
                         </div>
                         <div class="card-body">
-
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Tiền sân</span>
                                 <span class="sbd-field-value sbd-money" id="dCourtAmount"></span>
                             </div>
-
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Tiền thuê đồ</span>
                                 <span class="sbd-field-value sbd-money" id="dRentalAmount"></span>
                             </div>
-
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Tổng tiền</span>
                                 <span class="sbd-field-value sbd-money" id="dTotalAmount"></span>
                             </div>
-
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Đã thanh toán</span>
                                 <span class="sbd-field-value sbd-money" id="dPaidAmount"></span>
                             </div>
-
                             <div class="sbd-field mb-3" id="dRemainingField">
                                 <span class="sbd-field-label">Còn thiếu</span>
                                 <span class="sbd-field-value sbd-money sbd-remaining" id="dRemainingAmount"></span>
                             </div>
-
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Trạng thái TT</span>
                                 <span class="sbd-field-value" id="dPaymentStatus"></span>
                             </div>
-
                             <%-- Confirm payment button (shown by JS when not PAID) --%>
                             <div id="confirmPaymentBtnWrap" class="d-none">
                                 <button type="button" class="sbd-btn sbd-btn-payment" id="btnConfirmPayment">
@@ -221,7 +198,7 @@
     </div>
 </div>
 
-<%-- ═══════ Payment Confirmation Modal ═══════ --%>
+<%-- Payment Confirmation Modal --%>
 <div class="sbd-modal-overlay d-none" id="paymentModal">
     <div class="sbd-modal">
         <div class="sbd-modal-header">
@@ -285,3 +262,4 @@
 
 </body>
 </html>
+

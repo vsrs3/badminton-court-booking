@@ -23,6 +23,8 @@ import java.util.UUID;
  * Implementation of AuthService
  */
 public class AuthServiceImpl implements AuthService {
+    private static final int FULL_NAME_MAX_LENGTH = 6;
+
     private final AccountRepository accountRepository;
     private final EmailVerificationRepository emailVerificationRepository;
     public AuthServiceImpl() {
@@ -64,6 +66,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String register(RegisterRequestDTO dto) throws Exception {
+        normalizeRegisterRequest(dto);
+        validateRegisterRequest(dto);
 
         if (accountRepository.isEmailExists(dto.getEmail())) {
             throw new BusinessException("Email đã tồn tại");
@@ -93,6 +97,39 @@ public class AuthServiceImpl implements AuthService {
                 "http://localhost:8080/badminton_court_booking/verify-email?token=" + token;
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
         return token; // 🔥 QUAN TRỌNG
+    }
+
+    private void normalizeRegisterRequest(RegisterRequestDTO dto) {
+        dto.setEmail(trimToEmpty(dto.getEmail()));
+        dto.setPhone(trimToEmpty(dto.getPhone()));
+        dto.setFullName(sanitizeFullName(dto.getFullName()));
+    }
+
+    private void validateRegisterRequest(RegisterRequestDTO dto) throws BusinessException {
+        if (dto.getFullName().isEmpty()) {
+            throw new BusinessException("Ho ten chi duoc chua chu cai va toi da 6 ky tu");
+        }
+    }
+
+    private String sanitizeFullName(String fullName) {
+        if (fullName == null) {
+            return "";
+        }
+
+        String sanitizedFullName = fullName
+                .replaceAll("[^\\p{L}\\s]", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        if (sanitizedFullName.length() > FULL_NAME_MAX_LENGTH) {
+            sanitizedFullName = sanitizedFullName.substring(0, FULL_NAME_MAX_LENGTH).trim();
+        }
+
+        return sanitizedFullName;
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
 

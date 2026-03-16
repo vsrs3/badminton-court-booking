@@ -237,7 +237,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 int invoiceId = repository.insertInvoice(conn, bookingId, totalAmount);
                 paymentRepository.insertPayment(conn, invoiceId, totalAmount, "FULL", paymentMethod, staffId);
-                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount);
+                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount, totalAmount);
                 repository.updateBookingStatus(conn, bookingId, "CONFIRMED");
 
                 conn.commit();

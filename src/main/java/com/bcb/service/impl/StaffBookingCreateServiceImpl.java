@@ -115,20 +115,14 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                     accountId,
                     guestName,
                     guestPhone,
+                    guestEmail,
                     staffId,
                     slots,
                     rentals
             );
-
-            return out(200, "{\"success\":true,\"message\":\"Đặt sân thành công\",\"data\":{\"bookingId\":" + bookingId + "}}");
+            EmailQueueService.EmailEnqueueResult emailResult = emailQueueService.enqueueBookingCreated(bookingId);
+            return out(200, buildSuccessJson(bookingId, emailResult));
         } catch (SlotConflictException e) {
-                try {
-            int bookingId = createBookingTransaction(facilityId, bookingDate, customerType,
-                    accountId, guestName, guestPhone, guestEmail, staffId, slots);
-            EmailQueueService.EmailEnqueueResult emailResult =
-                    emailQueueService.enqueueBookingCreated(bookingId);
-            String json = buildSuccessJson(bookingId, emailResult);
-            return out(200, json);        } catch (SlotConflictException e) {
             return out(409, jsonError("Slot đã được đặt bởi người khác. Vui lòng chọn lại."));
         } catch (Exception e) {
             return out(500, jsonError("Lỗi hệ thống: " + e.getMessage()));
@@ -136,7 +130,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
     /**
-     * Giữ nguyên chữ ký cũ để không ảnh hưởng logic cũ nếu nơi khác còn gọi.
+     * Gi? nguyen ch? ky c? ?? khong ?nh h??ng logic c? n?u n?i khac con g?i.
      */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
                                          Integer accountId, String guestName, String guestPhone, String guestEmail,
@@ -148,6 +142,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                 accountId,
                 guestName,
                 guestPhone,
+                guestEmail,
                 staffId,
                 slots,
                 new ArrayList<>()
@@ -155,10 +150,10 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
     /**
-     * Hàm mới: mở rộng thêm rentals nhưng không phá logic cũ.
+     * Ham m?i: m? r?ng them rentals nh?ng khong pha logic c?.
      */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
-                                         Integer accountId, String guestName, String guestPhone,
+                                         Integer accountId, String guestName, String guestPhone, String guestEmail,
                                          int staffId, List<StaffBookingCreateSlotDTO> slots,
                                          List<RentalItemDTO> rentals) throws Exception {
 
@@ -184,7 +179,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
                 /**
-                 * Map để nối slot vừa tạo với bookingSlotId mới sinh ra.
+                 * Map ?? n?i slot v?a t?o v?i bookingSlotId m?i sinh ra.
                  * Key: courtId_slotId
                  */
                 Map<String, Integer> bookingSlotIdByCourtAndSlot = new HashMap<>();
@@ -205,8 +200,8 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                 }
 
                 /**
-                 * Lưu đồ thuê sau khi booking slots đã có.
-                 * Không ảnh hưởng logic cũ nếu rentals rỗng.
+                 * L?u ?? thue sau khi booking slots ?a co.
+                 * Khong ?nh h??ng logic c? n?u rentals r?ng.
                  */
                 BigDecimal rentalTotal = BigDecimal.ZERO;
 
@@ -549,8 +544,12 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
     private String normalizeEmail(String email) {
         if (email == null) return null;
-        String v = email.trim();
-        return v.isEmpty() ? null : v;
+        String value = email.trim();
+        return value.isEmpty() ? null : value;
+    }
+
+    private String buildCourtSlotKey(Integer courtId, Integer slotId) {
+        return courtId + "_" + slotId;
     }
 
     private String buildSuccessJson(int bookingId, EmailQueueService.EmailEnqueueResult emailResult) {
@@ -563,10 +562,6 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             }
         }
         return "{\"success\":true,\"message\":\"Đặt sân thành công\",\"data\":{" + data + "}}";
-    }
-
-    private String buildCourtSlotKey(Integer courtId, Integer slotId) {
-        return courtId + "_" + slotId;
     }
 
     private String guestPhoneMatchedJson(StaffCustomerAccountDTO account) {
@@ -596,9 +591,4 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
 }
-
-
-
-
-
 

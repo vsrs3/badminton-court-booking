@@ -48,9 +48,9 @@ public class RegisterController extends HttpServlet {
 
             // 5️⃣ Nếu lỗi nghiệp vụ → trả về form
             request.setAttribute("error", e.getMessage());
-            request.setAttribute("oldEmail", email);
-            request.setAttribute("oldFullName", fullName);
-            request.setAttribute("oldPhone", phone);
+            request.setAttribute("oldEmail", dto.getEmail());
+            request.setAttribute("oldFullName", dto.getFullName());
+            request.setAttribute("oldPhone", dto.getPhone());
 
             request.getRequestDispatcher("/jsp/auth/register.jsp")
                     .forward(request, response);
