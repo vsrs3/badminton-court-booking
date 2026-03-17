@@ -102,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
                 expireAt
         );
 
-        String verifyLink = "http://localhost:8080/badminton_court_booking/verify-email?token=" + token;
+        String verifyLink = "http://localhost:8080/badminton_court_booking/verify-email?purpose=register&token=" + token;
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
         return token;
     }
@@ -153,7 +153,8 @@ public class AuthServiceImpl implements AuthService {
         passwordResetTokenRepository.deleteByEmail(normalizedEmail);
         passwordResetTokenRepository.save(normalizedEmail, token, expireAt);
 
-        String resetLink = resetLinkBase + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        String delimiter = resetLinkBase.contains("?") ? "&" : "?";
+        String resetLink = resetLinkBase + delimiter + "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         try {
             MailUtil.sendPasswordResetEmail(normalizedEmail, resetLink);
         } catch (RuntimeException e) {

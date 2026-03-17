@@ -83,6 +83,12 @@
             </div>
             <% } %>
 
+            <% if (message != null && !isResetStep) { %>
+            <div class="mt-3 small" style="color:#166534;">
+                Sau khi bạn nhấn link xác nhận trong email, trang này sẽ tự chuyển sang bước tạo mật khẩu mới.
+            </div>
+            <% } %>
+
             <% if (!isResetStep) { %>
             <form method="post"
                   action="${pageContext.request.contextPath}/forgot-password"
@@ -173,6 +179,72 @@
 </div>
 
 <script>
+    const FORGOT_PASSWORD_SYNC_KEY = "bcb.forgot-password.verification";
+    const pendingEmail = "<%= email %>";
+    const waitingForEmailConfirmation = <%= (!isResetStep && message != null) ? "true" : "false" %>;
+
+    function parseForgotPasswordPayload(rawValue) {
+        if (!rawValue) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(rawValue);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function handleForgotPasswordVerification(payload) {
+        if (!waitingForEmailConfirmation || !payload || !payload.redirectUrl) {
+            return false;
+        }
+
+        if (pendingEmail && payload.email && pendingEmail.toLowerCase() !== payload.email.toLowerCase()) {
+            return false;
+        }
+
+        localStorage.removeItem(FORGOT_PASSWORD_SYNC_KEY);
+        window.location.href = payload.redirectUrl;
+        return true;
+    }
+
+    function checkForgotPasswordVerification() {
+        return handleForgotPasswordVerification(
+            parseForgotPasswordPayload(localStorage.getItem(FORGOT_PASSWORD_SYNC_KEY))
+        );
+    }
+
+    async function checkForgotPasswordVerificationFromServer() {
+        if (!waitingForEmailConfirmation) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(
+                "${pageContext.request.contextPath}/email-action-status?purpose=forgot-password&email="
+                + encodeURIComponent(pendingEmail ? pendingEmail : ""),
+                {
+                    cache: "no-store"
+                }
+            );
+
+            if (!response.ok) {
+                return false;
+            }
+
+            const payload = await response.json();
+            if (payload.status === "confirmed" && payload.continueUrl) {
+                window.location.href = payload.continueUrl;
+                return true;
+            }
+        } catch (error) {
+            console.log("Không kiểm tra được trạng thái xác nhận:", error);
+        }
+
+        return false;
+    }
+
     function validateForm() {
         const passwordInput = document.getElementById("password");
         const repasswordInput = document.getElementById("repassword");
@@ -243,6 +315,24 @@
 
         setupToggle(toggle1, password);
         setupToggle(toggle2, repassword);
+
+        if (waitingForEmailConfirmation) {
+            checkForgotPasswordVerification();
+
+            window.addEventListener("storage", function(event) {
+                if (event.key === FORGOT_PASSWORD_SYNC_KEY) {
+                    handleForgotPasswordVerification(parseForgotPasswordPayload(event.newValue));
+                }
+            });
+
+            document.addEventListener("visibilitychange", function() {
+                if (!document.hidden) {
+                    checkForgotPasswordVerification();
+                }
+            });
+
+            setInterval(checkForgotPasswordVerification, 1000);
+        }
     });
 </script>
 </body>

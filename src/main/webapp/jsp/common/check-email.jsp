@@ -12,21 +12,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiểm tra email</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/auth.css">
 </head>
-
 <body>
-
 <div class="auth-page">
-
     <div class="auth-card text-center">
-
-        <!-- Icon -->
         <div class="auth-logo mb-3">
             <i class="bi bi-envelope-check-fill text-primary" style="font-size: 48px;"></i>
         </div>
@@ -38,12 +31,12 @@
 
         <div class="alert alert-info mt-3">
             <i class="bi bi-info-circle-fill"></i>
-            Vui lòng mở email và <strong>nhấn vào link xác nhận</strong> để hoàn tất đăng ký.
+            Vui lòng mở email và nhấn vào link xác nhận để hoàn tất đăng ký.
         </div>
 
         <div class="mt-3">
             <p class="text-muted mb-1">
-                ⏳ Link xác nhận có hiệu lực trong
+                Link xác nhận có hiệu lực trong
                 <strong class="text-danger">60 giây</strong>
             </p>
 
@@ -54,89 +47,157 @@
             </p>
         </div>
 
-        <button
-                type="button"
-                id="backBtn"
-                class="btn btn-outline-primary">
+        <button type="button" id="backBtn" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left"></i>
             Quay lại đăng ký
         </button>
-
     </div>
-
 </div>
 
 <script>
-
-    let seconds = 60;
-    const token = "<%= token %>";
+    const REGISTER_SYNC_KEY = "bcb.register.verification";
+    const currentToken = "<%= token %>";
     const countdownEl = document.getElementById("countdown");
     const backBtn = document.getElementById("backBtn");
-    let interval;
-    let timeout;
-    // ===============================
-    // CLEANUP FUNCTION
-    // ===============================
+    let seconds = 60;
+    let countdownInterval = null;
+    let timeoutHandle = null;
+    let syncPoll = null;
+
+    function parsePayload(rawValue) {
+        if (!rawValue) {
+            return null;
+        }
+
+        try {
+            return JSON.parse(rawValue);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function clearWaitingTimers() {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+        if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+        }
+        if (syncPoll) {
+            clearInterval(syncPoll);
+        }
+    }
+
     async function cleanupAndRedirect() {
+        clearWaitingTimers();
 
-        clearInterval(interval);
-        clearTimeout(timeout);
-
-        if (token && token !== "") {
+        if (currentToken) {
             try {
-                await fetch(
-                    "${pageContext.request.contextPath}/cleanup-email",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: "token=" + encodeURIComponent(token)
-                    }
-                );
-            } catch (e) {
-                console.log("Cleanup lỗi:", e);
+                await fetch("${pageContext.request.contextPath}/cleanup-email", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: "token=" + encodeURIComponent(currentToken)
+                });
+            } catch (error) {
+                console.log("Cleanup lỗi:", error);
             }
         }
 
-        window.location.href =
-            "${pageContext.request.contextPath}/jsp/auth/register.jsp";
+        window.location.href = "${pageContext.request.contextPath}/jsp/auth/register.jsp";
     }
 
+    function handleRegisterVerification(payload) {
+        if (!payload || payload.token !== currentToken || !payload.redirectUrl) {
+            return false;
+        }
 
-    // ===============================
-    // COUNTDOWN
-    // ===============================
-    interval = setInterval(() => {
+        clearWaitingTimers();
+        localStorage.removeItem(REGISTER_SYNC_KEY);
+        window.location.href = payload.redirectUrl;
+        return true;
+    }
+
+    function checkRegisterVerification() {
+        return handleRegisterVerification(parsePayload(localStorage.getItem(REGISTER_SYNC_KEY)));
+    }
+
+    async function checkRegisterVerificationFromServer() {
+        if (!currentToken) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(
+                "${pageContext.request.contextPath}/email-action-status?purpose=register&token="
+                + encodeURIComponent(currentToken),
+                {
+                    cache: "no-store"
+                }
+            );
+
+            if (!response.ok) {
+                return false;
+            }
+
+            const payload = await response.json();
+            if (payload.status === "confirmed" && payload.continueUrl) {
+                clearWaitingTimers();
+                window.location.href = payload.continueUrl;
+                return true;
+            }
+        } catch (error) {
+            console.log("Không kiểm tra được trạng thái xác nhận:", error);
+        }
+
+        return false;
+    }
+
+    countdownInterval = setInterval(function() {
         seconds--;
         if (countdownEl) {
             countdownEl.innerText = seconds;
         }
         if (seconds <= 0) {
-            clearInterval(interval);
+            clearInterval(countdownInterval);
         }
     }, 1000);
 
-    // ===============================
-    // AUTO TIMEOUT
-    // ===============================
-    timeout = setTimeout(() => {
+    timeoutHandle = setTimeout(function() {
         cleanupAndRedirect();
     }, 60000);
-    // ===============================
-    // CLICK BACK
-    // ===============================
+
+    syncPoll = setInterval(function() {
+        checkRegisterVerification();
+        checkRegisterVerificationFromServer();
+    }, 1000);
+
+    window.addEventListener("storage", function(event) {
+        if (event.key === REGISTER_SYNC_KEY) {
+            handleRegisterVerification(parsePayload(event.newValue));
+        }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) {
+            checkRegisterVerification();
+            checkRegisterVerificationFromServer();
+        }
+    });
+
     if (backBtn) {
-        backBtn.addEventListener("click", function () {
+        backBtn.addEventListener("click", function() {
             backBtn.disabled = true;
-            backBtn.innerHTML =
-                '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+            backBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
             cleanupAndRedirect();
         });
     }
+
+    checkRegisterVerification();
+    checkRegisterVerificationFromServer();
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
