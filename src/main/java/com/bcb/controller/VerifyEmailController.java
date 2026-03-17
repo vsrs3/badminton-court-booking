@@ -6,6 +6,7 @@ import com.bcb.repository.impl.EmailVerificationRepositoryImpl;
 import com.bcb.service.AuthService;
 import com.bcb.service.impl.AuthServiceImpl;
 import com.bcb.utils.EmailActionSyncStore;
+import com.bcb.utils.RegisterGoogleLinkStore;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +17,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class VerifyEmailController extends HttpServlet {
-    private static final long REGISTER_CONTINUE_TTL_MS = 10 * 60 * 1000L;
+    private static final long REGISTER_CONTINUE_TTL_MS = 60 * 1000L;
     private static final long FORGOT_PASSWORD_CONTINUE_TTL_MS = 15 * 60 * 1000L;
 
     private final AuthService authService = new AuthServiceImpl();
@@ -30,7 +31,7 @@ public class VerifyEmailController extends HttpServlet {
         String purpose = trimToNull(request.getParameter("purpose"));
 
         if (token == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu token xác nhận");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu token xac nhan");
             return;
         }
 
@@ -54,32 +55,17 @@ public class VerifyEmailController extends HttpServlet {
 
         EmailVerification emailVerification = emailVerificationRepository.findByToken(token);
         if (emailVerification == null) {
-            throw new BusinessException("Token không hợp lệ");
+            throw new BusinessException("Token khong hop le.");
         }
 
         if (emailVerification.isExpired()) {
             emailVerificationRepository.deleteByToken(token);
-            throw new BusinessException("Token đã hết hạn");
+            throw new BusinessException("Token da het han.");
         }
 
         authService.verifyEmail(token);
-        EmailActionSyncStore.markConfirmed(
-                EmailActionSyncStore.PURPOSE_REGISTER,
-                token,
-                emailVerification.getEmail(),
-                REGISTER_CONTINUE_TTL_MS
-        );
-
-        forwardCompletionPage(
-                request,
-                response,
-                EmailActionSyncStore.PURPOSE_REGISTER,
-                token,
-                emailVerification.getEmail(),
-                buildContinueUrl(request, EmailActionSyncStore.PURPOSE_REGISTER, token),
-                "Email đã được xác nhận, vui lòng quay lại page để xem tài khoản.",
-                "Bạn có thể đóng trang này."
-        );
+        RegisterGoogleLinkStore.save(token, emailVerification.getEmail(), REGISTER_CONTINUE_TTL_MS);
+        response.sendRedirect(buildGoogleLinkUrl(request, token));
     }
 
     private void handleForgotPasswordConfirmation(HttpServletRequest request,
@@ -101,8 +87,8 @@ public class VerifyEmailController extends HttpServlet {
                 token,
                 email,
                 buildContinueUrl(request, EmailActionSyncStore.PURPOSE_FORGOT_PASSWORD, token),
-                "Email đã được xác nhận, vui lòng quay lại page để tiếp tục đổi mật khẩu.",
-                "Bạn có thể đóng trang này."
+                "Email da duoc xac nhan, vui long quay lai page de tiep tuc dat mat khau.",
+                "Ban co the dong trang nay."
         );
     }
 
@@ -121,8 +107,7 @@ public class VerifyEmailController extends HttpServlet {
         request.setAttribute("syncRedirectUrl", redirectUrl);
         request.setAttribute("message", message);
         request.setAttribute("instruction", instruction);
-        request.getRequestDispatcher("/jsp/common/email-action-complete.jsp")
-                .forward(request, response);
+        request.getRequestDispatcher("/jsp/common/email-action-complete.jsp").forward(request, response);
     }
 
     private String buildContinueUrl(HttpServletRequest request, String purpose, String token) {
@@ -130,6 +115,12 @@ public class VerifyEmailController extends HttpServlet {
                 + "/email-action-continue?purpose="
                 + URLEncoder.encode(purpose, StandardCharsets.UTF_8)
                 + "&token="
+                + URLEncoder.encode(token, StandardCharsets.UTF_8);
+    }
+
+    private String buildGoogleLinkUrl(HttpServletRequest request, String token) {
+        return request.getContextPath()
+                + "/google-link?token="
                 + URLEncoder.encode(token, StandardCharsets.UTF_8);
     }
 
