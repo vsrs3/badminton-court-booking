@@ -17,11 +17,16 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,6 +43,11 @@ import java.util.Set;
 @WebServlet(name = "MyBookingsServlet", urlPatterns = {"/my-bookings"})
 public class MyBookingsServlet extends HttpServlet {
 
+    private static final int BOOKING_PAGE_SIZE = 10;
+    private static final int RECURRING_DAY_PAGE_SIZE = 5;
+    private static final DateTimeFormatter DATE_DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final Gson GSON = new Gson();
+
     private final MyBookingService bookingService = new MyBookingServiceImpl();
     private final ReviewService reviewService = new ReviewServiceImpl();
     private final PaymentService paymentService = new PaymentServiceImpl();
@@ -52,7 +62,9 @@ public class MyBookingsServlet extends HttpServlet {
 
         String action = request.getParameter("action");
 
-        if ("detail".equals(action)) {
+        if ("future-sessions".equals(action)) {
+            loadFutureRecurringSessions(request, response, account);
+        } else if ("detail".equals(action)) {
             showBookingDetail(request, response, account);
         } else {
             showBookingList(request, response, account);
@@ -72,7 +84,7 @@ public class MyBookingsServlet extends HttpServlet {
         switch (action != null ? action : "") {
             case "cancel"        -> cancelBooking(request, response, account);
             case "retryPayment"  -> retryPayment(request, response, account);
-            case "payRemaining"  -> retryPayment(request, response, account); // same logic
+            case "payRemaining"  -> payRemaining(request, response, account);
             default              -> response.sendRedirect(request.getContextPath() + "/my-bookings");
         }
     }
@@ -93,10 +105,17 @@ public class MyBookingsServlet extends HttpServlet {
 
         LocalDate dateFrom = parseDate(dateFromStr);
         LocalDate dateTo   = parseDate(dateToStr);
+        int page = parsePositiveInt(request.getParameter("page"), 1);
+        int offset = (page - 1) * BOOKING_PAGE_SIZE;
 
         try {
             List<MyBookingListDTO> bookings = bookingService.getMyBookings(
-                    account.getAccountId(), status, dateFrom, dateTo);
+                    account.getAccountId(), status, dateFrom, dateTo, offset, BOOKING_PAGE_SIZE + 1);
+
+            boolean hasMore = bookings.size() > BOOKING_PAGE_SIZE;
+            if (hasMore) {
+                bookings = bookings.subList(0, BOOKING_PAGE_SIZE);
+            }
 
             // Set isReviewed trong MyBookingDTO
             // true -> bảng Review tồn tại booking_id
@@ -110,6 +129,9 @@ public class MyBookingsServlet extends HttpServlet {
             request.setAttribute("selectedStatus", status != null ? status : "all");
             request.setAttribute("dateFrom", dateFromStr);
             request.setAttribute("dateTo", dateToStr);
+            request.setAttribute("page", page);
+            request.setAttribute("hasMore", hasMore);
+            request.setAttribute("pageSize", BOOKING_PAGE_SIZE);
             request.setAttribute("section", "history");
 
         } catch (Exception e) {
@@ -134,9 +156,31 @@ public class MyBookingsServlet extends HttpServlet {
 
         try {
             int bookingId = Integer.parseInt(idStr);
-            MyBookingDetailDTO detail = bookingService.getBookingDetail(bookingId, account.getAccountId());
+            boolean expandAll = parseBooleanFlag(request.getParameter("expandAll"));
+            boolean showPast = parseBooleanFlag(request.getParameter("showPast"));
+            int futurePage = parsePositiveInt(request.getParameter("futurePage"), 1);
+            int pastPage = parsePositiveInt(request.getParameter("pastPage"), 1);
+
+            int futureDayLimit = expandAll
+                    ? futurePage * RECURRING_DAY_PAGE_SIZE
+                    : RECURRING_DAY_PAGE_SIZE;
+            int pastDayLimit = showPast
+                    ? pastPage * RECURRING_DAY_PAGE_SIZE
+                    : 0;
+
+            MyBookingDetailDTO detail = bookingService.getBookingDetail(
+                    bookingId,
+                    account.getAccountId(),
+                    futureDayLimit,
+                    showPast,
+                    pastDayLimit,
+                    LocalDate.now());
 
             request.setAttribute("bookingDetail", detail);
+            request.setAttribute("expandAll", expandAll);
+            request.setAttribute("showPast", showPast);
+            request.setAttribute("futurePage", futurePage);
+            request.setAttribute("pastPage", pastPage);
             request.setAttribute("section", "booking-detail");
 
         } catch (NumberFormatException e) {
@@ -152,6 +196,64 @@ public class MyBookingsServlet extends HttpServlet {
         }
 
         request.getRequestDispatcher("/jsp/customer/profile.jsp").forward(request, response);
+    }
+
+    private void loadFutureRecurringSessions(HttpServletRequest request, HttpServletResponse response,
+                                             Account account) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            writeSessionJson(response, false, "ID booking không hợp lệ.", null);
+            return;
+        }
+
+        try {
+            int bookingId = Integer.parseInt(idStr);
+            int futurePage = parsePositiveInt(request.getParameter("futurePage"), 1);
+            int futureDayLimit = futurePage * RECURRING_DAY_PAGE_SIZE;
+
+            MyBookingDetailDTO detail = bookingService.getBookingDetail(
+                    bookingId,
+                    account.getAccountId(),
+                    futureDayLimit,
+                    false,
+                    0,
+                    LocalDate.now());
+
+            int fromIndex = Math.max(0, (futurePage - 1) * RECURRING_DAY_PAGE_SIZE);
+            int toIndex = detail.getRecurringSessions() != null
+                    ? detail.getRecurringSessions().size()
+                    : 0;
+
+            List<Map<String, Object>> sessions = new ArrayList<>();
+            if (detail.getRecurringSessions() != null && fromIndex < toIndex) {
+                detail.getRecurringSessions().subList(fromIndex, toIndex).forEach(ms -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("bookingDate", ms.getBookingDate() != null ? ms.getBookingDate().toString() : "");
+                    row.put("bookingDateDisplay", ms.getBookingDate() != null
+                            ? ms.getBookingDate().format(DATE_DDMMYYYY) : "");
+                    row.put("courtName", ms.getCourtName());
+                    row.put("startTime", ms.getStartTime());
+                    row.put("endTime", ms.getEndTime());
+                    row.put("slotCount", ms.getSlotCount());
+                    row.put("totalPrice", ms.getTotalPrice() != null ? ms.getTotalPrice().toPlainString() : "0");
+                    sessions.add(row);
+                });
+            }
+
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("sessions", sessions);
+            payload.put("hasMore", detail.isHasMoreFutureSessions());
+            payload.put("nextPage", futurePage + 1);
+            writeSessionJson(response, true, "OK", payload);
+        } catch (NumberFormatException e) {
+            writeSessionJson(response, false, "ID booking không hợp lệ.", null);
+        } catch (BusinessException e) {
+            writeSessionJson(response, false, e.getMessage(), null);
+        } catch (Exception e) {
+            writeSessionJson(response, false, "Không thể tải thêm lịch tương lai.", null);
+        }
     }
 
     /**
@@ -203,6 +305,19 @@ public class MyBookingsServlet extends HttpServlet {
      */
     private void retryPayment(HttpServletRequest request, HttpServletResponse response,
                                Account account) throws IOException {
+        processPaymentRequest(request, response, account, false);
+    }
+
+    /**
+     * Handles pay-remaining for CONFIRMED + PARTIAL bookings.
+     */
+    private void payRemaining(HttpServletRequest request, HttpServletResponse response,
+                              Account account) throws IOException {
+        processPaymentRequest(request, response, account, true);
+    }
+
+    private void processPaymentRequest(HttpServletRequest request, HttpServletResponse response,
+                                       Account account, boolean payRemainingOnly) throws IOException {
         String idStr = request.getParameter("bookingId");
         HttpSession session = request.getSession();
 
@@ -214,8 +329,9 @@ public class MyBookingsServlet extends HttpServlet {
 
         try {
             int bookingId = Integer.parseInt(idStr);
-            PaymentCreateResult result = paymentService.retryPaymentForBooking(
-                    bookingId, account.getAccountId(), request);
+            PaymentCreateResult result = payRemainingOnly
+                    ? paymentService.payRemainingForBooking(bookingId, account.getAccountId(), request)
+                    : paymentService.retryPaymentForBooking(bookingId, account.getAccountId(), request);
 
             if (result.isSuccess()) {
                 // Redirect to VNPay payment gateway
@@ -230,7 +346,9 @@ public class MyBookingsServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/my-bookings");
         } catch (Exception e) {
             e.printStackTrace();
-            session.setAttribute("errorMessage", "Không thể tạo thanh toán. Vui lòng thử lại.");
+            session.setAttribute("errorMessage", payRemainingOnly
+                    ? "Không thể thanh toán phần còn lại. Vui lòng thử lại."
+                    : "Không thể tạo thanh toán. Vui lòng thử lại.");
             response.sendRedirect(request.getContextPath() + "/my-bookings");
         }
     }
@@ -267,6 +385,31 @@ public class MyBookingsServlet extends HttpServlet {
         } catch (DateTimeParseException e) {
             return null;
         }
+    }
+
+    private int parsePositiveInt(String value, int defaultValue) {
+        if (value == null || value.trim().isEmpty()) return defaultValue;
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed > 0 ? parsed : defaultValue;
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private boolean parseBooleanFlag(String value) {
+        return "1".equals(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value);
+    }
+
+    private void writeSessionJson(HttpServletResponse response,
+                                  boolean success,
+                                  String message,
+                                  Object data) throws IOException {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", success);
+        body.put("message", message);
+        body.put("data", data);
+        response.getWriter().write(GSON.toJson(body));
     }
 }
 

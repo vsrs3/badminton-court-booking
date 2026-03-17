@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     var CTX = window.ST_CTX || '';
@@ -16,11 +16,13 @@
     var tableBody     = document.getElementById('tableBody');
     var paginationUl  = document.getElementById('paginationUl');
     var errorMessage  = document.getElementById('errorMessage');
+    var filterChips   = document.querySelectorAll('.sbl-chip');
 
     var currentPage = 1;
     var pageSize = 10;
+    var todayFilter = 'ALL';
+    var statusFilter = 'ALL';
 
-    // ─── Show/hide clear button ───
     searchInput.addEventListener('input', function () {
         searchClear.classList.toggle('d-none', this.value.length === 0);
     });
@@ -31,7 +33,6 @@
         loadBookings();
     });
 
-    // ─── Search triggers ───
     searchBtn.addEventListener('click', function () {
         currentPage = 1;
         loadBookings();
@@ -44,22 +45,38 @@
         }
     });
 
-    // ─── Show state ───
+    filterChips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            var type = chip.getAttribute('data-filter');
+            var value = chip.getAttribute('data-value');
+            setActiveChip(type, value);
+            currentPage = 1;
+            loadBookings();
+        });
+    });
+
+    function setActiveChip(type, value) {
+        filterChips.forEach(function (c) {
+            if (c.getAttribute('data-filter') === type) {
+                c.classList.toggle('is-active', c.getAttribute('data-value') === value);
+            }
+        });
+        if (type === 'today') todayFilter = value;
+        if (type === 'status') statusFilter = value;
+    }
+
     function showState(state) {
         stateLoading.classList.add('d-none');
         stateError.classList.add('d-none');
         stateEmpty.classList.add('d-none');
         tableContent.classList.add('d-none');
 
-        switch (state) {
-            case 'loading': stateLoading.classList.remove('d-none'); break;
-            case 'error':   stateError.classList.remove('d-none');   break;
-            case 'empty':   stateEmpty.classList.remove('d-none');   break;
-            case 'table':   tableContent.classList.remove('d-none'); break;
-        }
+        if (state === 'loading') stateLoading.classList.remove('d-none');
+        if (state === 'error') stateError.classList.remove('d-none');
+        if (state === 'empty') stateEmpty.classList.remove('d-none');
+        if (state === 'table') tableContent.classList.remove('d-none');
     }
 
-    // ─── Fetch bookings ───
     window.loadBookings = function () {
         showState('loading');
         resultsInfo.classList.add('d-none');
@@ -67,6 +84,8 @@
         var search = searchInput.value.trim();
         var url = CTX + '/api/staff/booking/list?page=' + currentPage + '&size=' + pageSize;
         if (search) url += '&search=' + encodeURIComponent(search);
+        if (todayFilter === 'TODAY') url += '&today=1';
+        if (statusFilter && statusFilter !== 'ALL') url += '&status=' + encodeURIComponent(statusFilter);
 
         fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(function (res) {
@@ -84,11 +103,9 @@
             });
     };
 
-    // ─── Render ───
     function renderList(data) {
         var bookings = data.bookings;
 
-        // Results info
         resultsInfo.classList.remove('d-none');
         if (data.totalRows === 0) {
             resultsText.textContent = 'Không tìm thấy kết quả.';
@@ -100,7 +117,6 @@
         var to = Math.min(data.page * data.size, data.totalRows);
         resultsText.textContent = 'Hiển thị ' + from + '–' + to + ' trong ' + data.totalRows + ' booking';
 
-        // Table body
         tableBody.innerHTML = '';
         bookings.forEach(function (b) {
             var tr = document.createElement('tr');
@@ -108,18 +124,22 @@
                 window.location.href = CTX + '/staff/booking/detail/' + b.bookingId;
             });
 
-            // Build status cell: if COMPLETED + hasNoShow → show extra badge
             var statusHtml = '<span class="sbl-status sbl-status-' + b.bookingStatus.toLowerCase() + '">' +
                 statusLabel(b.bookingStatus) + '</span>';
             if (b.bookingStatus === 'COMPLETED' && b.hasNoShow) {
                 statusHtml += ' <span class="sbl-status sbl-status-noshow">Có vắng</span>';
             }
 
+            var dateRange = fmtRange(b.recurringStartDate, b.recurringEndDate);
+            var dateHtml = b.isRecurring
+                ? '<span class="sbl-recurring-tag sbl-recurring-tag--hover" title="' + dateRange + '">Định kỳ</span>'
+                : '<span class="sbl-date-range">' + fmtDate(b.bookingDate) + '</span>';
+
             tr.innerHTML =
                 '<td><span class="sbl-booking-id">#' + b.bookingId + '</span></td>' +
                 '<td><span class="sbl-customer-name">' + esc(b.customerName) + '</span></td>' +
                 '<td>' + esc(b.phone) + '</td>' +
-                '<td>' + fmtDate(b.bookingDate) + '</td>' +
+                '<td>' + dateHtml + '</td>' +
                 '<td>' + esc(b.courtDisplay) + '</td>' +
                 '<td>' + statusHtml + '</td>' +
                 '<td>' + paymentBadge(b.paymentStatus) + '</td>';
@@ -127,20 +147,16 @@
             tableBody.appendChild(tr);
         });
 
-        // Pagination
         renderPagination(data.page, data.totalPages);
         showState('table');
     }
 
-    // ─── Pagination ───
     function renderPagination(current, total) {
         paginationUl.innerHTML = '';
         if (total <= 1) return;
 
-        // Prev
-        addPageItem('«', current > 1 ? current - 1 : null, false);
+        addPageItem('<', current > 1 ? current - 1 : null, false);
 
-        // Page numbers (smart: show max 7)
         var pages = buildPageNumbers(current, total, 7);
         pages.forEach(function (p) {
             if (p === '...') {
@@ -150,8 +166,7 @@
             }
         });
 
-        // Next
-        addPageItem('»', current < total ? current + 1 : null, false);
+        addPageItem('>', current < total ? current + 1 : null, false);
     }
 
     function addPageItem(label, targetPage, isActive, isEllipsis) {
@@ -204,7 +219,6 @@
         return pages;
     }
 
-    // ─── Helpers ───
     function esc(s) {
         if (!s) return '<span style="color:#D1D5DB;">—</span>';
         var div = document.createElement('div');
@@ -220,38 +234,26 @@
             dt.getFullYear();
     }
 
-    function statusLabel(s) {
-        switch (s) {
-            case 'PENDING':   return 'Chờ XN';
-            case 'CONFIRMED': return 'Đã XN';
-            case 'COMPLETED': return 'Xong';
+    function fmtRange(start, end) {
+        if (!start || !end) return '—';
+        return fmtDate(start) + ' – ' + fmtDate(end);
+    }
+
+    function statusLabel(code) {
+        switch (code) {
+            case 'PENDING': return 'Chờ';
+            case 'CONFIRMED': return 'Đã xác nhận';
+            case 'EXPIRED': return 'Hết hạn';
             case 'CANCELLED': return 'Đã hủy';
-            default:          return s;
+            case 'COMPLETED': return 'Hoàn thành';
+            default: return code || '—';
         }
     }
 
-    function paymentBadge(s) {
-        if (!s) return '<span style="color:#D1D5DB;">—</span>';
-        var label, cls;
-        switch (s) {
-            case 'UNPAID':  label = 'Chưa TT'; cls = 'sbl-pay-unpaid'; break;
-            case 'PARTIAL': label = 'Một phần'; cls = 'sbl-pay-partial'; break;
-            case 'PAID':    label = 'Đã TT';   cls = 'sbl-pay-paid'; break;
-            default:        label = s; cls = '';
-        }
-        return '<span class="sbl-status ' + cls + '">' + label + '</span>';
+    function paymentBadge(status) {
+        if (!status) return '<span class="sbl-pay sbl-pay-unpaid">—</span>';
+        return '<span class="sbl-pay sbl-pay-' + status.toLowerCase() + '">' + status + '</span>';
     }
 
-    // ─── Init ───
-    // Refresh list when page is restored from browser cache or flagged dirty after edit.
-    window.addEventListener('pageshow', function (event) {
-        var isDirty = sessionStorage.getItem('staffBookingListDirty') === '1';
-        if (!event.persisted && !isDirty) return;
-        if (isDirty) {
-            sessionStorage.removeItem('staffBookingListDirty');
-        }
-        loadBookings();
-    });
     loadBookings();
-
 })();

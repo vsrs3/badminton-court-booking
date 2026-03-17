@@ -41,7 +41,7 @@ public class OwnerStaffController extends HttpServlet {
 
 	// Service instance for sending staff email
 	private final SendEmailService sendEmail = new SendEmailServiceImpl();
-	
+
 	// Service notification
 	private final NotificationService notificationService = new NotificationServiceImpl();
 
@@ -72,7 +72,7 @@ public class OwnerStaffController extends HttpServlet {
 				toggleStatus(request, response);
 
 			}
-			
+
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -80,9 +80,6 @@ public class OwnerStaffController extends HttpServlet {
 
 	}
 
-	/**
-	 * 
-	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
@@ -102,8 +99,8 @@ public class OwnerStaffController extends HttpServlet {
 			} else if (pathInfo.equals("/reset-password")) {
 				resetPassword(request, response);
 
-			} 
-			
+			}
+
 		} catch (Exception e) {
 			request.setAttribute("error", e.getMessage());
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -130,8 +127,7 @@ public class OwnerStaffController extends HttpServlet {
 		if (pageParam != null) {
 			try {
 				page = Math.max(1, Integer.parseInt(pageParam));
-			} 
-			catch (NumberFormatException ignored) {
+			} catch (NumberFormatException ignored) {
 			}
 		}
 
@@ -206,7 +202,7 @@ public class OwnerStaffController extends HttpServlet {
 		String pathInfo = request.getPathInfo();
 		String[] pathParts = pathInfo.split("/");
 		if (pathParts.length != 3) {
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid URL format");
 			return;
 		}
 
@@ -214,7 +210,8 @@ public class OwnerStaffController extends HttpServlet {
 			int accountId = Integer.parseInt(pathParts[2]);
 
 			// Lấy thông tin nhân viên
-			Account staff = staffService.findById(accountId).orElseThrow(() -> new RuntimeException("Staff not found"));
+			Account staff = staffService.findById(accountId)
+					.orElseThrow(() -> new RuntimeException("Không tìm thấy Nhân viên"));
 
 			// Lấy danh sách cơ sở mà nhân viên này quản lý
 			List<Facility> staffFacilities = staffService.findFacilitiesById(accountId);
@@ -230,8 +227,8 @@ public class OwnerStaffController extends HttpServlet {
 			request.setAttribute("staffFacilityId", staffFacilityId);
 			request.getRequestDispatcher("/jsp/owner/staffs/staff-detail.jsp").forward(request, response);
 
-		} catch (NumberFormatException e) {
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+		} catch (Exception e) {
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request parameters");
 		}
 	}
 
@@ -265,14 +262,16 @@ public class OwnerStaffController extends HttpServlet {
 			boolean success = staffProfileService.updateInfo(accountId, facilityId, fullName, email, phone);
 
 			if (success) {
+				request.setAttribute("success", "Successful creating a new staff");
 				response.sendRedirect(request.getContextPath() + "/owner/staffs/view/" + accountId);
+				
 			} else {
 				request.setAttribute("error", "Failed to update staff information");
 				request.getRequestDispatcher("/jsp/owner/staffs/staff-detail.jsp").forward(request, response);
 			}
 
 		} catch (NumberFormatException e) {
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid Account ID");
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid request parameters");
 		}
 
 	}
@@ -292,7 +291,7 @@ public class OwnerStaffController extends HttpServlet {
 		String[] pathParts = pathInfo.split("/");
 
 		if (pathParts.length != 3) {
-			response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid URL format");
 			return;
 		}
 
@@ -313,7 +312,9 @@ public class OwnerStaffController extends HttpServlet {
 			}
 
 			if (success) {
+				request.setAttribute("success", "Successful creating a new staff");
 				response.sendRedirect(url);
+				
 			} else {
 				request.setAttribute("error", "Failed to update staff status");
 				request.getRequestDispatcher(forwardJsp).forward(request, response);
@@ -346,21 +347,19 @@ public class OwnerStaffController extends HttpServlet {
 			int facilityId = Integer.parseInt(facilityParam);
 
 			boolean success = staffService.createStaff(fullName, email, phone, facilityId);
-
 			if (success) {
-				try {
-					String loginLink = request.getScheme() + "://" + request.getServerName() + ":"
-							+ request.getServerPort() + request.getContextPath() + "/auth/login";
 
-					// Send email to staff if create account successful
-					sendEmail.sendWelcomeEmail(email, fullName, loginLink);
+				String loginLink = request.getScheme() + "://" 
+						+ request.getServerName() + ":" 
+						+ request.getServerPort()
+						+ request.getContextPath() + "/auth/login";
 
-				} catch (Exception e) {
-					System.out.print(e.getMessage());
-				}
+				// Send email to staff if create account successful
+				sendEmail.sendWelcomeEmail(email, fullName, loginLink);
 
+				request.setAttribute("success", "Successful creating a new staff");
 				response.sendRedirect(request.getContextPath() + "/owner/staffs/list");
-
+				
 			} else {
 				request.setAttribute("error", "Failed to create a new staff");
 				request.getRequestDispatcher("/jsp/owner/staffs/staff-list.jsp").forward(request, response);
@@ -403,7 +402,7 @@ public class OwnerStaffController extends HttpServlet {
 
 					// Send email to staff if create account successful
 					sendEmail.resetStaffPassword(email, fullName, tempPassword, loginLink);
-					
+
 					// Send staff notification
 					/*
 					 * NotificationDTO dto = new NotificationDTO(); StaffRePassResponse description
@@ -415,9 +414,10 @@ public class OwnerStaffController extends HttpServlet {
 					 * notificationService.insertResetPassNotification(dto);
 					 */
 				} catch (Exception e) {
-					throw new IllegalArgumentException("Lỗi khi gửi email chứa link đăng nhập hoặc thông báo cho nhân viên");
+					throw new IllegalArgumentException(
+							"Lỗi khi gửi email chứa link đăng nhập hoặc thông báo cho nhân viên");
 				}
-				
+
 				response.getWriter().write("{\"success\":true,\"tempPassword\":\"" + tempPassword + "\"}");
 			} else {
 				response.getWriter().write("{\"success\":false,\"message\":\"Không thể đặt lại mật khẩu\"}");

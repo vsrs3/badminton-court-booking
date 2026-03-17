@@ -10,12 +10,15 @@ import com.bcb.dto.staff.StaffBookingEditStatusCountDTO;
 import com.bcb.repository.impl.StaffBookingEditRepositoryImpl;
 import com.bcb.repository.staff.StaffBookingEditRepository;
 import com.bcb.service.staff.StaffBookingEditService;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.utils.DBContext;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +32,7 @@ import java.util.Set;
 public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private final StaffBookingEditRepository repository = new StaffBookingEditRepositoryImpl();
+    private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
     @Override
     public StaffBookingEditOutcomeDTO process(String servletPath, int facilityId, int staffId, String body) throws Exception {
@@ -135,6 +139,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                     reason, beforeEtag, afterEtag, before, after, invoice.refundDue);
 
             conn.commit();
+
+            try {
+                String payload = buildUpdatePayload(before, after, reason);
+                emailQueueService.enqueueBookingUpdated(bookingId, payload);
+            } catch (Exception ignored) {
+            }
             return "{\"success\":true,\"message\":\"Lưu thay đổi thành công\",\"data\":{"
                     + "\"etag\":" + StaffAuthUtil.escapeJson(afterEtag)
                     + ",\"bookingStatus\":\"" + nextBookingStatus + "\""
@@ -174,6 +184,21 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             }
             if (!"NO_SHOW".equals(slot.getSlotStatus())) {
                 throw new ApiException(400, "Chỉ cho phép giải phóng slot NO_SHOW");
+            }
+            Map<Integer, String> beforeStatus = new HashMap<>();
+            for (StaffBookingSnapshotTokenUtil.SlotSnapshot s : before.slots) {
+                beforeStatus.put(s.bookingSlotId, s.slotStatus);
+            }
+            List<StaffBookingEditSessionCellDTO> cells = repository.findSessionCellsByBookingId(conn, bookingId);
+            Map<Integer, LocalTime> sessionEndBySlotId = buildSessionEndBySlotId(cells, beforeStatus);
+            LocalTime sessionEnd = sessionEndBySlotId.get(bookingSlotId);
+            if (sessionEnd == null || before.bookingDate == null || before.bookingDate.isEmpty()) {
+                throw new ApiException(400, "Không xác định được thời gian kết thúc phiên");
+            }
+            LocalDate bookingDate = LocalDate.parse(before.bookingDate);
+            LocalDateTime sessionEndAt = LocalDateTime.of(bookingDate, sessionEnd);
+            if (LocalDateTime.now().isAfter(sessionEndAt)) {
+                throw new ApiException(400, "Phiên đã quá giờ, không thể giải phóng slot");
             }
 
             boolean changed = false;
@@ -249,6 +274,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                     reason, beforeEtag, afterEtag, before, after, invoice.refundDue);
 
             conn.commit();
+
+            try {
+                String payload = buildCancelPayload(reason);
+                emailQueueService.enqueueBookingCancelled(bookingId, payload);
+            } catch (Exception ignored) {
+            }
             return "{\"success\":true,\"message\":\"Hủy các slot còn lại thành công\",\"data\":{"
                     + "\"etag\":" + StaffAuthUtil.escapeJson(afterEtag)
                     + ",\"bookingStatus\":\"" + nextBookingStatus + "\""
@@ -387,10 +418,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         for (SlotPair slot : addSlots) {
             StaffBookingEditSessionCellDTO cell = repository.findSessionCellBySlotId(conn, slot.courtId, slot.slotId);
             if (cell == null) {
-                throw new ApiException(400, "Slot khong ton tai");
+                throw new ApiException(400, "Slot không tồn tại");
             }
             if (now.compareTo(cell.getEnd()) >= 0) {
-                throw new ApiException(400, "Da qua gio ket thuc cua mot hoac nhieu slot. Vui long chon slot khac.");
+                throw new ApiException(400, "Đã quá giờ kết thúc của một hoặc nhiều slot. Vui lòng chọn slot khác.");
             }
         }
     }
@@ -590,6 +621,50 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
         return sessionStartBySlot;
     }
+    private Map<Integer, java.time.LocalTime> buildSessionEndBySlotId(List<StaffBookingEditSessionCellDTO> cells,
+                                                                      Map<Integer, String> beforeStatus) {
+        Map<Integer, List<StaffBookingEditSessionCellDTO>> byCourt = new HashMap<>();
+        for (StaffBookingEditSessionCellDTO cell : cells) {
+            String status = beforeStatus.get(cell.getBookingSlotId());
+            if (status == null || "CANCELLED".equals(status)) continue;
+            byCourt.computeIfAbsent(cell.getCourtId(), k -> new ArrayList<>()).add(cell);
+        }
+
+        Map<Integer, java.time.LocalTime> sessionEndBySlot = new HashMap<>();
+        for (List<StaffBookingEditSessionCellDTO> list : byCourt.values()) {
+            list.sort(Comparator.comparing(StaffBookingEditSessionCellDTO::getStart));
+            List<StaffBookingEditSessionCellDTO> current = new ArrayList<>();
+            java.time.LocalTime prevEnd = null;
+
+            for (StaffBookingEditSessionCellDTO cell : list) {
+                if (current.isEmpty()) {
+                    current.add(cell);
+                    prevEnd = cell.getEnd();
+                    continue;
+                }
+                if (prevEnd != null && prevEnd.equals(cell.getStart())) {
+                    current.add(cell);
+                    prevEnd = cell.getEnd();
+                    continue;
+                }
+                if (prevEnd != null) {
+                    for (StaffBookingEditSessionCellDTO c : current) {
+                        sessionEndBySlot.put(c.getBookingSlotId(), prevEnd);
+                    }
+                }
+                current = new ArrayList<>();
+                current.add(cell);
+                prevEnd = cell.getEnd();
+            }
+            if (!current.isEmpty() && prevEnd != null) {
+                for (StaffBookingEditSessionCellDTO c : current) {
+                    sessionEndBySlot.put(c.getBookingSlotId(), prevEnd);
+                }
+            }
+        }
+
+        return sessionEndBySlot;
+    }
 
     private String buildRefundNote(String prefix, String reason) {
         if (reason == null || reason.isEmpty()) return prefix;
@@ -664,6 +739,27 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
         json.append('}');
         return json.toString();
+    }
+
+    private String buildUpdatePayload(StaffBookingSnapshotTokenUtil.Snapshot before,
+                                      StaffBookingSnapshotTokenUtil.Snapshot after,
+                                      String reason) {
+        StringBuilder json = new StringBuilder(2048);
+        json.append('{');
+        json.append("\"before\":").append(buildSnapshotJson(before));
+        json.append(",\"after\":").append(buildSnapshotJson(after));
+        if (reason != null && !reason.isEmpty()) {
+            json.append(",\"reason\":").append(StaffAuthUtil.escapeJson(reason));
+        }
+        json.append('}');
+        return json.toString();
+    }
+
+    private String buildCancelPayload(String reason) {
+        if (reason == null || reason.isEmpty()) {
+            return "{}";
+        }
+        return "{\"reason\":" + StaffAuthUtil.escapeJson(reason) + "}";
     }
 
     private List<SlotPair> parseSlotPairs(String json, String key) {
@@ -806,6 +902,16 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

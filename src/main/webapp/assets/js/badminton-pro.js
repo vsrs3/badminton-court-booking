@@ -49,6 +49,7 @@ const contextPath = getContextPath();
     let isLoading = false;
     let hasMore = true;
     let inFlightRequestController = null;
+    let lastFacilitiesRequestKey = null;
 
     // ============================================
     // AUTH MODAL FUNCTIONS
@@ -83,6 +84,7 @@ const contextPath = getContextPath();
     }
 
     const LOCATION_PROMPT_KEY = "locationPrompted";
+    const USER_LOCATION_KEY = "userLocation";
 
     function showLocationPermissionModal() {
         const backdrop = document.getElementById("locationPermissionBackdrop");
@@ -116,6 +118,8 @@ const contextPath = getContextPath();
         }
 
         AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
         updateDistanceFilterAvailability();
         loadFacilitiesFromAPI(0);
     }
@@ -130,11 +134,26 @@ const contextPath = getContextPath();
         }
 
         if (status === "granted") {
+            const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+            if (cachedLocation) {
+                try {
+                    AppState.userLocation = JSON.parse(cachedLocation);
+                    window.__USER_LOCATION__ = AppState.userLocation;
+                    updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
+                } catch (e) {
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                }
+            }
             getUserLocation();
             return;
         }
 
         AppState.userLocation = null;
+        sessionStorage.removeItem(USER_LOCATION_KEY);
+        window.__USER_LOCATION__ = null;
         updateDistanceFilterAvailability();
         loadFacilitiesFromAPI(0);
     }
@@ -246,6 +265,22 @@ const contextPath = getContextPath();
     async function loadFacilitiesFromAPI(page = 0) {
         console.log('Loading facilities from API, page:', page);
 
+        const requestKey = [
+            page,
+            PAGE_SIZE,
+            AppState.searchQuery.trim(),
+            AppState.filters.province,
+            AppState.filters.district,
+            AppState.filters.maxDistance,
+            AppState.isShowingFavorites ? 'fav' : 'all',
+            AppState.userLocation ? `${AppState.userLocation.lat},${AppState.userLocation.lng}` : 'no-loc'
+        ].join('|');
+
+        if (isLoading && requestKey === lastFacilitiesRequestKey) {
+            console.log('Duplicate in-flight request, skipping...');
+            return;
+        }
+
         if (isLoading && page > 0) {
             console.log('Already loading, skipping...');
             return;
@@ -258,6 +293,7 @@ const contextPath = getContextPath();
         }
 
         isLoading = true;
+        lastFacilitiesRequestKey = requestKey;
 
         try {
             // Build API URL
@@ -274,6 +310,9 @@ const contextPath = getContextPath();
             }
             if (AppState.filters.district) {
                 params.append("district", AppState.filters.district);
+            }
+            if (AppState.filters.maxDistance !== null && AppState.userLocation) {
+                params.append("maxDistance", AppState.filters.maxDistance);
             }
 
             if (AppState.isShowingFavorites) {
@@ -375,7 +414,12 @@ const contextPath = getContextPath();
                         lng: position.coords.longitude
                     };
                     console.log('✅ User location obtained:', AppState.userLocation);
+                    sessionStorage.setItem(USER_LOCATION_KEY, JSON.stringify(AppState.userLocation));
+                    window.__USER_LOCATION__ = AppState.userLocation;
                     updateDistanceFilterAvailability();
+                    if (window.setUserLocationForMap) {
+                        window.setUserLocationForMap(AppState.userLocation);
+                    }
 
                     // ✅ Reload facilities with location to get distance calculation
                     loadFacilitiesFromAPI(0);
@@ -384,6 +428,8 @@ const contextPath = getContextPath();
                     console.error("Error getting location:", error);
                     showToast("Không thể lấy vị trí của bạn");
                     AppState.userLocation = null;
+                    sessionStorage.removeItem(USER_LOCATION_KEY);
+                    window.__USER_LOCATION__ = null;
                     updateDistanceFilterAvailability();
 
                     // Still load facilities without location
@@ -393,6 +439,8 @@ const contextPath = getContextPath();
         } else {
             console.log("Geolocation not supported");
             AppState.userLocation = null;
+            sessionStorage.removeItem(USER_LOCATION_KEY);
+            window.__USER_LOCATION__ = null;
             updateDistanceFilterAvailability();
             // Load without location
             loadFacilitiesFromAPI(0);
@@ -420,7 +468,7 @@ const contextPath = getContextPath();
         console.log('Applying filters and search...');
         let courts = [...AppState.courts];
 
-        // Search/province/district are filtered on API side (database).
+        // Search/province/district/distance are filtered on API side (database when possible).
 
         // 1. Distance filter
         if (AppState.filters.maxDistance !== null && AppState.userLocation) {
@@ -579,7 +627,7 @@ const contextPath = getContextPath();
 
                 // Ưu tiên dùng BookingTypeModal nếu đã load từ jsp/components
                 if (window.BookingTypeModal) {
-                    window.BookingTypeModal.open(venueId, courtName);
+                    window.BookingTypeModal.open(venueId, courtName, courtId);
                 } else {
                     // Fallback: navigate thẳng tới single-booking
                     const today = new Date();
@@ -789,7 +837,7 @@ const contextPath = getContextPath();
         const rating = Number(court.rating || 0);
         const detailRating = document.getElementById('detailRating');
         if (detailRating) {
-            detailRating.textContent = `${"\u2605"} ${rating.toFixed(1)} (0 \u0111\u00e1nh gi\u00e1)`;
+            detailRating.textContent = `${"★"} ${rating.toFixed(1)} (0 đánh giá)`;
         }
 
         setText('detailTitle', court.name || '');
@@ -805,10 +853,10 @@ const contextPath = getContextPath();
     }
 
     function renderDetailLoadingState() {
-        setText('detailOverview', '\u0111ang t\u1ea3i...');
-        setHtml('detailPricingContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
-        setHtml('detailImagesContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
-        setHtml('detailReviewsContent', '<div class="detail-empty-state">\u0111ang t\u1ea3i...</div>');
+        setText('detailOverview', 'đang tải...');
+        setHtml('detailPricingContent', '<div class="detail-empty-state">đang tải...</div>');
+        setHtml('detailImagesContent', '<div class="detail-empty-state">đang tải...</div>');
+        setHtml('detailReviewsContent', '<div class="detail-empty-state">đang tải...</div>');
     }
 
     async function loadCourtDetail(courtId) {
@@ -824,10 +872,10 @@ const contextPath = getContextPath();
             applyCourtDetail(detail);
         } catch (error) {
             console.error('Error loading facility detail:', error);
-            setText('detailOverview', 'ch\u01b0a c\u00f3');
-            setHtml('detailPricingContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3</div>');
-            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
-            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            setText('detailOverview', 'chưa có');
+            setHtml('detailPricingContent', '<div class="detail-empty-state">chưa có</div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>chưa có hình ảnh</span></div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">chưa có comment nào</div>');
         }
     }
 
@@ -852,9 +900,9 @@ const contextPath = getContextPath();
 
         const rating = Number(selected.rating || 0);
         const reviewCount = Number(selected.reviewCount || 0);
-        setText('detailRating', `${"\u2605"} ${rating.toFixed(1)} (${reviewCount} \u0111\u00e1nh gi\u00e1)`);
+        setText('detailRating', `${"★"} ${rating.toFixed(1)} (${reviewCount} đánh giá)`);
 
-        setText('detailOverview', selected.description || 'ch\u01b0a c\u00f3');
+        setText('detailOverview', selected.description || 'chưa có');
         renderDetailPricing(selected.priceRules || []);
         renderDetailImages(selected.galleryImages || [], selected.name || 'Facility');
         renderDetailReviews(selected.reviews || []);
@@ -863,12 +911,12 @@ const contextPath = getContextPath();
 
     function renderDetailPricing(priceRules) {
         if (!priceRules.length) {
-            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>ch\u01b0a c\u00f3 b\u1ea3ng gi\u00e1</span></div>');
+            setHtml('detailPricingContent', '<div class="detail-empty-state"><i class="bi bi-table"></i><span>chưa có bảng giá</span></div>');
             return;
         }
 
         const normalizedRules = priceRules.map(rule => ({
-            courtTypeName: rule.courtTypeName || 'ch\u01b0a c\u00f3',
+            courtTypeName: rule.courtTypeName || 'chưa có',
             dayType: rule.dayType || 'UNKNOWN',
             dayTypeLabel: getDayTypeLabel(rule.dayType),
             dayTypeBadgeClass: getDayTypeBadgeClass(rule.dayType),
@@ -930,10 +978,10 @@ const contextPath = getContextPath();
                     <table class="detail-data-table">
                         <thead>
                             <tr>
-                                <th>Lo\u1ea1i s\u00e2n</th>
-                                <th>Ng\u00e0y \u00e1p d\u1ee5ng</th>
-                                <th>Khung gi\u1edd</th>
-                                <th class="detail-price-header">Gi\u00e1 (VN\u0110/30 ph\u00fat)</th>
+                                <th>Loại sân</th>
+                                <th>Ngày áp dụng</th>
+                                <th>Khung giờ</th>
+                                <th class="detail-price-header">Giá (VNĐ/30 phút)</th>
                             </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
@@ -944,7 +992,7 @@ const contextPath = getContextPath();
     }
     function renderDetailImages(images, facilityName) {
         if (!images.length) {
-            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>ch\u01b0a c\u00f3 h\u00ecnh \u1ea3nh</span></div>');
+            setHtml('detailImagesContent', '<div class="detail-empty-state"><i class="bi bi-image"></i><span>chưa có hình ảnh</span></div>');
             return;
         }
 
@@ -964,14 +1012,14 @@ const contextPath = getContextPath();
 
     function renderDetailReviews(reviews) {
         if (!reviews.length) {
-            setHtml('detailReviewsContent', '<div class="detail-empty-state">ch\u01b0a c\u00f3 comment n\u00e0o</div>');
+            setHtml('detailReviewsContent', '<div class="detail-empty-state">chưa có comment nào</div>');
             return;
         }
 
         const html = reviews.map(review => {
-            const reviewer = escapeHtml(review.reviewerName || 'Ng\u01b0\u1eddi d\u00f9ng');
+            const reviewer = escapeHtml(review.reviewerName || 'Người dùng');
             const rating = Number(review.rating || 0);
-            const comment = escapeHtml((review.comment || '').trim() || 'ch\u01b0a c\u00f3 comment n\u00e0o');
+            const comment = escapeHtml((review.comment || '').trim() || 'chưa có comment nào');
             return `
                 <article class="detail-review-item">
                     <div class="detail-review-head">
@@ -1002,17 +1050,17 @@ const contextPath = getContextPath();
     }
 
     function getDayTypeLabel(dayType) {
-        if (dayType === 'WEEKDAY') return 'Trong tu\u1ea7n';
-        if (dayType === 'WEEKEND') return 'Cu\u1ed1i tu\u1ea7n';
-        return dayType || 'ch\u01b0a c\u00f3';
+        if (dayType === 'WEEKDAY') return 'Trong tuần';
+        if (dayType === 'WEEKEND') return 'Cuối tuần';
+        return dayType || 'chưa có';
     }
 
     function formatCurrencyVnd(value) {
         const amount = Number(value || 0);
         if (!Number.isFinite(amount) || amount <= 0) {
-            return 'ch\u01b0a c\u00f3';
+            return 'chưa có';
         }
-        return `${amount.toLocaleString('vi-VN')} \u20ab`;
+        return `${amount.toLocaleString('vi-VN')} ₫`;
     }
 
     function resolveAssetUrl(path) {
@@ -1535,7 +1583,25 @@ const contextPath = getContextPath();
         // Attach event listeners
         attachEventListeners();
 
+        const cachedLocation = sessionStorage.getItem(USER_LOCATION_KEY);
+        const status = sessionStorage.getItem(LOCATION_PROMPT_KEY);
+        if (status === "granted" && cachedLocation) {
+            try {
+                AppState.userLocation = JSON.parse(cachedLocation);
+                window.__USER_LOCATION__ = AppState.userLocation;
+            } catch (e) {
+                AppState.userLocation = null;
+                sessionStorage.removeItem(USER_LOCATION_KEY);
+            }
+        }
+
         updateDistanceFilterAvailability();
+        if (AppState.userLocation && window.setUserLocationForMap) {
+            window.setUserLocationForMap(AppState.userLocation);
+        }
+
+        // Always load baseline data (do not depend on geolocation callbacks)
+        loadFacilitiesFromAPI(0);
 
         // Ask for location permission once per session
         showLocationPromptIfNeeded();
@@ -1554,6 +1620,15 @@ const contextPath = getContextPath();
 
         console.log('App initialized');
     }
+
+    // Reload data when returning via back/forward cache
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            currentPage = 0;
+            hasMore = true;
+            loadFacilitiesFromAPI(0);
+        }
+    });
 
     // Start app when DOM is ready
     if (document.readyState === 'loading') {

@@ -17,10 +17,12 @@
 
         <c:if test="${not empty requestScope.errors}">
             <div class="alert alert-danger mb-4">
-                <i class="bi bi-exclamation-circle me-2"></i>
-                <ul class="mb-0">
+                <ul class="mb-0 ps-0" style="list-style: none;">
                     <c:forEach var="err" items="${requestScope.errors}">
-                        <li>${err}</li>
+                        <li class="d-flex align-items-center mb-1">
+                            <i class="bi bi-exclamation-circle text-danger me-2" style="font-size: 1.2rem;"></i>
+                            <span>${err}</span>
+                        </li>
                     </c:forEach>
                 </ul>
             </div>

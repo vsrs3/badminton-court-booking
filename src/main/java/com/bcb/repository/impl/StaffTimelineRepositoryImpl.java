@@ -129,7 +129,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
     public List<StaffTimelineDisabledCellDTO> findDisabledCells(int facilityId, LocalDate bookingDate,
                                                                 String openTime, String closeTime) throws Exception {
         String sql = """
-                SELECT cse.court_id, ts.slot_id, cse.reason
+                SELECT cse.exception_id, cse.court_id, ts.slot_id, cse.reason
                 FROM CourtScheduleException cse
                 CROSS JOIN TimeSlot ts
                 WHERE cse.facility_id = ? AND cse.is_active = 1
@@ -152,6 +152,7 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     StaffTimelineDisabledCellDTO cell = new StaffTimelineDisabledCellDTO();
+                    cell.setExceptionId(rs.getInt("exception_id"));
                     cell.setCourtId(rs.getInt("court_id"));
                     cell.setSlotId(rs.getInt("slot_id"));
                     String reason = rs.getString("reason");

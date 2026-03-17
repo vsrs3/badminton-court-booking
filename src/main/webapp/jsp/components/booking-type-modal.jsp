@@ -227,10 +227,13 @@
             + '&date='       + encodeURIComponent(todayStr());
     });
 
-    /* Đặt lịch cố định (team khác làm) */
+    /* Đặt lịch cố định */
     btnRecurring.addEventListener('click', function () {
+        if (!_venueId) return;
         closeModal();
-        alert('Tính năng đặt lịch cố định đang được phát triển.');
+        window.location.href = getCtx()
+            + '/jsp/booking/recurring/create.jsp'
+            + '?facilityId=' + encodeURIComponent(_venueId);
     });
 
     /* ── Export toàn cục ── */

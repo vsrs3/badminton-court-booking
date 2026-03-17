@@ -45,6 +45,8 @@ public class ReviewController extends HttpServlet {
 		switch (action) {
 			
 			case "user-list" -> listUserReview(request, response);
+			
+			case "location-list" -> listLocationReview(request, response);
 		
 			case "view" -> viewReview(request, response);
 	
@@ -210,7 +212,6 @@ public class ReviewController extends HttpServlet {
 	}
 
 	
-	
 	private void listUserReview(HttpServletRequest request, HttpServletResponse response)
 	        throws ServletException, IOException {
 
@@ -246,8 +247,31 @@ public class ReviewController extends HttpServlet {
 	}
 
 	
+	private void listLocationReview (HttpServletRequest request, HttpServletResponse response)
+			throws IOException, ServletException {
+		
+		String facilityIdParam = request.getParameter("facilityId");
+		
+		try {
+			Integer facilityId = Integer.parseInt(facilityIdParam);
+			List<Review> reviews = reviewService.listLocationReview(facilityId);
+			
+			if(reviews == null) {
+				request.setAttribute("error", "danh sách review bị null");
+			} else {
+				request.setAttribute("reviews", reviews);
+			}
+			
+			request.getRequestDispatcher("/jsp/owner/court/court-list.jsp").forward(request, response);
+			
+		} catch (Exception e) {
+			request.setAttribute("error", "Lỗi Param null hoặc khi truy vấn database");
+			request.getRequestDispatcher("/jsp/owner/court/court-list.jsp").forward(request, response);
+		}
+	}
 	
-	private Account getAuthenticatedCustomer(HttpServletRequest request, HttpServletResponse response)
+	
+	private Account getAuthenticatedCustomer (HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
 
 		HttpSession session = request.getSession(false);

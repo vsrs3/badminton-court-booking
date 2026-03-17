@@ -1,6 +1,7 @@
 package com.bcb.dto.mybooking;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * DTO representing a merged (consecutive) time block for one court.
@@ -17,6 +18,7 @@ public class MergedSlotDTO {
     private String endTime;         // HH:mm — end of merged block
     private BigDecimal totalPrice;  // sum of all slot prices within the merged block
     private int slotCount;          // number of original slots merged
+    private LocalDate bookingDate;  // nullable for single booking, non-null for recurring session rows
 
     public MergedSlotDTO() {}
 
@@ -27,6 +29,12 @@ public class MergedSlotDTO {
         this.endTime = endTime;
         this.totalPrice = totalPrice;
         this.slotCount = slotCount;
+    }
+
+    public MergedSlotDTO(String courtName, String startTime, String endTime,
+                         BigDecimal totalPrice, int slotCount, LocalDate bookingDate) {
+        this(courtName, startTime, endTime, totalPrice, slotCount);
+        this.bookingDate = bookingDate;
     }
 
     public String getCourtName() { return courtName; }
@@ -43,4 +51,7 @@ public class MergedSlotDTO {
 
     public int getSlotCount() { return slotCount; }
     public void setSlotCount(int slotCount) { this.slotCount = slotCount; }
+
+    public LocalDate getBookingDate() { return bookingDate; }
+    public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
 }

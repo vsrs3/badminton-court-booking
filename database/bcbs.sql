@@ -230,15 +230,13 @@ GO
 CREATE TABLE RecurringBooking (
     recurring_id INT IDENTITY PRIMARY KEY,
     facility_id INT NOT NULL,
-    account_id INT NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(20)
         CHECK (status IN ('ACTIVE','PAUSED','CANCELLED'))
         DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
-    FOREIGN KEY (account_id) REFERENCES Account(account_id)
+    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id)
 );
 GO
 
@@ -246,10 +244,12 @@ GO
 CREATE TABLE RecurringPattern (
     pattern_id INT IDENTITY PRIMARY KEY,
     recurring_id INT NOT NULL,
+    court_id INT NOT NULL,
     day_of_week INT CHECK (day_of_week BETWEEN 1 AND 7),
     slot_id INT NOT NULL,
     FOREIGN KEY (recurring_id) REFERENCES RecurringBooking(recurring_id) ON DELETE CASCADE,
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
+    foreign key (court_id) references Court(court_id),
     UNIQUE (recurring_id, day_of_week, slot_id)
 );
 GO
@@ -258,7 +258,8 @@ GO
 CREATE TABLE Guest (
     guest_id INT IDENTITY PRIMARY KEY,
     guest_name NVARCHAR(255) NOT NULL,
-    phone NVARCHAR(20) NOT NULL
+    phone NVARCHAR(20) NOT NULL,
+    email NVARCHAR(255) NULL
 );
 GO
 
@@ -268,7 +269,7 @@ CREATE TABLE Booking (
 
     recurring_id INT NULL,
     facility_id INT NOT NULL, -- them de nhat quan, giam quer
-    booking_date DATE NOT NULL,
+    booking_date DATE NULL,
 
     account_id INT NULL,     -- user online
     guest_id INT NULL,       -- walk-in / phone
@@ -302,6 +303,7 @@ CREATE TABLE BookingSlot (
     booking_slot_id INT IDENTITY PRIMARY KEY,
     booking_id INT NOT NULL,
     court_id INT NOT NULL,        -- FIX: gắn sân tại slot
+    booking_date DATE NULL,
     slot_id INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
 
@@ -317,7 +319,7 @@ CREATE TABLE BookingSlot (
     FOREIGN KEY (court_id) REFERENCES Court(court_id),
     FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
 
-    UNIQUE (booking_id, court_id, slot_id)
+    UNIQUE (booking_id, booking_date,court_id, slot_id)
 );
 GO
 
@@ -595,6 +597,31 @@ CREATE TABLE Notification (
 );
 GO
 
+-- Email Queue (for async email sending)
+CREATE TABLE EmailQueue (
+    email_id INT IDENTITY PRIMARY KEY,
+    email_type VARCHAR(20) NOT NULL
+        CONSTRAINT CK_EmailQueue_EmailType CHECK (email_type IN (
+            'CREATE','CREATE_RECURRING','UPDATE','CANCEL',
+            'REMINDER_UPCOMING_24H','REMINDER_UPCOMING_2H','REMINDER_PAYMENT_12H',
+            'PAY_SUCCESS','PAY_REMAINING','REMINDER_CUS_24H'
+        )),
+    booking_id INT NOT NULL,
+    to_email NVARCHAR(255) NOT NULL,
+    payload_json NVARCHAR(MAX) NULL,
+    reminder_at DATETIME NULL,
+    status VARCHAR(20) NOT NULL
+        CONSTRAINT CK_EmailQueue_Status CHECK (status IN ('PENDING','SENDING','SENT','FAILED'))
+        DEFAULT 'PENDING',
+    retry_count INT NOT NULL DEFAULT 0,
+    next_attempt_at DATETIME NOT NULL DEFAULT GETDATE(),
+    last_error NVARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    sent_at DATETIME NULL,
+    FOREIGN KEY (booking_id) REFERENCES Booking(booking_id)
+);
+GO
+
 -- Favorite
 CREATE TABLE CustomerFavoriteFacility (
     favorite_id INT IDENTITY PRIMARY KEY,
@@ -626,5 +653,91 @@ CREATE TABLE VoucherUsage (
 );
 GO
 
+-- Index
 CREATE INDEX IX_VoucherUsage_Voucher ON VoucherUsage(voucher_id);
 CREATE INDEX IX_VoucherUsage_Account ON VoucherUsage(account_id);
+
+/* ======================================================
+   COURT
+   ====================================================== */
+
+CREATE NONCLUSTERED INDEX IX_Court_FacilityId
+ON Court(facility_id)
+INCLUDE (court_id, court_name, court_type_id, is_active);
+
+CREATE NONCLUSTERED INDEX IX_Court_Facility_CourtType
+ON Court(facility_id, court_type_id)
+INCLUDE (court_id, court_name, is_active);
+
+
+/* ======================================================
+   BOOKING (cron + lịch + staff + recurring)
+   ====================================================== */
+
+-- load booking của user
+CREATE NONCLUSTERED INDEX IX_Booking_Account_Status
+ON Booking(account_id, booking_status)
+INCLUDE (booking_id, facility_id, created_at, recurring_id);
+
+-- load booking theo facility để render dashboard
+CREATE NONCLUSTERED INDEX IX_Booking_Facility_Status_Date
+ON Booking(facility_id, booking_status, booking_date)
+INCLUDE (account_id, guest_id, staff_id);
+
+-- recurring booking
+CREATE NONCLUSTERED INDEX IX_Booking_RecurringId
+ON Booking(recurring_id)
+INCLUDE (booking_id, booking_status);
+
+-- staff tạo booking
+CREATE NONCLUSTERED INDEX IX_Booking_Staff
+ON Booking(staff_id)
+INCLUDE (booking_id, booking_date, booking_status);
+
+-- CRON JOB tìm hold expired
+CREATE NONCLUSTERED INDEX IX_Booking_Status_HoldExpired
+ON Booking(booking_status, hold_expired_at)
+INCLUDE (booking_id);
+
+
+/* ======================================================
+   BOOKINGSLOT (CORE AVAILABILITY)
+   ====================================================== */
+
+-- check sân trống realtime
+CREATE NONCLUSTERED INDEX IX_BookingSlot_Court_Date_Slot
+ON BookingSlot(court_id, booking_date, slot_id)
+INCLUDE (booking_id, slot_status, price, is_released);
+
+-- render lịch dạng calendar theo ngày
+CREATE NONCLUSTERED INDEX IX_BookingSlot_Date_Court_Status
+ON BookingSlot(booking_date, court_id, slot_id, slot_status)
+INCLUDE (booking_id, price, is_released);
+
+-- phục vụ cleanupExpiredHolds → tìm slot theo booking
+CREATE NONCLUSTERED INDEX IX_BookingSlot_BookingId
+ON BookingSlot(booking_id)
+INCLUDE (booking_slot_id, court_id, booking_date, slot_id);
+
+
+/* ======================================================
+   COURTSLOTBOOKING (LOCK TABLE - conflict realtime)
+   ====================================================== */
+
+-- check trùng  khi user click đặt sân
+CREATE NONCLUSTERED INDEX IX_CourtSlotBooking_Date_Court_Slot
+ON CourtSlotBooking(booking_date, court_id, slot_id)
+INCLUDE (booking_slot_id);
+
+-- quan trọng cho job cleanup delete lock
+CREATE NONCLUSTERED INDEX IX_CourtSlotBooking_BookingSlotId
+ON CourtSlotBooking(booking_slot_id);
+
+
+/* ======================================================
+   FACILITY PRICE RULE
+   ====================================================== */
+
+CREATE NONCLUSTERED INDEX IX_FacilityPriceRule_Main
+ON FacilityPriceRule(facility_id, court_type_id, day_type)
+INCLUDE (start_time, end_time, price);

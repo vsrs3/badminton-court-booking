@@ -121,7 +121,7 @@ public class CustomerController extends HttpServlet {
             if (session != null) {
                 session.invalidate();
             }
-            response.sendRedirect(request.getContextPath() + "/home");
+            response.sendRedirect(request.getContextPath() + "/");
 
         } catch (Exception e) {
             System.out.println(e.getMessage());

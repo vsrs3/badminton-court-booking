@@ -20,9 +20,13 @@ public class MyBookingDetailDTO {
 
     // Booking info
     private LocalDate bookingDate;
+    private LocalDate recurringStartDate;
+    private LocalDate recurringEndDate;
+    private String recurringPatternDetails;
     private String bookingStatus;
     private String bookingType;         // SINGLE or RECURRING
     private LocalDateTime createdAt;
+    private String createdAtDisplay;
     private LocalDateTime holdExpiredAt;
 
     // Slot details — raw individual slots (for price breakdown)
@@ -30,6 +34,12 @@ public class MyBookingDetailDTO {
 
     // Merged slots — consecutive slots on the same court merged into one block (for display)
     private List<MergedSlotDTO> mergedSlots;
+    private List<MergedSlotDTO> recurringSessions;
+    private List<MergedSlotDTO> pastRecurringSessions;
+
+    // Recurring lazy-load metadata
+    private boolean hasMoreFutureSessions;
+    private boolean hasMorePastSessions;
 
     // Payment info
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
@@ -61,6 +71,15 @@ public class MyBookingDetailDTO {
     public LocalDate getBookingDate() { return bookingDate; }
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
 
+    public LocalDate getRecurringStartDate() { return recurringStartDate; }
+    public void setRecurringStartDate(LocalDate recurringStartDate) { this.recurringStartDate = recurringStartDate; }
+
+    public LocalDate getRecurringEndDate() { return recurringEndDate; }
+    public void setRecurringEndDate(LocalDate recurringEndDate) { this.recurringEndDate = recurringEndDate; }
+
+    public String getRecurringPatternDetails() { return recurringPatternDetails; }
+    public void setRecurringPatternDetails(String recurringPatternDetails) { this.recurringPatternDetails = recurringPatternDetails; }
+
     public String getBookingStatus() { return bookingStatus; }
     public void setBookingStatus(String bookingStatus) { this.bookingStatus = bookingStatus; }
 
@@ -70,6 +89,9 @@ public class MyBookingDetailDTO {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
+    public String getCreatedAtDisplay() { return createdAtDisplay; }
+    public void setCreatedAtDisplay(String createdAtDisplay) { this.createdAtDisplay = createdAtDisplay; }
+
     public LocalDateTime getHoldExpiredAt() { return holdExpiredAt; }
     public void setHoldExpiredAt(LocalDateTime holdExpiredAt) { this.holdExpiredAt = holdExpiredAt; }
 
@@ -78,6 +100,18 @@ public class MyBookingDetailDTO {
 
     public List<MergedSlotDTO> getMergedSlots() { return mergedSlots; }
     public void setMergedSlots(List<MergedSlotDTO> mergedSlots) { this.mergedSlots = mergedSlots; }
+
+    public List<MergedSlotDTO> getRecurringSessions() { return recurringSessions; }
+    public void setRecurringSessions(List<MergedSlotDTO> recurringSessions) { this.recurringSessions = recurringSessions; }
+
+    public List<MergedSlotDTO> getPastRecurringSessions() { return pastRecurringSessions; }
+    public void setPastRecurringSessions(List<MergedSlotDTO> pastRecurringSessions) { this.pastRecurringSessions = pastRecurringSessions; }
+
+    public boolean isHasMoreFutureSessions() { return hasMoreFutureSessions; }
+    public void setHasMoreFutureSessions(boolean hasMoreFutureSessions) { this.hasMoreFutureSessions = hasMoreFutureSessions; }
+
+    public boolean isHasMorePastSessions() { return hasMorePastSessions; }
+    public void setHasMorePastSessions(boolean hasMorePastSessions) { this.hasMorePastSessions = hasMorePastSessions; }
 
     public String getPaymentStatus() { return paymentStatus; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }

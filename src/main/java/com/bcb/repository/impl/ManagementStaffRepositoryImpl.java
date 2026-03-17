@@ -5,9 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import com.bcb.exception.DataAccessException;
 import com.bcb.utils.DBContext;
-import com.bcb.repository.StaffProfileRepository;
+import com.bcb.repository.ManagementStaffRepository;
 
-public class StaffProfileRepositoryImpl implements StaffProfileRepository {
+public class ManagementStaffRepositoryImpl implements ManagementStaffRepository {
 
 	@Override
 	public boolean updateInfo(Integer accountId, Integer facilityId, String fullName, String email, String phoneNumber) {

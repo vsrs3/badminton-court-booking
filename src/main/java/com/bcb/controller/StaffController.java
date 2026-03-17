@@ -70,6 +70,9 @@ public class StaffController extends HttpServlet {
             case "/booking/create":
                 forward(request, response, "/jsp/staff/staff-booking-create.jsp");
                 break;
+            case "/booking/recurring":
+                forward(request, response, "/jsp/staff/staff-booking-recurring.jsp");
+                break;
 
             case "/refunds":
                 forward(request, response, "/jsp/staff/staff-refund-list.jsp");

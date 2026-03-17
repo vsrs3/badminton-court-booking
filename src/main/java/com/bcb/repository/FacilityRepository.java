@@ -24,6 +24,7 @@ public interface FacilityRepository {
 
     List<Facility> findForHome(int offset, int limit, String keyword, String province, String district,
                                Integer favoriteAccountId);
+    List<Facility> findForHomeAll(String keyword, String province, String district, Integer favoriteAccountId);
 
     Optional<Facility> findById(int facilityId);
 

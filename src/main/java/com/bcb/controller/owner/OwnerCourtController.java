@@ -4,12 +4,15 @@ import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Court;
 import com.bcb.model.Facility;
+import com.bcb.model.Review;
 import com.bcb.service.CourtService;
 import com.bcb.service.CourtTypeService;
 import com.bcb.service.FacilityService;
+import com.bcb.service.ReviewService;
 import com.bcb.service.impl.CourtServiceImpl;
 import com.bcb.service.impl.CourtTypeServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
+import com.bcb.service.impl.ReviewServiceImpl;
 import com.bcb.utils.BreadcrumbUtils;
 import com.bcb.validation.CourtValidator;
 import jakarta.servlet.ServletException;
@@ -19,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 
 /*
  *   @Author: AnhTN
@@ -135,8 +139,9 @@ public class OwnerCourtController extends HttpServlet {
             throws IOException, BusinessException {
 
         int courtId = Integer.parseInt(pathInfo.substring("/detail/".length()));
+        
         Court court = courtService.getCourtById(courtId);
-
+        
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
@@ -252,6 +257,8 @@ public class OwnerCourtController extends HttpServlet {
                 request.getContextPath() + "/owner/courts/list/" + court.getFacilityId()
         );
     }
+    
+    
 
     // ==========================
     // UTIL

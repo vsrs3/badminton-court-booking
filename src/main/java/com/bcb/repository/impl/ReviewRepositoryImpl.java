@@ -73,7 +73,9 @@ public class ReviewRepositoryImpl implements ReviewRepository {
 	@Override
 	public List<Review> listLocationReview(Integer facilityId) {
 
-		String sql = "Select booking_id from Booking Where facility_id = ?";
+		String sql = "Select r.* from Review r "
+				+ "JOIN Booking b ON r.booking_id = b.booking_id "
+				+ "WHERE b.facility_id = ?";
 
 		List<Review> listReview = new ArrayList<Review>();
 		try (Connection conn = DBContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {

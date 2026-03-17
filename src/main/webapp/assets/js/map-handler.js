@@ -1,8 +1,3 @@
-﻿/**
- * BADMINTON PRO - Map Handler JavaScript
- * Handles: Leaflet map initialization, markers, popup interactions
- */
-
 (function() {
     'use strict';
 
@@ -16,6 +11,10 @@
         if (!mapContainer) {
             console.error('Map container not found');
             return;
+        }
+
+        if (window.__USER_LOCATION__ && window.__USER_LOCATION__.lat && window.__USER_LOCATION__.lng) {
+            userLocation = window.__USER_LOCATION__;
         }
 
         let courts = [];
@@ -109,7 +108,7 @@
         return window.MAP_COURTS_DATA || window.COURTS_DATA || [];
     }
 
-        function resolveAssetUrl(path) {
+    function resolveAssetUrl(path) {
         if (!path) {
             return '';
         }
@@ -135,7 +134,7 @@
         if (distKm === null || !Number.isFinite(distKm)) return 'Dang tinh...';
         return distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`;
     }
-function fitMapToCourts(courts) {
+    function fitMapToCourts(courts) {
         if (!mapInstance || !Array.isArray(courts) || courts.length === 0) {
             return;
         }
@@ -255,6 +254,7 @@ function fitMapToCourts(courts) {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
                 userLocation = { lat: userLat, lng: userLng };
+                window.__USER_LOCATION__ = userLocation;
 
                 const userIcon = L.divIcon({
                     className: 'custom-div-icon',
@@ -385,6 +385,18 @@ function fitMapToCourts(courts) {
     }
 
     window.initMap = initMap;
+
+    window.setUserLocationForMap = function(location) {
+        if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng)) {
+            return;
+        }
+        userLocation = { lat: location.lat, lng: location.lng };
+        window.__USER_LOCATION__ = userLocation;
+
+        if (mapInstance) {
+            addCourtMarkers(getMapCourtsDataset());
+        }
+    };
 
     window.updateMapMarkers = function(courts) {
         if (!Array.isArray(courts)) {

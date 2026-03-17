@@ -9,8 +9,9 @@ import java.sql.Connection;
 public class StaffRefundListServiceImpl implements StaffRefundListService {
     private final StaffRefundRepository repository = new StaffRefundRepositoryImpl();
     @Override
-    public StaffRefundListDataDTO getRefundList(int facilityId, int page, int size) throws Exception {        try (Connection conn = DBContext.getConnection()) {
-            int totalRows = repository.countPendingRefunds(conn, facilityId);
+    public StaffRefundListDataDTO getRefundList(int facilityId, int page, int size, String search) throws Exception {
+        try (Connection conn = DBContext.getConnection()) {
+            int totalRows = repository.countPendingRefunds(conn, facilityId, search);
             int totalPages = Math.max(1, (int) Math.ceil((double) totalRows / size));
             int normalizedPage = Math.min(page, totalPages);
             int offset = (normalizedPage - 1) * size;
@@ -19,7 +20,7 @@ public class StaffRefundListServiceImpl implements StaffRefundListService {
             data.setSize(size);
             data.setTotalRows(totalRows);
             data.setTotalPages(totalPages);
-            data.setRefunds(repository.findPendingRefunds(conn, facilityId, offset, size));
+            data.setRefunds(repository.findPendingRefunds(conn, facilityId, offset, size, search));
             return data;
         }
     }

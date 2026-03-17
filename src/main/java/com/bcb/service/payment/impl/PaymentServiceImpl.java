@@ -12,6 +12,8 @@ import com.bcb.repository.booking.impl.BookingRepositoryImpl;
 import com.bcb.repository.booking.impl.InvoiceRepositoryImpl;
 import com.bcb.repository.payment.PaymentRepository;
 import com.bcb.repository.payment.impl.PaymentRepositoryImpl;
+import com.bcb.service.email.EmailQueueService;
+import com.bcb.service.email.impl.EmailQueueServiceImpl;
 import com.bcb.service.payment.PaymentService;
 import com.bcb.service.payment.VNPayService;
 import com.bcb.utils.DBContext;
@@ -45,6 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepository invoiceRepo;
     private final BookingRepository bookingRepo;
     private final VNPayService vnPayService;
+    private final EmailQueueService emailQueueService;
 
     /** Default constructor wiring concrete implementations. */
     public PaymentServiceImpl() {
@@ -52,6 +55,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.invoiceRepo = new InvoiceRepositoryImpl();
         this.bookingRepo = new BookingRepositoryImpl();
         this.vnPayService = new VNPayServiceImpl();
+        this.emailQueueService = new EmailQueueServiceImpl();
     }
 
     /** {@inheritDoc} */
@@ -176,6 +180,10 @@ public class PaymentServiceImpl implements PaymentService {
         Optional<Invoice> optInv = invoiceRepo.findById(payment.getInvoiceId());
         optInv.ifPresent(inv -> dto.setBookingId(inv.getBookingId()));
 
+        if ("SUCCESS".equals(newStatus) && optInv.isPresent()) {
+            enqueueCustomerPaymentEmailAfterSuccess(optInv.get().getBookingId(), payment.getPaymentType());
+        }
+
         return dto;
     }
 
@@ -250,6 +258,19 @@ public class PaymentServiceImpl implements PaymentService {
     /** {@inheritDoc} */
     @Override
     public PaymentCreateResult retryPaymentForBooking(int bookingId, int accountId, HttpServletRequest httpReq) {
+        return createPaymentForExistingBooking(bookingId, accountId, httpReq, false);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public PaymentCreateResult payRemainingForBooking(int bookingId, int accountId, HttpServletRequest httpReq) {
+        return createPaymentForExistingBooking(bookingId, accountId, httpReq, true);
+    }
+
+    private PaymentCreateResult createPaymentForExistingBooking(int bookingId,
+                                                                int accountId,
+                                                                HttpServletRequest httpReq,
+                                                                boolean payRemainingOnly) {
         PaymentCreateResult result = new PaymentCreateResult();
 
         // 1. Verify booking belongs to user and is PENDING
@@ -264,18 +285,7 @@ public class PaymentServiceImpl implements PaymentService {
         String bookingStatus = bookingInfo[0];
         String facilityName = bookingInfo[1];
 
-        if (!"PENDING".equals(bookingStatus)) {
-            result.setSuccess(false);
-            result.setMessage("Booking #" + bookingId + " không ở trạng thái chờ thanh toán (hiện tại: " + bookingStatus + ").");
-            result.setErrorCode("INVALID_STATUS");
-            result.setHttpStatus(400);
-            return result;
-        }
-
-        // 2. Extend hold — synced with VNPay expire
-        bookingRepo.extendHold(bookingId, LocalDateTime.now().plusMinutes(VNPayConfig.EXPIRE_MINUTES));
-
-        // 3. Find invoice
+        // 2. Find invoice
         Optional<Invoice> optInvoice = invoiceRepo.findByBookingId(bookingId);
         if (optInvoice.isEmpty()) {
             result.setSuccess(false);
@@ -285,14 +295,41 @@ public class PaymentServiceImpl implements PaymentService {
             return result;
         }
         Invoice invoice = optInvoice.get();
+        String invoiceStatus = invoice.getPaymentStatus() != null ? invoice.getPaymentStatus() : "UNPAID";
 
-        // 4. Check if already paid
+        // 3. Check if already paid
         if ("PAID".equals(invoice.getPaymentStatus())) {
             result.setSuccess(false);
             result.setMessage("Booking #" + bookingId + " đã được thanh toán.");
             result.setErrorCode("ALREADY_PAID");
             result.setHttpStatus(400);
             return result;
+        }
+
+        boolean canRetryPending = "PENDING".equals(bookingStatus) && "UNPAID".equals(invoiceStatus);
+        boolean canPayRemaining = "CONFIRMED".equals(bookingStatus) && "PARTIAL".equals(invoiceStatus);
+
+        if (payRemainingOnly) {
+            if (!canPayRemaining) {
+                result.setSuccess(false);
+                result.setMessage("Chỉ booking đã xác nhận và hóa đơn PARTIAL mới được thanh toán phần còn lại.");
+                result.setErrorCode("INVALID_STATUS");
+                result.setHttpStatus(400);
+                return result;
+            }
+        } else if (!(canRetryPending || canPayRemaining)) {
+            result.setSuccess(false);
+            result.setMessage("Booking #" + bookingId
+                    + " không ở trạng thái hợp lệ để thanh toán (booking=" + bookingStatus
+                    + ", invoice=" + invoiceStatus + ").");
+            result.setErrorCode("INVALID_STATUS");
+            result.setHttpStatus(400);
+            return result;
+        }
+
+        // 4. Extend hold only for pending-unpaid retry flow.
+        if (canRetryPending) {
+            bookingRepo.extendHold(bookingId, LocalDateTime.now().plusMinutes(VNPayConfig.EXPIRE_MINUTES));
         }
 
         // 4b. Double-payment guard: reuse existing PENDING payment if not expired yet.
@@ -329,7 +366,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal amountToPay;
         String paymentType;
 
-        if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+        if ("PARTIAL".equals(invoiceStatus) || paidAmount.compareTo(BigDecimal.ZERO) > 0) {
             amountToPay = totalAmount.subtract(paidAmount);
             paymentType = "REMAINING";
         } else {
@@ -347,7 +384,9 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 6. Create new VNPay payment (delegates to createVNPayPayment)
-        String description = "Thanh toan dat san #" + bookingId + " tai " + facilityName;
+        String description = "REMAINING".equals(paymentType)
+                ? "Thanh toan phan con lai dat san #" + bookingId + " tai " + facilityName
+                : "Thanh toan dat san #" + bookingId + " tai " + facilityName;
         PaymentCreateResult payResult = createVNPayPayment(
                 invoice.getInvoiceId(), amountToPay.longValue(), paymentType, description, httpReq);
 
@@ -396,6 +435,19 @@ public class PaymentServiceImpl implements PaymentService {
             }
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed to update booking after payment success", e);
+        }
+    }
+
+    private void enqueueCustomerPaymentEmailAfterSuccess(int bookingId, String paymentType) {
+        try {
+            String normalizedType = paymentType == null ? "" : paymentType.trim().toUpperCase();
+            if ("REMAINING".equals(normalizedType)) {
+                emailQueueService.enqueueCustomerRemainingPaid(bookingId);
+            } else {
+                emailQueueService.enqueueCustomerPaymentSuccess(bookingId, normalizedType);
+            }
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Failed to enqueue customer payment email for bookingId=" + bookingId, e);
         }
     }
 

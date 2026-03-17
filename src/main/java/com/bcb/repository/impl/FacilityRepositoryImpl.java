@@ -353,6 +353,86 @@ public class FacilityRepositoryImpl implements FacilityRepository {
     }
 
     @Override
+    public List<Facility> findForHomeAll(String keyword, String province, String district, Integer favoriteAccountId) {
+        List<Facility> facilities = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                facility_id,
+                name,
+                province,
+                district,
+                ward,
+                address,
+                latitude,
+                longitude,
+                description,
+                open_time,
+                close_time,
+                is_active
+            FROM Facility f
+            WHERE f.is_active = 1
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append(" AND (")
+                    .append("f.name COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.address COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ? OR ")
+                    .append("f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" LIKE ?)");
+
+            String likeKeyword = "%" + keyword.trim() + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+        }
+
+        if (province != null && !province.trim().isEmpty()) {
+            sql.append(" AND f.province COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(province.trim());
+        }
+
+        if (favoriteAccountId != null) {
+            sql.append(" AND EXISTS (")
+                    .append("SELECT 1 FROM CustomerFavoriteFacility cff ")
+                    .append("WHERE cff.facility_id = f.facility_id AND cff.account_id = ?)");
+            params.add(favoriteAccountId);
+        }
+        if (district != null && !district.trim().isEmpty()) {
+            sql.append(" AND f.district COLLATE ").append(HOME_SEARCH_COLLATION).append(" = ?");
+            params.add(district.trim());
+        }
+
+        sql.append(" ORDER BY f.facility_id ASC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            int idx = 1;
+            for (Object param : params) {
+                if (param instanceof Integer) {
+                    ps.setInt(idx++, (Integer) param);
+                } else {
+                    ps.setString(idx++, param.toString());
+                }
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    facilities.add(mapResultSetToFacility(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching facilities: " + e.getMessage(), e);
+        }
+
+        return facilities;
+    }
+
+    @Override
     public Optional<Facility> findById(Integer facilityId) {
         // ✅ CLEANED: Pure entity query
         String sql = """

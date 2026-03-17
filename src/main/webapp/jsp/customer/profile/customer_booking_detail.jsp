@@ -11,6 +11,10 @@
     <c:choose>
         <c:when test="${not empty bookingDetail}">
             <c:set var="d" value="${bookingDetail}" />
+            <c:set var="expandAllFuture" value="${expandAll == true}" />
+            <c:set var="showPastSession" value="${showPast == true}" />
+            <c:set var="futurePageValue" value="${empty futurePage ? 1 : futurePage}" />
+            <c:set var="pastPageValue" value="${empty pastPage ? 1 : pastPage}" />
 
             <%-- Pre-compute button flags (same logic as list) --%>
             <c:set var="canPay" value="${d.bookingStatus == 'PENDING'
@@ -101,13 +105,37 @@
                         <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
                         Thông tin đặt sân
                     </h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Ngày đặt sân</span>
-                        <span class="detail-value">
-                            <fmt:parseDate value="${d.bookingDate}" pattern="yyyy-MM-dd" var="parsedBookingDate" type="date" />
-                            <fmt:formatDate value="${parsedBookingDate}" pattern="dd/MM/yyyy" />
-                        </span>
-                    </div>
+                    <c:choose>
+                        <c:when test="${d.bookingType == 'RECURRING'}">
+                            <div class="detail-row">
+                                <span class="detail-label">Thời gian áp dụng</span>
+                                <span class="detail-value">
+                                    <c:if test="${not empty d.recurringStartDate}">
+                                        <fmt:parseDate value="${d.recurringStartDate}" pattern="yyyy-MM-dd" var="parsedRecurringStart" type="date" />
+                                        <fmt:formatDate value="${parsedRecurringStart}" pattern="dd/MM/yyyy" />
+                                    </c:if>
+                                    <c:if test="${not empty d.recurringEndDate}">
+                                        -
+                                        <fmt:parseDate value="${d.recurringEndDate}" pattern="yyyy-MM-dd" var="parsedRecurringEnd" type="date" />
+                                        <fmt:formatDate value="${parsedRecurringEnd}" pattern="dd/MM/yyyy" />
+                                    </c:if>
+                                </span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Pattern hàng tuần</span>
+                                <span class="detail-value text-gray-700" style="white-space: pre-line;">${d.recurringPatternDetails}</span>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="detail-row">
+                                <span class="detail-label">Ngày đặt sân</span>
+                                <span class="detail-value">
+                                    <fmt:parseDate value="${d.bookingDate}" pattern="yyyy-MM-dd" var="parsedBookingDate" type="date" />
+                                    <fmt:formatDate value="${parsedBookingDate}" pattern="dd/MM/yyyy" />
+                                </span>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                     <div class="detail-row">
                         <span class="detail-label">Trạng thái booking</span>
                         <span class="detail-value">
@@ -129,7 +157,7 @@
                     <c:if test="${not empty d.createdAt}">
                         <div class="detail-row">
                             <span class="detail-label">Ngày tạo</span>
-                            <span class="detail-value text-gray-500 font-normal">${d.createdAt}</span>
+                            <span class="detail-value text-gray-500 font-normal">${d.createdAtDisplay}</span>
                         </div>
                     </c:if>
                     <%-- Hold expiry info for PENDING --%>
@@ -152,6 +180,104 @@
                         Lịch đặt sân
                     </h3>
                     <c:choose>
+                        <c:when test="${d.bookingType == 'RECURRING'}">
+                            <div class="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Sắp tới</div>
+                            <div id="future-recurring-scroll"
+                                 class="max-h-80 overflow-y-auto pr-1"
+                                 data-booking-id="${d.bookingId}"
+                                 data-next-page="${futurePageValue + 1}"
+                                 data-has-more="${d.hasMoreFutureSessions ? '1' : '0'}">
+                                <div id="future-recurring-list" class="space-y-0.5">
+                                    <c:choose>
+                                        <c:when test="${not empty d.recurringSessions}">
+                                            <c:forEach var="ms" items="${d.recurringSessions}">
+                                                <div class="slot-row future-session-row">
+                                                    <div class="flex items-center space-x-2">
+                                                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                                                        <div>
+                                                            <span class="text-xs text-gray-500">
+                                                                <fmt:parseDate value="${ms.bookingDate}" pattern="yyyy-MM-dd" var="parsedSessionDate" type="date" />
+                                                                <fmt:formatDate value="${parsedSessionDate}" pattern="dd/MM/yyyy" />
+                                                            </span>
+                                                            <span class="text-xs font-semibold text-gray-700 ml-1">${ms.courtName}</span>
+                                                            <span class="text-xs text-gray-500 ml-1">${ms.startTime} - ${ms.endTime}</span>
+                                                            <c:if test="${ms.slotCount > 1}">
+                                                                <span class="text-xs text-gray-400 ml-1">(${ms.slotCount} slot)</span>
+                                                            </c:if>
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-xs font-bold text-gray-700">
+                                                        <fmt:formatNumber value="${ms.totalPrice}" type="number" groupingUsed="true" />đ
+                                                    </span>
+                                                </div>
+                                            </c:forEach>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <p class="text-xs text-gray-400">Không có lịch tương lai trong phạm vi hiển thị.</p>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+
+                                <div id="future-recurring-loading" class="hidden py-2 text-center text-xs text-gray-400">
+                                    Đang tải thêm lịch...
+                                </div>
+                                <div id="future-recurring-end"
+                                     class="py-2 text-center text-xs text-gray-400 ${d.hasMoreFutureSessions ? 'hidden' : ''}">
+                                    Đã hiển thị hết lịch tương lai.
+                                </div>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <c:if test="${not showPastSession}">
+                                    <a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${d.bookingId}&expandAll=${expandAllFuture ? 1 : 0}&futurePage=${futurePageValue}&showPast=1&pastPage=1"
+                                       class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 hover:bg-gray-50">
+                                        Xem các ngày đã qua
+                                    </a>
+                                </c:if>
+                            </div>
+
+                            <c:if test="${showPastSession}">
+                                <div class="text-xs font-semibold text-gray-500 mt-4 mb-2 uppercase tracking-wide">Đã qua</div>
+                                <c:choose>
+                                    <c:when test="${not empty d.pastRecurringSessions}">
+                                        <c:forEach var="ms" items="${d.pastRecurringSessions}">
+                                            <div class="slot-row opacity-85">
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+                                                    <div>
+                                                        <span class="text-xs text-gray-500">
+                                                            <fmt:parseDate value="${ms.bookingDate}" pattern="yyyy-MM-dd" var="parsedPastSessionDate" type="date" />
+                                                            <fmt:formatDate value="${parsedPastSessionDate}" pattern="dd/MM/yyyy" />
+                                                        </span>
+                                                        <span class="text-xs font-semibold text-gray-700 ml-1">${ms.courtName}</span>
+                                                        <span class="text-xs text-gray-500 ml-1">${ms.startTime} - ${ms.endTime}</span>
+                                                    </div>
+                                                </div>
+                                                <span class="text-xs font-bold text-gray-700">
+                                                    <fmt:formatNumber value="${ms.totalPrice}" type="number" groupingUsed="true" />đ
+                                                </span>
+                                            </div>
+                                        </c:forEach>
+
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <c:if test="${d.hasMorePastSessions}">
+                                                <a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${d.bookingId}&expandAll=${expandAllFuture ? 1 : 0}&futurePage=${futurePageValue}&showPast=1&pastPage=${pastPageValue + 1}"
+                                                   class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 hover:bg-gray-50">
+                                                    Xem thêm ngày đã qua
+                                                </a>
+                                            </c:if>
+                                            <a href="${pageContext.request.contextPath}/my-bookings?action=detail&id=${d.bookingId}&expandAll=${expandAllFuture ? 1 : 0}&futurePage=${futurePageValue}&showPast=0&pastPage=1"
+                                               class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 hover:bg-gray-50">
+                                                Ẩn các ngày đã qua
+                                            </a>
+                                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <p class="text-xs text-gray-400">Chưa có phiên đã qua.</p>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:if>
+                        </c:when>
                         <c:when test="${not empty d.mergedSlots}">
                             <c:forEach var="ms" items="${d.mergedSlots}">
                                 <div class="slot-row">
@@ -178,6 +304,12 @@
                                     <div class="flex items-center space-x-2">
                                         <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
                                         <div>
+                                            <c:if test="${not empty slot.bookingDate}">
+                                                <span class="text-xs text-gray-500">
+                                                    <fmt:parseDate value="${slot.bookingDate}" pattern="yyyy-MM-dd" var="parsedRawSessionDate" type="date" />
+                                                    <fmt:formatDate value="${parsedRawSessionDate}" pattern="dd/MM/yyyy" />
+                                                </span>
+                                            </c:if>
                                             <span class="text-xs font-semibold text-gray-700">${slot.courtName}</span>
                                             <span class="text-xs text-gray-500 ml-1">${slot.startTime} - ${slot.endTime}</span>
                                         </div>
@@ -192,7 +324,7 @@
                 </div>
 
                 <!-- Slot breakdown (toggle — chi tiết từng slot khi merged) -->
-                <c:if test="${fn:length(d.mergedSlots) < fn:length(d.slots)}">
+                <c:if test="${d.bookingType == 'SINGLE' and fn:length(d.mergedSlots) < fn:length(d.slots)}">
                     <div class="detail-section">
                         <button type="button"
                                 class="text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600 transition-colors"
@@ -410,6 +542,117 @@
         }
         return confirm('Bạn có chắc chắn muốn hủy booking #' + bookingId + '?');
     }
+
+    /* ── Infinite scroll for recurring future sessions ── */
+    (function () {
+        var wrap = document.getElementById('future-recurring-scroll');
+        var list = document.getElementById('future-recurring-list');
+        var loading = document.getElementById('future-recurring-loading');
+        var endLabel = document.getElementById('future-recurring-end');
+        if (!wrap || !list || !loading || !endLabel) return;
+
+        var bookingId = wrap.getAttribute('data-booking-id');
+        var nextPage = parseInt(wrap.getAttribute('data-next-page') || '2', 10);
+        var hasMore = wrap.getAttribute('data-has-more') === '1';
+        var isLoading = false;
+        var contextPath = '${pageContext.request.contextPath}';
+
+        function formatPrice(raw) {
+            var value = Number(raw || 0);
+            return new Intl.NumberFormat('vi-VN').format(isNaN(value) ? 0 : value) + 'đ';
+        }
+
+        function createSessionRow(item) {
+            var row = document.createElement('div');
+            row.className = 'slot-row future-session-row';
+
+            var left = document.createElement('div');
+            left.className = 'flex items-center space-x-2';
+
+            var dot = document.createElement('div');
+            dot.className = 'w-2 h-2 rounded-full bg-green-400';
+
+            var textWrap = document.createElement('div');
+            var date = document.createElement('span');
+            date.className = 'text-xs text-gray-500';
+            date.textContent = item.bookingDateDisplay || '';
+
+            var court = document.createElement('span');
+            court.className = 'text-xs font-semibold text-gray-700 ml-1';
+            court.textContent = item.courtName || '';
+
+            var time = document.createElement('span');
+            time.className = 'text-xs text-gray-500 ml-1';
+            time.textContent = (item.startTime || '') + ' - ' + (item.endTime || '');
+
+            textWrap.appendChild(date);
+            textWrap.appendChild(court);
+            textWrap.appendChild(time);
+
+            if ((item.slotCount || 0) > 1) {
+                var count = document.createElement('span');
+                count.className = 'text-xs text-gray-400 ml-1';
+                count.textContent = '(' + item.slotCount + ' slot)';
+                textWrap.appendChild(count);
+            }
+
+            left.appendChild(dot);
+            left.appendChild(textWrap);
+
+            var amount = document.createElement('span');
+            amount.className = 'text-xs font-bold text-gray-700';
+            amount.textContent = formatPrice(item.totalPrice);
+
+            row.appendChild(left);
+            row.appendChild(amount);
+            return row;
+        }
+
+        function loadMoreFutureSessions() {
+            if (!hasMore || isLoading) return;
+            isLoading = true;
+            loading.classList.remove('hidden');
+
+            var url = contextPath + '/my-bookings?action=future-sessions&id=' + encodeURIComponent(bookingId)
+                + '&futurePage=' + encodeURIComponent(nextPage);
+
+            fetch(url)
+                .then(function (res) { return res.json(); })
+                .then(function (json) {
+                    if (!json || json.success !== true || !json.data) return;
+                    var sessions = json.data.sessions || [];
+                    sessions.forEach(function (item) {
+                        list.appendChild(createSessionRow(item));
+                    });
+
+                    hasMore = json.data.hasMore === true;
+                    nextPage = Number(json.data.nextPage || (nextPage + 1));
+                    wrap.setAttribute('data-has-more', hasMore ? '1' : '0');
+                    wrap.setAttribute('data-next-page', String(nextPage));
+                    endLabel.classList.toggle('hidden', hasMore);
+                })
+                .catch(function () {
+                    // Keep silent to avoid noisy popups while user scrolls.
+                })
+                .finally(function () {
+                    isLoading = false;
+                    loading.classList.add('hidden');
+                });
+        }
+
+        wrap.addEventListener('scroll', function () {
+            if (!hasMore || isLoading) return;
+            var remain = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight;
+            if (remain <= 80) {
+                loadMoreFutureSessions();
+            }
+        });
+
+        // Auto-load if first batch is too short to create scrollbar.
+        if (hasMore && wrap.scrollHeight <= wrap.clientHeight + 20) {
+            loadMoreFutureSessions();
+        }
+    })();
 
     /* ── Detail countdown timer for PENDING hold expiry ── */
     (function() {

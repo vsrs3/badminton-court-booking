@@ -31,6 +31,7 @@
               action="${pageContext.request.contextPath}/my-bookings">
             <input type="hidden" name="status" id="hiddenStatus"
                    value="${selectedStatus}"/>
+            <input type="hidden" name="page" id="hiddenPage" value="1"/>
             <div class="history-filter-row">
                 <div class="history-date-group">
                     <label class="history-date-label">Từ ngày</label> <input
@@ -177,18 +178,41 @@
 
                             <!-- Date + merged slot details -->
                             <div class="bg-gray-50 rounded-lg p-3 mb-3 space-y-1.5">
-                                <div class="flex items-center space-x-2">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                                    <span class="text-xs text-gray-600 font-medium">
-									<fmt:parseDate value="${booking.bookingDate}" pattern="yyyy-MM-dd" var="parsedDate"
-                                                   type="date"/>
-									<fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy"/>
-								</span>
-                                </div>
-                                <div class="flex items-start space-x-2">
-                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400 mt-0.5"></i>
-                                    <span class="text-xs text-gray-600">${booking.slotDetails}</span>
-                                </div>
+                                <c:choose>
+                                    <c:when test="${booking.bookingType == 'RECURRING'}">
+                                        <div class="flex items-center space-x-2">
+                                            <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-gray-400"></i>
+                                            <span class="text-xs text-gray-600 font-medium">
+                                                <c:if test="${not empty booking.recurringStartDate}">
+                                                    <fmt:parseDate value="${booking.recurringStartDate}" pattern="yyyy-MM-dd" var="parsedStartDate" type="date"/>
+                                                    <fmt:formatDate value="${parsedStartDate}" pattern="dd/MM/yyyy"/>
+                                                </c:if>
+                                                <c:if test="${not empty booking.recurringEndDate}">
+                                                    -
+                                                    <fmt:parseDate value="${booking.recurringEndDate}" pattern="yyyy-MM-dd" var="parsedEndDate" type="date"/>
+                                                    <fmt:formatDate value="${parsedEndDate}" pattern="dd/MM/yyyy"/>
+                                                </c:if>
+                                            </span>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i data-lucide="repeat" class="w-3.5 h-3.5 text-gray-400 mt-0.5"></i>
+                                            <span class="text-xs text-gray-600" style="white-space: pre-line;">${booking.recurringPatternDetails}</span>
+                                        </div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="flex items-center space-x-2">
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                                            <span class="text-xs text-gray-600 font-medium">
+                                                <fmt:parseDate value="${booking.bookingDate}" pattern="yyyy-MM-dd" var="parsedDate" type="date"/>
+                                                <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy"/>
+                                            </span>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400 mt-0.5"></i>
+                                            <span class="text-xs text-gray-600">${booking.slotDetails}</span>
+                                        </div>
+                                    </c:otherwise>
+                                </c:choose>
                                     <%-- Hold expiry countdown for PENDING --%>
                                 <c:if test="${canPay}">
                                     <div class="flex items-center space-x-2 mt-1">
@@ -291,6 +315,24 @@
                             </div>
                         </div>
                     </c:forEach>
+
+                    <div class="pt-2 pb-1 flex items-center justify-between">
+                        <c:set var="currentPage" value="${empty page ? 1 : page}"/>
+                        <c:set var="prevPage" value="${currentPage - 1}"/>
+                        <c:set var="nextPage" value="${currentPage + 1}"/>
+
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${prevPage}"
+                           class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${currentPage <= 1 ? 'pointer-events-none opacity-40' : 'hover:bg-gray-50'}">
+                            Trang trước
+                        </a>
+
+                        <span class="text-xs text-gray-500">Trang ${currentPage}</span>
+
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${nextPage}"
+                           class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${hasMore ? 'hover:bg-gray-50' : 'pointer-events-none opacity-40'}">
+                            Trang sau
+                        </a>
+                    </div>
                 </div>
             </c:when>
             <c:otherwise>
@@ -316,13 +358,20 @@
         if (hiddenStatus) hiddenStatus.value = status;
         var params = new URLSearchParams(window.location.search);
         params.set('status', status);
+        params.set('page', '1');
         var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
         var container = document.getElementById('booking-list-container');
         if (window.loadContent && container) {
             fetch(url).then(function(res) { return res.text(); }).then(function(html) {
                 var doc = new DOMParser().parseFromString(html, 'text/html');
                 var newList = doc.getElementById('booking-list-container');
-                if (newList) { container.innerHTML = newList.innerHTML; if (window.lucide) lucide.createIcons(); }
+                if (newList) {
+                    container.innerHTML = newList.innerHTML;
+                    if (window.lucide) lucide.createIcons();
+                    if (window.MyBookingsCountdown && typeof window.MyBookingsCountdown.init === 'function') {
+                        window.MyBookingsCountdown.init();
+                    }
+                }
             });
         } else { window.location.href = url; }
     }
@@ -351,42 +400,85 @@
     function handlePayClick(form) {
         var btn = form.querySelector('button[type="submit"]');
         if (btn.disabled) return false; // already submitted
+
+        // Guard: block stale clicks if hold already expired but UI hasn't refreshed booking status yet.
+        var card = form.closest('.booking-card');
+        if (card) {
+            var countdownEl = card.querySelector('[id^="countdown-"][data-expire]');
+            if (countdownEl) {
+                var expireStr = countdownEl.getAttribute('data-expire');
+                var expireAt = new Date(String(expireStr).replace('T', ' '));
+                if (!isNaN(expireAt.getTime()) && (expireAt - new Date()) <= 0) {
+                    btn.disabled = true;
+                    btn.style.display = 'none';
+                    countdownEl.textContent = 'Đã hết hạn thanh toán';
+                    countdownEl.classList.remove('text-amber-600');
+                    countdownEl.classList.add('text-red-600');
+                    return false;
+                }
+            }
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<span class="animate-spin">⏳</span> Đang xử lý...';
         return true;
     }
 
     /* ── Countdown timer for PENDING hold expiry ── */
-    (function initCountdowns() {
+    function initCountdowns() {
+        window.__bookingCountdownIntervals = window.__bookingCountdownIntervals || [];
+        window.__bookingCountdownIntervals.forEach(function (id) { clearInterval(id); });
+        window.__bookingCountdownIntervals = [];
+
         var elements = document.querySelectorAll('[id^="countdown-"]');
         elements.forEach(function (el) {
             var expireStr = el.getAttribute('data-expire');
             if (!expireStr) return;
             // Format from Java LocalDateTime: "2026-03-09T15:30:00"
             var expireTime = new Date(expireStr.replace('T', ' '));
-            var interval = setInterval(function () {
+
+            var tick = function () {
                 var now = new Date();
                 var diff = expireTime - now;
                 if (diff <= 0) {
                     el.textContent = 'Đã hết hạn thanh toán';
                     el.classList.remove('text-amber-600');
                     el.classList.add('text-red-600');
-                    clearInterval(interval);
-                    // Hide pay button for this card
-                    var bookingId = el.id.replace('countdown-', '');
-                    var payForms = document.querySelectorAll('input[value="' + bookingId + '"]');
-                    payForms.forEach(function (input) {
-                        if (input.name === 'bookingId') {
-                            var btn = input.closest('form').querySelector('button');
-                            if (btn) btn.style.display = 'none';
-                        }
-                    });
-                    return;
+
+                    // Disable pay button immediately for this card
+                    var card = el.closest('.booking-card');
+                    if (card) {
+                        var payBtns = card.querySelectorAll('form button[type="submit"]');
+                        payBtns.forEach(function (btn) {
+                            btn.disabled = true;
+                            btn.style.display = 'none';
+                        });
+                    }
+                    return false;
                 }
+
                 var mins = Math.floor(diff / 60000);
                 var secs = Math.floor((diff % 60000) / 1000);
                 el.textContent = 'Hết hạn sau: ' + mins + 'm ' + (secs < 10 ? '0' : '') + secs + 's';
+                return true;
+            };
+
+            // Run immediately so first paint is correct and buttons are hidden without 1s delay.
+            if (!tick()) {
+                return;
+            }
+
+            var interval = setInterval(function () {
+                if (!tick()) {
+                    clearInterval(interval);
+                }
             }, 1000);
+            window.__bookingCountdownIntervals.push(interval);
         });
-    })();
+    }
+
+    window.MyBookingsCountdown = {
+        init: initCountdowns
+    };
+    initCountdowns();
 </script>

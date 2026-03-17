@@ -98,11 +98,11 @@
         }
 
         /* ===== SIDEBAR ACTIVE ===== */
-        .sidebar-active {
+        /* .sidebar-active {
             background-color: rgba(163, 230, 53, 0.1);
             color: var(--color-lime-brand) !important;
             border-right: 4px solid var(--color-lime-brand);
-        }
+        } */
 
         /* ===== FORM FOCUS ===== */
         .form-control:focus,

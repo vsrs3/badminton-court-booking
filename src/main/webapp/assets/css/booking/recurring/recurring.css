@@ -1,0 +1,323 @@
+/*
+ * Recurring booking screens
+ * Theme aligned with badminton-pro.css tokens.
+ * Author: AnhTN
+ */
+
+.recurring-page-bg {
+    background: #f8fafc;
+}
+
+.recurring-container {
+    max-width: 1180px;
+}
+
+.main-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.step-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 2rem;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90px;
+}
+
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.step-circle.active,
+.step-circle.completed {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.step-line {
+    flex: 1;
+    max-width: 120px;
+    border-top: 3px dashed #d1d5db;
+    margin-top: -20px;
+}
+
+.step-line-active {
+    border-top-style: solid;
+    border-top-color: #10b981;
+}
+
+.main-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+    padding: 2rem;
+}
+
+.sidebar-card {
+    background: #111827;
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 2rem;
+    height: fit-content;
+}
+
+.pattern-row {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.date-input {
+    height: 44px;
+    font-size: 0.95rem;
+}
+
+.recurring-date-btn {
+    position: relative;
+}
+
+.recurring-date-icon-start,
+.recurring-date-icon-end {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.recurring-date-icon-start {
+    left: 0.85rem;
+}
+
+.recurring-date-icon-end {
+    right: 0.85rem;
+    font-size: 0.85rem;
+}
+
+.recurring-date-btn .date-input {
+    border: 1px solid #198754;
+    border-radius: 0.5rem;
+    color: #198754;
+    font-weight: 600;
+    background: #ffffff;
+    padding-left: 2.35rem;
+    padding-right: 2.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recurring-date-btn .date-input:hover {
+    background: #ecfdf5;
+}
+
+.recurring-date-btn .date-input:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.2);
+    color: #198754;
+}
+
+.recurring-date-btn .date-input::-webkit-calendar-picker-indicator {
+    opacity: 0.01;
+    cursor: pointer;
+}
+
+.recurring-modal-shell {
+    border: 1px solid rgba(6, 78, 59, 0.18);
+    border-radius: 14px;
+}
+
+.recurring-table thead th {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+    font-weight: 700;
+}
+
+.recurring-badge {
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+}
+
+.recurring-badge.available {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.recurring-badge.conflict {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.recurring-badge.modified {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.row-skipped {
+    opacity: 0.55;
+}
+
+.status-dot {
+    display: inline-flex;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.voucher-input-group .form-control {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #ffffff;
+}
+
+.voucher-input-group .form-control::placeholder {
+    color: #9ca3af;
+}
+
+.voucher-input-group .btn-outline-success {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.voucher-input-group .btn-outline-success:hover {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.discount-line {
+    color: #34d399;
+}
+
+.final-price {
+    font-size: 1.35rem;
+}
+
+.btn-lift {
+    transition: all 0.2s ease;
+}
+
+.btn-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+}
+
+.recurring-suggestion-menu {
+    min-width: 260px;
+    max-width: 320px;
+}
+
+.recurring-suggestion-menu .dropdown-item {
+    white-space: normal;
+    border-radius: 8px;
+}
+
+.recurring-suggestion-menu .dropdown-item:hover {
+    background: #ecfdf5;
+}
+
+.weekly-preview-wrap {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.weekly-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.weekly-day-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px 8px;
+    min-height: 92px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.weekly-day-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.weekly-day-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.weekly-item {
+    display: block;
+    font-weight: 600;
+    color: #065f46;
+    background: #ecfdf5;
+    border-radius: 8px;
+    padding: 4px 6px;
+}
+
+.weekly-day-card.has-schedule {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 10px 18px rgba(16, 185, 129, 0.2);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .weekly-preview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .main-card,
+    .sidebar-card {
+        padding: 1.25rem;
+    }
+}
+
+/* Custom scrollbar cho toàn bộ màn hình, đồng bộ style với dashboard */
+html, body {
+    min-height: 100vh;
+    overflow-y: scroll;
+}
+body::-webkit-scrollbar {
+    width: 4px;
+    background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+}
+body::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.05) transparent;
+}

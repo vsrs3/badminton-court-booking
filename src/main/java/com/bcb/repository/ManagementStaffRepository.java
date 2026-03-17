@@ -3,7 +3,7 @@ package com.bcb.repository;
 import java.util.List;
 import com.bcb.model.Facility;
 
-public interface StaffProfileRepository {
+public interface ManagementStaffRepository {
 	
 	/**
 	 * Update staff information (full name, email, phone number).

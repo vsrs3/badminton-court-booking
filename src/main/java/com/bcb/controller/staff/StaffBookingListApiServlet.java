@@ -34,6 +34,16 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
         if (search != null) search = search.trim();
         if (search != null && search.isEmpty()) search = null;
 
+        String status = request.getParameter("status");
+        if (status != null) status = status.trim();
+        if (status != null && (status.isEmpty() || "ALL".equalsIgnoreCase(status))) status = null;
+
+        boolean todayOnly = false;
+        String todayParam = request.getParameter("today");
+        if (todayParam != null) {
+            todayOnly = "1".equals(todayParam) || "true".equalsIgnoreCase(todayParam);
+        }
+
         int page = 1;
         int size = DEFAULT_PAGE_SIZE;
         try {
@@ -45,7 +55,7 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
         }
 
         try {
-            StaffBookingListDataDTO data = staffBookingListService.getBookingList(auth.facilityId, search, page, size);
+            StaffBookingListDataDTO data = staffBookingListService.getBookingList(auth.facilityId, search, status, todayOnly, page, size);
             writeJson(response, buildListJson(data));
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,6 +81,9 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
             json.append(",\"customerName\":").append(StaffAuthUtil.escapeJson(booking.getCustomerName()));
             json.append(",\"phone\":").append(StaffAuthUtil.escapeJson(booking.getPhone()));
             json.append(",\"bookingDate\":\"").append(booking.getBookingDate()).append("\"");
+            json.append(",\"isRecurring\":").append(booking.isRecurring());
+            json.append(",\"recurringStartDate\":").append(StaffAuthUtil.escapeJson(booking.getRecurringStartDate()));
+            json.append(",\"recurringEndDate\":").append(StaffAuthUtil.escapeJson(booking.getRecurringEndDate()));
             json.append(",\"bookingStatus\":\"").append(booking.getBookingStatus()).append("\"");
             json.append(",\"paymentStatus\":").append(StaffAuthUtil.escapeJson(booking.getPaymentStatus()));
             json.append(",\"courtDisplay\":").append(StaffAuthUtil.escapeJson(booking.getCourtDisplay()));

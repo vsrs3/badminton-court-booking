@@ -5,11 +5,14 @@ import com.bcb.exception.BusinessException;
 import com.bcb.exception.ValidationException;
 import com.bcb.model.Facility;
 import com.bcb.model.FacilityImage;
+import com.bcb.model.Review;
 import com.bcb.service.FacilityImageService;
 import com.bcb.service.FacilityService;
+import com.bcb.service.ReviewService;
 import com.bcb.service.UploadService;
 import com.bcb.service.impl.FacilityImageServiceImpl;
 import com.bcb.service.impl.FacilityServiceImpl;
+import com.bcb.service.impl.ReviewServiceImpl;
 import com.bcb.service.impl.UploadServiceImpl;
 import com.bcb.utils.BreadcrumbUtils;
 import com.bcb.validation.FacilityValidator;
@@ -50,6 +53,7 @@ public class OwnerFacilityController extends HttpServlet {
 
     private FacilityService facilityService;
     private FacilityImageService facilityImageService;
+    private ReviewService reviewService;
 
     // Formatter for HTML <input type="time">
     private static final DateTimeFormatter TIME_INPUT_FORMATTER =
@@ -59,6 +63,7 @@ public class OwnerFacilityController extends HttpServlet {
     public void init() throws ServletException {
         facilityService = new FacilityServiceImpl();
         facilityImageService = new FacilityImageServiceImpl();
+        reviewService = new ReviewServiceImpl();
     }
 
     @Override
@@ -118,7 +123,7 @@ public class OwnerFacilityController extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             }
         } catch (ValidationException e) {
-            request.setAttribute("error", "Validation error occurred");
+            request.setAttribute("error", "Đã xảy ra lỗi xác thực dữ liệu");
             setBreadcrumbForForm(request, "update".equals(action));
             request.getRequestDispatcher("/jsp/owner/facility/facility-form.jsp")
                     .forward(request, response);
@@ -218,7 +223,10 @@ public class OwnerFacilityController extends HttpServlet {
         Facility facility = facilityService.findById(facilityId);
         FacilityImage thumbnail = facilityImageService.getThumbnail(facilityId);
         List<FacilityImage> gallery = facilityImageService.getGallery(facilityId);
-
+        
+        List<Review> reviews = reviewService.listLocationReview(facilityId);
+        
+        request.setAttribute("reviews", reviews);
         request.setAttribute("facility", facility);
         request.setAttribute("thumbnailImage", thumbnail);
         request.setAttribute("galleryImages", gallery);

@@ -70,19 +70,39 @@ public class CourtSlotBookingRepositoryImpl implements CourtSlotBookingRepositor
     /** {@inheritDoc} */
     @Override
     public void deleteByBookingSlotIds(Connection conn, List<Integer> bookingSlotIds) {
+
         if (bookingSlotIds == null || bookingSlotIds.isEmpty()) {
             return;
         }
-        StringBuilder sb = new StringBuilder("DELETE FROM CourtSlotBooking WHERE booking_slot_id IN (");
-        for (int i = 0; i < bookingSlotIds.size(); i++) {
-            sb.append(i == 0 ? "?" : ",?");
-        }
-        sb.append(")");
-        try (PreparedStatement ps = conn.prepareStatement(sb.toString())) {
-            for (int i = 0; i < bookingSlotIds.size(); i++) {
-                ps.setInt(i + 1, bookingSlotIds.get(i));
+
+        final int BATCH_SIZE = 1000;
+
+        try {
+
+            for (int start = 0; start < bookingSlotIds.size(); start += BATCH_SIZE) {
+
+                int end = Math.min(start + BATCH_SIZE, bookingSlotIds.size());
+                List<Integer> batch = bookingSlotIds.subList(start, end);
+
+                StringBuilder sb = new StringBuilder(
+                        "DELETE FROM CourtSlotBooking WHERE booking_slot_id IN ("
+                );
+
+                for (int i = 0; i < batch.size(); i++) {
+                    sb.append(i == 0 ? "?" : ",?");
+                }
+                sb.append(")");
+
+                try (PreparedStatement ps = conn.prepareStatement(sb.toString())) {
+
+                    for (int i = 0; i < batch.size(); i++) {
+                        ps.setInt(i + 1, batch.get(i));
+                    }
+
+                    ps.executeUpdate();
+                }
             }
-            ps.executeUpdate();
+
         } catch (SQLException e) {
             throw new DataAccessException("Failed to delete court slot locks", e);
         }

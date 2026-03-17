@@ -5,6 +5,7 @@ import com.bcb.dto.staff.StaffCheckinSessionSlotRowDTO;
 
 import java.sql.Connection;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface StaffCheckinRepository {
@@ -23,5 +24,10 @@ public interface StaffCheckinRepository {
     void updateSlotsNoShow(Connection conn, List<Integer> slotIds) throws Exception;
 
     void updateBookingStatus(Connection conn, int bookingId, String status) throws Exception;
+
+    List<Integer> findConfirmedBookingIdsWithPendingSlots(Connection conn, LocalDate bookingDate) throws Exception;
+
+    List<Integer> findBookingIdsWithCheckedInSlots(Connection conn, LocalDate upToDate) throws Exception;
 }
+
 
