@@ -31,6 +31,7 @@
               action="${pageContext.request.contextPath}/my-bookings">
             <input type="hidden" name="status" id="hiddenStatus"
                    value="${selectedStatus}"/>
+            <input type="hidden" name="page" id="hiddenPage" value="1"/>
             <div class="history-filter-row">
                 <div class="history-date-group">
                     <label class="history-date-label">Từ ngày</label> <input
@@ -314,6 +315,24 @@
                             </div>
                         </div>
                     </c:forEach>
+
+                    <div class="pt-2 pb-1 flex items-center justify-between">
+                        <c:set var="currentPage" value="${empty page ? 1 : page}"/>
+                        <c:set var="prevPage" value="${currentPage - 1}"/>
+                        <c:set var="nextPage" value="${currentPage + 1}"/>
+
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${prevPage}"
+                           class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${currentPage <= 1 ? 'pointer-events-none opacity-40' : 'hover:bg-gray-50'}">
+                            Trang trước
+                        </a>
+
+                        <span class="text-xs text-gray-500">Trang ${currentPage}</span>
+
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${nextPage}"
+                           class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${hasMore ? 'hover:bg-gray-50' : 'pointer-events-none opacity-40'}">
+                            Trang sau
+                        </a>
+                    </div>
                 </div>
             </c:when>
             <c:otherwise>
@@ -339,6 +358,7 @@
         if (hiddenStatus) hiddenStatus.value = status;
         var params = new URLSearchParams(window.location.search);
         params.set('status', status);
+        params.set('page', '1');
         var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
         var container = document.getElementById('booking-list-container');
         if (window.loadContent && container) {

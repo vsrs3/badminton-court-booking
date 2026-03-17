@@ -4,6 +4,17 @@
  * Author: AnhTN
  */
 (function () {
+            /**
+             * Sets the loading state for the confirm button: disables/enables, toggles label and spinner.
+             */
+            function setConfirmButtonLoading(isLoading) {
+                if (!confirmBtn) return;
+                confirmBtn.disabled = isLoading;
+                const label = confirmBtn.querySelector('.confirm-btn-label');
+                const loading = confirmBtn.querySelector('.confirm-btn-loading');
+                if (label) label.classList.toggle('d-none', isLoading);
+                if (loading) loading.classList.toggle('d-none', !isLoading);
+            }
     'use strict';
 
     const CTX = window.APP_CONTEXT_PATH || '';
@@ -500,9 +511,9 @@
     /** Calls confirm-and-pay API for recurring booking. */
     async function confirmRecurring() {
         clearAlerts();
+        let loadingSet = false;
         try {
-            confirmBtn.disabled = true;
-
+            // Validate before showing loading
             const minRequired = getMinRequiredSessions();
             const remaining = getCurrentRemainingSessions();
             const skippedNonConflict = countSkippedNonConflictSessions();
@@ -510,6 +521,9 @@
             if (remaining < minRequired && !skipOnlyConflict) {
                 throw new Error('Cần ít nhất ' + minRequired + ' session để đặt lịch cố định. Hiện chỉ còn ' + remaining + ' session.');
             }
+
+            setConfirmButtonLoading(true);
+            loadingSet = true;
 
             const payload = buildConfirmPayload();
             let res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
@@ -538,22 +552,23 @@
                         throw new Error(retryMsg);
                     }
 
-                    showInfo('Voucher khng còn hợp lệ. Hệ thống đã bỏ voucher và tiếp tục thanh toán với tổng tiền mới.');
+                    showInfo('Voucher không còn hợp lệ. Hệ thống đã bỏ voucher và tiếp tục thanh toán với tổng tiền mới.');
                 }
 
                 if (res.ok && json.success) {
                     // Continue success flow after voucher fallback.
                 } else {
-                if (json && json.error && json.error.code === 'MIN_SESSIONS_REQUIRED') {
-                    throw new Error(json.error.message || 'Không đủ số session tối thiểu để đặt lịch cố định.');
-                }
-                const msg = (json && json.error && json.error.message) || 'Xác nhận recurring thất bại.';
-                throw new Error(msg);
+                    if (json && json.error && json.error.code === 'MIN_SESSIONS_REQUIRED') {
+                        throw new Error(json.error.message || 'Không đủ số session tối thiểu để đặt lịch cố định.');
+                    }
+                    const msg = (json && json.error && json.error.message) || 'Xác nhận recurring thất bại.';
+                    throw new Error(msg);
                 }
             }
 
             const data = json.data || {};
             if (data.paymentUrl) {
+                // Keep loading while redirecting
                 window.location.href = data.paymentUrl;
                 return;
             }
@@ -563,8 +578,10 @@
             sessionStorage.removeItem('recurringCreatePayload');
         } catch (e) {
             showError(e.message || 'Không thể xác nhận recurring booking.');
+            if (loadingSet) setConfirmButtonLoading(false);
         } finally {
-            confirmBtn.disabled = false;
+            // If not redirecting, always reset button
+            if (loadingSet) setConfirmButtonLoading(false);
         }
     }
 

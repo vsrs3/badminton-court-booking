@@ -78,6 +78,10 @@ public class StaffController extends HttpServlet {
                 forward(request, response, "/jsp/staff/staff-refund-list.jsp");
                 break;
 
+            case "/rental/status":
+                forward(request, response, "/jsp/staff/staff-rental-status.jsp");
+                break;
+
             default:
                 if (pathInfo.startsWith("/booking/detail/")) {
                     String idStr = pathInfo.substring("/booking/detail/".length());

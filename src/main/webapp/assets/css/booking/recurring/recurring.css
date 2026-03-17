@@ -6,7 +6,6 @@
 
 .recurring-page-bg {
     background: #f8fafc;
-    min-height: 100vh;
 }
 
 .recurring-container {
@@ -241,11 +240,84 @@
     background: #ecfdf5;
 }
 
+.weekly-preview-wrap {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.weekly-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.weekly-day-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px 8px;
+    min-height: 92px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.weekly-day-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.weekly-day-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.weekly-item {
+    display: block;
+    font-weight: 600;
+    color: #065f46;
+    background: #ecfdf5;
+    border-radius: 8px;
+    padding: 4px 6px;
+}
+
+.weekly-day-card.has-schedule {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 10px 18px rgba(16, 185, 129, 0.2);
+    transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
+    .weekly-preview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .main-card,
     .sidebar-card {
         padding: 1.25rem;
     }
 }
 
-
+/* Custom scrollbar cho toàn bộ màn hình, đồng bộ style với dashboard */
+html, body {
+    min-height: 100vh;
+    overflow-y: scroll;
+}
+body::-webkit-scrollbar {
+    width: 4px;
+    background: transparent;
+}
+body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+}
+body::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.05) transparent;
+}

@@ -2,6 +2,7 @@ package com.bcb.repository.impl;
 
 import com.bcb.dto.staff.StaffBookingDetailHeaderDTO;
 import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailRentalRowDTO;
 import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.repository.staff.StaffBookingDetailRepository;
 
@@ -118,5 +119,58 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         if (ts == null) return null;
         return ts.toLocalDateTime().toString().replace("T", " ").substring(0, 16);
     }
+
+    @Override
+    public List<StaffBookingDetailRentalRowDTO> findBookingRentalRows(Connection conn, int bookingId) throws Exception {
+        List<StaffBookingDetailRentalRowDTO> list = new ArrayList<>();
+
+        String sql = """
+            SELECT
+                c.court_name,
+                ts.start_time,
+                ts.end_time,
+                STRING_AGG(i.name, ', ') WITHIN GROUP (ORDER BY i.name) AS rental_items_text,
+                SUM(rr.quantity * rr.unit_price) AS rental_total
+            FROM RacketRental rr
+            INNER JOIN BookingSlot bs
+                ON rr.booking_slot_id = bs.booking_slot_id
+            INNER JOIN Court c
+                ON bs.court_id = c.court_id
+            INNER JOIN TimeSlot ts
+                ON bs.slot_id = ts.slot_id
+            INNER JOIN Inventory i
+                ON rr.inventory_id = i.inventory_id
+            WHERE bs.booking_id = ?
+            GROUP BY
+                c.court_name,
+                ts.start_time,
+                ts.end_time,
+                bs.booking_slot_id
+            ORDER BY
+                c.court_name ASC,
+                ts.start_time ASC,
+                ts.end_time ASC
+            """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StaffBookingDetailRentalRowDTO dto = new StaffBookingDetailRentalRowDTO();
+                    dto.setCourtName(rs.getString("court_name"));
+                    dto.setStartTime(fmtTime(rs.getTime("start_time")));
+                    dto.setEndTime(fmtTime(rs.getTime("end_time")));
+                    dto.setRentalItemsText(rs.getString("rental_items_text"));
+                    dto.setRentalTotal(rs.getBigDecimal("rental_total"));
+                    list.add(dto);
+                }
+            }
+        }
+
+        return list;
+    }
+
+
 }
 

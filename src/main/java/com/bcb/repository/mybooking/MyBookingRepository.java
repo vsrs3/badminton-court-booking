@@ -15,16 +15,11 @@ import java.util.Optional;
 public interface MyBookingRepository {
 
     /**
-     * Finds all bookings for a customer with optional filters.
-     *
-     * @param accountId  the customer's account ID
-     * @param status     booking status filter (null = all)
-     * @param dateFrom   date range start (null = no lower bound)
-     * @param dateTo     date range end (null = no upper bound)
-     * @return list of booking summary DTOs
+     * Finds bookings for a customer with paging support.
      */
     List<MyBookingListDTO> findMyBookings(int accountId, String status,
-                                          LocalDate dateFrom, LocalDate dateTo);
+                                          LocalDate dateFrom, LocalDate dateTo,
+                                          int offset, int limit);
 
     /**
      * Finds detailed booking info including facility, slots, invoice.
@@ -42,6 +37,19 @@ public interface MyBookingRepository {
      * @return list of slot detail DTOs
      */
     List<BookingSlotDetailDTO> findSlotsByBookingId(int bookingId);
+
+    /**
+     * Finds booking dates for recurring session lazy loading.
+     */
+    List<LocalDate> findBookingDates(int bookingId, LocalDate pivotDate,
+                                     boolean pastDates, int limit);
+
+    /**
+     * Finds slots for provided booking dates.
+     */
+    List<BookingSlotDetailDTO> findSlotsByBookingIdAndDates(int bookingId,
+                                                            List<LocalDate> bookingDates,
+                                                            boolean ascendingDate);
 
     /**
      * Checks if booking is UNPAID and belongs to the account.

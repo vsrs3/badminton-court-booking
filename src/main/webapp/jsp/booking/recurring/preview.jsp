@@ -134,7 +134,8 @@
                 </div>
 
                 <button id="confirmBtn" type="button" class="btn btn-success btn-lg w-100 mt-5 py-3 btn-lift">
-                    Xác nhận và thanh toán
+                    <span class="confirm-btn-label">Xác nhận và thanh toán</span>
+                    <span class="confirm-btn-loading d-none"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...</span>
                 </button>
             </div>
         </div>
@@ -184,6 +185,24 @@
 
 <script>
     window.APP_CONTEXT_PATH = '<%= ctx %>';
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('confirmBtn');
+        var label = btn.querySelector('.confirm-btn-label');
+        var loading = btn.querySelector('.confirm-btn-loading');
+        btn.addEventListener('click', function() {
+            if (!btn.disabled) {
+                btn.disabled = true;
+                label.classList.add('d-none');
+                loading.classList.remove('d-none');
+            }
+        });
+        // Hàm để bật lại nút và ẩn loading (gọi sau khi xử lý xong, ví dụ sau AJAX)
+        window.enableConfirmBtn = function() {
+            btn.disabled = false;
+            label.classList.remove('d-none');
+            loading.classList.add('d-none');
+        };
+    });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<%= ctx %>/assets/js/booking/recurring/recurring-preview.js"></script>

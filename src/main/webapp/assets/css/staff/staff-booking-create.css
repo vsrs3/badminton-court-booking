@@ -351,6 +351,129 @@
     to { transform: rotate(360deg); }
 }
 
+/* ===== RENTAL SLOT GRID ===== */
+.sbc-rental-court {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #FCFFFD;
+}
+
+.sbc-rental-court-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.875rem;
+}
+
+.sbc-rental-court-name {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: #1F2937;
+}
+
+.sbc-rental-court-meta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6B7280;
+}
+
+.sbc-rental-court-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.875rem;
+}
+
+.sbc-rental-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 0.75rem;
+}
+
+.sbc-rental-slot-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 6.25rem;
+    padding: 0.875rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 0.75rem;
+    background: white;
+    color: #1F2937;
+    text-align: left;
+    transition: all 0.16s ease;
+}
+
+.sbc-rental-slot-btn:hover {
+    border-color: #059669;
+    box-shadow: 0 8px 18px rgba(5, 150, 105, 0.08);
+    transform: translateY(-1px);
+}
+
+.sbc-rental-slot-btn.is-configured {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+
+.sbc-rental-slot-btn.is-active {
+    border-color: #064E3B;
+    box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.12);
+}
+
+.sbc-rental-slot-time {
+    font-size: 0.8125rem;
+    font-weight: 800;
+}
+
+.sbc-rental-slot-state {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #047857;
+}
+
+.sbc-rental-slot-sub {
+    font-size: 0.72rem;
+    color: #6B7280;
+    min-height: 1rem;
+}
+
+.sbc-rental-slot-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    margin-top: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6B7280;
+}
+
+.sbc-rental-court-summary {
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px dashed #D1D5DB;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.sbc-rental-court-summary-title {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #374151;
+}
+
+.sbc-rental-court-summary-total {
+    color: #064E3B;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
 /* ================================================================
    Phone validation styles
    ================================================================ */

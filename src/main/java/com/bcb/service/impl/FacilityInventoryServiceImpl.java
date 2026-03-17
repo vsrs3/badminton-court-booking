@@ -23,20 +23,11 @@ public class FacilityInventoryServiceImpl implements FacilityInventoryService {
 
     @Override
     public void assignToFacility(int facilityId, int inventoryId, int totalQuantity) {
-        if (facilityId <= 0) {
-            throw new IllegalArgumentException("Facility ID không hợp lệ.");
-        }
+        validateFacilityId(facilityId);
+        validateInventoryId(inventoryId);
+        validateQuantity(totalQuantity);
 
-        if (inventoryId <= 0) {
-            throw new IllegalArgumentException("Inventory ID không hợp lệ.");
-        }
-
-        if (totalQuantity < 0) {
-            throw new IllegalArgumentException("Số lượng sản phẩm không được nhỏ hơn 0.");
-        }
-
-        boolean exists = repository.existsByFacilityAndInventory(facilityId, inventoryId);
-        if (exists) {
+        if (repository.existsByFacilityAndInventory(facilityId, inventoryId)) {
             throw new IllegalArgumentException("Sản phẩm này đã được gán cho sân.");
         }
 
@@ -44,21 +35,49 @@ public class FacilityInventoryServiceImpl implements FacilityInventoryService {
     }
 
     @Override
+    public int assignAllToFacility(int facilityId, int totalQuantity, String keyword) {
+        validateFacilityId(facilityId);
+        validateQuantity(totalQuantity);
+
+        int assignedCount = repository.assignAllToFacility(
+                facilityId,
+                totalQuantity,
+                totalQuantity,
+                normalizeKeyword(keyword)
+        );
+
+        if (assignedCount <= 0) {
+            throw new IllegalArgumentException("Không có đồ khả dụng để gán cho sân.");
+        }
+
+        return assignedCount;
+    }
+
+    @Override
     public void updateQuantity(int facilityInventoryId, int totalQuantity) {
         if (facilityInventoryId <= 0) {
             throw new IllegalArgumentException("Mã đồ gán sân không hợp lệ.");
         }
-
-        if (totalQuantity < 0) {
-            throw new IllegalArgumentException("Số lượng sản phẩm không được nhỏ hơn 0.");
-        }
+        validateQuantity(totalQuantity);
 
         FacilityInventory existing = repository.findById(facilityInventoryId);
         if (existing == null) {
-            throw new IllegalArgumentException("Không tìm thấy dữ liệu đồ gán sân.");
+            throw new IllegalArgumentException("Không tìm thấy dữ liệu đồ đã gán cho sân.");
         }
 
         repository.updateQuantity(facilityInventoryId, totalQuantity, totalQuantity);
+    }
+
+    @Override
+    public void updateAllQuantitiesByFacility(int facilityId, int totalQuantity) {
+        validateFacilityId(facilityId);
+        validateQuantity(totalQuantity);
+
+        if (repository.countByFacilityId(facilityId, null) <= 0) {
+            throw new IllegalArgumentException("Sân hiện chưa có đồ nào được gán.");
+        }
+
+        repository.updateAllQuantitiesByFacility(facilityId, totalQuantity, totalQuantity);
     }
 
     @Override
@@ -69,10 +88,22 @@ public class FacilityInventoryServiceImpl implements FacilityInventoryService {
 
         FacilityInventory existing = repository.findById(facilityInventoryId);
         if (existing == null) {
-            throw new IllegalArgumentException("Không tìm thấy dữ liệu để gỡ.");
+            throw new IllegalArgumentException("Không tìm thấy dữ liệu cần gỡ.");
         }
 
         repository.removeById(facilityInventoryId);
+    }
+
+    @Override
+    public int removeAllByFacility(int facilityId, String keyword) {
+        validateFacilityId(facilityId);
+
+        int removedCount = repository.removeAllByFacility(facilityId, normalizeKeyword(keyword));
+        if (removedCount <= 0) {
+            throw new IllegalArgumentException("Khong co san pham nao dang duoc go khoi san.");
+        }
+
+        return removedCount;
     }
 
     @Override
@@ -89,5 +120,32 @@ public class FacilityInventoryServiceImpl implements FacilityInventoryService {
             return false;
         }
         return repository.existsByFacilityAndInventory(facilityId, inventoryId);
+    }
+
+    private void validateFacilityId(int facilityId) {
+        if (facilityId <= 0) {
+            throw new IllegalArgumentException("Mã sân không hợp lệ.");
+        }
+    }
+
+    private void validateInventoryId(int inventoryId) {
+        if (inventoryId <= 0) {
+            throw new IllegalArgumentException("Mã sản phẩm không hợp lệ.");
+        }
+    }
+
+    private void validateQuantity(int quantity) {
+        if (quantity < 0) {
+            throw new IllegalArgumentException("Số lượng không được nhỏ hơn 0.");
+        }
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+
+        String trimmedKeyword = keyword.trim();
+        return trimmedKeyword.isEmpty() ? null : trimmedKeyword;
     }
 }
