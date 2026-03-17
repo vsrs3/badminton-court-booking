@@ -1,6 +1,7 @@
 package com.bcb.model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class BlogPost {
     private Integer postId;
@@ -101,5 +102,15 @@ public class BlogPost {
 
     public void setIsDeleted(Boolean deleted) {
         isDeleted = deleted;
+    }
+
+    private static final DateTimeFormatter VN_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    public String getPublishedAtFormatted() {
+        return publishedAt != null ? publishedAt.format(VN_FORMAT) : "";
+    }
+
+    public String getCreatedAtFormatted() {
+        return createdAt != null ? createdAt.format(VN_FORMAT) : "";
     }
 }

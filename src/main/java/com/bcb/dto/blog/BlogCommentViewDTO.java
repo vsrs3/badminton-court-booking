@@ -1,6 +1,7 @@
 package com.bcb.dto.blog;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class BlogCommentViewDTO {
     private Integer commentId;
@@ -65,5 +66,11 @@ public class BlogCommentViewDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    private static final DateTimeFormatter VN_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    public String getCreatedAtFormatted() {
+        return createdAt != null ? createdAt.format(VN_FORMAT) : "";
     }
 }

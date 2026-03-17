@@ -27,7 +27,7 @@
                     <div style="color: #64748B; font-weight: 700;">ADMIN / OWNER / STAFF</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem public</a>
+                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/blogs" style="font-weight: 900; text-transform: uppercase;">Xem bài viết</a>
                     <a class="btn btn-success" href="${pageContext.request.contextPath}/blogs/manage/create" style="font-weight: 900; text-transform: uppercase;">Tạo bài viết</a>
                 </div>
             </div>
@@ -39,7 +39,7 @@
             <form class="row g-2 align-items-end mb-3" method="GET" action="${pageContext.request.contextPath}/blogs/manage/list">
                 <div class="col-12 col-md-5">
                     <label class="form-label" style="font-weight: 800;">Tìm kiếm</label>
-                    <input class="form-control" name="q" value="${fn:escapeXml(param.q)}" placeholder="Tìm theo tiêu đề / tóm tắt" />
+                    <input class="form-control" name="q" value="${fn:escapeXml(param.q)}" placeholder="Tìm theo tiêu đề/tóm tắt" />
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label" style="font-weight: 800;">Trạng thái</label>
@@ -54,14 +54,13 @@
                     <select class="form-select" name="sortBy">
                         <option value="created_at" <c:if test="${param.sortBy eq 'created_at' || empty param.sortBy}">selected</c:if>>Ngày tạo</option>
                         <option value="published_at" <c:if test="${param.sortBy eq 'published_at'}">selected</c:if>>Ngày đăng</option>
-                        <option value="title" <c:if test="${param.sortBy eq 'title'}">selected</c:if>>Tiêu đề</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-1">
-                    <label class="form-label" style="font-weight: 800;">Dir</label>
+                <div class="col-6 col-md-2">
+                    <label class="form-label" style="font-weight: 800;">Thứ tự</label>
                     <select class="form-select" name="sortDir">
-                        <option value="DESC" <c:if test="${param.sortDir eq 'DESC' || empty param.sortDir}">selected</c:if>>DESC</option>
-                        <option value="ASC" <c:if test="${param.sortDir eq 'ASC'}">selected</c:if>>ASC</option>
+                        <option value="DESC" <c:if test="${param.sortDir eq 'Giảm dần ' || empty param.sortDir}">selected</c:if>>Giảm dần</option>
+                        <option value="ASC" <c:if test="${param.sortDir eq 'Tăng dần'}">selected</c:if>>Tăng dần</option>
                     </select>
                 </div>
                 <div class="col-12 d-flex gap-2">
@@ -89,7 +88,7 @@
                             <td style="font-weight: 800;"><c:out value="${p.title}" /></td>
                             <td><c:out value="${p.authorName}" /></td>
                             <td><span class="badge bg-secondary"><c:out value="${p.status}" /></span></td>
-                            <td><c:out value="${p.createdAt}" /></td>
+                            <td><c:out value="${p.createdAtFormatted}" /></td>
                             <td>
                                 <a class="btn btn-sm btn-success" href="${pageContext.request.contextPath}/blogs/manage/edit?id=${p.postId}">Sửa</a>
                                 <a class="btn btn-sm btn-outline-danger" href="${pageContext.request.contextPath}/blogs/manage/delete?id=${p.postId}" onclick="return confirm('Xóa bài viết?');">Xóa</a>
@@ -103,18 +102,20 @@
                 </table>
             </div>
 
-            <c:set var="pageSize" value="${filter.pageSize}" />
             <c:set var="page" value="${filter.page}" />
-            <c:set var="totalPages" value="${(total + pageSize - 1) / pageSize}" />
 
             <nav class="mt-4" aria-label="pagination">
                 <ul class="pagination justify-content-center">
                     <li class="page-item <c:if test='${page <= 1}'>disabled</c:if>">
-                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page-1}&pageSize=${pageSize}">Trước</a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page-1}&pageSize=${filter.pageSize}">
+                            <i class="bi bi-chevron-left"></i> Trước
+                        </a>
                     </li>
-                    <li class="page-item disabled"><span class="page-link">${page} / ${totalPages}</span></li>
+                    <li class="page-item disabled"><span class="page-link" style="font-weight: 700;">Trang ${page} / ${totalPages}</span></li>
                     <li class="page-item <c:if test='${page >= totalPages}'>disabled</c:if>">
-                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page+1}&pageSize=${pageSize}">Sau</a>
+                        <a class="page-link" href="${pageContext.request.contextPath}/blogs/manage/list?q=${fn:escapeXml(param.q)}&status=${fn:escapeXml(param.status)}&sortBy=${fn:escapeXml(param.sortBy)}&sortDir=${fn:escapeXml(param.sortDir)}&page=${page+1}&pageSize=${filter.pageSize}">
+                            Sau <i class="bi bi-chevron-right"></i>
+                        </a>
                     </li>
                 </ul>
             </nav>

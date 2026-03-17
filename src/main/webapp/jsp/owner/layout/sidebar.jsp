@@ -17,6 +17,7 @@
 			<i class="bi bi-speedometer2"></i> <span>Dashboard</span>
 		</a>
 
+
 		<%-- My Locations --%>
 		<a href="${pageContext.request.contextPath}/owner/facility/list"
 			class="nav-link ${pageContext.request.requestURI.contains('/facility') ? 'active' : ''}">
@@ -42,7 +43,12 @@
             <i class="bi bi-box-seam"></i>
             <span>Quản Lý Dụng Cụ</span>
        </a>
-
+			<%-- Community / Blog --%>
+			<a href="${pageContext.request.contextPath}/blogs"
+			   class="nav-link ${pageContext.request.requestURI.contains('/blogs') ? 'active' : ''}">
+				<i class="bi bi-chat-dots"></i>
+				<span>Cộng Đồng</span>
+			</a>
 		<%-- Settings --%>
 		<a href="#"
 			class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">

@@ -72,9 +72,12 @@ public class BlogManagementController extends HttpServlet {
     private void showList(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         BlogPostFilterDTO filter = bindManageFilter(req);
         int total = service.countManagePosts(filter);
+        int totalPages = (int) Math.ceil((double) total / filter.getPageSize());
+        if (totalPages < 1) totalPages = 1;
         req.setAttribute("filter", filter);
         req.setAttribute("posts", service.getManagePosts(filter));
         req.setAttribute("total", total);
+        req.setAttribute("totalPages", totalPages);
         req.getRequestDispatcher("/jsp/blogs/manage/blog-manage-list.jsp").forward(req, resp);
     }
 

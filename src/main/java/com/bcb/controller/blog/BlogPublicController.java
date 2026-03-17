@@ -49,9 +49,12 @@ public class BlogPublicController extends HttpServlet {
     private void showList(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         BlogPostFilterDTO filter = bindFilter(req);
         int total = service.countPublicPosts(filter);
+        int totalPages = (int) Math.ceil((double) total / filter.getPageSize());
+        if (totalPages < 1) totalPages = 1;
         req.setAttribute("filter", filter);
         req.setAttribute("posts", service.getPublicPosts(filter));
         req.setAttribute("total", total);
+        req.setAttribute("totalPages", totalPages);
         req.getRequestDispatcher("/jsp/blogs/blog-list.jsp").forward(req, resp);
     }
 

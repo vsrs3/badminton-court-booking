@@ -1,6 +1,7 @@
 package com.bcb.dto.blog;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class BlogPostListItemDTO {
     private Integer postId;
@@ -74,5 +75,15 @@ public class BlogPostListItemDTO {
 
     public void setAuthorName(String authorName) {
         this.authorName = authorName;
+    }
+
+    private static final DateTimeFormatter VN_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    public String getPublishedAtFormatted() {
+        return publishedAt != null ? publishedAt.format(VN_FORMAT) : "";
+    }
+
+    public String getCreatedAtFormatted() {
+        return createdAt != null ? createdAt.format(VN_FORMAT) : "";
     }
 }
