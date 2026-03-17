@@ -48,6 +48,19 @@ CREATE TABLE [dbo].[EmailVerification](
 );
 GO
 
+CREATE TABLE [dbo].[PasswordResetToken](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [email] [nvarchar](255) NOT NULL,
+    [token] [nvarchar](255) NOT NULL,
+    [expire_at] [datetime] NOT NULL,
+    [created_at] [datetime] NOT NULL CONSTRAINT [DF_PasswordResetToken_CreatedAt] DEFAULT (GETDATE())
+);
+GO
+
+CREATE UNIQUE INDEX [UX_PasswordResetToken_Token]
+    ON [dbo].[PasswordResetToken]([token]);
+GO
+
 -- Facility
 CREATE TABLE Facility (
     facility_id INT IDENTITY PRIMARY KEY,
