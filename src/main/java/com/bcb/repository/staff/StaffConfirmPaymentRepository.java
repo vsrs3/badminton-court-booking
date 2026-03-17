@@ -12,6 +12,6 @@ public interface StaffConfirmPaymentRepository {
 
     void insertPayment(Connection conn, int invoiceId, BigDecimal amount, String paymentType, String method, int staffId) throws Exception;
 
-    void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal paidAmount) throws Exception;
+    void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal paidAmount) throws Exception;
 }
 

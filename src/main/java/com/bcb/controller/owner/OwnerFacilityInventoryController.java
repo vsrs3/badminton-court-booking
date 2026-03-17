@@ -7,22 +7,25 @@ import com.bcb.service.InventoryService;
 import com.bcb.service.impl.FacilityInventoryServiceImpl;
 import com.bcb.service.impl.InventoryServiceImpl;
 import com.bcb.utils.BreadcrumbUtils;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OwnerFacilityInventoryController extends HttpServlet {
 
-    private InventoryService inventoryService;
-    private FacilityInventoryService facilityInventoryService;
-
     private static final int ASSIGNED_PAGE_SIZE = 5;
     private static final int INVENTORY_PAGE_SIZE = 5;
+    private static final int SUGGESTION_LIMIT = 50;
+
+    private InventoryService inventoryService;
+    private FacilityInventoryService facilityInventoryService;
 
     @Override
     public void init() {
@@ -33,99 +36,95 @@ public class OwnerFacilityInventoryController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        response.setCharacterEncoding("UTF-8");
 
-        String pathInfo = request.getPathInfo();
-
-        if (pathInfo == null || pathInfo.equals("/")) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Facility ID missing");
-            return;
-        }
-
-        int facilityId;
-        try {
-            facilityId = Integer.parseInt(pathInfo.substring(1));
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid facility ID");
+        Integer facilityId = parseFacilityIdFromPath(request.getPathInfo());
+        if (facilityId == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Ma san khong hop le");
             return;
         }
 
         String assignedKeyword = trimToNull(request.getParameter("assignedKeyword"));
         String inventoryKeyword = trimToNull(request.getParameter("inventoryKeyword"));
 
-        int assignedPage = parsePage(request.getParameter("assignedPage"));
-        int inventoryPage = parsePage(request.getParameter("inventoryPage"));
-
-        int assignedOffset = (assignedPage - 1) * ASSIGNED_PAGE_SIZE;
-        int inventoryOffset = (inventoryPage - 1) * INVENTORY_PAGE_SIZE;
-
-        // ===== Block 1: Đồ gán sân =====
-        List<FacilityInventory> assignedItems =
-                facilityInventoryService.getByFacilityId(facilityId, ASSIGNED_PAGE_SIZE, assignedOffset, assignedKeyword);
-
         int assignedTotal = facilityInventoryService.countByFacilityId(facilityId, assignedKeyword);
-        int assignedTotalPages = (int) Math.ceil((double) assignedTotal / ASSIGNED_PAGE_SIZE);
-        if (assignedTotalPages == 0) {
-            assignedTotalPages = 1;
-        }
+        int assignedTotalPages = Math.max(1, (int) Math.ceil((double) assignedTotal / ASSIGNED_PAGE_SIZE));
+        int assignedPage = Math.min(parsePage(request.getParameter("assignedPage")), assignedTotalPages);
+        int assignedOffset = (assignedPage - 1) * ASSIGNED_PAGE_SIZE;
 
-        // ===== Block 2: Kho đồ =====
-        List<Inventory> availableInventories =
-                inventoryService.getActiveNotAssignedToFacilityWithPagination(
-                        facilityId, INVENTORY_PAGE_SIZE, inventoryOffset, inventoryKeyword
-                );
+        List<FacilityInventory> assignedItems = facilityInventoryService.getByFacilityId(
+                facilityId,
+                ASSIGNED_PAGE_SIZE,
+                assignedOffset,
+                assignedKeyword
+        );
 
         int inventoryTotal = inventoryService.countActiveNotAssignedToFacility(facilityId, inventoryKeyword);
-        int inventoryTotalPages = (int) Math.ceil((double) inventoryTotal / INVENTORY_PAGE_SIZE);
-        if (inventoryTotalPages == 0) {
-            inventoryTotalPages = 1;
-        }
+        int inventoryTotalPages = Math.max(1, (int) Math.ceil((double) inventoryTotal / INVENTORY_PAGE_SIZE));
+        int inventoryPage = Math.min(parsePage(request.getParameter("inventoryPage")), inventoryTotalPages);
+        int inventoryOffset = (inventoryPage - 1) * INVENTORY_PAGE_SIZE;
+
+        List<Inventory> availableInventories = inventoryService.getActiveNotAssignedToFacilityWithPagination(
+                facilityId,
+                INVENTORY_PAGE_SIZE,
+                inventoryOffset,
+                inventoryKeyword
+        );
+
+        List<FacilityInventory> assignedSuggestionItems = facilityInventoryService.getByFacilityId(
+                facilityId,
+                SUGGESTION_LIMIT,
+                0,
+                assignedKeyword
+        );
+
+        List<Inventory> inventorySuggestionItems = inventoryService.getActiveNotAssignedToFacilityWithPagination(
+                facilityId,
+                SUGGESTION_LIMIT,
+                0,
+                inventoryKeyword
+        );
 
         request.setAttribute("facilityId", facilityId);
-
         request.setAttribute("assignedItems", assignedItems);
         request.setAttribute("assignedKeyword", assignedKeyword);
         request.setAttribute("assignedCurrentPage", assignedPage);
         request.setAttribute("assignedTotalPages", assignedTotalPages);
         request.setAttribute("assignedPageSize", ASSIGNED_PAGE_SIZE);
+        request.setAttribute("assignedSuggestionItems", assignedSuggestionItems);
 
         request.setAttribute("inventories", availableInventories);
         request.setAttribute("inventoryKeyword", inventoryKeyword);
         request.setAttribute("inventoryCurrentPage", inventoryPage);
         request.setAttribute("inventoryTotalPages", inventoryTotalPages);
         request.setAttribute("inventoryPageSize", INVENTORY_PAGE_SIZE);
+        request.setAttribute("inventorySuggestionItems", inventorySuggestionItems);
+        request.setAttribute("suggestionLimit", SUGGESTION_LIMIT);
 
         BreadcrumbUtils.builder(request)
-                .dashboard()
-                .facilityList()
-                .active("Kho đồ")
+                .add("Bang dieu khien", request.getContextPath() + "/owner/dashboard")
+                .add("Danh sach dia diem", request.getContextPath() + "/owner/facility/list")
+                .active("Quan ly kho do cua san")
                 .build();
 
-        request.getRequestDispatcher("/jsp/owner/facility/facility-inventory.jsp")
-                .forward(request, response);
+        request.getRequestDispatcher("/jsp/owner/facility/facility-inventory.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
-        String facilityParam = request.getParameter("facilityId");
-
-        if (facilityParam == null || facilityParam.isBlank()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Facility ID missing");
+        Integer facilityId = parsePositiveInteger(request.getParameter("facilityId"));
+        if (facilityId == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Ma san khong hop le");
             return;
         }
 
-        int facilityId;
-        try {
-            facilityId = Integer.parseInt(facilityParam);
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid facility ID");
-            return;
-        }
-
-        String action = request.getParameter("action");
-        if (action == null || action.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/owner/facility/inventory/" + facilityId);
+        String action = trimToNull(request.getParameter("action"));
+        if (action == null) {
+            response.sendRedirect(buildRedirectUrl(request, facilityId));
             return;
         }
 
@@ -134,106 +133,163 @@ public class OwnerFacilityInventoryController extends HttpServlet {
                 case "assign":
                     handleAssign(request, facilityId);
                     break;
+                case "assignAll":
+                    handleAssignAll(request, facilityId);
+                    break;
                 case "updateQuantity":
                     handleUpdateQuantity(request);
+                    break;
+                case "bulkUpdateQuantity":
+                    handleBulkUpdateQuantity(request, facilityId);
                     break;
                 case "remove":
                     handleRemove(request);
                     break;
+                case "removeAll":
+                    handleRemoveAll(request, facilityId);
+                    break;
                 default:
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thao tac khong hop le");
                     return;
             }
         } catch (IllegalArgumentException e) {
             request.getSession().setAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
-            request.getSession().setAttribute("errorMessage", "Đã xảy ra lỗi khi xử lý kho đồ.");
+            request.getSession().setAttribute("errorMessage", "Da xay ra loi khi xu ly kho do cua san.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/owner/facility/inventory/" + facilityId);
+        response.sendRedirect(buildRedirectUrl(request, facilityId));
     }
 
     private void handleAssign(HttpServletRequest request, int facilityId) {
-        String inventoryIdParam = request.getParameter("inventoryId");
-
-        if (inventoryIdParam == null || inventoryIdParam.isBlank()) {
-            throw new IllegalArgumentException("Thiếu mã sản phẩm để gán.");
-        }
-
-        int inventoryId;
-        try {
-            inventoryId = Integer.parseInt(inventoryIdParam);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Mã sản phẩm không hợp lệ.");
-        }
-
-        if (facilityInventoryService.existsByFacilityAndInventory(facilityId, inventoryId)) {
-            throw new IllegalArgumentException("Sản phẩm này đã được gán cho sân.");
-        }
+        int inventoryId = parseRequiredPositiveInt(
+                request.getParameter("inventoryId"),
+                "Thieu ma san pham can gan.",
+                "Ma san pham khong hop le"
+        );
 
         facilityInventoryService.assignToFacility(facilityId, inventoryId, 0);
-        request.getSession().setAttribute("successMessage", "Gán sản phẩm vào sân thành công.");
+        request.getSession().setAttribute("successMessage", "Gan san pham vao san thanh cong.");
+    }
+
+    private void handleAssignAll(HttpServletRequest request, int facilityId) {
+        String inventoryKeyword = trimToNull(request.getParameter("inventoryKeyword"));
+        int assignedCount = facilityInventoryService.assignAllToFacility(facilityId, 0, inventoryKeyword);
+        request.getSession().setAttribute("successMessage", "Da gan " + assignedCount + " do vao san thanh cong.");
     }
 
     private void handleUpdateQuantity(HttpServletRequest request) {
-        String facilityInventoryIdParam = request.getParameter("facilityInventoryId");
-        String totalQuantityParam = request.getParameter("totalQuantity");
+        int facilityInventoryId = parseRequiredPositiveInt(
+                request.getParameter("facilityInventoryId"),
+                "Thieu ma do gan san.",
+                "Ma do gan san khong hop le"
+        );
 
-        if (facilityInventoryIdParam == null || facilityInventoryIdParam.isBlank()) {
-            throw new IllegalArgumentException("Thiếu mã đồ gán sân.");
-        }
-
-        if (totalQuantityParam == null || totalQuantityParam.isBlank()) {
-            throw new IllegalArgumentException("Vui lòng nhập số lượng sản phẩm.");
-        }
-
-        int facilityInventoryId;
-        int totalQuantity;
-
-        try {
-            facilityInventoryId = Integer.parseInt(facilityInventoryIdParam);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Mã đồ gán sân không hợp lệ.");
-        }
-
-        try {
-            totalQuantity = Integer.parseInt(totalQuantityParam);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Số lượng sản phẩm phải là số nguyên.");
-        }
-
-        if (totalQuantity < 0) {
-            throw new IllegalArgumentException("Số lượng sản phẩm không được nhỏ hơn 0.");
-        }
+        int totalQuantity = parseRequiredNonNegativeInt(
+                request.getParameter("totalQuantity"),
+                "Vui long nhap so luong san pham.",
+                "So luong san pham phai la so nguyen khong am."
+        );
 
         facilityInventoryService.updateQuantity(facilityInventoryId, totalQuantity);
-        request.getSession().setAttribute("successMessage", "Cập nhật số lượng thành công.");
+        request.getSession().setAttribute("successMessage", "Cap nhat so luong thanh cong.");
+    }
+
+    private void handleBulkUpdateQuantity(HttpServletRequest request, int facilityId) {
+        int bulkQuantity = parseRequiredNonNegativeInt(
+                request.getParameter("bulkQuantity"),
+                "Vui long nhap so luong muon ap dung.",
+                "So luong muon ap dung phai la so nguyen khong am."
+        );
+
+        facilityInventoryService.updateAllQuantitiesByFacility(facilityId, bulkQuantity);
+        request.getSession().setAttribute("successMessage", "Cap nhat so luong hang loat thanh cong.");
     }
 
     private void handleRemove(HttpServletRequest request) {
-        String facilityInventoryIdParam = request.getParameter("facilityInventoryId");
-
-        if (facilityInventoryIdParam == null || facilityInventoryIdParam.isBlank()) {
-            throw new IllegalArgumentException("Thiếu mã đồ gán sân để gỡ.");
-        }
-
-        int facilityInventoryId;
-        try {
-            facilityInventoryId = Integer.parseInt(facilityInventoryIdParam);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Mã đồ gán sân không hợp lệ.");
-        }
+        int facilityInventoryId = parseRequiredPositiveInt(
+                request.getParameter("facilityInventoryId"),
+                "Thieu ma do gan san can go.",
+                "Ma do gan san khong hop le"
+        );
 
         facilityInventoryService.removeById(facilityInventoryId);
-        request.getSession().setAttribute("successMessage", "Gỡ sản phẩm khỏi sân thành công.");
+        request.getSession().setAttribute("successMessage", "Go san pham khoi san thanh cong.");
+    }
+
+    private void handleRemoveAll(HttpServletRequest request, int facilityId) {
+        String assignedKeyword = trimToNull(request.getParameter("assignedKeyword"));
+        int removedCount = facilityInventoryService.removeAllByFacility(facilityId, assignedKeyword);
+        request.getSession().setAttribute("successMessage", "Da go " + removedCount + " san pham khoi san thanh cong.");
+    }
+
+    private Integer parseFacilityIdFromPath(String pathInfo) {
+        if (pathInfo == null || pathInfo.isBlank() || "/".equals(pathInfo)) {
+            return null;
+        }
+
+        String normalizedPath = pathInfo.startsWith("/") ? pathInfo.substring(1) : pathInfo;
+        if (normalizedPath.contains("/")) {
+            return null;
+        }
+
+        return parsePositiveInteger(normalizedPath);
+    }
+
+    private Integer parsePositiveInteger(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        try {
+            int parsedValue = Integer.parseInt(value.trim());
+            return parsedValue > 0 ? parsedValue : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private int parseRequiredPositiveInt(String value, String missingMessage, String invalidMessage) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(missingMessage);
+        }
+
+        try {
+            int parsedValue = Integer.parseInt(value.trim());
+            if (parsedValue <= 0) {
+                throw new IllegalArgumentException(invalidMessage);
+            }
+            return parsedValue;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(invalidMessage);
+        }
+    }
+
+    private int parseRequiredNonNegativeInt(String value, String missingMessage, String invalidMessage) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(missingMessage);
+        }
+
+        try {
+            int parsedValue = Integer.parseInt(value.trim());
+            if (parsedValue < 0) {
+                throw new IllegalArgumentException(invalidMessage);
+            }
+            return parsedValue;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(invalidMessage);
+        }
     }
 
     private int parsePage(String pageParam) {
+        if (pageParam == null || pageParam.isBlank()) {
+            return 1;
+        }
+
         try {
-            int page = Integer.parseInt(pageParam);
+            int page = Integer.parseInt(pageParam.trim());
             return Math.max(page, 1);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             return 1;
         }
     }
@@ -242,7 +298,39 @@ public class OwnerFacilityInventoryController extends HttpServlet {
         if (value == null) {
             return null;
         }
-        value = value.trim();
-        return value.isEmpty() ? null : value;
+
+        String trimmedValue = value.trim();
+        return trimmedValue.isEmpty() ? null : trimmedValue;
+    }
+
+    private String buildRedirectUrl(HttpServletRequest request, int facilityId) {
+        List<String> queryParams = new ArrayList<>();
+
+        appendQueryParam(queryParams, "assignedKeyword", trimToNull(request.getParameter("assignedKeyword")));
+        appendQueryParam(queryParams, "inventoryKeyword", trimToNull(request.getParameter("inventoryKeyword")));
+        appendPageParam(queryParams, "assignedPage", request.getParameter("assignedPage"));
+        appendPageParam(queryParams, "inventoryPage", request.getParameter("inventoryPage"));
+
+        String baseUrl = request.getContextPath() + "/owner/facility/inventory/" + facilityId;
+        return queryParams.isEmpty() ? baseUrl : baseUrl + "?" + String.join("&", queryParams);
+    }
+
+    private void appendPageParam(List<String> queryParams, String key, String rawValue) {
+        Integer page = parsePositiveInteger(rawValue);
+        if (page != null) {
+            appendQueryParam(queryParams, key, String.valueOf(page));
+        }
+    }
+
+    private void appendQueryParam(List<String> queryParams, String key, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+
+        queryParams.add(
+                URLEncoder.encode(key, StandardCharsets.UTF_8)
+                        + "="
+                        + URLEncoder.encode(value, StandardCharsets.UTF_8)
+        );
     }
 }
