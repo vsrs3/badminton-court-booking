@@ -20,7 +20,6 @@ public class Payment {
     private LocalDateTime expireAt;
     private LocalDateTime createdAt;
 
-    private String gateway;           // VNPAY (default)
     private String transactionCode;   // our internal txn ref (used as vnp_TxnRef)
     private BigDecimal paidAmount;
     private LocalDateTime paymentTime;
@@ -58,9 +57,6 @@ public class Payment {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    /** @return payment gateway name */
-    public String getGateway() { return gateway; }
-    public void setGateway(String gateway) { this.gateway = gateway; }
 
     /** @return internal transaction code (used as vnp_TxnRef) */
     public String getTransactionCode() { return transactionCode; }
