@@ -271,6 +271,7 @@ const contextPath = getContextPath();
             AppState.searchQuery.trim(),
             AppState.filters.province,
             AppState.filters.district,
+            AppState.filters.maxDistance,
             AppState.isShowingFavorites ? 'fav' : 'all',
             AppState.userLocation ? `${AppState.userLocation.lat},${AppState.userLocation.lng}` : 'no-loc'
         ].join('|');
@@ -309,6 +310,9 @@ const contextPath = getContextPath();
             }
             if (AppState.filters.district) {
                 params.append("district", AppState.filters.district);
+            }
+            if (AppState.filters.maxDistance !== null && AppState.userLocation) {
+                params.append("maxDistance", AppState.filters.maxDistance);
             }
 
             if (AppState.isShowingFavorites) {
@@ -464,7 +468,7 @@ const contextPath = getContextPath();
         console.log('Applying filters and search...');
         let courts = [...AppState.courts];
 
-        // Search/province/district are filtered on API side (database).
+        // Search/province/district/distance are filtered on API side (database when possible).
 
         // 1. Distance filter
         if (AppState.filters.maxDistance !== null && AppState.userLocation) {

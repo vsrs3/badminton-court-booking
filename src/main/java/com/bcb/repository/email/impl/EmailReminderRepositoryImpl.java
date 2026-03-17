@@ -33,6 +33,24 @@ public class EmailReminderRepositoryImpl implements EmailReminderRepository {
     }
 
     @Override
+    public List<EmailReminderCandidateDTO> findUpcomingCustomerCandidates(LocalDateTime from, LocalDateTime to) throws Exception {
+        String sql = "SELECT b.booking_id, COALESCE(a.email, g.email) AS email, " +
+                "DATEADD(SECOND, DATEDIFF(SECOND, '00:00:00', MIN(ts.start_time)), CAST(COALESCE(bs.booking_date, b.booking_date) AS DATETIME)) AS start_at " +
+                "FROM Booking b " +
+                "JOIN BookingSlot bs ON bs.booking_id = b.booking_id AND bs.slot_status <> 'CANCELLED' " +
+                "JOIN TimeSlot ts ON ts.slot_id = bs.slot_id " +
+                "LEFT JOIN Account a ON b.account_id = a.account_id " +
+                "LEFT JOIN Guest g ON b.guest_id = g.guest_id " +
+                "WHERE b.staff_id IS NULL " +
+                "AND b.booking_status = 'CONFIRMED' " +
+                "AND COALESCE(a.email, g.email) IS NOT NULL " +
+                "GROUP BY b.booking_id, COALESCE(bs.booking_date, b.booking_date), a.email, g.email " +
+                "HAVING DATEADD(SECOND, DATEDIFF(SECOND, '00:00:00', MIN(ts.start_time)), CAST(COALESCE(bs.booking_date, b.booking_date) AS DATETIME)) BETWEEN ? AND ?";
+
+        return queryCandidates(sql, from, to);
+    }
+
+    @Override
     public List<EmailReminderCandidateDTO> findPaymentCandidates(LocalDateTime from, LocalDateTime to) throws Exception {
         String sql = "SELECT b.booking_id, COALESCE(a.email, g.email) AS email, " +
                 "DATEADD(SECOND, DATEDIFF(SECOND, '00:00:00', MIN(ts.start_time)), CAST(COALESCE(bs.booking_date, b.booking_date) AS DATETIME)) AS start_at " +

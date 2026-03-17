@@ -1,7 +1,12 @@
 package com.bcb.filter;
 
 import com.bcb.model.Account;
-import jakarta.servlet.*;
+import com.bcb.utils.AuthRedirectUtil;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,8 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
- * Redirect users to appropriate dashboard if they access wrong URL
- * Example: STAFF accessing "/" → redirect to "/staff/dashboard"
+ * Redirect logged-in users from root path to the correct home page.
  */
 @WebFilter("/*")
 public class RoleRedirectFilter implements Filter {
@@ -27,55 +31,29 @@ public class RoleRedirectFilter implements Filter {
         String contextPath = httpRequest.getContextPath();
         String path = requestURI.substring(contextPath.length());
 
-        // Only process home page access
         if (!path.equals("/") && !path.equals("")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Get current user
         HttpSession session = httpRequest.getSession(false);
         if (session == null) {
-            // Guest - allow access to home
             chain.doFilter(request, response);
             return;
         }
 
         Account currentUser = (Account) session.getAttribute("account");
         if (currentUser == null) {
-            // Guest - allow access to home
             chain.doFilter(request, response);
             return;
         }
 
-        String role = currentUser.getRole();
-        String redirectUrl = null;
-
-        // Redirect non-customer roles to their dashboard
-        switch (role) {
-            case "ADMIN":
-                redirectUrl = contextPath + "/admin/dashboard";
-                break;
-            case "OWNER":
-                redirectUrl = contextPath + "/owner/dashboard";
-                break;
-            case "STAFF":
-                redirectUrl = contextPath + "/staff/dashboard";
-                break;
-            case "CUSTOMER":
-                // Customer can access home page - continue
-                chain.doFilter(request, response);
-                return;
-            default:
-                // Unknown role - treat as guest
-                chain.doFilter(request, response);
-                return;
+        String redirectPath = AuthRedirectUtil.resolvePathByRole(currentUser.getRole());
+        if ("/".equals(redirectPath)) {
+            chain.doFilter(request, response);
+            return;
         }
 
-        // Redirect to appropriate dashboard
-        if (redirectUrl != null) {
-            System.out.println("🔄 Redirecting " + role + " from / to " + redirectUrl);
-            httpResponse.sendRedirect(redirectUrl);
-        }
+        httpResponse.sendRedirect(contextPath + redirectPath);
     }
 }

@@ -233,11 +233,11 @@ public class InventoryRepositoryImpl implements InventoryRepository {
     }
 
     @Override
-    public List<Inventory> findWithPagination(int limit, int offset, String keyword) {
+    public List<Inventory> findWithPagination(int limit, int offset, String keyword, Boolean activeStatus, String priceSort) {
 
         List<Inventory> list = new ArrayList<>();
 
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
                 SELECT inventory_id,
                        name,
                        brand,
@@ -245,25 +245,31 @@ public class InventoryRepositoryImpl implements InventoryRepository {
                        rental_price,
                        is_active
                 FROM Inventory
-                WHERE (? IS NULL OR name LIKE ?)
-                ORDER BY inventory_id ASC
-                OFFSET ? ROWS
-                FETCH NEXT ? ROWS ONLY
-                """;
+                WHERE 1 = 1
+                """);
+
+        List<Object> parameters = new ArrayList<>();
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        if (normalizedKeyword != null) {
+            sql.append(" AND name LIKE ? ");
+            parameters.add("%" + normalizedKeyword + "%");
+        }
+
+        if (activeStatus != null) {
+            sql.append(" AND is_active = ? ");
+            parameters.add(activeStatus);
+        }
+
+        sql.append(resolveInventoryOrderBy(priceSort));
+        sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+        parameters.add(offset);
+        parameters.add(limit);
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            if (keyword == null || keyword.trim().isEmpty()) {
-                ps.setNull(1, Types.VARCHAR);
-                ps.setNull(2, Types.VARCHAR);
-            } else {
-                ps.setString(1, keyword);
-                ps.setString(2, "%" + keyword + "%");
-            }
-
-            ps.setInt(3, offset);
-            ps.setInt(4, limit);
+            bindParameters(ps, parameters);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -279,24 +285,31 @@ public class InventoryRepositoryImpl implements InventoryRepository {
     }
 
     @Override
-    public int countInventory(String keyword) {
+    public int countInventory(String keyword, Boolean activeStatus) {
 
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
                 SELECT COUNT(*)
                 FROM Inventory
-                WHERE (? IS NULL OR name LIKE ?)
-                """;
+                WHERE 1 = 1
+                """);
+
+        List<Object> parameters = new ArrayList<>();
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        if (normalizedKeyword != null) {
+            sql.append(" AND name LIKE ? ");
+            parameters.add("%" + normalizedKeyword + "%");
+        }
+
+        if (activeStatus != null) {
+            sql.append(" AND is_active = ? ");
+            parameters.add(activeStatus);
+        }
 
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            if (keyword == null || keyword.trim().isEmpty()) {
-                ps.setNull(1, Types.VARCHAR);
-                ps.setNull(2, Types.VARCHAR);
-            } else {
-                ps.setString(1, keyword);
-                ps.setString(2, "%" + keyword + "%");
-            }
+            bindParameters(ps, parameters);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -476,5 +489,47 @@ public class InventoryRepositoryImpl implements InventoryRepository {
         }
 
         return 0;
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return null;
+        }
+
+        String trimmed = keyword.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String resolveInventoryOrderBy(String priceSort) {
+        if ("price_desc".equals(priceSort)) {
+            return " ORDER BY rental_price DESC, inventory_id ASC ";
+        }
+
+        if ("price_asc".equals(priceSort)) {
+            return " ORDER BY rental_price ASC, inventory_id ASC ";
+        }
+
+        return " ORDER BY inventory_id ASC ";
+    }
+
+    private void bindParameters(PreparedStatement ps, List<Object> parameters) throws SQLException {
+        for (int index = 0; index < parameters.size(); index++) {
+            Object value = parameters.get(index);
+            int parameterIndex = index + 1;
+
+            if (value instanceof String stringValue) {
+                ps.setString(parameterIndex, stringValue);
+                continue;
+            }
+
+            if (value instanceof Boolean booleanValue) {
+                ps.setBoolean(parameterIndex, booleanValue);
+                continue;
+            }
+
+            if (value instanceof Integer integerValue) {
+                ps.setInt(parameterIndex, integerValue);
+            }
+        }
     }
 }

@@ -81,7 +81,7 @@ public class FacilityServiceImpl implements FacilityService {
     public Facility findById(int facilityId) throws BusinessException {
         return facilityRepository.findById(facilityId)
                                  .orElseThrow(() -> new BusinessException("FACILITY_NOT_FOUND",
-                                         "Facility not found with ID: " + facilityId));
+                                         "Không tìm thấy địa điểm với ID: " + facilityId));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class FacilityServiceImpl implements FacilityService {
             return facilityRepository.insert(facility);
         } catch (Exception e) {
             throw new BusinessException("FACILITY_CREATE_ERROR",
-                    "Failed to create facility: " + e.getMessage(), e);
+                    "Tạo địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -111,18 +111,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facility.getFacilityId()).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facility.getFacilityId());
+                    "Không tìm thấy địa điểm với ID: " + facility.getFacilityId());
         }
 
         try {
             int rowsAffected = facilityRepository.update(facility);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_UPDATE_ERROR",
-                        "No rows affected during update");
+                        "Không có bản ghi nào được cập nhật");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_UPDATE_ERROR",
-                    "Failed to update facility: " + e.getMessage(), e);
+                    "Cập nhật địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -223,7 +223,7 @@ public class FacilityServiceImpl implements FacilityService {
             }
 
             throw new BusinessException(
-                    "Update facility failed. All changes rolled back.", e
+                    "Cập nhật địa điểm thất bại. Tất cả thay đổi đã được hoàn tác.", e
             );
         }
     }
@@ -233,18 +233,18 @@ public class FacilityServiceImpl implements FacilityService {
         // Check facility exists
         if (!facilityRepository.findById(facilityId).isPresent()) {
             throw new BusinessException("FACILITY_NOT_FOUND",
-                    "Facility not found with ID: " + facilityId);
+                    "Không tìm thấy địa điểm với ID: " + facilityId);
         }
 
         try {
             int rowsAffected = facilityRepository.softDelete(facilityId);
             if (rowsAffected == 0) {
                 throw new BusinessException("FACILITY_DELETE_ERROR",
-                        "No rows affected during delete");
+                        "Không có bản ghi nào được xóa");
             }
         } catch (Exception e) {
             throw new BusinessException("FACILITY_DELETE_ERROR",
-                    "Failed to delete facility: " + e.getMessage(), e);
+                    "Xóa địa điểm thất bại: " + e.getMessage(), e);
         }
     }
 
@@ -334,20 +334,34 @@ public class FacilityServiceImpl implements FacilityService {
             }
 
             throw new BusinessException(
-                    "Create facility failed. All changes rolled back.", e
+                    "Tạo địa điểm thất bại. Tất cả thay đổi đã được hoàn tác.", e
             );
         }
     }
     //    ============= VUONGPD =============
     @Override
-    public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
+    public List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng, Double maxDistance, Integer accountId, String keyword, String province, String district, boolean favoritesOnly) {
         Integer favoriteAccountId = favoritesOnly ? accountId : null;
         if (favoritesOnly && favoriteAccountId == null) {
             return new ArrayList<>();
         }
 
-        int offset = page * pageSize;
-        List<Facility> facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
+        boolean useDistanceFilter = maxDistance != null && maxDistance > 0 && userLat != null && userLng != null;
+        List<Facility> facilities;
+        if (useDistanceFilter) {
+            facilities = facilityRepository.findForHomeAll(keyword, province, district, favoriteAccountId);
+            facilities = applyDistanceFilter(facilities, userLat, userLng, maxDistance);
+
+            int fromIndex = page * pageSize;
+            if (fromIndex >= facilities.size()) {
+                return new ArrayList<>();
+            }
+            int toIndex = Math.min(fromIndex + pageSize, facilities.size());
+            facilities = facilities.subList(fromIndex, toIndex);
+        } else {
+            int offset = page * pageSize;
+            facilities = facilityRepository.findForHome(offset, pageSize, keyword, province, district, favoriteAccountId);
+        }
 
         Set<Integer> favoriteFacilityIds = new HashSet<>();
         if (accountId != null) {
@@ -385,12 +399,38 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
-    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly) {
+    public int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly,
+                             Double userLat, Double userLng, Double maxDistance) {
         Integer favoriteAccountId = favoritesOnly ? accountId : null;
         if (favoritesOnly && favoriteAccountId == null) {
             return 0;
         }
-        return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
+        boolean useDistanceFilter = maxDistance != null && maxDistance > 0 && userLat != null && userLng != null;
+        if (!useDistanceFilter) {
+            return facilityRepository.countForHome(keyword, province, district, favoriteAccountId);
+        }
+
+        List<Facility> facilities = facilityRepository.findForHomeAll(keyword, province, district, favoriteAccountId);
+        return applyDistanceFilter(facilities, userLat, userLng, maxDistance).size();
+    }
+
+    private List<Facility> applyDistanceFilter(List<Facility> facilities, double userLat, double userLng, double maxDistanceKm) {
+        List<Facility> filtered = new ArrayList<>();
+        for (Facility facility : facilities) {
+            if (facility.getLatitude() == null || facility.getLongitude() == null) {
+                filtered.add(facility);
+                continue;
+            }
+            double distance = calculateDistance(
+                    userLat, userLng,
+                    facility.getLatitude().doubleValue(),
+                    facility.getLongitude().doubleValue()
+            );
+            if (distance <= maxDistanceKm) {
+                filtered.add(facility);
+            }
+        }
+        return filtered;
     }
 
     @Override

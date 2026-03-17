@@ -79,31 +79,43 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             BigDecimal totalAmount = BigDecimal.ZERO;
             String policy = normalizePolicy(req.getConflictPolicy());
 
+            Map<LocalDate, SelectedSession> overrides;
+            try {
+                overrides = buildOverrides(req, datePlans, ctx.slotOrder, policy);
+            } catch (Exception ex) {
+                return out(400, error(ex.getMessage()));
+            }
+
             for (DatePlan plan : datePlans) {
-                if (isPastSession(plan.date, plan.slotIds, ctx)) {
+                SelectedSession override = overrides.get(plan.date);
+                int courtId = override != null ? override.courtId : plan.courtId;
+                List<Integer> slotIds = override != null ? override.slotIds : plan.slotIds;
+                DatePlan effectivePlan = new DatePlan(plan.date, courtId, slotIds);
+
+                if (isPastSession(plan.date, slotIds, ctx)) {
                     return out(400, error(buildPastSessionMessage(plan.date)));
                 }
                 Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
-                boolean conflict = isConflict(booked, plan.courtId, plan.slotIds);
+                boolean conflict = isConflict(booked, courtId, slotIds);
 
-                BigDecimal sessionAmount = calcSessionAmount(plan.courtId, plan.slotIds, plan.date, ctx);
+                BigDecimal sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
 
                 if (!conflict) {
                     totalAmount = totalAmount.add(sessionAmount);
-                    sessions.add(SessionView.ok(plan.date, plan.courtId, plan.slotIds, sessionAmount));
+                    sessions.add(SessionView.ok(plan.date, courtId, slotIds, sessionAmount));
                     continue;
                 }
 
                 if ("SKIP".equals(policy)) {
                     skippedDates.add(plan.date.toString());
-                    sessions.add(SessionView.skipped(plan.date, plan.courtId, plan.slotIds, sessionAmount));
-                    conflicts.add(new ConflictView(plan, Collections.emptyList()));
+                    sessions.add(SessionView.skipped(plan.date, courtId, slotIds, sessionAmount));
+                    conflicts.add(new ConflictView(effectivePlan, Collections.emptyList()));
                     continue;
                 }
 
-                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, plan, booked, ctx);
-                sessions.add(SessionView.conflict(plan.date, plan.courtId, plan.slotIds, sessionAmount));
-                conflicts.add(new ConflictView(plan, suggestions));
+                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, effectivePlan, booked, ctx);
+                sessions.add(SessionView.conflict(plan.date, courtId, slotIds, sessionAmount));
+                conflicts.add(new ConflictView(effectivePlan, suggestions));
             }
 
             Map<String, Object> data = new LinkedHashMap<>();
@@ -237,7 +249,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 int invoiceId = repository.insertInvoice(conn, bookingId, totalAmount);
                 paymentRepository.insertPayment(conn, invoiceId, totalAmount, "FULL", paymentMethod, staffId);
-                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount);
+                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount, totalAmount);
                 repository.updateBookingStatus(conn, bookingId, "CONFIRMED");
 
                 conn.commit();
@@ -484,7 +496,10 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         for (Integer courtId : sameTypeCourts) {
             if (courtId == plan.courtId) continue;
             if (!isConflict(booked, courtId, plan.slotIds)) {
-                suggestions.add(buildSuggestion(courtId, plan.slotIds, plan.date, ctx));
+                SuggestionView suggestion = buildSuggestionIfPriced(courtId, plan.slotIds, plan.date, ctx);
+                if (suggestion != null) {
+                    suggestions.add(suggestion);
+                }
                 if (suggestions.size() >= MAX_SUGGESTIONS) return suggestions;
             }
         }
@@ -495,7 +510,10 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
         List<TimeBlock> blocks = findAvailableBlocks(plan, booked, ctx);
         for (TimeBlock block : blocks) {
-            suggestions.add(buildSuggestion(plan.courtId, block.slotIds, plan.date, ctx));
+            SuggestionView suggestion = buildSuggestionIfPriced(plan.courtId, block.slotIds, plan.date, ctx);
+            if (suggestion != null) {
+                suggestions.add(suggestion);
+            }
             if (suggestions.size() >= MAX_SUGGESTIONS) break;
         }
 
@@ -534,11 +552,24 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         return candidates;
     }
 
-    private SuggestionView buildSuggestion(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {
+    private SuggestionView buildSuggestionIfPriced(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {
+        if (!hasValidPrice(courtId, slotIds, date, ctx)) {
+            return null;
+        }
         BigDecimal amount = calcSessionAmount(courtId, slotIds, date, ctx);
         LocalTime start = ctx.slotTimes.get(slotIds.get(0))[0];
         LocalTime end = ctx.slotTimes.get(slotIds.get(slotIds.size() - 1))[1];
         return new SuggestionView(courtId, slotIds, amount, start.toString(), end.toString());
+    }
+
+    private boolean hasValidPrice(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {
+        for (Integer slotId : slotIds) {
+            BigDecimal price = sessionAmountForSlot(courtId, slotId, date, ctx);
+            if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private BigDecimal calcSessionAmount(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {

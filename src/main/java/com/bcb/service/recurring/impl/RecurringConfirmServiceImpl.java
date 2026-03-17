@@ -69,6 +69,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -139,6 +140,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
         List<SingleBookingMatrixTimeSlotDTO> slots = timeSlotRepo.findByTimeRange(openTime, closeTime);
         Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap = slots.stream()
                 .collect(Collectors.toMap(SingleBookingMatrixTimeSlotDTO::getSlotId, s -> s));
+        Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache = new HashMap<>();
 
         Map<String, RuntimeSession> runtimeSessionMap = buildRuntimeSessionMap(preview.getSessions(), skipDates);
         applyModifiedSessions(request.getModifiedSessions(), runtimeSessionMap, courtMap, slots,
@@ -165,7 +167,8 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                 if (court == null) {
                     throw new RecurringValidationException("COURT_NOT_FOUND", "Không tìm thấy sân trong cơ sở: " + session.courtId);
                 }
-                BigDecimal price = resolveSlotPrice(preview.getFacilityId(), court.getCourtTypeId(), date, slotId, slotMap);
+                BigDecimal price = resolveSlotPrice(preview.getFacilityId(), court.getCourtTypeId(), date, slotId,
+                        slotMap, priceRuleCache);
                 totalAmount = totalAmount.add(price);
 
                 SessionSlotPrice row = new SessionSlotPrice();
@@ -204,7 +207,7 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             recurring.setStatus("ACTIVE");
             int recurringId = recurringBookingRepo.insert(conn, recurring);
 
-            List<SingleBookingMatrixTimeSlotDTO> facilitySlots = timeSlotRepo.findByTimeRange(openTime, closeTime);
+            List<SingleBookingMatrixTimeSlotDTO> facilitySlots = slots;
             for (RecurringPatternDTO pattern : preview.getPatterns()) {
                 List<Integer> patternSlotIds = convertTimeRangeToSlots(
                         parseTime(pattern.getStartTime(), "startTime"),
@@ -470,15 +473,19 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
                                         int courtTypeId,
                                         LocalDate bookingDate,
                                         int slotId,
-                                        Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
+                                        Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap,
+                                        Map<PriceRuleCacheKey, List<FacilityPriceRule>> priceRuleCache) {
         SingleBookingMatrixTimeSlotDTO slot = slotMap.get(slotId);
         if (slot == null) {
             throw new RecurringValidationException("INVALID_SLOT", "slotId không hợp lệ=" + slotId);
         }
 
         String dayType = SingleBookingDayTypeUtil.resolve(bookingDate);
-        List<FacilityPriceRule> rules =
-                priceRuleRepo.findByFacilityAndCourtTypeAndDayType(facilityId, courtTypeId, dayType);
+        PriceRuleCacheKey cacheKey = new PriceRuleCacheKey(facilityId, courtTypeId, dayType);
+        List<FacilityPriceRule> rules = priceRuleCache.computeIfAbsent(
+                cacheKey,
+                k -> priceRuleRepo.findByFacilityAndCourtTypeAndDayType(k.facilityId, k.courtTypeId, k.dayType)
+        );
 
         LocalTime slotStart = LocalTime.parse(slot.getStartTime(), TF);
         LocalTime slotEnd = LocalTime.parse(slot.getEndTime(), TF);
@@ -545,5 +552,34 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
         private List<Integer> slotIds;
         private String status;
     }
-}
 
+    private static final class PriceRuleCacheKey {
+        private final int facilityId;
+        private final int courtTypeId;
+        private final String dayType;
+
+        private PriceRuleCacheKey(int facilityId, int courtTypeId, String dayType) {
+            this.facilityId = facilityId;
+            this.courtTypeId = courtTypeId;
+            this.dayType = dayType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof PriceRuleCacheKey that)) {
+                return false;
+            }
+            return facilityId == that.facilityId
+                    && courtTypeId == that.courtTypeId
+                    && Objects.equals(dayType, that.dayType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(facilityId, courtTypeId, dayType);
+        }
+    }
+}

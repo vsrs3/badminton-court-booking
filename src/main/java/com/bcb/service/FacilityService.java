@@ -95,12 +95,14 @@ public interface FacilityService {
      * Get facilities with pagination for home/infinite scroll.
      */
     List<FacilityDTO> getFacilities(int page, int pageSize, Double userLat, Double userLng,
+                                    Double maxDistance,
                                     Integer accountId, String keyword, String province, String district,
                                     boolean favoritesOnly);
 
     int getTotalCount();
 
-    int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly);
+    int getTotalCount(String keyword, String province, String district, Integer accountId, boolean favoritesOnly,
+                      Double userLat, Double userLng, Double maxDistance);
 
     FacilityDTO getFacilityById(Integer facilityId, Integer accountId);
 

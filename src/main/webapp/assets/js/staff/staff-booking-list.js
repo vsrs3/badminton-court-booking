@@ -155,7 +155,7 @@
         paginationUl.innerHTML = '';
         if (total <= 1) return;
 
-        addPageItem('?', current > 1 ? current - 1 : null, false);
+        addPageItem('<', current > 1 ? current - 1 : null, false);
 
         var pages = buildPageNumbers(current, total, 7);
         pages.forEach(function (p) {
@@ -166,7 +166,7 @@
             }
         });
 
-        addPageItem('?', current < total ? current + 1 : null, false);
+        addPageItem('>', current < total ? current + 1 : null, false);
     }
 
     function addPageItem(label, targetPage, isActive, isEllipsis) {

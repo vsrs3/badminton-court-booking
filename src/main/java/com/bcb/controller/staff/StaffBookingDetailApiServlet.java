@@ -2,6 +2,7 @@ package com.bcb.controller.staff;
 
 import com.bcb.dto.staff.StaffBookingDetailDataDTO;
 import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailRentalRowDTO;
 import com.bcb.dto.staff.StaffBookingDetailSessionDTO;
 import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.service.impl.StaffBookingDetailServiceImpl;
@@ -60,7 +61,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
     }
 
     private String buildDetailJson(StaffBookingDetailDataDTO data) {
-        StringBuilder json = new StringBuilder(4096);
+        StringBuilder json = new StringBuilder(8192);
         json.append("{\"success\":true,\"data\":{");
         json.append("\"bookingId\":").append(data.getBookingId());
         json.append(",\"bookingDate\":\"").append(data.getBookingDate()).append("\"");
@@ -125,6 +126,25 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         } else {
             json.append("null");
         }
+
+        json.append(",\"rentalRows\":[");
+        for (int i = 0; i < data.getRentalRows().size(); i++) {
+            if (i > 0) json.append(",");
+            StaffBookingDetailRentalRowDTO row = data.getRentalRows().get(i);
+
+            json.append("{");
+            json.append("\"courtName\":").append(esc(row.getCourtName()));
+            json.append(",\"startTime\":\"").append(row.getStartTime()).append("\"");
+            json.append(",\"endTime\":\"").append(row.getEndTime()).append("\"");
+            json.append(",\"rentalItemsText\":").append(esc(row.getRentalItemsText()));
+            json.append(",\"rentalTotal\":").append(row.getRentalTotal());
+            json.append("}");
+        }
+        json.append("]");
+
+        json.append(",\"courtTotal\":").append(data.getCourtTotal());
+        json.append(",\"rentalTotal\":").append(data.getRentalTotal());
+        json.append(",\"grandTotal\":").append(data.getGrandTotal());
 
         json.append(",\"etag\":").append(esc(data.getEtag()));
         json.append("}}");

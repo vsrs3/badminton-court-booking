@@ -35,6 +35,11 @@ public class MyBookingDetailDTO {
     // Merged slots — consecutive slots on the same court merged into one block (for display)
     private List<MergedSlotDTO> mergedSlots;
     private List<MergedSlotDTO> recurringSessions;
+    private List<MergedSlotDTO> pastRecurringSessions;
+
+    // Recurring lazy-load metadata
+    private boolean hasMoreFutureSessions;
+    private boolean hasMorePastSessions;
 
     // Payment info
     private String paymentStatus;       // UNPAID, PARTIAL, PAID
@@ -98,6 +103,15 @@ public class MyBookingDetailDTO {
 
     public List<MergedSlotDTO> getRecurringSessions() { return recurringSessions; }
     public void setRecurringSessions(List<MergedSlotDTO> recurringSessions) { this.recurringSessions = recurringSessions; }
+
+    public List<MergedSlotDTO> getPastRecurringSessions() { return pastRecurringSessions; }
+    public void setPastRecurringSessions(List<MergedSlotDTO> pastRecurringSessions) { this.pastRecurringSessions = pastRecurringSessions; }
+
+    public boolean isHasMoreFutureSessions() { return hasMoreFutureSessions; }
+    public void setHasMoreFutureSessions(boolean hasMoreFutureSessions) { this.hasMoreFutureSessions = hasMoreFutureSessions; }
+
+    public boolean isHasMorePastSessions() { return hasMorePastSessions; }
+    public void setHasMorePastSessions(boolean hasMorePastSessions) { this.hasMorePastSessions = hasMorePastSessions; }
 
     public String getPaymentStatus() { return paymentStatus; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }

@@ -62,11 +62,12 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
     }
 
     @Override
-    public void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal paidAmount) throws Exception {
-        String sql = "UPDATE Invoice SET paid_amount = ?, payment_status = 'PAID' WHERE booking_id = ?";
+    public void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal paidAmount) throws Exception {
+        String sql = "UPDATE Invoice SET total_amount = ?, paid_amount = ?, payment_status = 'PAID' WHERE booking_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBigDecimal(1, paidAmount);
-            ps.setInt(2, bookingId);
+            ps.setBigDecimal(1, totalAmount);
+            ps.setBigDecimal(2, paidAmount);
+            ps.setInt(3, bookingId);
             ps.executeUpdate();
         }
     }

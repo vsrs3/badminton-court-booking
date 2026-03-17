@@ -17,6 +17,7 @@
     const previewBtn = document.getElementById('previewBtn');
     const alertBox = document.getElementById('rcAlert');
     const facilityNameText = document.getElementById('facilityNameText');
+    const weeklySchedulePreview = document.getElementById('weeklySchedulePreview');
 
     const prefillCourtId = qs.get('courtId');
 
@@ -164,6 +165,59 @@
         };
     }
 
+    function formatTimeForWeeklyPreview(value) {
+        const raw = String(value || '');
+        const parts = raw.split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || '0', 10);
+        if (!Number.isFinite(h) || !Number.isFinite(m)) {
+            return raw;
+        }
+        if (m === 0) {
+            return h + 'h';
+        }
+        return h + 'h' + String(m).padStart(2, '0');
+    }
+
+    function renderWeeklySchedulePreview() {
+        if (!weeklySchedulePreview) return;
+
+        const grouped = {};
+        collectPatterns().forEach(function (p) {
+            if (!grouped[p.dayOfWeek]) grouped[p.dayOfWeek] = [];
+            grouped[p.dayOfWeek].push(p);
+        });
+
+        Array.from(weeklySchedulePreview.querySelectorAll('.weekly-day-card')).forEach(function (card) {
+            const day = parseInt(card.getAttribute('data-day'), 10);
+            const content = card.querySelector('.weekly-day-content');
+            if (!content) return;
+
+            const items = grouped[day] || [];
+            content.innerHTML = '';
+
+            if (!items.length) {
+                card.classList.remove('has-schedule');
+                content.classList.add('text-muted');
+                content.textContent = 'Chưa có lịch';
+                return;
+            }
+
+            card.classList.add('has-schedule');
+            content.classList.remove('text-muted');
+            items.forEach(function (item) {
+                const court = courts.find(function (c) {
+                    return String(c.courtId) === String(item.courtId);
+                });
+                const line = document.createElement('span');
+                line.className = 'weekly-item';
+                const courtName = court ? court.courtName : ('Sân #' + item.courtId);
+                line.textContent = courtName + ' ' + formatTimeForWeeklyPreview(item.startTime) + '-' + formatTimeForWeeklyPreview(item.endTime);
+                content.appendChild(line);
+            });
+        });
+    }
+
     /** Adds one weekly pattern row into the card layout. */
     function addPatternRow(defaults) {
         const cfg = defaults || {};
@@ -206,6 +260,8 @@
         const pickerOptions = buildTimePickerOptions();
         initializeTimePicker(startDisplayId, startInputId, pickerOptions);
         initializeTimePicker(endDisplayId, endInputId, pickerOptions);
+
+        renderWeeklySchedulePreview();
     }
 
     /** Collects all pattern rows into API payload structure. */
@@ -262,6 +318,20 @@
         });
     }
 
+    /** Sync preview button UI state (disabled + loading text/icon). */
+    function setPreviewButtonLoading(isLoading) {
+        if (!previewBtn) return;
+        previewBtn.disabled = isLoading;
+
+        const label = previewBtn.querySelector('.preview-btn-label');
+        const loading = previewBtn.querySelector('.preview-btn-loading');
+        const icon = previewBtn.querySelector('i');
+
+        if (label) label.classList.toggle('d-none', isLoading);
+        if (loading) loading.classList.toggle('d-none', !isLoading);
+        if (icon) icon.classList.toggle('d-none', isLoading);
+    }
+
     /** Calls recurring preview API and stores response for preview screen. */
     async function previewRecurring() {
         clearError();
@@ -274,16 +344,24 @@
         };
 
         try {
+            // Only enter loading state when client-side validation has passed.
             validatePayload(payload);
-            previewBtn.disabled = true;
+            setPreviewButtonLoading(true);
 
             const res = await fetch(CTX + '/api/recurring/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            const json = await res.json();
-            if (!res.ok || !json.success) {
+
+            let json = null;
+            try {
+                json = await res.json();
+            } catch (e) {
+                // Keep null; handled by generic error below when response is not usable.
+            }
+
+            if (!res.ok || !json || !json.success) {
                 const msg = (json && json.error && json.error.message) || 'Preview không thành công.';
                 throw new Error(msg);
             }
@@ -293,8 +371,7 @@
             window.location.href = CTX + '/jsp/booking/recurring/preview.jsp';
         } catch (err) {
             showError(err.message || 'Không thể tạo preview recurring.');
-        } finally {
-            previewBtn.disabled = false;
+            setPreviewButtonLoading(false);
         }
     }
 
@@ -342,7 +419,23 @@
             const removeBtn = e.target.closest('.removePatternBtn');
             if (!removeBtn) return;
             const row = removeBtn.closest('.pattern-row');
-            if (row) row.remove();
+            if (row) {
+                row.remove();
+                renderWeeklySchedulePreview();
+            }
+        });
+
+        patternContainer.addEventListener('change', function (e) {
+            const target = e.target;
+            if (!target) return;
+            if (
+                target.classList.contains('dayOfWeek') ||
+                target.classList.contains('courtId') ||
+                target.classList.contains('startTime') ||
+                target.classList.contains('endTime')
+            ) {
+                renderWeeklySchedulePreview();
+            }
         });
 
         previewBtn.addEventListener('click', previewRecurring);
@@ -378,6 +471,7 @@
             }
 
             bindEvents();
+            renderWeeklySchedulePreview();
         } catch (e) {
             showError(e.message || 'Không thể khởi tạo trang recurring create.');
         }

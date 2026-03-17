@@ -14,6 +14,8 @@
     String activePage = "timeline"; // default
     if (fullPath.contains("/booking/list")) {
         activePage = "booking-list";
+    } else if (fullPath.contains("/rental/status")) {
+        activePage = "rental-status";
     } else if (fullPath.contains("/booking/detail")) {
         // Booking detail: came from timeline or list — check referer
         String ref = request.getHeader("Referer");
@@ -101,6 +103,12 @@
                 <i class="bi bi-chat-dots"></i>
                 <span>Cộng Đồng</span>
             </a>
+
+        <a href="${pageContext.request.contextPath}/staff/rental/status"
+           class="nav-link ${_activePage == 'rental-status' ? 'active' : ''}">
+            <i class="bi bi-bag-check"></i>
+            <span>Danh Sách Đồ Thuê</span>
+        </a>
 
         <%-- Divider + Logout --%>
         <div class="mt-auto pt-4">

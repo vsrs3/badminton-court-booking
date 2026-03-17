@@ -182,13 +182,18 @@
 
     // ─── Render Invoice ───
     function renderInvoice(d) {
+        var courtAmount = toMoneyNumber(d.courtTotal);
+        var rentalAmount = toMoneyNumber(d.rentalTotal);
+
         if (d.invoice) {
-            var totalAmount = d.invoice.totalAmount;
-            var paidAmount = d.invoice.paidAmount;
-            var remaining = totalAmount - paidAmount;
+            var totalAmount = d.invoice.totalAmount != null ? toMoneyNumber(d.invoice.totalAmount) : toMoneyNumber(d.grandTotal);
+            var paidAmount = toMoneyNumber(d.invoice.paidAmount);
+            var remaining = Math.max(0, totalAmount - paidAmount);
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
 
+            setText('dCourtAmount', formatMoney(courtAmount));
+            setText('dRentalAmount', formatMoney(rentalAmount));
             setText('dTotalAmount', formatMoney(totalAmount));
             setText('dPaidAmount', formatMoney(paidAmount));
 
@@ -216,8 +221,10 @@
                 paymentWarningBanner.classList.add('d-none');
             }
         } else {
-            setText('dTotalAmount', '—');
-            setText('dPaidAmount', '—');
+            setText('dCourtAmount', formatMoney(courtAmount));
+            setText('dRentalAmount', formatMoney(rentalAmount));
+            setText('dTotalAmount', formatMoney(toMoneyNumber(d.grandTotal)));
+            setText('dPaidAmount', formatMoney(0));
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
             confirmPaymentBtnWrap.classList.add('d-none');
@@ -313,6 +320,8 @@
                 timeInfoEl.textContent = parts.join(' · ');
                 infoEl.appendChild(timeInfoEl);
             }
+
+            appendRentalInfo(infoEl, s, d.rentalRows || []);
 
             row.appendChild(infoEl);
 
@@ -489,6 +498,41 @@
         container.appendChild(btnRelease);
     }
 
+    function appendRentalInfo(infoEl, session, rentalRows) {
+        var matchedRows = findRentalRowsForSession(session, rentalRows);
+        if (!matchedRows.length) return;
+
+        var rentalEl = document.createElement('div');
+        rentalEl.className = 'sbd-session-time-info';
+        rentalEl.textContent = 'Đồ thuê: ' + matchedRows.map(function (row) {
+            var label = row.rentalItemsText || 'Đã chọn đồ thuê';
+            var sameWindow = row.startTime === session.startTime && row.endTime === session.endTime;
+
+            if (!sameWindow) {
+                label = row.startTime + ' - ' + row.endTime + ': ' + label;
+            }
+
+            return label + ' (' + formatMoney(row.rentalTotal || 0) + ')';
+        }).join(' · ');
+        infoEl.appendChild(rentalEl);
+    }
+
+    function findRentalRowsForSession(session, rentalRows) {
+        var sessionStart = toMinutes(session.startTime);
+        var sessionEnd = toMinutes(session.endTime);
+
+        return (rentalRows || []).filter(function (row) {
+            if (!row) return false;
+            if (row.courtName !== session.courtName) return false;
+
+            var rowStart = toMinutes(row.startTime);
+            var rowEnd = toMinutes(row.endTime);
+            if (rowStart == null || rowEnd == null) return false;
+
+            return rowStart >= sessionStart && rowEnd <= sessionEnd;
+        });
+    }
+
     /**
      * Check if a session is past due (now > startTime + 15 min buffer).
      * startTime is "HH:mm" format from API.
@@ -510,9 +554,10 @@
     }
 
     function isSessionEnded(session) {
-        if (!bookingData || !bookingData.bookingDate || !session.endTime) return false;
+        if (!bookingData || !session.endTime) return false;
 
-        var dateStr = bookingData.bookingDate;
+        var dateStr = session.sessionDate || bookingData.bookingDate;
+        if (!dateStr) return false;
         var now = new Date();
         var todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' +
             String(now.getDate()).padStart(2, '0');
@@ -538,14 +583,16 @@
     function openPaymentModal() {
         if (!bookingData || !bookingData.invoice) return;
         var inv = bookingData.invoice;
-        var remaining = inv.totalAmount - inv.paidAmount;
+        var totalAmount = inv.totalAmount != null ? toMoneyNumber(inv.totalAmount) : toMoneyNumber(bookingData.grandTotal);
+        var paidAmount = toMoneyNumber(inv.paidAmount);
+        var remaining = Math.max(0, totalAmount - paidAmount);
 
-        setText('modalTotalAmount', formatMoney(inv.totalAmount));
-        setText('modalPaidAmount', formatMoney(inv.paidAmount));
+        setText('modalTotalAmount', formatMoney(totalAmount));
+        setText('modalPaidAmount', formatMoney(paidAmount));
         setText('modalRemainingAmount', formatMoney(remaining));
 
-        paymentAmountInput.value = remaining;
-        paymentAmountInput.max = remaining;
+        paymentAmountInput.value = remaining > 0 ? String(Math.round(remaining)) : '';
+        paymentAmountInput.max = String(Math.max(remaining, 0));
         if (paymentMethodSelect) paymentMethodSelect.value = 'CASH';
         paymentInputHint.textContent = 'Nhập đúng ' + formatMoney(remaining) + ' để hoàn tất thanh toán';
 
@@ -576,7 +623,8 @@
     function handleConfirmPayment() {
         hideModalError();
         var inv = bookingData.invoice;
-        var remaining = inv.totalAmount - inv.paidAmount;
+        var totalAmount = inv.totalAmount != null ? toMoneyNumber(inv.totalAmount) : toMoneyNumber(bookingData.grandTotal);
+        var remaining = Math.max(0, totalAmount - toMoneyNumber(inv.paidAmount));
         var inputVal = paymentAmountInput.value.trim();
 
         if (!inputVal || isNaN(inputVal)) {
@@ -588,7 +636,7 @@
             showModalError('Số tiền phải lớn hơn 0.');
             return;
         }
-        if (amount !== remaining) {
+        if (!isSameMoney(amount, remaining)) {
             showModalError('Số tiền không hợp lệ. Cần thu thêm đúng ' + formatMoney(remaining) + ' để đủ tổng tiền.');
             return;
         }
@@ -617,6 +665,10 @@
                 }
                 bookingData.invoice.paidAmount = body.data.paidAmount;
                 bookingData.invoice.paymentStatus = body.data.paymentStatus;
+                if (body.data.totalAmount != null) {
+                    bookingData.invoice.totalAmount = body.data.totalAmount;
+                    bookingData.grandTotal = body.data.totalAmount;
+                }
                 showToast('Xác nhận thanh toán thành công!', 'success');
                 closePaymentModal();
                 resetConfirmButton();
@@ -1006,6 +1058,27 @@
         return Number(amount).toLocaleString('vi-VN') + 'đ';
     }
 
+    function toMoneyNumber(value) {
+        var num = Number(value);
+        return isFinite(num) ? num : 0;
+    }
+
+    function isSameMoney(a, b) {
+        return Math.abs(toMoneyNumber(a) - toMoneyNumber(b)) < 0.01;
+    }
+
+    function toMinutes(timeText) {
+        if (!timeText) return null;
+        var parts = String(timeText).split(':');
+        if (parts.length < 2) return null;
+
+        var hours = parseInt(parts[0], 10);
+        var minutes = parseInt(parts[1], 10);
+        if (isNaN(hours) || isNaN(minutes)) return null;
+
+        return (hours * 60) + minutes;
+    }
+
     function bookingStatusLabel(s) {
         var m = { PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy', EXPIRED: 'Hết hạn' };
         return m[s] || s;
@@ -1033,9 +1106,5 @@
     }
 
 })();
-
-
-
-
 
 

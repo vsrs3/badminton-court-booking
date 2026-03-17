@@ -1,7 +1,6 @@
 package com.bcb.service.impl;
 
 import com.bcb.dto.staff.StaffCheckinSessionDTO;
-import com.bcb.dto.staff.StaffCheckinSessionSlotRowDTO;
 import com.bcb.repository.impl.StaffCheckinRepositoryImpl;
 import com.bcb.repository.staff.StaffCheckinRepository;
 import com.bcb.service.staff.StaffCheckinAutoNoShowService;
@@ -38,6 +37,7 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
             return;
         }
 
+        LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
 
         for (int bookingId : bookingIds) {
@@ -46,7 +46,8 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
                 conn = DBContext.getConnection();
                 conn.setAutoCommit(false);
 
-                List<StaffCheckinSessionDTO> sessions = buildSessionsWithTime(conn, bookingId);
+                List<StaffCheckinSessionDTO> sessions =
+                        StaffCheckinSessionBuilder.buildSessionsWithTime(repository, conn, bookingId);
                 if (sessions.isEmpty()) {
                     conn.commit();
                     continue;
@@ -55,7 +56,13 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
                 int autoNoShowCount = 0;
                 for (StaffCheckinSessionDTO session : sessions) {
                     String status = getSessionStatus(conn, session.getSlotIds());
-                    if ("PENDING".equals(status) && now.isAfter(session.getEndTime())) {
+                    LocalDate sessionDate = session.getSessionDate();
+                    if (sessionDate == null) {
+                        continue;
+                    }
+                    boolean expired = sessionDate.isBefore(today)
+                            || (sessionDate.isEqual(today) && now.isAfter(session.getEndTime()));
+                    if ("PENDING".equals(status) && expired) {
                         repository.updateSlotsNoShow(conn, session.getSlotIds());
                         autoNoShowCount++;
                     }
@@ -88,39 +95,6 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
             }
         }
         return true;
-    }
-
-    private List<StaffCheckinSessionDTO> buildSessionsWithTime(Connection conn, int bookingId) throws Exception {
-        List<StaffCheckinSessionSlotRowDTO> rows = repository.findSessionSlotRows(conn, bookingId);
-
-        if (rows.isEmpty()) return new ArrayList<>();
-
-        List<StaffCheckinSessionDTO> sessions = new ArrayList<>();
-
-        StaffCheckinSessionDTO current = new StaffCheckinSessionDTO();
-        current.getSlotIds().add(rows.get(0).getBookingSlotId());
-        current.setStartTime(rows.get(0).getStartTime());
-        current.setEndTime(rows.get(0).getEndTime());
-
-        for (int i = 1; i < rows.size(); i++) {
-            StaffCheckinSessionSlotRowDTO prev = rows.get(i - 1);
-            StaffCheckinSessionSlotRowDTO curr = rows.get(i);
-
-            if (prev.getCourtId() == curr.getCourtId() && prev.getEndTime().equals(curr.getStartTime())) {
-                current.getSlotIds().add(curr.getBookingSlotId());
-                current.setEndTime(curr.getEndTime());
-            } else {
-                sessions.add(current);
-                current = new StaffCheckinSessionDTO();
-                current.getSlotIds().add(curr.getBookingSlotId());
-                current.setStartTime(curr.getStartTime());
-                current.setEndTime(curr.getEndTime());
-            }
-        }
-        sessions.add(current);
-
-        sessions.sort((a, b) -> a.getStartTime().compareTo(b.getStartTime()));
-        return sessions;
     }
 
     private String getSessionStatus(Connection conn, List<Integer> slotIds) throws Exception {
