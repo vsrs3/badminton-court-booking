@@ -11,17 +11,19 @@
 
 	<div class="sidebar-nav">
 
-		<%-- Dashboard --%>
-		<a href="${pageContext.request.contextPath}/admin/dashboard"
-			class="nav-link ${pageContext.request.requestURI.contains('/dashboard') && !pageContext.request.requestURI.contains('/accounts') ? 'active' : ''}">
-			<i class="bi bi-speedometer2"></i> <span>Dashboard</span>
-		</a>
+
 
 		<%-- Account Management --%>
 		<a href="${pageContext.request.contextPath}/admin/accounts/list"
 			class="nav-link ${pageContext.request.requestURI.contains('/accounts') ? 'active' : ''}">
 			<i class="bi bi-people"></i> <span>Quản Lý Tài Khoản</span>
 		</a>
+			<%-- Community / Blog --%>
+			<a href="${pageContext.request.contextPath}/blogs"
+			   class="nav-link ${pageContext.request.requestURI.contains('/blogs') ? 'active' : ''}">
+				<i class="bi bi-chat-dots"></i>
+				<span>Cộng Đồng</span>
+			</a>
 
 
 		<%-- Settings --%>

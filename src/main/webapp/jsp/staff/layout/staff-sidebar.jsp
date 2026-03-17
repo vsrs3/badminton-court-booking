@@ -97,6 +97,12 @@
             <i class="bi bi-arrow-counterclockwise"></i>
             <span>Hoàn Tiền</span>
         </a>
+            <%-- Community / Blog --%>
+            <a href="${pageContext.request.contextPath}/blogs"
+               class="nav-link ${pageContext.request.requestURI.contains('/blogs') ? 'active' : ''}">
+                <i class="bi bi-chat-dots"></i>
+                <span>Cộng Đồng</span>
+            </a>
 
         <a href="${pageContext.request.contextPath}/staff/rental/status"
            class="nav-link ${_activePage == 'rental-status' ? 'active' : ''}">

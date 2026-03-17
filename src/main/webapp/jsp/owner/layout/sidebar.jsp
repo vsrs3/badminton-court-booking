@@ -37,14 +37,19 @@
         <a href="${pageContext.request.contextPath}/owner/inventory"
            class="nav-link ${pageContext.request.requestURI.contains('/inventory') ? 'active' : ''}">
             <i class="bi bi-box-seam"></i>
-            <span>Quản lý dụng cụ</span>
-        </a>
-
-        <a href="#"
-           class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">
-            <i class="bi bi-gear"></i>
-            <span>Cài đặt</span>
-        </a>
+            <span>Quản Lý Dụng Cụ</span>
+       </a>
+			<%-- Community / Blog --%>
+			<a href="${pageContext.request.contextPath}/blogs"
+			   class="nav-link ${pageContext.request.requestURI.contains('/blogs') ? 'active' : ''}">
+				<i class="bi bi-chat-dots"></i>
+				<span>Cộng Đồng</span>
+			</a>
+		<%-- Settings --%>
+		<a href="#"
+			class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">
+			<i class="bi bi-gear"></i> <span>Cài Đặt</span>
+		</a>
 
         <div class="mt-auto pt-4">
             <a href="${pageContext.request.contextPath}/auth/logout"
