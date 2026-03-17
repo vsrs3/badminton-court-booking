@@ -249,7 +249,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 int invoiceId = repository.insertInvoice(conn, bookingId, totalAmount);
                 paymentRepository.insertPayment(conn, invoiceId, totalAmount, "FULL", paymentMethod, staffId);
-                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount);
+                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount, totalAmount);
                 repository.updateBookingStatus(conn, bookingId, "CONFIRMED");
 
                 conn.commit();
@@ -606,7 +606,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
     }
 
     private String buildPastSessionMessage(LocalDate date) {
-        String time = LocalTime.now().format(TIME_FMT);
+        String time = LocalTime.now().minusMinutes(30).format(TIME_FMT);
         return "Bạn đang đặt lịch cho ngày " + date + ". Vui lòng chọn các khung giờ từ " + time + " trở đi.";
     }
 
@@ -616,9 +616,15 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         if (date.isBefore(today)) return true;
         if (!date.isEqual(today)) return false;
 
+        LocalTime now = LocalTime.now();
+        LocalTime sessionStart = getSessionStartTime(slotIds, ctx);
+        if (sessionStart != null && !now.isBefore(sessionStart.plusMinutes(30))) {
+            return true;
+        }
+
         LocalTime sessionEnd = getSessionEndTime(slotIds, ctx);
         if (sessionEnd == null) return false;
-        return !LocalTime.now().isBefore(sessionEnd);
+        return !now.isBefore(sessionEnd);
     }
 
     private LocalTime getSessionStartTime(List<Integer> slotIds, PlanningContext ctx) {

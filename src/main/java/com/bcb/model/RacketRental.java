@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public class RacketRental {
     private Integer racketRentalId;
-    private Integer bookingSlotID;
+    private Integer bookingSlotId;
     private Integer inventoryId;
     private Integer quantity;
     private BigDecimal unitPrice;
@@ -16,8 +16,10 @@ public class RacketRental {
 
     public Integer getRacketRentalId() { return racketRentalId; }
     public void setRacketRentalId(Integer racketRentalId) { this.racketRentalId = racketRentalId; }
-    public Integer getBookingSlotID() { return bookingSlotID; }
-    public void setBookingSlotID(Integer bookingSlotID) { this.bookingSlotID = bookingSlotID; }
+    public Integer getBookingSlotId() { return bookingSlotId; }
+    public void setBookingSlotId(Integer bookingSlotId) { this.bookingSlotId = bookingSlotId; }
+    public Integer getBookingSlotID() { return bookingSlotId; }
+    public void setBookingSlotID(Integer bookingSlotID) { this.bookingSlotId = bookingSlotID; }
     public Integer getInventoryId() { return inventoryId; }
     public void setInventoryId(Integer inventoryId) { this.inventoryId = inventoryId; }
     public Integer getQuantity() { return quantity; }

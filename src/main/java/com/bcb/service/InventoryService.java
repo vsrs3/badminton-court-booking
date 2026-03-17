@@ -11,9 +11,9 @@ public interface InventoryService {
     void update(Inventory inventory);
     void delete(int id);
 
-    List<Inventory> getWithPagination(int limit, int offset, String keyword);
+    List<Inventory> getWithPagination(int limit, int offset, String keyword, Boolean activeStatus, String priceSort);
 
-    int countInventory(String keyword);
+    int countInventory(String keyword, Boolean activeStatus);
 
     List<Inventory> getActiveNotAssignedToFacility(int facilityId, String keyword);
 

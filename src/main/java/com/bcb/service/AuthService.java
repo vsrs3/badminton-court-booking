@@ -40,8 +40,10 @@ public interface AuthService {
 
     void verifyEmail(String token) throws Exception;
 
-    void forgotPassword(String email) throws BusinessException;
+    void forgotPassword(String email, String resetLinkBase) throws BusinessException;
 
-    void resetPassword(String email, String password) throws BusinessException;
+    String getPasswordResetEmail(String token) throws BusinessException;
+
+    void resetPassword(String token, String password) throws BusinessException;
 
 }

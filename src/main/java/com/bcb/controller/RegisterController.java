@@ -19,14 +19,15 @@ public class RegisterController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
-        // 1️⃣ Lấy dữ liệu từ form
         String email = request.getParameter("email");
         String phone = request.getParameter("phone");
         String password = request.getParameter("password");
+        String rePassword = request.getParameter("repassword");
         String fullName = request.getParameter("fullName");
 
-        // 2️⃣ Đưa vào DTO
         RegisterRequestDTO dto = new RegisterRequestDTO();
         dto.setEmail(email);
         dto.setPhone(phone);
@@ -34,23 +35,22 @@ public class RegisterController extends HttpServlet {
         dto.setFullName(fullName);
 
         try {
+            if (password == null || !password.equals(rePassword)) {
+                throw new BusinessException("Mật khẩu nhập lại không khớp");
+            }
 
-            // 3️⃣ Gọi Service xử lý business logic
             String token = authService.register(dto);
 
-            // 4️⃣ Thành công → chuyển sang trang check email
             response.sendRedirect(
                     request.getContextPath()
                             + "/jsp/common/check-email.jsp?token=" + token
             );
 
         } catch (BusinessException e) {
-
-            // 5️⃣ Nếu lỗi nghiệp vụ → trả về form
             request.setAttribute("error", e.getMessage());
-            request.setAttribute("oldEmail", email);
-            request.setAttribute("oldFullName", fullName);
-            request.setAttribute("oldPhone", phone);
+            request.setAttribute("oldEmail", dto.getEmail());
+            request.setAttribute("oldFullName", dto.getFullName());
+            request.setAttribute("oldPhone", dto.getPhone());
 
             request.getRequestDispatcher("/jsp/auth/register.jsp")
                     .forward(request, response);
