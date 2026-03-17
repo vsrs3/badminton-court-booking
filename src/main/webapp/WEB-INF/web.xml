@@ -32,6 +32,14 @@
         <servlet-class>com.bcb.controller.CleanupEmailVerificationController</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>EmailActionStatusController</servlet-name>
+        <servlet-class>com.bcb.controller.EmailActionStatusController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EmailActionContinueController</servlet-name>
+        <servlet-class>com.bcb.controller.EmailActionContinueController</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>GoogleLoginServlet</servlet-name>
         <servlet-class>com.bcb.controller.GoogleLoginServlet</servlet-class>
     </servlet>
@@ -59,6 +67,14 @@
     <servlet-mapping>
         <servlet-name>CleanupEmailVerificationController</servlet-name>
         <url-pattern>/cleanup-email</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EmailActionStatusController</servlet-name>
+        <url-pattern>/email-action-status</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EmailActionContinueController</servlet-name>
+        <url-pattern>/email-action-continue</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>GoogleLoginServlet</servlet-name>

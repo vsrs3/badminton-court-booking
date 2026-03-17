@@ -5,6 +5,7 @@ import com.bcb.repository.InventoryRepository;
 import com.bcb.repository.impl.InventoryRepositoryImpl;
 import com.bcb.service.InventoryService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class InventoryServiceImpl implements InventoryService {
@@ -28,11 +29,13 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public void create(Inventory inventory) {
+        validateInventory(inventory);
         repository.save(inventory);
     }
 
     @Override
     public void update(Inventory inventory) {
+        validateInventory(inventory);
         repository.update(inventory);
     }
 
@@ -64,5 +67,20 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public int countActiveNotAssignedToFacility(int facilityId, String keyword) {
         return repository.countActiveNotAssignedToFacility(facilityId, keyword);
+    }
+
+    private void validateInventory(Inventory inventory) {
+        if (inventory == null) {
+            throw new IllegalArgumentException("Dữ liệu dụng cụ không hợp lệ");
+        }
+
+        BigDecimal rentalPrice = inventory.getRentalPrice();
+        if (rentalPrice == null) {
+            throw new IllegalArgumentException("Vui lòng nhập giá thuê");
+        }
+
+        if (rentalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Giá thuê không được là số âm");
+        }
     }
 }

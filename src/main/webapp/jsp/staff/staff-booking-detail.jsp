@@ -55,7 +55,17 @@
                         Chi tiết đặt sân
                     </p>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">                    <button type="button" class="btn btn-sm rounded-3 d-none" id="btnEditBooking" style="background:var(--primary-color);color:#fff;"><i class="bi bi-pencil-square me-1"></i>Chỉnh sửa                  </button>                  <button type="button" class="btn btn-sm rounded-3 d-none" id="btnCancelRemaining" style="background:#DC2626;color:#fff;">                       <i class="bi bi-x-circle me-1"></i>Hủy phần còn lại                 </button>                 <span class="sbd-status-badge" id="dStatusBadge"></span>                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                    <button type="button" class="btn btn-sm rounded-3 d-none" id="btnEditBooking"
+                            style="background:var(--primary-color);color:#fff;">
+                        <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa
+                    </button>
+                    <button type="button" class="btn btn-sm rounded-3 d-none" id="btnCancelRemaining"
+                            style="background:#DC2626;color:#fff;">
+                        <i class="bi bi-x-circle me-1"></i>Hủy phần còn lại
+                    </button>
+                    <span class="sbd-status-badge" id="dStatusBadge"></span>
+                </div>
             </div>
 
             <%-- Cards grid --%>
@@ -148,6 +158,14 @@
                         </div>
                         <div class="card-body">
                             <div class="sbd-field mb-3">
+                                <span class="sbd-field-label">Tiền sân</span>
+                                <span class="sbd-field-value sbd-money" id="dCourtAmount"></span>
+                            </div>
+                            <div class="sbd-field mb-3">
+                                <span class="sbd-field-label">Tiền thuê đồ</span>
+                                <span class="sbd-field-value sbd-money" id="dRentalAmount"></span>
+                            </div>
+                            <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Tổng tiền</span>
                                 <span class="sbd-field-value sbd-money" id="dTotalAmount"></span>
                             </div>
@@ -180,7 +198,7 @@
     </div>
 </div>
 
-<%-- ═══════ Payment Confirmation Modal ═══════ --%>
+<%-- Payment Confirmation Modal --%>
 <div class="sbd-modal-overlay d-none" id="paymentModal">
     <div class="sbd-modal">
         <div class="sbd-modal-header">
