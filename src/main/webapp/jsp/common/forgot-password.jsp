@@ -182,6 +182,8 @@
     const FORGOT_PASSWORD_SYNC_KEY = "bcb.forgot-password.verification";
     const pendingEmail = "<%= email %>";
     const waitingForEmailConfirmation = <%= (!isResetStep && message != null) ? "true" : "false" %>;
+    let forgotPasswordSyncPoll = null;
+    let forgotPasswordStatusRequestInFlight = false;
 
     function parseForgotPasswordPayload(rawValue) {
         if (!rawValue) {
@@ -195,6 +197,15 @@
         }
     }
 
+    function stopForgotPasswordSyncPoll() {
+        if (!forgotPasswordSyncPoll) {
+            return;
+        }
+
+        clearInterval(forgotPasswordSyncPoll);
+        forgotPasswordSyncPoll = null;
+    }
+
     function handleForgotPasswordVerification(payload) {
         if (!waitingForEmailConfirmation || !payload || !payload.redirectUrl) {
             return false;
@@ -204,6 +215,7 @@
             return false;
         }
 
+        stopForgotPasswordSyncPoll();
         localStorage.removeItem(FORGOT_PASSWORD_SYNC_KEY);
         window.location.href = payload.redirectUrl;
         return true;
@@ -216,9 +228,11 @@
     }
 
     async function checkForgotPasswordVerificationFromServer() {
-        if (!waitingForEmailConfirmation) {
+        if (!waitingForEmailConfirmation || forgotPasswordStatusRequestInFlight) {
             return false;
         }
+
+        forgotPasswordStatusRequestInFlight = true;
 
         try {
             const response = await fetch(
@@ -235,14 +249,25 @@
 
             const payload = await response.json();
             if (payload.status === "confirmed" && payload.continueUrl) {
+                stopForgotPasswordSyncPoll();
                 window.location.href = payload.continueUrl;
                 return true;
             }
         } catch (error) {
-            console.log("Không kiểm tra được trạng thái xác nhận:", error);
+            console.log("Khong kiem tra duoc trang thai xac nhan:", error);
+        } finally {
+            forgotPasswordStatusRequestInFlight = false;
         }
 
         return false;
+    }
+
+    function syncForgotPasswordVerification() {
+        if (checkForgotPasswordVerification()) {
+            return;
+        }
+
+        checkForgotPasswordVerificationFromServer();
     }
 
     function validateForm() {
@@ -317,7 +342,7 @@
         setupToggle(toggle2, repassword);
 
         if (waitingForEmailConfirmation) {
-            checkForgotPasswordVerification();
+            syncForgotPasswordVerification();
 
             window.addEventListener("storage", function(event) {
                 if (event.key === FORGOT_PASSWORD_SYNC_KEY) {
@@ -327,11 +352,13 @@
 
             document.addEventListener("visibilitychange", function() {
                 if (!document.hidden) {
-                    checkForgotPasswordVerification();
+                    syncForgotPasswordVerification();
                 }
             });
 
-            setInterval(checkForgotPasswordVerification, 1000);
+            window.addEventListener("focus", syncForgotPasswordVerification);
+
+            forgotPasswordSyncPoll = setInterval(syncForgotPasswordVerification, 1000);
         }
     });
 </script>

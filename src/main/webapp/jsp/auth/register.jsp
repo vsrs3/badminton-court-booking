@@ -210,6 +210,53 @@
         return (value || "").replace(/\D/g, "").slice(0, 10);
     }
 
+    function syncPasswordValidity() {
+        if (!passwordInput.value) {
+            passwordInput.setCustomValidity("");
+            return;
+        }
+
+        if (passwordInput.value.length < 6) {
+            passwordInput.setCustomValidity("Mật khẩu phải có ít nhất 6 ký tự");
+            return;
+        }
+
+        passwordInput.setCustomValidity("");
+    }
+
+    function syncRePasswordValidity() {
+        if (!rePasswordInput.value) {
+            rePasswordInput.setCustomValidity("");
+            return;
+        }
+
+        if (rePasswordInput.value.length < 6) {
+            rePasswordInput.setCustomValidity("Mật khẩu nhập lại phải có ít nhất 6 ký tự");
+            return;
+        }
+
+        if (passwordInput.value !== rePasswordInput.value) {
+            rePasswordInput.setCustomValidity("Mật khẩu nhập lại không khớp");
+            return;
+        }
+
+        rePasswordInput.setCustomValidity("");
+    }
+
+    function syncPhoneValidity() {
+        if (!phoneInput.value) {
+            phoneInput.setCustomValidity("");
+            return;
+        }
+
+        if (!/^\d{10}$/.test(phoneInput.value)) {
+            phoneInput.setCustomValidity("Số điện thoại phải gồm đúng 10 chữ số");
+            return;
+        }
+
+        phoneInput.setCustomValidity("");
+    }
+
     fullNameInput.addEventListener("input", function () {
         fullNameInput.setCustomValidity("");
         nameError.innerText = "";
@@ -220,19 +267,27 @@
         if (phoneInput.value !== sanitizedPhone) {
             phoneInput.value = sanitizedPhone;
         }
-        phoneInput.setCustomValidity("");
+        syncPhoneValidity();
         phoneError.innerText = "";
     });
 
     passwordInput.addEventListener("input", function () {
-        passwordInput.setCustomValidity("");
-        pwRules.style.display = "none";
-        ruleLength.style.display = "none";
+        if (passwordInput.value && passwordInput.value.length < 6) {
+            pwRules.style.display = "block";
+            ruleLength.style.display = "block";
+        } else {
+            pwRules.style.display = "none";
+            ruleLength.style.display = "none";
+        }
+        syncPasswordValidity();
+        syncRePasswordValidity();
     });
 
     rePasswordInput.addEventListener("input", function () {
-        rePasswordInput.setCustomValidity("");
-        rePwError.innerText = "";
+        syncRePasswordValidity();
+        rePwError.innerText = passwordInput.value !== rePasswordInput.value
+            ? "Mật khẩu nhập lại không khớp"
+            : "";
     });
 
     emailInput.addEventListener("input", function () {

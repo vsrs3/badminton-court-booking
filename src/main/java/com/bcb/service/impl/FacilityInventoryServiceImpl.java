@@ -95,6 +95,18 @@ public class FacilityInventoryServiceImpl implements FacilityInventoryService {
     }
 
     @Override
+    public int removeAllByFacility(int facilityId, String keyword) {
+        validateFacilityId(facilityId);
+
+        int removedCount = repository.removeAllByFacility(facilityId, normalizeKeyword(keyword));
+        if (removedCount <= 0) {
+            throw new IllegalArgumentException("Khong co san pham nao dang duoc go khoi san.");
+        }
+
+        return removedCount;
+    }
+
+    @Override
     public FacilityInventory getById(int facilityInventoryId) {
         if (facilityInventoryId <= 0) {
             return null;

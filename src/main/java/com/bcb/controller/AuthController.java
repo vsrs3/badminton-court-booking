@@ -13,9 +13,6 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-/**
- * Controller for authentication.
- */
 @WebServlet(name = "AuthController", urlPatterns = {"/auth/*"})
 public class AuthController extends HttpServlet {
 
@@ -32,7 +29,6 @@ public class AuthController extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
-
         if (pathInfo == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login");
             return;
@@ -42,10 +38,9 @@ public class AuthController extends HttpServlet {
             case "/login":
                 HttpSession session = request.getSession(false);
                 if (session != null && session.getAttribute("account") != null) {
-                    // Already logged in, redirect to home
-                    response.sendRedirect(request.getContextPath() + "/home");
                     Account account = (Account) session.getAttribute("account");
-                    response.sendRedirect(request.getContextPath() + AuthRedirectUtil.resolvePathByRole(account.getRole()));
+                    response.sendRedirect(request.getContextPath()
+                            + AuthRedirectUtil.resolvePathByRole(account.getRole()));
                     return;
                 }
 
@@ -71,7 +66,6 @@ public class AuthController extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
-
         if (pathInfo == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
@@ -94,9 +88,8 @@ public class AuthController extends HttpServlet {
         String password = request.getParameter("password");
         String rememberMe = request.getParameter("rememberMe");
 
-        if (email == null || email.trim().isEmpty() ||
-                password == null || password.trim().isEmpty()) {
-
+        if (email == null || email.trim().isEmpty()
+                || password == null || password.trim().isEmpty()) {
             request.setAttribute("error", "Email và mật khẩu không được để trống");
             request.getRequestDispatcher("/jsp/auth/login.jsp").forward(request, response);
             return;
@@ -115,37 +108,11 @@ public class AuthController extends HttpServlet {
             if ("on".equals(rememberMe)) {
                 session.setMaxInactiveInterval(7 * 24 * 60 * 60);
             } else {
-                session.setMaxInactiveInterval(30 * 60); // 30 minutes
-            }
-
-            System.out.println("✅ Login successful, session created for: " + account.getEmail());
-
-            // ✅ UPDATED: Role-based redirect
-            String redirectUrl;
-            String role = account.getRole();
-
-            switch (role) {
-                case "ADMIN":
-                    redirectUrl = request.getContextPath() + "/admin/dashboard";
-                    break;
-                case "OWNER":
-                    redirectUrl = request.getContextPath() + "/owner/dashboard";
-                    break;
-                case "STAFF":
-                    redirectUrl = request.getContextPath() + "/staff/dashboard";
-                    break;
-                case "CUSTOMER":
-                    redirectUrl = request.getContextPath() + "/home";
-                    break;
-                default:
-                    // Unknown role - treat as customer
-                    redirectUrl = request.getContextPath() + "/";
                 session.setMaxInactiveInterval(30 * 60);
             }
 
-            String redirectUrl = request.getContextPath() + AuthRedirectUtil.resolvePathByRole(account.getRole());
-            response.sendRedirect(redirectUrl);
-
+            response.sendRedirect(request.getContextPath()
+                    + AuthRedirectUtil.resolvePathByRole(account.getRole()));
         } catch (RuntimeException e) {
             request.setAttribute("error", "Email hoặc mật khẩu không đúng");
             request.setAttribute("email", email);

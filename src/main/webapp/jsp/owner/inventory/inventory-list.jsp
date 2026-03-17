@@ -12,7 +12,7 @@
 
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div>
-                <h1 class="fw-black mb-1" style="font-size:1.75rem;color:var(--color-gray-900);">
+                <h1 class="fw-black mb-1" style="font-size: 1.75rem; color: var(--color-gray-900);">
                     Quản lý dụng cụ
                 </h1>
                 <p class="text-secondary mb-0">
@@ -27,31 +27,67 @@
             </a>
         </div>
 
-        <div class="card border-0 rounded-4 mb-4" style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div class="card border-0 rounded-4 mb-4" style="box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
             <div class="card-body">
-                <form method="get"
+                <form id="inventoryToolbarForm"
+                      method="get"
                       action="${pageContext.request.contextPath}/owner/inventory"
-                      class="row g-3">
+                      class="row g-3 align-items-center inventory-search-form">
 
-                    <div class="col-md-4">
-                        <input type="text"
-                               name="keyword"
-                               value="${keyword}"
-                               class="form-control rounded-3"
-                               placeholder="Tìm tên dụng cụ...">
+                    <input type="hidden" name="page" id="inventoryPageField" value="${currentPage}">
+
+                    <div class="col-lg-4 col-md-6 inventory-search-input">
+                        <div class="search-suggestion-wrap">
+                            <input type="text"
+                                   id="inventoryKeywordInput"
+                                   name="keyword"
+                                   value="${keyword}"
+                                   class="form-control rounded-3"
+                                   placeholder="Tìm theo tên dụng cụ"
+                                   aria-label="Tìm theo tên dụng cụ"
+                                   autocomplete="off">
+                            <div id="inventorySuggestionMenu" class="search-suggestion-menu"></div>
+                        </div>
                     </div>
 
                     <div class="col-auto">
-                        <button class="btn btn-outline-success rounded-3">
+                        <button type="submit" id="inventorySearchBtn" class="btn btn-outline-success rounded-3">
                             <i class="bi bi-search"></i>
                             Tìm kiếm
+                        </button>
+                    </div>
+
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <select name="priceSort"
+                                class="form-select rounded-3"
+                                aria-label="Lọc theo giá">
+                            <option value="default" ${priceSort == 'default' ? 'selected' : ''}>Giá: Mặc định</option>
+                            <option value="price_desc" ${priceSort == 'price_desc' ? 'selected' : ''}>Giá: Cao xuống thấp</option>
+                            <option value="price_asc" ${priceSort == 'price_asc' ? 'selected' : ''}>Giá: Thấp lên cao</option>
+                        </select>
+                    </div>
+
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <select name="status"
+                                class="form-select rounded-3"
+                                aria-label="Lọc theo trạng thái">
+                            <option value="all" ${status == 'all' ? 'selected' : ''}>Trạng thái: Tất cả</option>
+                            <option value="active" ${status == 'active' ? 'selected' : ''}>Đang hoạt động</option>
+                            <option value="inactive" ${status == 'inactive' ? 'selected' : ''}>Ngừng hoạt động</option>
+                        </select>
+                    </div>
+
+                    <div class="col-auto">
+                        <button type="submit" id="inventoryFilterBtn" class="btn btn-success rounded-3">
+                            <i class="bi bi-funnel"></i>
+                            Lọc
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <div class="card border-0 rounded-4" style="box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div class="card border-0 rounded-4" style="box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table align-middle">
@@ -111,18 +147,92 @@
                     </table>
                 </div>
 
-                <nav class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <c:forEach begin="1" end="${totalPages}" var="p">
-                            <li class="page-item ${p==currentPage?'active':''}">
-                                <a class="page-link"
-                                   href="${pageContext.request.contextPath}/owner/inventory?page=${p}&keyword=${keyword}">
-                                    ${p}
-                                </a>
+                <div id="inventorySuggestionDataset" class="d-none">
+                    <c:forEach items="${suggestionInventories}" var="item">
+                        <div class="suggestion-source-item">
+                            <span class="suggestion-source-name"><c:out value="${item.name}"/></span>
+                            <span class="suggestion-source-label"><c:out value="${item.name}"/></span>
+                            <span class="suggestion-source-meta"><c:out value="${item.brand}"/></span>
+                        </div>
+                    </c:forEach>
+                </div>
+
+                <c:if test="${totalPages > 1}">
+                    <c:if test="${currentPage > 1}">
+                        <c:url var="previousPageUrl" value="/owner/inventory">
+                            <c:param name="page" value="${currentPage - 1}"/>
+                            <c:param name="keyword" value="${keyword}"/>
+                            <c:param name="priceSort" value="${priceSort}"/>
+                            <c:param name="status" value="${status}"/>
+                        </c:url>
+                    </c:if>
+
+                    <c:if test="${currentPage < totalPages}">
+                        <c:url var="lastPageUrl" value="/owner/inventory">
+                            <c:param name="page" value="${totalPages}"/>
+                            <c:param name="keyword" value="${keyword}"/>
+                            <c:param name="priceSort" value="${priceSort}"/>
+                            <c:param name="status" value="${status}"/>
+                        </c:url>
+
+                        <c:url var="nextPageUrl" value="/owner/inventory">
+                            <c:param name="page" value="${currentPage + 1}"/>
+                            <c:param name="keyword" value="${keyword}"/>
+                            <c:param name="priceSort" value="${priceSort}"/>
+                            <c:param name="status" value="${status}"/>
+                        </c:url>
+                    </c:if>
+
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center align-items-center gap-2 compact-pagination">
+                            <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                                <c:choose>
+                                    <c:when test="${currentPage == 1}">
+                                        <span class="page-link-static" aria-label="Trang trước">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <a class="page-link" aria-label="Trang trước" href="${previousPageUrl}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
                             </li>
-                        </c:forEach>
-                    </ul>
-                </nav>
+
+                            <li class="page-item active">
+                                <span class="page-link-static">${currentPage}</span>
+                            </li>
+
+                            <c:if test="${currentPage + 1 < totalPages}">
+                                <li class="page-item disabled">
+                                    <span class="page-link-static pagination-ellipsis">...</span>
+                                </li>
+                            </c:if>
+
+                            <c:if test="${currentPage < totalPages}">
+                                <li class="page-item">
+                                    <a class="page-link" href="${lastPageUrl}">${totalPages}</a>
+                                </li>
+                            </c:if>
+
+                            <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                                <c:choose>
+                                    <c:when test="${currentPage == totalPages}">
+                                        <span class="page-link-static" aria-label="Trang sau">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <a class="page-link" aria-label="Trang sau" href="${nextPageUrl}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
+                            </li>
+                        </ul>
+                    </nav>
+                </c:if>
             </div>
         </div>
     </div>
@@ -130,3 +240,141 @@
     <%@ include file="../layout/footer.jsp"%>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toolbarForm = document.getElementById("inventoryToolbarForm");
+    const pageField = document.getElementById("inventoryPageField");
+    const keywordInput = document.getElementById("inventoryKeywordInput");
+    const suggestionMenu = document.getElementById("inventorySuggestionMenu");
+
+    function normalizeText(value) {
+        return (value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    }
+
+    function collectSuggestionItems(datasetId) {
+        const uniqueItems = new Map();
+        const nodes = document.querySelectorAll("#" + datasetId + " .suggestion-source-item");
+
+        nodes.forEach(function (node) {
+            const name = (node.querySelector(".suggestion-source-name")?.textContent || "").trim();
+            const label = (node.querySelector(".suggestion-source-label")?.textContent || name).trim();
+            const meta = (node.querySelector(".suggestion-source-meta")?.textContent || "").trim();
+            const key = normalizeText(name);
+
+            if (!name || uniqueItems.has(key)) {
+                return;
+            }
+
+            uniqueItems.set(key, {
+                name: name,
+                label: label,
+                meta: meta
+            });
+        });
+
+        return Array.from(uniqueItems.values());
+    }
+
+    function hideSuggestionMenu() {
+        if (!suggestionMenu) {
+            return;
+        }
+
+        suggestionMenu.classList.remove("is-visible");
+        suggestionMenu.innerHTML = "";
+    }
+
+    function renderSuggestionMenu(items) {
+        if (!suggestionMenu || !keywordInput) {
+            return;
+        }
+
+        suggestionMenu.innerHTML = "";
+
+        if (!items.length) {
+            const emptyState = document.createElement("div");
+            emptyState.className = "search-suggestion-empty";
+            emptyState.textContent = "Không có dụng cụ phù hợp trong 50 dữ liệu đầu tiên.";
+            suggestionMenu.appendChild(emptyState);
+            suggestionMenu.classList.add("is-visible");
+            return;
+        }
+
+        items.forEach(function (item) {
+            const button = document.createElement("button");
+            const title = document.createElement("span");
+
+            button.type = "button";
+            button.className = "search-suggestion-item";
+            title.className = "search-suggestion-title";
+            title.textContent = item.label;
+            button.appendChild(title);
+
+            if (item.meta) {
+                const meta = document.createElement("span");
+                meta.className = "search-suggestion-meta";
+                meta.textContent = item.meta;
+                button.appendChild(meta);
+            }
+
+            button.addEventListener("mousedown", function (event) {
+                event.preventDefault();
+                keywordInput.value = item.name;
+                hideSuggestionMenu();
+                keywordInput.focus();
+            });
+
+            suggestionMenu.appendChild(button);
+        });
+
+        suggestionMenu.classList.add("is-visible");
+    }
+
+    function setupSuggestionAutocomplete() {
+        if (!keywordInput || !suggestionMenu) {
+            return;
+        }
+
+        const dataset = collectSuggestionItems("inventorySuggestionDataset");
+
+        function refreshSuggestions() {
+            const keyword = normalizeText(keywordInput.value);
+
+            if (!keyword) {
+                hideSuggestionMenu();
+                return;
+            }
+
+            const matchedItems = dataset.filter(function (item) {
+                return normalizeText(item.name).includes(keyword);
+            });
+
+            renderSuggestionMenu(matchedItems);
+        }
+
+        keywordInput.addEventListener("input", refreshSuggestions);
+        keywordInput.addEventListener("focus", refreshSuggestions);
+
+        document.addEventListener("click", function (event) {
+            if (event.target === keywordInput || suggestionMenu.contains(event.target)) {
+                return;
+            }
+
+            hideSuggestionMenu();
+        });
+    }
+
+    if (toolbarForm && pageField) {
+        toolbarForm.addEventListener("submit", function () {
+            pageField.value = "1";
+        });
+    }
+
+    setupSuggestionAutocomplete();
+});
+</script>

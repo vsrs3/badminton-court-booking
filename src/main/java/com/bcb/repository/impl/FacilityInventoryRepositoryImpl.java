@@ -220,6 +220,51 @@ public class FacilityInventoryRepositoryImpl implements FacilityInventoryReposit
     }
 
     @Override
+    public int removeAllByFacility(int facilityId, String keyword) {
+        String deleteRentalLog = """
+                DELETE rrl
+                FROM RacketRentalLog rrl
+                JOIN FacilityInventory fi ON rrl.facility_inventory_id = fi.facility_inventory_id
+                JOIN Inventory i ON fi.inventory_id = i.inventory_id
+                WHERE fi.facility_id = ?
+                  AND (? IS NULL OR i.name LIKE ?)
+                """;
+
+        String deleteFacilityInventory = """
+                DELETE fi
+                FROM FacilityInventory fi
+                JOIN Inventory i ON fi.inventory_id = i.inventory_id
+                WHERE fi.facility_id = ?
+                  AND (? IS NULL OR i.name LIKE ?)
+                """;
+
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = conn.prepareStatement(deleteRentalLog);
+                 PreparedStatement ps2 = conn.prepareStatement(deleteFacilityInventory)) {
+
+                ps1.setInt(1, facilityId);
+                bindKeyword(ps1, keyword, 2, 3);
+                ps1.executeUpdate();
+
+                ps2.setInt(1, facilityId);
+                bindKeyword(ps2, keyword, 2, 3);
+                int removedCount = ps2.executeUpdate();
+
+                conn.commit();
+                return removedCount;
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to remove all assigned inventory", e);
+        }
+    }
+
+    @Override
     public FacilityInventory findById(int facilityInventoryId) {
         String sql = """
                 SELECT

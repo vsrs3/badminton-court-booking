@@ -42,23 +42,30 @@ public class InventoryController extends HttpServlet {
             return;
         }
 
-        String keyword = req.getParameter("keyword");
+        String keyword = normalizeKeyword(req.getParameter("keyword"));
+        String priceSort = normalizePriceSort(req.getParameter("priceSort"));
+        String status = normalizeStatus(req.getParameter("status"));
+        Boolean activeStatus = resolveActiveStatus(status);
 
-        int page = 1;
+        int page = parsePositiveInt(req.getParameter("page"), 1);
         int size = 10;
+        int total = service.countInventory(keyword, activeStatus);
+        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / size);
 
-        try {
-            page = Integer.parseInt(req.getParameter("page"));
-        } catch (Exception ignored) {
+        if (totalPages > 0 && page > totalPages) {
+            page = totalPages;
         }
 
         int offset = (page - 1) * size;
-        List<Inventory> list = service.getWithPagination(size, offset, keyword);
-        int total = service.countInventory(keyword);
-        int totalPages = (int) Math.ceil((double) total / size);
+        List<Inventory> list = service.getWithPagination(size, offset, keyword, activeStatus, priceSort);
+        List<Inventory> suggestionInventories = service.getWithPagination(50, 0, keyword, activeStatus, priceSort);
 
         req.setAttribute("inventories", list);
-        req.setAttribute("keyword", keyword);
+        req.setAttribute("suggestionInventories", suggestionInventories);
+        req.setAttribute("suggestionLimit", 50);
+        req.setAttribute("keyword", keyword == null ? "" : keyword);
+        req.setAttribute("priceSort", priceSort);
+        req.setAttribute("status", status);
         req.setAttribute("currentPage", page);
         req.setAttribute("totalPages", totalPages);
 
@@ -111,5 +118,43 @@ public class InventoryController extends HttpServlet {
 
     private String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String normalizeKeyword(String value) {
+        String trimmed = trimToEmpty(value);
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private int parsePositiveInt(String rawValue, int fallback) {
+        try {
+            int value = Integer.parseInt(rawValue);
+            return value > 0 ? value : fallback;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private String normalizePriceSort(String value) {
+        if ("price_desc".equals(value) || "price_asc".equals(value)) {
+            return value;
+        }
+        return "default";
+    }
+
+    private String normalizeStatus(String value) {
+        if ("active".equals(value) || "inactive".equals(value)) {
+            return value;
+        }
+        return "all";
+    }
+
+    private Boolean resolveActiveStatus(String status) {
+        if ("active".equals(status)) {
+            return Boolean.TRUE;
+        }
+        if ("inactive".equals(status)) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 }

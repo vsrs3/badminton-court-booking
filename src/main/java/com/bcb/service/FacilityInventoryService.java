@@ -20,6 +20,8 @@ public interface FacilityInventoryService {
 
     void removeById(int facilityInventoryId);
 
+    int removeAllByFacility(int facilityId, String keyword);
+
     FacilityInventory getById(int facilityInventoryId);
 
     boolean existsByFacilityAndInventory(int facilityId, int inventoryId);

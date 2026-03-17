@@ -45,13 +45,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public List<Inventory> getWithPagination(int limit, int offset, String keyword) {
-        return repository.findWithPagination(limit, offset, keyword);
+    public List<Inventory> getWithPagination(int limit, int offset, String keyword, Boolean activeStatus, String priceSort) {
+        return repository.findWithPagination(limit, offset, keyword, activeStatus, priceSort);
     }
 
     @Override
-    public int countInventory(String keyword) {
-        return repository.countInventory(keyword);
+    public int countInventory(String keyword, Boolean activeStatus) {
+        return repository.countInventory(keyword, activeStatus);
     }
 
     @Override
