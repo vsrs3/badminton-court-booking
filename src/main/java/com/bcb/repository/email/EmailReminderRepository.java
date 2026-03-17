@@ -8,5 +8,7 @@ import java.util.List;
 public interface EmailReminderRepository {
     List<EmailReminderCandidateDTO> findUpcomingCandidates(LocalDateTime from, LocalDateTime to) throws Exception;
 
+    List<EmailReminderCandidateDTO> findUpcomingCustomerCandidates(LocalDateTime from, LocalDateTime to) throws Exception;
+
     List<EmailReminderCandidateDTO> findPaymentCandidates(LocalDateTime from, LocalDateTime to) throws Exception;
 }

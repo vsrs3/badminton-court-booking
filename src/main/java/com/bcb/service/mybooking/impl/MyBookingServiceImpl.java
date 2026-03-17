@@ -37,11 +37,20 @@ public class MyBookingServiceImpl implements MyBookingService {
         this.notificationRepo = new NotificationRepositoryImpl();
     }
 
+//    /** {@inheritDoc} */
+//    @Override
+//    public List<MyBookingListDTO> getMyBookings(int accountId, String status,
+//                                                 LocalDate dateFrom, LocalDate dateTo) {
+//        return getMyBookings(accountId, status, dateFrom, dateTo, 0, Integer.MAX_VALUE);
+//    }
+
     /** {@inheritDoc} */
     @Override
     public List<MyBookingListDTO> getMyBookings(int accountId, String status,
-                                                 LocalDate dateFrom, LocalDate dateTo) {
-        List<MyBookingListDTO> bookings = bookingRepo.findMyBookings(accountId, status, dateFrom, dateTo);
+                                                 LocalDate dateFrom, LocalDate dateTo,
+                                                 int offset, int limit) {
+        List<MyBookingListDTO> bookings = bookingRepo.findMyBookings(accountId, status, dateFrom, dateTo,
+                Math.max(0, offset), Math.max(1, limit));
         // Post-process: single booking keeps old slot merge, recurring shows weekly pattern summary.
         for (MyBookingListDTO b : bookings) {
             if ("RECURRING".equals(b.getBookingType())) {
@@ -55,33 +64,77 @@ public class MyBookingServiceImpl implements MyBookingService {
         return bookings;
     }
 
+//    /** {@inheritDoc} */
+//    @Override
+//    public MyBookingDetailDTO getBookingDetail(int bookingId, int accountId) throws BusinessException {
+//        return getBookingDetail(bookingId, accountId, 5, false, 0, LocalDate.now());
+//    }
+
     /** {@inheritDoc} */
     @Override
-    public MyBookingDetailDTO getBookingDetail(int bookingId, int accountId) throws BusinessException {
+    public MyBookingDetailDTO getBookingDetail(int bookingId, int accountId,
+                                               int futureDayLimit,
+                                               boolean includePastDays,
+                                               int pastDayLimit,
+                                               LocalDate pivotDate) throws BusinessException {
         MyBookingDetailDTO detail = bookingRepo.findBookingDetail(bookingId, accountId)
                 .orElseThrow(() -> new BusinessException("NOT_FOUND",
                         "Booking not found or you don't have permission to view it."));
 
-        // Load slot details
-        List<BookingSlotDetailDTO> slots = bookingRepo.findSlotsByBookingId(bookingId);
-        detail.setSlots(slots);
+        List<BookingSlotDetailDTO> slots;
+        List<BookingSlotDetailDTO> pastSlots = new ArrayList<>();
         if (detail.getCreatedAt() != null) {
             detail.setCreatedAtDisplay(detail.getCreatedAt().format(DTF_UI));
         }
 
         // Build merged slots for display (same algorithm as list view)
         if ("RECURRING".equals(detail.getBookingType())) {
+            int safeFutureDayLimit = Math.max(1, futureDayLimit);
+            int safePastDayLimit = Math.max(0, pastDayLimit);
+            LocalDate baseDate = pivotDate != null ? pivotDate : LocalDate.now();
+
+            List<LocalDate> futureDates = bookingRepo.findBookingDates(
+                    bookingId, baseDate, false, safeFutureDayLimit + 1);
+            boolean hasMoreFuture = futureDates.size() > safeFutureDayLimit;
+            if (hasMoreFuture) {
+                futureDates = new ArrayList<>(futureDates.subList(0, safeFutureDayLimit));
+            }
+            slots = bookingRepo.findSlotsByBookingIdAndDates(bookingId, futureDates, true);
+
+            boolean hasMorePast = false;
+            if (includePastDays && safePastDayLimit > 0) {
+                List<LocalDate> pastDates = bookingRepo.findBookingDates(
+                        bookingId, baseDate, true, safePastDayLimit + 1);
+                hasMorePast = pastDates.size() > safePastDayLimit;
+                if (hasMorePast) {
+                    pastDates = new ArrayList<>(pastDates.subList(0, safePastDayLimit));
+                }
+                pastSlots = bookingRepo.findSlotsByBookingIdAndDates(bookingId, pastDates, false);
+            }
+
+            List<BookingSlotDetailDTO> visibleSlots = new ArrayList<>(slots);
+            visibleSlots.addAll(pastSlots);
+            detail.setSlots(visibleSlots);
             detail.setRecurringPatternDetails(mergeRecurringPatternSlots(detail.getRecurringPatternDetails()));
-            detail.setRecurringSessions(mergeSlotsByDate(slots));
+            detail.setRecurringSessions(mergeSlotsByDate(slots, true));
+            detail.setPastRecurringSessions(mergeSlotsByDate(pastSlots, false));
+            detail.setHasMoreFutureSessions(hasMoreFuture);
+            detail.setHasMorePastSessions(hasMorePast);
             detail.setMergedSlots(new ArrayList<>());
         } else {
+            slots = bookingRepo.findSlotsByBookingId(bookingId);
+            detail.setSlots(slots);
             detail.setMergedSlots(mergeSlots(slots));
             detail.setRecurringSessions(new ArrayList<>());
+            detail.setPastRecurringSessions(new ArrayList<>());
+            detail.setHasMoreFutureSessions(false);
+            detail.setHasMorePastSessions(false);
         }
 
         // Calculate total hours from slots
         double totalHours = 0;
-        for (BookingSlotDetailDTO slot : slots) {
+        List<BookingSlotDetailDTO> hoursSource = detail.getSlots() != null ? detail.getSlots() : slots;
+        for (BookingSlotDetailDTO slot : hoursSource) {
             try {
                 LocalTime start = LocalTime.parse(slot.getStartTime(), TF);
                 LocalTime end = LocalTime.parse(slot.getEndTime(), TF);
@@ -341,7 +394,7 @@ public class MyBookingServiceImpl implements MyBookingService {
     /**
      * Builds recurring sessions similar to preview screen: grouped by booking date + court + contiguous time.
      */
-    private List<MergedSlotDTO> mergeSlotsByDate(List<BookingSlotDetailDTO> slots) {
+    private List<MergedSlotDTO> mergeSlotsByDate(List<BookingSlotDetailDTO> slots, boolean ascendingDate) {
         if (slots == null || slots.isEmpty()) return new ArrayList<>();
 
         LinkedHashMap<String, List<BookingSlotDetailDTO>> grouped = new LinkedHashMap<>();
@@ -389,10 +442,12 @@ public class MyBookingServiceImpl implements MyBookingService {
             merged.add(new MergedSlotDTO(courtName, segStart.format(TF), segEnd.format(TF), price, count, bookingDate));
         }
 
-        merged.sort(Comparator
-                .comparing(MergedSlotDTO::getBookingDate)
+        Comparator<MergedSlotDTO> comparator = Comparator
+                .comparing(MergedSlotDTO::getBookingDate,
+                        ascendingDate ? Comparator.naturalOrder() : Comparator.reverseOrder())
                 .thenComparing(MergedSlotDTO::getStartTime)
-                .thenComparing(MergedSlotDTO::getCourtName));
+                .thenComparing(MergedSlotDTO::getCourtName);
+        merged.sort(comparator);
         return merged;
     }
 

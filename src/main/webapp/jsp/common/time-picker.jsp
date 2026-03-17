@@ -330,9 +330,20 @@ class CustomTimePicker {
     }
 
     open() {
+        // Move dropdown to body for highest stacking
+        if (!this.dropdown._appendedToBody) {
+            document.body.appendChild(this.dropdown);
+            this.dropdown._appendedToBody = true;
+        }
+        // Set position: fixed and z-index high
+        const rect = this.display.getBoundingClientRect();
+        this.dropdown.style.position = 'fixed';
+        this.dropdown.style.left = rect.left + 'px';
+        this.dropdown.style.top = (rect.bottom + 2) + 'px';
+        this.dropdown.style.width = rect.width + 'px';
+        this.dropdown.style.zIndex = 2000;
         this.dropdown.classList.remove('hidden');
         this.isOpen = true;
-
         // Scroll selected items into view
         setTimeout(() => {
             const selectedItems = this.dropdown.querySelectorAll('.time-picker-item.selected');

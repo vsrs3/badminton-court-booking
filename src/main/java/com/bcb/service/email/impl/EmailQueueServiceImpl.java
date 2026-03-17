@@ -55,6 +55,19 @@ public class EmailQueueServiceImpl implements EmailQueueService {
     }
 
     @Override
+    public EmailEnqueueResult enqueueCustomerPaymentSuccess(int bookingId, String paymentType) {
+        String normalizedType = paymentType == null ? "" : paymentType.trim().toUpperCase();
+        String emailType = "REMAINING".equals(normalizedType) ? "PAY_REMAINING" : "PAY_SUCCESS";
+        String payload = "{\"paymentType\":\"" + normalizedType + "\"}";
+        return enqueueForCustomer(emailType, bookingId, payload);
+    }
+
+    @Override
+    public EmailEnqueueResult enqueueCustomerRemainingPaid(int bookingId) {
+        return enqueueForCustomer("PAY_REMAINING", bookingId, "{\"paymentType\":\"REMAINING\"}");
+    }
+
+    @Override
     public void processPendingEmails() {
         List<EmailQueueItemDTO> items;
         try {
@@ -131,8 +144,34 @@ public class EmailQueueServiceImpl implements EmailQueueService {
                 return buildUpcomingReminderEmail(item.getBookingId(), 2);
             case "REMINDER_PAYMENT_12H":
                 return buildPaymentReminderEmail(item.getBookingId(), 12);
+            case "PAY_SUCCESS":
+                return buildCustomerPaymentSuccessEmail(item.getBookingId(), item.getPayloadJson());
+            case "PAY_REMAINING":
+                return buildCustomerRemainingPaidEmail(item.getBookingId(), item.getPayloadJson());
+            case "REMINDER_CUS_24H":
+                return buildUpcomingReminderEmail(item.getBookingId(), 24);
             default:
                 return null;
+        }
+    }
+
+    private EmailEnqueueResult enqueueForCustomer(String emailType, int bookingId, String payloadJson) {
+        try {
+            BookingRecipientDTO recipient = bookingEmailRepository.findRecipient(bookingId);
+            if (recipient == null) {
+                return new EmailEnqueueResult(false, "Không tìm thấy người nhận.");
+            }
+            if (recipient.getStaffId() != null) {
+                return new EmailEnqueueResult(false, "Booking do staff tạo. Bỏ qua email customer.");
+            }
+            String toEmail = recipient.getEmail();
+            if (toEmail == null || toEmail.trim().isEmpty()) {
+                return new EmailEnqueueResult(false, "Không có email. Không xếp thông báo.");
+            }
+            emailQueueRepository.enqueue(emailType, bookingId, toEmail.trim(), payloadJson, null);
+            return new EmailEnqueueResult(true, null);
+        } catch (Exception e) {
+            return new EmailEnqueueResult(false, "Không thể xếp email vào hàng đợi.");
         }
     }
 
@@ -327,6 +366,96 @@ private EmailContent buildUpdateEmail(int bookingId, String payloadJson) throws 
         body.append("<p>Còn phải thanh toán: ").append(escapeHtml(formatMoney(remain))).append("</p>");
         appendPayment(body, header);
         return new EmailContent(subject, body.toString());
+    }
+
+    private EmailContent buildCustomerPaymentSuccessEmail(int bookingId, String payloadJson) throws Exception {
+        String paymentType = SimpleJson.extractString(payloadJson, "paymentType");
+        return buildCustomerPaymentEmail(bookingId, paymentType, false);
+    }
+
+    private EmailContent buildCustomerRemainingPaidEmail(int bookingId, String payloadJson) throws Exception {
+        String paymentType = SimpleJson.extractString(payloadJson, "paymentType");
+        return buildCustomerPaymentEmail(bookingId, paymentType, true);
+    }
+
+    private EmailContent buildCustomerPaymentEmail(int bookingId, String paymentType, boolean remainingOnly) throws Exception {
+        BookingRecurringHeaderDTO recurringHeader = bookingEmailRepository.findRecurringHeader(bookingId);
+        if (recurringHeader != null) {
+            List<BookingRecurringPatternDTO> patterns = bookingEmailRepository.findRecurringPatterns(bookingId);
+            String subject = remainingOnly
+                    ? "Thanh toán phần còn lại thành công"
+                    : buildPaymentSuccessSubject(paymentType);
+            StringBuilder body = new StringBuilder(1200);
+            body.append("<h2>").append(subject).append("</h2>");
+            body.append("<p>Mã booking: ").append(recurringHeader.getBookingId()).append("</p>");
+            body.append("<p>Sân: ").append(escapeHtml(safe(recurringHeader.getFacilityName()))).append("</p>");
+            body.append("<p>Khách hàng: ").append(escapeHtml(safe(recurringHeader.getCustomerName()))).append("</p>");
+            if (recurringHeader.getCustomerPhone() != null && !recurringHeader.getCustomerPhone().isEmpty()) {
+                body.append("<p>Điện thoại: ").append(escapeHtml(recurringHeader.getCustomerPhone())).append("</p>");
+            }
+            if (recurringHeader.getStartDate() != null && recurringHeader.getEndDate() != null) {
+                body.append("<p>Lịch định kỳ: ")
+                        .append(escapeHtml(recurringHeader.getStartDate()))
+                        .append(" → ")
+                        .append(escapeHtml(recurringHeader.getEndDate()))
+                        .append("</p>");
+            }
+            body.append("<h3>Lịch định kỳ</h3>");
+            body.append(renderRecurringPatterns(patterns));
+            appendRecurringPayment(body, recurringHeader, remainingOnly);
+            return new EmailContent(subject, body.toString());
+        }
+
+        BookingEmailHeaderDTO header = bookingEmailRepository.findHeader(bookingId);
+        if (header == null) return null;
+        List<BookingEmailSlotDTO> slots = bookingEmailRepository.findSlots(bookingId);
+        List<EmailSession> sessions = buildSessionsFromSlots(slots);
+
+        String subject = remainingOnly
+                ? "Thanh toán phần còn lại thành công"
+                : buildPaymentSuccessSubject(paymentType);
+        StringBuilder body = new StringBuilder(1100);
+        body.append("<h2>").append(subject).append("</h2>");
+        appendHeader(body, header);
+        body.append("<h3>Chi tiết phiên</h3>");
+        body.append(renderSessions(sessions));
+
+        if (remainingOnly) {
+            body.append("<p>Bạn đã thanh toán xong phần còn lại cho booking này.</p>");
+        } else {
+            body.append("<p>Giao dịch thanh toán của bạn đã được ghi nhận thành công.</p>");
+        }
+        appendPayment(body, header);
+        return new EmailContent(subject, body.toString());
+    }
+
+    private void appendRecurringPayment(StringBuilder body, BookingRecurringHeaderDTO header, boolean remainingOnly) {
+        if (header.getTotalAmount() != null) {
+            body.append("<p>Tổng tiền: ").append(escapeHtml(formatMoney(header.getTotalAmount()))).append("</p>");
+        }
+        if (header.getPaidAmount() != null) {
+            body.append("<p>Đã thanh toán: ").append(escapeHtml(formatMoney(header.getPaidAmount()))).append("</p>");
+        }
+        if (remainingOnly) {
+            body.append("<p>Bạn đã thanh toán xong phần còn lại cho booking định kỳ này.</p>");
+        }
+        if (header.getPaymentStatus() != null) {
+            body.append("<p>Trạng thái thanh toán: ").append(escapeHtml(header.getPaymentStatus())).append("</p>");
+        }
+    }
+
+    private String buildPaymentSuccessSubject(String paymentType) {
+        String normalizedType = paymentType == null ? "" : paymentType.trim().toUpperCase();
+        switch (normalizedType) {
+            case "DEPOSIT":
+                return "Thanh toán đặt cọc thành công";
+            case "FULL":
+                return "Thanh toán toàn phần thành công";
+            case "REMAINING":
+                return "Thanh toán phần còn lại thành công";
+            default:
+                return "Thanh toán thành công";
+        }
     }
 
     private String buildStartInfo(BookingEmailHeaderDTO header, List<EmailSession> sessions) {

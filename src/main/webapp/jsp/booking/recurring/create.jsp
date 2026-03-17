@@ -81,6 +81,43 @@
             </div>
         </div>
 
+        <div class="weekly-preview-wrap mb-4">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-calendar-week text-success"></i>
+                <h6 class="fw-bold mb-0">Lịch trình của bạn trong tuần</h6>
+            </div>
+            <div id="weeklySchedulePreview" class="weekly-preview-grid">
+                <div class="weekly-day-card" data-day="2">
+                    <div class="weekly-day-title text-center">Thứ 2</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="3">
+                    <div class="weekly-day-title text-center">Thứ 3</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="4">
+                    <div class="weekly-day-title text-center">Thứ 4</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="5">
+                    <div class="weekly-day-title text-center">Thứ 5</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="6">
+                    <div class="weekly-day-title text-center">Thứ 6</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="7">
+                    <div class="weekly-day-title text-center text-center">Thứ 7</div>
+                    <div class="weekly-day-content text-muted">Chưa có lịch</div>
+                </div>
+                <div class="weekly-day-card" data-day="1">
+                    <div class="weekly-day-title text-center">Chủ nhật</div>
+                    <div class="weekly-day-content text-muted text-center">Chưa có lịch</div>
+                </div>
+            </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
                 <h5 class="fw-bold mb-1"><i class="bi bi-repeat"></i> Lịch trình hàng tuần</h5>
@@ -95,7 +132,8 @@
 
         <div class="d-flex justify-content-end mt-4">
             <button id="previewBtn" type="button" class="btn btn-success btn-lg px-5 py-3 btn-lift">
-                Tiếp tục xem trước
+                <span class="preview-btn-label">Tiếp tục xem trước</span>
+                <span class="preview-btn-loading d-none"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang tải...</span>
                 <i class="bi bi-arrow-right ms-2"></i>
             </button>
         </div>
