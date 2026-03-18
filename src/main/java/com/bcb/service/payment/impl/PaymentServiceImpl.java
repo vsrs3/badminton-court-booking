@@ -75,7 +75,6 @@ public class PaymentServiceImpl implements PaymentService {
             // 1. Persist PENDING payment
             Payment payment = new Payment();
             payment.setInvoiceId(invoiceId);
-            payment.setGateway("VNPAY");
             payment.setTransactionCode(txnCode);
             payment.setPaidAmount(BigDecimal.valueOf(payAmountVND));
             payment.setPaymentType(paymentType);

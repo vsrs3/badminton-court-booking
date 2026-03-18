@@ -437,6 +437,10 @@
             showError('Vui lòng chọn ngày bắt đầu và ngày kết thúc');
             return null;
         }
+        if (isEndDateBeforeStart(startDate, endDate)) {
+            showError('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu');
+            return null;
+        }
         if (!isMinFourWeeks(startDate, endDate)) {
             showError('Thời gian định kỳ phải tối thiểu 4 tuần');
             return null;
@@ -935,6 +939,12 @@
         return diffDays >= 28;
     }
 
+    function isEndDateBeforeStart(start, end) {
+        var s = new Date(start + 'T00:00:00');
+        var e = new Date(end + 'T00:00:00');
+        return e.getTime() < s.getTime();
+    }
+
     function isValidEmail(email) {
         var cleaned = (email || '').trim();
         if (!cleaned) return true;
@@ -1132,12 +1142,28 @@
         var nowMinutes = timeToMinutes(new Date().toTimeString().slice(0, 5));
         for (var i = 0; i < patterns.length; i++) {
             if (patterns[i].dayOfWeek !== todayDay) continue;
+            var startTime = getSessionStartTimeFromSlotIds(patterns[i].slotIds);
+            if (startTime && timeToMinutes(startTime) <= nowMinutes - 30) {
+                return true;
+            }
             var endTime = getSessionEndTimeFromSlotIds(patterns[i].slotIds);
             if (endTime && timeToMinutes(endTime) <= nowMinutes) {
                 return true;
             }
         }
         return false;
+    }
+
+    function getSessionStartTimeFromSlotIds(slotIds) {
+        var startTime = null;
+        for (var i = 0; i < slotIds.length; i++) {
+            var slot = findSlotById(slotIds[i]);
+            if (!slot) continue;
+            if (!startTime || timeToMinutes(slot.startTime) < timeToMinutes(startTime)) {
+                startTime = slot.startTime;
+            }
+        }
+        return startTime;
     }
 
     function getSessionEndTimeFromSlotIds(slotIds) {
@@ -1153,7 +1179,7 @@
     }
 
     function buildPastSessionMessage() {
-        var nowStr = new Date().toTimeString().slice(0, 5);
+        var nowStr = new Date(Date.now() - 30 * 60 * 1000).toTimeString().slice(0, 5);
         return 'Bạn đang đặt lịch cho hôm nay. Vui lòng chọn các khung giờ từ ' + nowStr + ' trở đi.';
     }
 

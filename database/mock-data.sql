@@ -78,16 +78,16 @@ GO
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'admin@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'admin@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Phạm Thị Admin',
-        '0904234567',
-        'ADMIN',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'admin@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Phạm Thị Admin',
+           '0904234567',
+           'ADMIN',
+           1,
+           GETDATE()
+       );
 END
 GO
 
@@ -96,16 +96,16 @@ GO
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'owner@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'owner@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Lê Văn Owner',
-        '0903234567',
-        'OWNER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'owner@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Lê Văn Owner',
+           '0903234567',
+           'OWNER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
@@ -116,16 +116,16 @@ GO
 -- Staff 1: Gán vào facility_id = 1 (CLB Cầu Lông Hà Đông Star)
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'staff1@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'staff1@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Trần Thị Staff Một',
-        '0902234567',
-        'STAFF',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'staff1@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Trần Thị Staff Một',
+           '0902234567',
+           'STAFF',
+           1,
+           GETDATE()
+       );
 END
 GO
 
@@ -133,24 +133,24 @@ GO
 DECLARE @staff1AccId INT = (SELECT account_id FROM Account WHERE email = 'staff1@test.com');
 IF @staff1AccId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Staff WHERE account_id = @staff1AccId)
 BEGIN
-    INSERT INTO Staff (account_id, facility_id, is_active)
-    VALUES (@staff1AccId, 1, 1);
+INSERT INTO Staff (account_id, facility_id, is_active)
+VALUES (@staff1AccId, 1, 1);
 END
 GO
 
 -- Staff 2: Gán vào facility_id = 2 (CLB Cầu Lông Thanh Xuân Pro)
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'staff2@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'staff2@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Nguyễn Văn Staff Hai',
-        '0905234567',
-        'STAFF',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'staff2@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Nguyễn Văn Staff Hai',
+           '0905234567',
+           'STAFF',
+           1,
+           GETDATE()
+       );
 END
 GO
 
@@ -158,8 +158,8 @@ GO
 DECLARE @staff2AccId INT = (SELECT account_id FROM Account WHERE email = 'staff2@test.com');
 IF @staff2AccId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Staff WHERE account_id = @staff2AccId)
 BEGIN
-    INSERT INTO Staff (account_id, facility_id, is_active)
-    VALUES (@staff2AccId, 2, 1);
+INSERT INTO Staff (account_id, facility_id, is_active)
+VALUES (@staff2AccId, 2, 1);
 END
 GO
 
@@ -170,80 +170,80 @@ GO
 -- Customer 1
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer1@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer1@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Nguyễn Văn Khách Một',
-        '0901234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer1@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Nguyễn Văn Khách Một',
+           '0901234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
 -- Customer 2
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer2@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer2@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Trần Thị Khách Hai',
-        '0906234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer2@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Trần Thị Khách Hai',
+           '0906234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
 -- Customer 3
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer3@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer3@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Lê Hoàng Khách Ba',
-        '0907234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer3@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Lê Hoàng Khách Ba',
+           '0907234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
 -- Customer 4
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer4@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer4@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Phạm Minh Khách Bốn',
-        '0908234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer4@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Phạm Minh Khách Bốn',
+           '0908234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
 -- Customer 5
 IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer5@test.com')
 BEGIN
-    INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
-    VALUES (
-        'customer5@test.com',
-        '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
-        N'Hoàng Thị Khách Năm',
-        '0909234567',
-        'CUSTOMER',
-        1,
-        GETDATE()
-    );
+INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
+VALUES (
+           'customer5@test.com',
+           '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
+           N'Hoàng Thị Khách Năm',
+           '0909234567',
+           'CUSTOMER',
+           1,
+           GETDATE()
+       );
 END
 GO
 
@@ -252,33 +252,33 @@ GO
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM Court WHERE facility_id = 1)
 BEGIN
-    INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
-    VALUES
-        (1, 1, N'Sân A1', N'Sân tiêu chuẩn tầng 1', 1),
-        (1, 1, N'Sân A2', N'Sân tiêu chuẩn tầng 1', 1),
-        (1, 2, N'Sân VIP 1', N'Sân VIP có điều hòa', 1),
-        (1, 1, N'Sân A3', N'Sân tiêu chuẩn tầng 2', 1);
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+    (1, 1, N'Sân A1', N'Sân tiêu chuẩn tầng 1', 1),
+    (1, 1, N'Sân A2', N'Sân tiêu chuẩn tầng 1', 1),
+    (1, 2, N'Sân VIP 1', N'Sân VIP có điều hòa', 1),
+    (1, 1, N'Sân A3', N'Sân tiêu chuẩn tầng 2', 1);
 END
 GO
 
 -- Courts cho facility_id = 2 (CLB Cầu Lông Thanh Xuân Pro)
 IF NOT EXISTS (SELECT 1 FROM Court WHERE facility_id = 2)
 BEGIN
-    INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
-    VALUES
-        (2, 1, N'Sân B1', N'Sân tiêu chuẩn', 1),
-        (2, 1, N'Sân B2', N'Sân tiêu chuẩn', 1),
-        (2, 2, N'Sân VIP B', N'Sân VIP đặc biệt', 1);
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+    (2, 1, N'Sân B1', N'Sân tiêu chuẩn', 1),
+    (2, 1, N'Sân B2', N'Sân tiêu chuẩn', 1),
+    (2, 2, N'Sân VIP B', N'Sân VIP đặc biệt', 1);
 END
 GO
 
 -- Courts cho facility_id = 3 (CLB Cầu Lông Văn Quán)
 IF NOT EXISTS (SELECT 1 FROM Court WHERE facility_id = 3)
 BEGIN
-    INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
-    VALUES
-        (3, 1, N'Sân C1', N'Sân tiêu chuẩn', 1),
-        (3, 1, N'Sân C2', N'Sân tiêu chuẩn', 1);
+INSERT INTO Court (facility_id, court_type_id, court_name, description, is_active)
+VALUES
+    (3, 1, N'Sân C1', N'Sân tiêu chuẩn', 1),
+    (3, 1, N'Sân C2', N'Sân tiêu chuẩn', 1);
 END
 GO
 
@@ -287,46 +287,46 @@ GO
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM FacilityPriceRule WHERE facility_id = 1)
 BEGIN
-    INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
-    VALUES
-        -- Facility 1, NORMAL court
-        (1, 1, 'WEEKDAY', '05:30', '17:00', 60000),
-        (1, 1, 'WEEKDAY', '17:00', '22:00', 90000),
-        (1, 1, 'WEEKEND', '05:30', '17:00', 80000),
-        (1, 1, 'WEEKEND', '17:00', '22:00', 120000),
-        -- Facility 1, VIP court
-        (1, 2, 'WEEKDAY', '05:30', '17:00', 100000),
-        (1, 2, 'WEEKDAY', '17:00', '22:00', 150000),
-        (1, 2, 'WEEKEND', '05:30', '17:00', 130000),
-        (1, 2, 'WEEKEND', '17:00', '22:00', 180000);
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+    -- Facility 1, NORMAL court
+    (1, 1, 'WEEKDAY', '05:30', '17:00', 60000),
+    (1, 1, 'WEEKDAY', '17:00', '22:00', 90000),
+    (1, 1, 'WEEKEND', '05:30', '17:00', 80000),
+    (1, 1, 'WEEKEND', '17:00', '22:00', 120000),
+    -- Facility 1, VIP court
+    (1, 2, 'WEEKDAY', '05:30', '17:00', 100000),
+    (1, 2, 'WEEKDAY', '17:00', '22:00', 150000),
+    (1, 2, 'WEEKEND', '05:30', '17:00', 130000),
+    (1, 2, 'WEEKEND', '17:00', '22:00', 180000);
 END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM FacilityPriceRule WHERE facility_id = 2)
 BEGIN
-    INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
-    VALUES
-        -- Facility 2, NORMAL court
-        (2, 1, 'WEEKDAY', '06:00', '17:00', 55000),
-        (2, 1, 'WEEKDAY', '17:00', '23:00', 85000),
-        (2, 1, 'WEEKEND', '06:00', '17:00', 75000),
-        (2, 1, 'WEEKEND', '17:00', '23:00', 110000),
-        -- Facility 2, VIP court
-        (2, 2, 'WEEKDAY', '06:00', '17:00', 90000),
-        (2, 2, 'WEEKDAY', '17:00', '23:00', 140000),
-        (2, 2, 'WEEKEND', '06:00', '17:00', 120000),
-        (2, 2, 'WEEKEND', '17:00', '23:00', 170000);
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+    -- Facility 2, NORMAL court
+    (2, 1, 'WEEKDAY', '06:00', '17:00', 55000),
+    (2, 1, 'WEEKDAY', '17:00', '23:00', 85000),
+    (2, 1, 'WEEKEND', '06:00', '17:00', 75000),
+    (2, 1, 'WEEKEND', '17:00', '23:00', 110000),
+    -- Facility 2, VIP court
+    (2, 2, 'WEEKDAY', '06:00', '17:00', 90000),
+    (2, 2, 'WEEKDAY', '17:00', '23:00', 140000),
+    (2, 2, 'WEEKEND', '06:00', '17:00', 120000),
+    (2, 2, 'WEEKEND', '17:00', '23:00', 170000);
 END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM FacilityPriceRule WHERE facility_id = 3)
 BEGIN
-    INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
-    VALUES
-        (3, 1, 'WEEKDAY', '06:00', '17:00', 50000),
-        (3, 1, 'WEEKDAY', '17:00', '22:00', 80000),
-        (3, 1, 'WEEKEND', '06:00', '17:00', 70000),
-        (3, 1, 'WEEKEND', '17:00', '22:00', 100000);
+INSERT INTO FacilityPriceRule (facility_id, court_type_id, day_type, start_time, end_time, price)
+VALUES
+    (3, 1, 'WEEKDAY', '06:00', '17:00', 50000),
+    (3, 1, 'WEEKDAY', '17:00', '22:00', 80000),
+    (3, 1, 'WEEKEND', '06:00', '17:00', 70000),
+    (3, 1, 'WEEKEND', '17:00', '22:00', 100000);
 END
 GO
 
@@ -335,31 +335,31 @@ GO
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM Inventory WHERE name = N'Vợt Yonex Astrox 88D')
 BEGIN
-    INSERT INTO Inventory (name, brand, description, rental_price, is_active)
-    VALUES
-        (N'Vợt Yonex Astrox 88D', 'Yonex', N'Vợt tấn công chuyên nghiệp', 50000, 1),
-        (N'Vợt Lining Windstorm 72', 'Lining', N'Vợt nhẹ, phù hợp phòng thủ', 40000, 1),
-        (N'Vợt Victor Thruster K 9900', 'Victor', N'Vợt cao cấp', 60000, 1);
+INSERT INTO Inventory (name, brand, description, rental_price, is_active)
+VALUES
+    (N'Vợt Yonex Astrox 88D', 'Yonex', N'Vợt tấn công chuyên nghiệp', 50000, 1),
+    (N'Vợt Lining Windstorm 72', 'Lining', N'Vợt nhẹ, phù hợp phòng thủ', 40000, 1),
+    (N'Vợt Victor Thruster K 9900', 'Victor', N'Vợt cao cấp', 60000, 1);
 END
 GO
 
 -- Gán inventory vào facility 1 và 2
 IF NOT EXISTS (SELECT 1 FROM FacilityInventory WHERE facility_id = 1)
 BEGIN
-    INSERT INTO FacilityInventory (facility_id, inventory_id, total_quantity, available_quantity)
-    VALUES
-        (1, 1, 10, 10),
-        (1, 2, 8, 8),
-        (1, 3, 5, 5);
+INSERT INTO FacilityInventory (facility_id, inventory_id, total_quantity, available_quantity)
+VALUES
+    (1, 1, 10, 10),
+    (1, 2, 8, 8),
+    (1, 3, 5, 5);
 END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM FacilityInventory WHERE facility_id = 2)
 BEGIN
-    INSERT INTO FacilityInventory (facility_id, inventory_id, total_quantity, available_quantity)
-    VALUES
-        (2, 1, 6, 6),
-        (2, 2, 4, 4);
+INSERT INTO FacilityInventory (facility_id, inventory_id, total_quantity, available_quantity)
+VALUES
+    (2, 1, 6, 6),
+    (2, 2, 4, 4);
 END
 GO
 
@@ -382,7 +382,7 @@ DELETE csb FROM CourtSlotBooking csb
 WHERE b.account_id IN (SELECT id FROM @testCustIds);
 
 DELETE FROM Review WHERE booking_id IN
-    (SELECT booking_id FROM Booking WHERE account_id IN (SELECT id FROM @testCustIds));
+                         (SELECT booking_id FROM Booking WHERE account_id IN (SELECT id FROM @testCustIds));
 
 DELETE inv FROM Invoice inv
     INNER JOIN Booking b ON inv.booking_id = b.booking_id
@@ -398,7 +398,7 @@ DELETE FROM Booking WHERE account_id IN (SELECT id FROM @testCustIds);
 DECLARE @testStaffIds TABLE (id INT);
 INSERT INTO @testStaffIds
 SELECT s.staff_id FROM Staff s
-    INNER JOIN Account a ON s.account_id = a.account_id
+                           INNER JOIN Account a ON s.account_id = a.account_id
 WHERE a.email IN ('staff1@test.com','staff2@test.com');
 
 DELETE csb FROM CourtSlotBooking csb
@@ -492,11 +492,11 @@ VALUES (@bk2, 180000, 0, 100, 'UNPAID');
 -- Facility 1, Sân VIP 1, slot 17:00-18:00
 -- ============================================================
 INSERT INTO Booking (facility_id, booking_date, account_id, booking_status,
-    checkin_time, checkout_time, created_at)
+                     checkin_time, checkout_time, created_at)
 VALUES (1, @yesterday, @cust1Id, 'COMPLETED',
-    DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME)),
-    DATEADD(HOUR, 18, CAST(@yesterday AS DATETIME)),
-    DATEADD(DAY, -2, GETDATE()));
+        DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME)),
+        DATEADD(HOUR, 18, CAST(@yesterday AS DATETIME)),
+        DATEADD(DAY, -2, GETDATE()));
 
 DECLARE @bk3 INT = SCOPE_IDENTITY();
 
@@ -597,11 +597,11 @@ VALUES (@bk7, 280000, 280000, 100, 'PAID');
 -- Facility 3, Sân C1, slot 08:00-09:00
 -- ============================================================
 INSERT INTO Booking (facility_id, booking_date, account_id, booking_status,
-    checkin_time, checkout_time, created_at)
+                     checkin_time, checkout_time, created_at)
 VALUES (3, @yesterday, @cust5Id, 'COMPLETED',
-    DATEADD(HOUR, 8, CAST(@yesterday AS DATETIME)),
-    DATEADD(HOUR, 9, CAST(@yesterday AS DATETIME)),
-    DATEADD(DAY, -2, GETDATE()));
+        DATEADD(HOUR, 8, CAST(@yesterday AS DATETIME)),
+        DATEADD(HOUR, 9, CAST(@yesterday AS DATETIME)),
+        DATEADD(DAY, -2, GETDATE()));
 
 DECLARE @bk8 INT = SCOPE_IDENTITY();
 
@@ -696,15 +696,15 @@ VALUES (@bk11, 120000, 0, 100, 'UNPAID');
 -- Review cho Booking 3 (Customer1 - hôm qua)
 IF NOT EXISTS (SELECT 1 FROM Review WHERE booking_id = @bk3)
 BEGIN
-    INSERT INTO Review (booking_id, account_id, rating, comment, created_at)
-    VALUES (@bk3, @cust1Id, 5, N'Sân rất đẹp, dịch vụ tốt, sẽ quay lại!', GETDATE());
+INSERT INTO Review (booking_id, account_id, rating, comment, created_at)
+VALUES (@bk3, @cust1Id, 5, N'Sân rất đẹp, dịch vụ tốt, sẽ quay lại!', GETDATE());
 END
 
 -- Review cho Booking 8 (Customer5 - hôm qua)
 IF NOT EXISTS (SELECT 1 FROM Review WHERE booking_id = @bk8)
 BEGIN
-    INSERT INTO Review (booking_id, account_id, rating, comment, created_at)
-    VALUES (@bk8, @cust5Id, 4, N'Sân ổn, giá hợp lý. Nhân viên thân thiện.', GETDATE());
+INSERT INTO Review (booking_id, account_id, rating, comment, created_at)
+VALUES (@bk8, @cust5Id, 4, N'Sân ổn, giá hợp lý. Nhân viên thân thiện.', GETDATE());
 END
 
 -- ============================================================
@@ -737,19 +737,19 @@ VALUES
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM CustomerFavoriteFacility WHERE account_id = @cust1Id AND facility_id = 1)
 BEGIN
-    INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust1Id, 1);
-    INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust1Id, 2);
+INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust1Id, 1);
+INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust1Id, 2);
 END
 
 IF NOT EXISTS (SELECT 1 FROM CustomerFavoriteFacility WHERE account_id = @cust2Id AND facility_id = 1)
 BEGIN
-    INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust2Id, 1);
+INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust2Id, 1);
 END
 
 IF NOT EXISTS (SELECT 1 FROM CustomerFavoriteFacility WHERE account_id = @cust3Id AND facility_id = 2)
 BEGIN
-    INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust3Id, 2);
-    INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust3Id, 3);
+INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust3Id, 2);
+INSERT INTO CustomerFavoriteFacility (account_id, facility_id) VALUES (@cust3Id, 3);
 END
 
 -- ============================================================
@@ -757,32 +757,32 @@ END
 -- ============================================================
 -- Payment cho Booking 1 (Customer1 - CONFIRMED ngày mai)
 INSERT INTO Payment (invoice_id, transaction_code, paid_amount, payment_time,
-    payment_type, method, payment_status)
+                     payment_type, method, payment_status)
 SELECT invoice_id, 'VNP' + CAST(@bk1 AS VARCHAR) + '001', 180000,
-    DATEADD(HOUR, -1, GETDATE()), 'FULL', 'VNPAY', 'SUCCESS'
+       DATEADD(HOUR, -1, GETDATE()), 'FULL', 'VNPAY', 'SUCCESS'
 FROM Invoice WHERE booking_id = @bk1;
 
 -- Payment cho Booking 5 (Customer2 - CONFIRMED hôm nay)
 INSERT INTO Payment (invoice_id, transaction_code, paid_amount, payment_time,
-    payment_type, method, payment_status)
+                     payment_type, method, payment_status)
 SELECT invoice_id, 'VNP' + CAST(@bk5 AS VARCHAR) + '002', 300000,
-    DATEADD(HOUR, -3, GETDATE()), 'FULL', 'VNPAY', 'SUCCESS'
+       DATEADD(HOUR, -3, GETDATE()), 'FULL', 'VNPAY', 'SUCCESS'
 FROM Invoice WHERE booking_id = @bk5;
 
 -- Payment cho Booking 3 (Customer1 - COMPLETED hôm qua, trả tiền mặt)
 INSERT INTO Payment (invoice_id, paid_amount, payment_time,
-    payment_type, method, payment_status, staff_confirm_id, confirm_time)
+                     payment_type, method, payment_status, staff_confirm_id, confirm_time)
 SELECT invoice_id, 300000,
-    DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME)),
-    'FULL', 'CASH', 'SUCCESS', @staff1Id,
-    DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME))
+       DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME)),
+       'FULL', 'CASH', 'SUCCESS', @staff1Id,
+       DATEADD(HOUR, 17, CAST(@yesterday AS DATETIME))
 FROM Invoice WHERE booking_id = @bk3;
 
 -- Payment cho Booking 9 (Guest - Staff1 tạo, tiền mặt)
 INSERT INTO Payment (invoice_id, paid_amount, payment_time,
-    payment_type, method, payment_status, staff_confirm_id, confirm_time)
+                     payment_type, method, payment_status, staff_confirm_id, confirm_time)
 SELECT invoice_id, 180000, GETDATE(),
-    'FULL', 'CASH', 'SUCCESS', @staff1Id, GETDATE()
+       'FULL', 'CASH', 'SUCCESS', @staff1Id, GETDATE()
 FROM Invoice WHERE booking_id = @bk9;
 
 -- Voucher
@@ -828,3 +828,35 @@ PRINT N'  BK10 : Guest CONFIRMED  hôm nay      (Staff2 tạo)';
 PRINT N'  BK11 : Cust2 PENDING    7 ngày sau   (Sân A1)';
 PRINT N'============================================================';
 GO
+ -- ============================================================
+-- 13. Blog
+-- ============================================================
+ SET IDENTITY_INSERT [dbo].[BlogPost] ON
+    INSERT [dbo].[BlogPost] ([post_id], [author_account_id], [title], [summary], [content], [thumbnail_path], [status], [published_at], [created_at], [updated_at], [is_deleted])
+    VALUES
+    (1, 1, N'Chào mừng đến với Cộng đồng', N'Bài viết demo để test danh sách/chi tiết.', N'Nội dung demo\n\n- Có comment\n- Có reaction\n- Có kiểm duyệt', NULL, N'PUBLISHED', CAST(N'2026-03-13T12:36:20.010' AS DateTime), CAST(N'2026-03-15T12:36:20.010' AS DateTime), NULL, 0),
+    (3, 6, N'cách bảo quản đồ', N'Rat gap can chu y', N'Việc xây dựng nội dung cho blog ("blog nội dung") là yếu tố cốt lõi...', N'https://trungtamthanhcong.net/wp-content/uploads/2015/07/bien_nguy_hiem.jpg', N'PUBLISHED', CAST(N'2026-03-15T13:14:17.623' AS DateTime), CAST(N'2026-03-15T13:13:26.860' AS DateTime), CAST(N'2026-03-15T13:14:17.643' AS DateTime), 0)
+-- ... (các bài khác bạn có thể thêm tiếp nếu cần)
+    SET IDENTITY_INSERT [dbo].[BlogPost] OFF
+    GO
+
+    SET IDENTITY_INSERT [dbo].[BlogComment] ON
+    INSERT [dbo].[BlogComment] ([comment_id], [post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
+    VALUES
+    (1, 1, 3, N'Bài viết hay quá!', N'APPROVED', 1, CAST(N'2026-03-15T12:36:20.013' AS DateTime), CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
+    (2, 1, 3, N'Khi nào có thêm bài mới ạ?', N'PENDING', NULL, NULL, CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
+    (4, 3, 13, N'minh thay bai viet rat hay', N'APPROVED', 6, CAST(N'2026-03-15T17:27:42.530' AS DateTime), CAST(N'2026-03-15T13:15:56.497' AS DateTime), CAST(N'2026-03-15T17:28:14.550' AS DateTime), 1)
+-- ... (các comment khác)
+    SET IDENTITY_INSERT [dbo].[BlogComment] OFF
+    GO
+
+    SET IDENTITY_INSERT [dbo].[BlogReaction] ON
+    INSERT [dbo].[BlogReaction] ([reaction_id], [post_id], [account_id], [emoji_code], [created_at])
+    VALUES
+    (1, 1, 3, N'LIKE', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
+    (2, 1, 1, N'HEART', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
+    (4, 3, 6, N'LIKE', CAST(N'2026-03-15T13:15:10.287' AS DateTime)),
+    (13, 3, 13, N'SAD', CAST(N'2026-03-15T17:32:09.753' AS DateTime))
+-- ... (các reaction khác)
+    SET IDENTITY_INSERT [dbo].[BlogReaction] OFF
+    GO
