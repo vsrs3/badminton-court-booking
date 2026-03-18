@@ -16,7 +16,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
             "FROM BlogPost p " +
             "JOIN Account a ON a.account_id = p.author_account_id " +
             "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
@@ -51,7 +51,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
             "FROM BlogPost p " +
             "JOIN Account a ON a.account_id = p.author_account_id " +
             "WHERE p.is_deleted = 0"
@@ -97,8 +97,8 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
 
     @Override
     public int insert(BlogPost post) {
-        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, thumbnail_path, status, published_at, created_at, is_deleted) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), 0)";
+        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, status, published_at, created_at, is_deleted) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, GETDATE(), 0)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -126,7 +126,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
 
     @Override
     public int update(BlogPost post) {
-        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, thumbnail_path=?, status=?, published_at=?, updated_at=GETDATE() " +
+        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, status=?, published_at=?, updated_at=GETDATE() " +
                      "WHERE post_id=? AND is_deleted=0";
 
         try (Connection conn = DBContext.getConnection();
@@ -192,7 +192,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
                     dto.setPostId(rs.getInt("post_id"));
                     dto.setTitle(rs.getString("title"));
                     dto.setSummary(rs.getString("summary"));
-                    dto.setThumbnailPath(rs.getString("thumbnail_path"));
                     dto.setStatus(rs.getString("status"));
                     Timestamp pub = rs.getTimestamp("published_at");
                     if (pub != null) dto.setPublishedAt(pub.toLocalDateTime());
@@ -243,7 +242,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
         p.setTitle(rs.getString("title"));
         p.setSummary(rs.getString("summary"));
         p.setContent(rs.getString("content"));
-        p.setThumbnailPath(rs.getString("thumbnail_path"));
         p.setStatus(rs.getString("status"));
 
         Timestamp publishedAt = rs.getTimestamp("published_at");
