@@ -36,7 +36,6 @@ public final class RegisterGoogleLinkStore {
             STORE.remove(token);
             return null;
         }
-
         return entry;
     }
 

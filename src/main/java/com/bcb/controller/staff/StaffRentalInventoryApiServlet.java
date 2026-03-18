@@ -1,4 +1,5 @@
 package com.bcb.controller.staff;
+
 import com.bcb.service.impl.StaffRentalServiceImpl;
 import com.bcb.service.staff.StaffRentalService;
 import com.bcb.utils.staff.StaffAuthUtil;
@@ -26,7 +27,7 @@ public class StaffRentalInventoryApiServlet extends BaseStaffApiServlet {
 
         String q = request.getParameter("q");
         int page = parseInt(request.getParameter("page"), 1);
-        int pageSize = 5;
+        int pageSize = normalizePageSize(request.getParameter("pageSize"));
 
         try {
             writeJson(response, service.getInventoryJson(auth.facilityId, q, page, pageSize));
@@ -42,5 +43,13 @@ public class StaffRentalInventoryApiServlet extends BaseStaffApiServlet {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    private int normalizePageSize(String rawPageSize) {
+        int pageSize = parseInt(rawPageSize, 5);
+        if (pageSize < 1) {
+            return 5;
+        }
+        return Math.min(pageSize, 50);
     }
 }

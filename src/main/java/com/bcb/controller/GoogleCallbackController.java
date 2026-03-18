@@ -90,8 +90,8 @@ public class GoogleCallbackController extends HttpServlet {
                     response,
                     token,
                     account.getEmail(),
-                    "Email da duoc xac nhan, vui long quay lai page de xem tai khoan.",
-                    "Ban co the dong trang nay."
+                    "Email đã được xác nhận, vui lòng quay lại trang để xem tài khoản.",
+                    "Bạn có thể đóng trang này."
             );
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());

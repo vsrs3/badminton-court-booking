@@ -31,7 +31,7 @@ public class VerifyEmailController extends HttpServlet {
         String purpose = trimToNull(request.getParameter("purpose"));
 
         if (token == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thieu token xac nhan");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu token xác nhận");
             return;
         }
 
@@ -87,8 +87,8 @@ public class VerifyEmailController extends HttpServlet {
                 token,
                 email,
                 buildContinueUrl(request, EmailActionSyncStore.PURPOSE_FORGOT_PASSWORD, token),
-                "Email da duoc xac nhan, vui long quay lai page de tiep tuc dat mat khau.",
-                "Ban co the dong trang nay."
+                "Email đã được xác nhận, vui lòng quay lại trang để tiếp tục đặt mật khẩu.",
+                "Bạn có thể đóng trang này."
         );
     }
 

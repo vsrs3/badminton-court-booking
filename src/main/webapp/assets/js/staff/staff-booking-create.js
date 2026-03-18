@@ -26,14 +26,16 @@ var phoneHint = document.getElementById('phoneHint');
 var formError = document.getElementById('formError');
 var btnSubmit = document.getElementById('btnSubmit');
 var rentalGroupsContainer = document.getElementById('rentalGroupsContainer');
+var rentalActionNotice = document.getElementById('rentalActionNotice');
 var rentalFeeSummary = document.getElementById('rentalFeeSummary');
 var rentalGrandTotal = document.getElementById('rentalGrandTotal');
 var rentalSearchInput = document.getElementById('rentalSearchInput');
+var rentalSuggestionMenu = document.getElementById('rentalSuggestionMenu');
+var rentalSortSelect = document.getElementById('rentalSortSelect');
 var btnRentalSearch = document.getElementById('btnRentalSearch');
 var rentalInventoryTableBody = document.getElementById('rentalInventoryTableBody');
 var rentalPaginationInfo = document.getElementById('rentalPaginationInfo');
-var btnRentalPrev = document.getElementById('btnRentalPrev');
-var btnRentalNext = document.getElementById('btnRentalNext');
+var rentalPagination = document.getElementById('rentalPagination');
 var btnRentalSave = document.getElementById('btnRentalSave');
 var rentalModalContext = document.getElementById('rentalModalContext');
 var rentalInventoryEmpty = document.getElementById('rentalInventoryEmpty');
@@ -45,17 +47,24 @@ var searchTimer = null;
 var sessions = [];
 var courtTotalPrice = 0;
 var rentalModal = null;
+var rentalActionTimer = null;
 var rentalState = {
     selectedSlot: null,
     page: 1,
+    pageSize: 5,
     keyword: '',
+    sortBy: 'default',
+    totalItems: 0,
     totalPages: 1,
     items: [],
+    suggestionItems: [],
     courts: [],
     slotPagesByCourt: {},
     draftBySlot: {},
     draftLoadedSlots: {},
     savedBySlot: {},
+    clearingSlotKey: null,
+    applyingAll: false,
     applyingCourtId: null
 };
 
@@ -101,7 +110,7 @@ function normalizeBookingSlots() {
         return {
             bookingSlotId: slot.bookingSlotId || slot.id || null,
             courtId: Number(slot.courtId || 0),
-            courtName: slot.courtName || ('San #' + slot.courtId),
+            courtName: slot.courtName || ('Sân #' + slot.courtId),
             slotId: Number(slot.slotId || 0),
             startTime: normalizeTime(slot.startTime),
             endTime: normalizeTime(slot.endTime),
@@ -147,7 +156,7 @@ function renderBookingSummary() {
             '  <div class="sbc-session-court">' + escapeHtml(first.courtName) + '</div>' +
             '  <div class="sbc-session-meta">' +
             '    <span><i class="bi bi-clock"></i>' + escapeHtml(first.startTime) + ' - ' + escapeHtml(last.endTime) + '</span>' +
-            '    <span><i class="bi bi-layers"></i>' + session.length + ' slot</span>' +
+            '    <span><i class="bi bi-layers"></i>' + session.length + ' khung giờ</span>' +
             '    <span class="sbc-session-price">' + formatMoney(sessionPrice) + '</span>' +
             '  </div>' +
             '</div>';
@@ -170,12 +179,12 @@ function renderRentalSection() {
         return;
     }
     if (!rentalState.courts.length) {
-        rentalGroupsContainer.innerHTML = '<div class="text-muted">Khong co slot de cho thue do.</div>';
+        rentalGroupsContainer.innerHTML = '<div class="text-muted">Không có slot để thêm đồ thuê.</div>';
         renderRentalFeeSummary();
         return;
     }
 
-    rentalGroupsContainer.innerHTML = rentalState.courts.map(function (court) {
+    rentalGroupsContainer.innerHTML = buildRentalToolbar() + rentalState.courts.map(function (court) {
         var pageInfo = getCourtSlotPage(court.courtId, court.slots.length);
         var start = (pageInfo.page - 1) * 5;
         var pageSlots = court.slots.slice(start, start + 5);
@@ -184,7 +193,7 @@ function renderRentalSection() {
             '<div class="sbc-rental-court">' +
             '   <div class="sbc-rental-court-header">' +
             '       <div class="sbc-rental-court-name">' + escapeHtml(court.courtName) + '</div>' +
-            '       <div class="sbc-rental-court-meta">' + court.slots.length + ' o slot</div>' +
+            '       <div class="sbc-rental-court-meta">' + court.slots.length + ' slot</div>' +
             '   </div>' +
             buildCourtActionBar(court) +
             '   <div class="sbc-rental-slot-grid">' + pageSlots.map(buildRentalSlotBox).join('') + '</div>' +
@@ -236,36 +245,83 @@ function buildRentalSlotBox(slot) {
     var items = rentalState.savedBySlot[slot.slotKey] || [];
     var classes = ['sbc-rental-slot-btn'];
     var isActive = rentalState.selectedSlot && rentalState.selectedSlot.slotKey === slot.slotKey;
+    var isClearing = rentalState.clearingSlotKey === slot.slotKey;
     if (items.length) classes.push('is-configured');
     if (isActive) classes.push('is-active');
 
     return '' +
-        '<button type="button" class="' + classes.join(' ') + '" onclick="openRentalModal(\'' + jsString(slot.slotKey) + '\')">' +
+        '<div class="sbc-rental-slot-card">' +
+        (items.length
+            ? '<button type="button" class="sbc-rental-slot-clear" ' + (isClearing ? 'disabled ' : '') +
+              'onclick="clearRentalSlot(\'' + jsString(slot.slotKey) + '\', event)" aria-label="Xóa đồ thuê" title="Xóa đồ thuê">' +
+              '   <i class="bi ' + (isClearing ? 'bi-hourglass-split' : 'bi-x-lg') + '"></i>' +
+              '</button>'
+            : '') +
+        '<button type="button" class="' + classes.join(' ') + '" ' + (isClearing ? 'disabled ' : '') + 'onclick="openRentalModal(\'' + jsString(slot.slotKey) + '\')">' +
         '   <span class="sbc-rental-slot-time">' + escapeHtml(slot.startTime) + ' - ' + escapeHtml(slot.endTime) + '</span>' +
-        '   <span class="sbc-rental-slot-state">' + (items.length ? ('Da luu ' + items.length + ' mon') : 'Nhan de chon do') + '</span>' +
-        '   <span class="sbc-rental-slot-sub">' + (items.length ? (sumItemQuantities(items) + ' cai - ' + formatMoney(computeItemsTotal(items))) : '&nbsp;') + '</span>' +
-        '</button>';
+        '   <span class="sbc-rental-slot-state">' + (items.length ? ('Đã lưu ' + items.length + ' món') : 'Nhấn để chọn đồ') + '</span>' +
+        '   <span class="sbc-rental-slot-sub">' + (items.length ? ('SL thuê: ' + sumItemQuantities(items) + ' - ' + formatMoney(computeItemsTotal(items))) : '&nbsp;') + '</span>' +
+        '</button>' +
+        '</div>';
 }
 
 function buildCourtSlotPagination(courtId, currentPage, totalPages) {
     if (totalPages <= 1) return '';
     return '' +
         '<div class="sbc-rental-slot-pagination">' +
-            '   <button type="button" class="btn btn-outline-secondary btn-sm" ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="changeRentalSlotPage(' + Number(courtId) + ', -1)"><i class="bi bi-chevron-left"></i></button>' +
+        '   <button type="button" class="btn btn-outline-secondary btn-sm" ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="changeRentalSlotPage(' + Number(courtId) + ', -1)"><i class="bi bi-chevron-left"></i></button>' +
         '   <span>Trang ' + currentPage + ' / ' + totalPages + '</span>' +
         '   <button type="button" class="btn btn-outline-secondary btn-sm" ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="changeRentalSlotPage(' + Number(courtId) + ', 1)"><i class="bi bi-chevron-right"></i></button>' +
         '</div>';
 }
 
+function buildRentalToolbar() {
+    var configuredSlots = getConfiguredRentalSlots();
+    var configuredCount = configuredSlots.length;
+    var isApplying = !!rentalState.applyingAll;
+    var buttonLabel = isApplying ? 'Đang áp dụng...' : 'Áp dụng tất cả sân';
+    var helperText = 'Hãy lưu đồ thuê cho đúng 1 slot để dùng làm mẫu.';
+
+    if (configuredCount === 1) {
+        var sourceSlot = configuredSlots[0].slot;
+        helperText = 'Slot mẫu: ' + sourceSlot.courtName + ' - ' + sourceSlot.startTime + ' đến ' + sourceSlot.endTime + '.';
+    } else if (configuredCount > 1) {
+        helperText = 'Hiện đang có ' + configuredCount + ' slot đã lưu đồ thuê.';
+    }
+
+    return '' +
+        '<div class="sbc-rental-toolbar">' +
+        '   <div class="sbc-rental-toolbar-copy">' +
+        '       <div class="sbc-rental-toolbar-title">Áp dụng đồ thuê cho tất cả sân</div>' +
+        '       <div class="sbc-rental-toolbar-note">' + escapeHtml(helperText) + '</div>' +
+        '   </div>' +
+        '   <button type="button" class="btn btn-sm btn-outline-success sbc-rental-toolbar-btn" ' +
+        ((configuredCount === 0 || isApplying || rentalState.applyingCourtId) ? 'disabled ' : '') +
+        'onclick="applyAllRentalSlots()">' +
+        '       <i class="bi bi-copy me-1"></i>' + buttonLabel +
+        '   </button>' +
+        '</div>';
+}
+
 function buildCourtActionBar(court) {
-    var applyTargets = getCourtApplyTargets(court);
+    var configuredSlots = getConfiguredRentalSlotsForCourt(court);
+    var configuredCount = configuredSlots.length;
     var isApplying = Number(rentalState.applyingCourtId || 0) === Number(court.courtId);
-    var buttonLabel = isApplying ? 'Dang ap dung...' : 'Ap dung toan bo';
+    var buttonLabel = isApplying ? 'Đang áp dụng...' : 'Áp dụng sân';
+    var helperText = 'Chưa có slot mẫu trong sân này.';
+
+    if (configuredCount === 1) {
+        var sourceSlot = configuredSlots[0].slot;
+        helperText = 'Slot mẫu trong sân: ' + sourceSlot.startTime + ' đến ' + sourceSlot.endTime + '.';
+    } else if (configuredCount > 1) {
+        helperText = 'Hiện có ' + configuredCount + ' slot đã lưu đồ thuê trong sân này.';
+    }
 
     return '' +
         '<div class="sbc-rental-court-actions">' +
-        '   <button type="button" class="btn btn-sm btn-outline-success" ' +
-        (applyTargets.length === 0 || isApplying ? 'disabled ' : '') +
+        '   <div class="sbc-rental-court-actions-note">' + escapeHtml(helperText) + '</div>' +
+        '   <button type="button" class="btn btn-sm btn-outline-success sbc-rental-court-btn" ' +
+        ((configuredCount === 0 || isApplying || rentalState.applyingAll || rentalState.applyingCourtId) ? 'disabled ' : '') +
         'onclick="applyCourtRental(' + Number(court.courtId) + ')">' +
         '       <i class="bi bi-copy me-1"></i>' + buttonLabel +
         '   </button>' +
@@ -276,31 +332,60 @@ function buildCourtRentalSummary(court) {
     var total = getCourtRentalTotal(court);
     return '' +
         '<div class="sbc-rental-court-summary">' +
-        '   <div class="sbc-rental-court-summary-title">Tong tien thue do</div>' +
+        '   <div class="sbc-rental-court-summary-title">Tổng tiền thuê đồ</div>' +
         '   <div class="sbc-rental-court-summary-total">' + formatMoney(total) + '</div>' +
         '</div>';
 }
 
-function getCourtApplyTargets(court) {
-    var targets = [];
-    var lastItems = null;
+function getConfiguredRentalSlots() {
+    return getConfiguredRentalSlotsByList(getAllSlotsInApplyOrder());
+}
 
-    (court.slots || []).forEach(function (slot) {
-        var items = rentalState.savedBySlot[slot.slotKey] || [];
-        if (items.length) {
-            lastItems = cloneRentalItems(items);
-            return;
-        }
+function getConfiguredRentalSlotsForCourt(court) {
+    return getConfiguredRentalSlotsByList((court && court.slots) || []);
+}
 
-        if (lastItems && lastItems.length) {
-            targets.push({
-                slot: slot,
-                items: cloneRentalItems(lastItems)
-            });
-        }
+function getConfiguredRentalSlotsByList(slots) {
+    return (slots || []).map(function (slot) {
+        return {
+            slot: slot,
+            items: cloneRentalItems(rentalState.savedBySlot[slot.slotKey] || [])
+        };
+    }).filter(function (entry) {
+        return entry.items.length > 0;
     });
+}
 
-    return targets;
+function getAllSlotsInApplyOrder() {
+    var orderedSlots = [];
+    (rentalState.courts || []).forEach(function (court) {
+        (court.slots || []).forEach(function (slot) {
+            orderedSlots.push(slot);
+        });
+    });
+    return orderedSlots;
+}
+
+function getApplyAllTargets(sourceEntry) {
+    return getApplyTargetsByList(sourceEntry, getAllSlotsInApplyOrder());
+}
+
+function getCourtApplyTargets(court, sourceEntry) {
+    return getApplyTargetsByList(sourceEntry, (court && court.slots) || []);
+}
+
+function getApplyTargetsByList(sourceEntry, slots) {
+    var sourceSlotKey = sourceEntry && sourceEntry.slot ? sourceEntry.slot.slotKey : '';
+    var sourceItems = cloneRentalItems(sourceEntry ? sourceEntry.items : []);
+
+    return (slots || []).filter(function (slot) {
+        return slot.slotKey !== sourceSlotKey;
+    }).map(function (slot) {
+        return {
+            slot: slot,
+            items: cloneRentalItems(sourceItems)
+        };
+    });
 }
 
 function getCourtRentalTotal(court) {
@@ -411,7 +496,7 @@ function renderRentalFeeSummary() {
     if (!rentalFeeSummary) return;
     var entries = getCourtRentalEntries();
     if (!entries.length) {
-        rentalFeeSummary.innerHTML = '<div class="text-muted">Chua co phi thue do.</div>';
+        rentalFeeSummary.innerHTML = '<div class="text-muted">Chưa có phí thuê đồ.</div>';
         if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(0);
         updateGrandSummary();
         return;
@@ -467,7 +552,8 @@ function loadRentalInventory() {
         '&courtId=' + encodeURIComponent(slot.courtId) +
         '&slotId=' + encodeURIComponent(slot.slotId) +
         '&page=' + encodeURIComponent(rentalState.page) +
-        '&q=' + encodeURIComponent(rentalState.keyword || '');
+        '&q=' + encodeURIComponent(rentalState.keyword || '') +
+        '&sort=' + encodeURIComponent(rentalState.sortBy || 'default');
 
     fetch(url, {
         method: 'GET',
@@ -478,11 +564,15 @@ function loadRentalInventory() {
         .then(function (json) {
             if (!rentalState.selectedSlot || rentalState.selectedSlot.slotKey !== slotKey) return;
             if (!json.success || !json.data) {
-                throw new Error(json.message || 'Khong the tai danh sach do thue.');
+                throw new Error(json.message || 'Không thể tải danh sách đồ thuê.');
             }
 
             rentalState.page = Number(json.data.page || rentalState.page || 1);
+            rentalState.pageSize = Number(json.data.pageSize || rentalState.pageSize || 5);
+            rentalState.totalItems = Number(json.data.total || 0);
             rentalState.items = json.data.items || [];
+            rentalState.suggestionItems = json.data.suggestionItems || [];
+            rentalState.sortBy = json.data.priceSort || rentalState.sortBy || 'default';
             rentalState.totalPages = Math.max(1, Number(json.data.totalPages || 1));
             rentalState.savedBySlot[slotKey] = normalizeSavedItems(json.data.selectedItems || []);
 
@@ -493,14 +583,22 @@ function loadRentalInventory() {
                 rentalState.draftBySlot[slotKey] = buildDraftMap(rentalState.savedBySlot[slotKey]);
             }
 
+            if (rentalSortSelect) {
+                rentalSortSelect.value = rentalState.sortBy;
+            }
+
             renderRentalSection();
             renderRentalInventoryTable();
+            refreshRentalSuggestions();
         })
         .catch(function (err) {
             console.error('Rental inventory load error:', err);
+            rentalState.totalItems = 0;
             rentalState.items = [];
+            rentalState.suggestionItems = [];
             rentalState.totalPages = 1;
-            renderRentalInventoryTable('Khong the tai danh sach do thue.');
+            renderRentalInventoryTable('Không thể tải danh sách đồ thuê.');
+            hideRentalSuggestionMenu();
         });
 }
 
@@ -519,15 +617,60 @@ function renderRentalInventoryTable(errorMessage) {
         if (rentalInventoryEmpty) rentalInventoryEmpty.classList.add('d-none');
         var slotKey = rentalState.selectedSlot ? rentalState.selectedSlot.slotKey : '';
         var draftMap = getDraftMap(slotKey);
-        var startIndex = ((rentalState.page - 1) * 5) + 1;
+        var startIndex = ((rentalState.page - 1) * rentalState.pageSize) + 1;
         rentalInventoryTableBody.innerHTML = items.map(function (item, idx) {
             return buildRentalRow(item, startIndex + idx, draftMap[String(item.inventoryId)]);
         }).join('');
     }
 
-    if (rentalPaginationInfo) rentalPaginationInfo.textContent = 'Trang ' + rentalState.page + ' / ' + rentalState.totalPages;
-    if (btnRentalPrev) btnRentalPrev.disabled = rentalState.page <= 1;
-    if (btnRentalNext) btnRentalNext.disabled = rentalState.page >= rentalState.totalPages;
+    renderRentalPagination();
+}
+
+function renderRentalPagination() {
+    if (rentalPaginationInfo) {
+        if (!rentalState.totalItems) {
+            rentalPaginationInfo.textContent = 'Chưa có dữ liệu đồ thuê.';
+        } else {
+            var fromItem = ((rentalState.page - 1) * rentalState.pageSize) + 1;
+            var toItem = Math.min(rentalState.totalItems, fromItem + rentalState.items.length - 1);
+            rentalPaginationInfo.textContent = 'Hiển thị ' + fromItem + ' - ' + toItem + ' / ' + rentalState.totalItems + ' đồ thuê';
+        }
+    }
+
+    if (!rentalPagination) return;
+    if (rentalState.totalPages <= 1) {
+        rentalPagination.innerHTML = '';
+        return;
+    }
+
+    var current = rentalState.page;
+    var total = rentalState.totalPages;
+    var html = '<nav><ul class="pagination justify-content-center align-items-center gap-2 compact-pagination mb-0">';
+
+    html += '<li class="page-item ' + (current === 1 ? 'disabled' : '') + '">';
+    html += current === 1
+        ? '<span class="page-link-static" aria-label="Trang trước"><i class="bi bi-chevron-left"></i></span>'
+        : '<button type="button" class="page-link" data-page="' + (current - 1) + '" aria-label="Trang trước"><i class="bi bi-chevron-left"></i></button>';
+    html += '</li>';
+
+    html += '<li class="page-item active"><span class="page-link-static">' + current + '</span></li>';
+
+    if (current + 1 < total) {
+        html += '<li class="page-item disabled"><span class="page-link-static pagination-ellipsis">...</span></li>';
+    }
+
+    if (current < total) {
+        html += '<li class="page-item"><button type="button" class="page-link" data-page="' + total + '">' + total + '</button></li>';
+    }
+
+    html += '<li class="page-item ' + (current === total ? 'disabled' : '') + '">';
+    html += current === total
+        ? '<span class="page-link-static" aria-label="Trang sau"><i class="bi bi-chevron-right"></i></span>'
+        : '<button type="button" class="page-link" data-page="' + (current + 1) + '" aria-label="Trang sau"><i class="bi bi-chevron-right"></i></button>';
+    html += '</li>';
+
+    html += '</ul></nav>';
+    rentalPagination.innerHTML = html;
 }
 
 function buildRentalRow(item, index, draftItem) {
@@ -542,9 +685,9 @@ function buildRentalRow(item, index, draftItem) {
         '   <td>' + escapeHtml(item.name || '') + '</td>' +
         '   <td>' + escapeHtml(item.brand || '') + '</td>' +
         '   <td>' + escapeHtml(item.description || '') + '</td>' +
-        '   <td>' + formatMoney(item.rentalPrice || 0) + '</td>' +
-        '   <td><div class="fw-semibold" id="rentalRemaining_' + inventoryId + '">' + Math.max(0, maxQty - currentQty) + '</div><div class="small text-muted">Toi da: ' + maxQty + '</div></td>' +
-        '   <td><input type="number" min="0" max="' + maxQty + '" value="' + currentQty + '" class="form-control form-control-sm js-rental-qty" data-inventory-id="' + inventoryId + '" data-max-qty="' + maxQty + '"><div class="small text-muted mt-1">Nhap 0 neu khong thue mon nay.</div></td>' +
+        '   <td><div class="fw-semibold">' + formatMoney(item.rentalPrice || 0) + '</div><div class="small text-muted">/30 phút</div></td>' +
+        '   <td><div class="fw-semibold" id="rentalRemaining_' + inventoryId + '">' + Math.max(0, maxQty - currentQty) + '</div><div class="small text-muted">Tối đa: ' + maxQty + '</div></td>' +
+        '   <td><input type="number" min="0" max="' + maxQty + '" value="' + currentQty + '" class="form-control form-control-sm js-rental-qty" data-inventory-id="' + inventoryId + '" data-max-qty="' + maxQty + '"><div class="small text-muted mt-1">Nhập 0 nếu không thuê món này.</div></td>' +
         '</tr>';
 }
 
@@ -615,7 +758,7 @@ async function requestSaveSlotRentalSchedule(slot, items) {
 
     var body = await res.json();
     if (!body.success) {
-        throw new Error(body.message || 'Khong the luu lich cho thue.');
+        throw new Error(body.message || 'Không thể lưu lịch đồ thuê.');
     }
 
     var slotKey = slot.slotKey;
@@ -632,19 +775,82 @@ async function saveRentalSchedule() {
 
     var originalHtml = btnRentalSave.innerHTML;
     btnRentalSave.disabled = true;
-    btnRentalSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Luu';
+    btnRentalSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Lưu';
 
     try {
         await requestSaveSlotRentalSchedule(slot, payloadItems);
         renderRentalSection();
         hideError();
+        hideRentalAlert();
         closeRentalModal();
     } catch (err) {
         console.error('Save rental schedule error:', err);
-        showError(err.message || 'Khong the luu lich cho thue.');
+        showError(err.message || 'Không thể lưu lịch đồ thuê.');
     } finally {
         btnRentalSave.disabled = false;
         btnRentalSave.innerHTML = originalHtml;
+    }
+}
+
+async function clearRentalSlot(slotKey, event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    var slot = findSlotByKey(slotKey);
+    if (!slot || rentalState.clearingSlotKey === slotKey) {
+        return;
+    }
+
+    rentalState.clearingSlotKey = slotKey;
+    renderRentalSection();
+
+    try {
+        await requestSaveSlotRentalSchedule(slot, []);
+        renderRentalSection();
+        hideRentalAlert();
+    } catch (err) {
+        console.error('Clear rental slot error:', err);
+        showRentalAlert(err.message || 'Không thể xóa đồ thuê của slot này.', 10000);
+    } finally {
+        rentalState.clearingSlotKey = null;
+        renderRentalSection();
+    }
+}
+
+async function applyAllRentalSlots() {
+    var configuredSlots = getConfiguredRentalSlots();
+    if (!configuredSlots.length) {
+        return;
+    }
+
+    if (configuredSlots.length !== 1) {
+        showRentalAlert('Chỉ áp dụng cho duy nhất 1 slot', 10000);
+        return;
+    }
+
+    var targets = getApplyAllTargets(configuredSlots[0]);
+    if (!targets.length) {
+        showRentalAlert('Không còn slot nào để áp dụng.', 10000);
+        return;
+    }
+
+    rentalState.applyingAll = true;
+    renderRentalSection();
+
+    try {
+        for (var i = 0; i < targets.length; i++) {
+            await requestSaveSlotRentalSchedule(targets[i].slot, targets[i].items);
+        }
+        renderRentalSection();
+        hideRentalAlert();
+    } catch (err) {
+        console.error('Apply rental to all courts error:', err);
+        showRentalAlert(err.message || 'Không thể áp dụng cho tất cả sân.', 10000);
+    } finally {
+        rentalState.applyingAll = false;
+        renderRentalSection();
     }
 }
 
@@ -652,9 +858,19 @@ async function applyCourtRental(courtId) {
     var court = findCourtById(courtId);
     if (!court) return;
 
-    var targets = getCourtApplyTargets(court);
+    var configuredSlots = getConfiguredRentalSlotsForCourt(court);
+    if (!configuredSlots.length) {
+        return;
+    }
+
+    if (configuredSlots.length !== 1) {
+        showRentalAlert('Chỉ áp dụng cho duy nhất 1 slot', 10000);
+        return;
+    }
+
+    var targets = getCourtApplyTargets(court, configuredSlots[0]);
     if (!targets.length) {
-        showError('San nay chua co slot mau de ap dung cho cac slot sau.');
+        showRentalAlert('Không còn slot nào để áp dụng trong sân này.', 10000);
         return;
     }
 
@@ -666,10 +882,10 @@ async function applyCourtRental(courtId) {
             await requestSaveSlotRentalSchedule(targets[i].slot, targets[i].items);
         }
         renderRentalSection();
-        hideError();
+        hideRentalAlert();
     } catch (err) {
-        console.error('Apply court rental error:', err);
-        showError(err.message || 'Khong the ap dung toan bo cho san nay.');
+        console.error('Apply rental for court error:', err);
+        showRentalAlert(err.message || 'Không thể áp dụng cho sân này.', 10000);
     } finally {
         rentalState.applyingCourtId = null;
         renderRentalSection();
@@ -682,12 +898,17 @@ function openRentalModal(slotKey) {
 
     rentalState.selectedSlot = slot;
     rentalState.page = 1;
+    rentalState.pageSize = 5;
     rentalState.keyword = '';
+    rentalState.totalItems = 0;
     rentalState.items = [];
+    rentalState.suggestionItems = [];
     rentalState.totalPages = 1;
 
     if (rentalSearchInput) rentalSearchInput.value = '';
-    if (rentalModalContext) rentalModalContext.textContent = slot.courtName + ' - ' + slot.startTime + ' den ' + slot.endTime;
+    if (rentalSortSelect) rentalSortSelect.value = rentalState.sortBy || 'default';
+    if (rentalModalContext) rentalModalContext.textContent = slot.courtName + ' - ' + slot.startTime + ' đến ' + slot.endTime;
+    hideRentalSuggestionMenu();
 
     loadRentalInventory();
     if (rentalModal) {
@@ -712,7 +933,9 @@ function closeRentalModal() {
 }
 
 window.openRentalModal = openRentalModal;
+window.clearRentalSlot = clearRentalSlot;
 window.changeRentalSlotPage = changeRentalSlotPage;
+window.applyAllRentalSlots = applyAllRentalSlots;
 window.applyCourtRental = applyCourtRental;
 
 function bindEvents() {
@@ -807,37 +1030,118 @@ function bindGuestPhoneEvents() {
     });
 }
 
+function normalizeSearchText(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function hideRentalSuggestionMenu() {
+    if (!rentalSuggestionMenu) return;
+    rentalSuggestionMenu.classList.remove('is-visible');
+    rentalSuggestionMenu.innerHTML = '';
+}
+
+function renderRentalSuggestionMenu(items) {
+    if (!rentalSuggestionMenu || !rentalSearchInput) return;
+    rentalSuggestionMenu.innerHTML = '';
+
+    if (!items.length) {
+        var emptyState = document.createElement('div');
+        emptyState.className = 'search-suggestion-empty';
+        emptyState.textContent = 'Không có gợi ý trong 50 dữ liệu đầu tiên. Bấm Tìm kiếm để tra toàn bộ.';
+        rentalSuggestionMenu.appendChild(emptyState);
+        rentalSuggestionMenu.classList.add('is-visible');
+        return;
+    }
+
+    items.forEach(function (item) {
+        var button = document.createElement('button');
+        var title = document.createElement('span');
+
+        button.type = 'button';
+        button.className = 'search-suggestion-item';
+        title.className = 'search-suggestion-title';
+        title.textContent = item.name || '';
+        button.appendChild(title);
+
+        if (item.brand || item.description) {
+            var meta = document.createElement('span');
+            meta.className = 'search-suggestion-meta';
+            meta.textContent = [item.brand, item.description].filter(Boolean).join(' - ');
+            button.appendChild(meta);
+        }
+
+        button.addEventListener('mousedown', function (event) {
+            event.preventDefault();
+            rentalSearchInput.value = item.name || '';
+            hideRentalSuggestionMenu();
+            rentalSearchInput.focus();
+        });
+
+        rentalSuggestionMenu.appendChild(button);
+    });
+
+    rentalSuggestionMenu.classList.add('is-visible');
+}
+
+function refreshRentalSuggestions() {
+    if (!rentalSearchInput || !rentalSuggestionMenu) return;
+
+    var keyword = normalizeSearchText(rentalSearchInput.value);
+    if (!keyword) {
+        hideRentalSuggestionMenu();
+        return;
+    }
+
+    var matchedItems = (rentalState.suggestionItems || []).filter(function (item) {
+        var joined = [item.name, item.brand, item.description].filter(Boolean).join(' ');
+        return normalizeSearchText(joined).includes(keyword);
+    });
+
+    renderRentalSuggestionMenu(matchedItems);
+}
+
 function bindRentalEvents() {
     if (btnRentalSearch) {
         btnRentalSearch.addEventListener('click', function () {
             rentalState.keyword = (rentalSearchInput ? rentalSearchInput.value : '').trim();
             rentalState.page = 1;
             loadRentalInventory();
+            hideRentalSuggestionMenu();
         });
     }
 
     if (rentalSearchInput) {
+        rentalSearchInput.addEventListener('input', refreshRentalSuggestions);
+        rentalSearchInput.addEventListener('focus', refreshRentalSuggestions);
         rentalSearchInput.addEventListener('keydown', function (event) {
             if (event.key !== 'Enter') return;
             event.preventDefault();
             rentalState.keyword = (rentalSearchInput.value || '').trim();
             rentalState.page = 1;
             loadRentalInventory();
+            hideRentalSuggestionMenu();
         });
     }
 
-    if (btnRentalPrev) {
-        btnRentalPrev.addEventListener('click', function () {
-            if (rentalState.page <= 1) return;
-            rentalState.page--;
+    if (rentalSortSelect) {
+        rentalSortSelect.addEventListener('change', function () {
+            rentalState.sortBy = this.value || 'default';
+            rentalState.page = 1;
             loadRentalInventory();
         });
     }
 
-    if (btnRentalNext) {
-        btnRentalNext.addEventListener('click', function () {
-            if (rentalState.page >= rentalState.totalPages) return;
-            rentalState.page++;
+    if (rentalPagination) {
+        rentalPagination.addEventListener('click', function (event) {
+            var pageButton = event.target.closest('[data-page]');
+            if (!pageButton) return;
+            var targetPage = Number(pageButton.getAttribute('data-page') || 0);
+            if (targetPage <= 0 || targetPage === rentalState.page) return;
+            rentalState.page = targetPage;
             loadRentalInventory();
         });
     }
@@ -855,6 +1159,12 @@ function bindRentalEvents() {
             saveRentalSchedule();
         });
     }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('.search-suggestion-wrap')) {
+            hideRentalSuggestionMenu();
+        }
+    });
 }
 
 function bindSubmitEvent() {
@@ -864,22 +1174,22 @@ function bindSubmitEvent() {
 
         if (customerType === 'ACCOUNT') {
             if (!selectedAccountId || !selectedAccountId.value) {
-                showError('Vui long tim va chon khach hang.');
+                showError('Vui lòng tìm và chọn khách hàng.');
                 return;
             }
         } else {
             if (!guestNameInput || !guestNameInput.value.trim()) {
-                showError('Vui long nhap ho ten khach.');
+                showError('Vui lòng nhập họ tên khách.');
                 if (guestNameInput) guestNameInput.focus();
                 return;
             }
             if (!guestPhoneInput || !guestPhoneInput.value.trim()) {
-                showError('Vui long nhap so dien thoai.');
+                showError('Vui lòng nhập số điện thoại.');
                 if (guestPhoneInput) guestPhoneInput.focus();
                 return;
             }
             if (!isValidPhone(guestPhoneInput.value)) {
-                showError('So dien thoai phai gom 10 chu so va bat dau bang 0.');
+                showError('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.');
                 guestPhoneInput.focus();
                 return;
             }
@@ -924,7 +1234,7 @@ function bindSubmitEvent() {
         };
 
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Dang tao booking...';
+        btnSubmit.innerHTML = '<span class="sbc-spinner"></span>Đang tạo booking...';
 
         try {
             var res = await fetch(CTX + '/api/staff/booking/create', {
@@ -946,7 +1256,7 @@ function bindSubmitEvent() {
                     }
                 }
 
-                showError(body.message || 'Dat san that bai.');
+                showError(body.message || 'Đặt sân thất bại.');
                 resetSubmitButton();
                 return;
             }
@@ -955,7 +1265,7 @@ function bindSubmitEvent() {
             window.location.href = CTX + '/staff/booking/detail/' + body.data.bookingId;
         } catch (err) {
             console.error('Create booking error:', err);
-            showError('Loi ket noi. Vui long thu lai.');
+            showError('Lỗi kết nối. Vui lòng thử lại.');
             resetSubmitButton();
         }
     });
@@ -966,7 +1276,7 @@ function renderSearchResults(customers) {
     searchDropdown.innerHTML = '';
 
     if (!customers.length) {
-        searchDropdown.innerHTML = '<div class="sbc-search-empty">Khong tim thay</div>';
+        searchDropdown.innerHTML = '<div class="sbc-search-empty">Không tìm thấy</div>';
         searchDropdown.classList.remove('d-none');
         return;
     }
@@ -1011,22 +1321,22 @@ function switchToAccountMode(matched) {
 }
 
 function confirmGuestPhoneMatched(matched) {
-    var message = 'So dien thoai nay da ton tai tren tai khoan CUSTOMER:\n' +
-        '- ' + (matched.fullName || 'Khong ro ten') + '\n' +
+    var message = 'Số điện thoại này đã tồn tại trên tài khoản CUSTOMER:\n' +
+        '- ' + (matched.fullName || 'Không rõ tên') + '\n' +
         '- ' + (matched.phone || '') + '\n\n' +
-        'He thong se chuyen sang luong khach co tai khoan. Tiep tuc?';
-    return uiConfirm(message, 'Trung so dien thoai');
+        'Hệ thống sẽ chuyển sang luồng khách có tài khoản. Tiếp tục?';
+    return uiConfirm(message, 'Trùng số điện thoại');
 }
 
 function resetSubmitButton() {
     if (!btnSubmit) return;
     btnSubmit.disabled = false;
-    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xac nhan dat san';
+    btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Xác nhận đặt sân';
 }
 
 function uiConfirm(message, title) {
     if (window.StaffDialog && typeof window.StaffDialog.confirm === 'function') {
-        return window.StaffDialog.confirm({ title: title || 'Xac nhan', message: message || '' });
+        return window.StaffDialog.confirm({ title: title || 'Xác nhận', message: message || '' });
     }
     return Promise.resolve(window.confirm(message || ''));
 }
@@ -1040,6 +1350,32 @@ function showError(message) {
 function hideError() {
     if (!formError) return;
     formError.classList.add('d-none');
+}
+
+function showRentalAlert(message, durationMs) {
+    if (!rentalActionNotice) return;
+    if (rentalActionTimer) {
+        clearTimeout(rentalActionTimer);
+        rentalActionTimer = null;
+    }
+    rentalActionNotice.textContent = message || '';
+    rentalActionNotice.classList.remove('d-none');
+
+    if (durationMs && durationMs > 0) {
+        rentalActionTimer = setTimeout(function () {
+            hideRentalAlert();
+        }, durationMs);
+    }
+}
+
+function hideRentalAlert() {
+    if (!rentalActionNotice) return;
+    if (rentalActionTimer) {
+        clearTimeout(rentalActionTimer);
+        rentalActionTimer = null;
+    }
+    rentalActionNotice.classList.add('d-none');
+    rentalActionNotice.textContent = '';
 }
 
 function isValidPhone(phone) {
@@ -1058,7 +1394,7 @@ function updatePhoneHint(digits) {
 
     phoneHint.classList.remove('d-none');
     if (digits.length < 10) {
-        phoneHint.textContent = 'Con thieu ' + (10 - digits.length) + ' so.';
+        phoneHint.textContent = 'Còn thiếu ' + (10 - digits.length) + ' số.';
         phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
         guestPhoneInput.classList.remove('sbc-input-valid');
         guestPhoneInput.classList.add('sbc-input-error');
@@ -1066,14 +1402,14 @@ function updatePhoneHint(digits) {
     }
 
     if (digits.length === 10 && digits.charAt(0) === '0') {
-        phoneHint.textContent = 'So dien thoai hop le.';
+        phoneHint.textContent = 'Số điện thoại hợp lệ.';
         phoneHint.className = 'sbc-phone-hint sbc-hint-ok';
         guestPhoneInput.classList.remove('sbc-input-error');
         guestPhoneInput.classList.add('sbc-input-valid');
         return;
     }
 
-    phoneHint.textContent = 'So dien thoai phai bat dau bang 0.';
+    phoneHint.textContent = 'Số điện thoại phải bắt đầu bằng 0.';
     phoneHint.className = 'sbc-phone-hint sbc-hint-warn';
     guestPhoneInput.classList.remove('sbc-input-valid');
     guestPhoneInput.classList.add('sbc-input-error');
