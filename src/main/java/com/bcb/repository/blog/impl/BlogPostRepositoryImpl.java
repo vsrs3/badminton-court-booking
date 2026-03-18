@@ -16,10 +16,10 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
-            "FROM BlogPost p " +
-            "JOIN Account a ON a.account_id = p.author_account_id " +
-            "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
+                "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+                        "FROM BlogPost p " +
+                        "JOIN Account a ON a.account_id = p.author_account_id " +
+                        "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
         );
 
         List<Object> params = new ArrayList<>();
@@ -35,7 +35,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public int countPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
+                "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
         );
         List<Object> params = new ArrayList<>();
         applyKeyword(sql, params, filter);
@@ -51,10 +51,10 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
-            "FROM BlogPost p " +
-            "JOIN Account a ON a.account_id = p.author_account_id " +
-            "WHERE p.is_deleted = 0"
+                "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+                        "FROM BlogPost p " +
+                        "JOIN Account a ON a.account_id = p.author_account_id " +
+                        "WHERE p.is_deleted = 0"
         );
 
         List<Object> params = new ArrayList<>();
@@ -76,7 +76,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public int countManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0"
+                "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0"
         );
         List<Object> params = new ArrayList<>();
         applyKeyword(sql, params, filter);
@@ -97,8 +97,8 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
 
     @Override
     public int insert(BlogPost post) {
-        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, thumbnail_path, status, published_at, created_at, is_deleted) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), 0)";
+        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, status, published_at, created_at, is_deleted) " +
+                "VALUES (?, ?, ?, ?, ?, ?, GETDATE(), 0)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -106,12 +106,11 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
             ps.setString(2, post.getTitle());
             if (post.getSummary() != null) ps.setString(3, post.getSummary()); else ps.setNull(3, Types.NVARCHAR);
             ps.setString(4, post.getContent());
-            if (post.getThumbnailPath() != null) ps.setString(5, post.getThumbnailPath()); else ps.setNull(5, Types.NVARCHAR);
-            ps.setString(6, post.getStatus());
+            ps.setString(5, post.getStatus());
             if (post.getPublishedAt() != null) {
-                ps.setTimestamp(7, Timestamp.valueOf(post.getPublishedAt()));
+                ps.setTimestamp(6, Timestamp.valueOf(post.getPublishedAt()));
             } else {
-                ps.setNull(7, Types.TIMESTAMP);
+                ps.setNull(6, Types.TIMESTAMP);
             }
             ps.executeUpdate();
 
@@ -126,22 +125,21 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
 
     @Override
     public int update(BlogPost post) {
-        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, thumbnail_path=?, status=?, published_at=?, updated_at=GETDATE() " +
-                     "WHERE post_id=? AND is_deleted=0";
+        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, status=?, published_at=?, updated_at=GETDATE() " +
+                "WHERE post_id=? AND is_deleted=0";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, post.getTitle());
             if (post.getSummary() != null) ps.setString(2, post.getSummary()); else ps.setNull(2, Types.NVARCHAR);
             ps.setString(3, post.getContent());
-            if (post.getThumbnailPath() != null) ps.setString(4, post.getThumbnailPath()); else ps.setNull(4, Types.NVARCHAR);
-            ps.setString(5, post.getStatus());
+            ps.setString(4, post.getStatus());
             if (post.getPublishedAt() != null) {
-                ps.setTimestamp(6, Timestamp.valueOf(post.getPublishedAt()));
+                ps.setTimestamp(5, Timestamp.valueOf(post.getPublishedAt()));
             } else {
-                ps.setNull(6, Types.TIMESTAMP);
+                ps.setNull(5, Types.TIMESTAMP);
             }
-            ps.setInt(7, post.getPostId());
+            ps.setInt(6, post.getPostId());
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update blog post", e);
@@ -172,8 +170,8 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     private void applySorting(StringBuilder sql, BlogPostFilterDTO filter, boolean isPublic) {
         Set<String> allowed = new HashSet<>(Arrays.asList("title", "created_at", "published_at"));
         String sortBy = (filter.getSortBy() != null && allowed.contains(filter.getSortBy()))
-            ? filter.getSortBy()
-            : (isPublic ? "published_at" : "created_at");
+                ? filter.getSortBy()
+                : (isPublic ? "published_at" : "created_at");
 
         String dir = "ASC".equalsIgnoreCase(filter.getSortDir()) ? "ASC" : "DESC";
         sql.append(" ORDER BY p.").append(sortBy).append(" ").append(dir);
@@ -192,7 +190,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
                     dto.setPostId(rs.getInt("post_id"));
                     dto.setTitle(rs.getString("title"));
                     dto.setSummary(rs.getString("summary"));
-                    dto.setThumbnailPath(rs.getString("thumbnail_path"));
                     dto.setStatus(rs.getString("status"));
                     Timestamp pub = rs.getTimestamp("published_at");
                     if (pub != null) dto.setPublishedAt(pub.toLocalDateTime());
@@ -243,7 +240,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
         p.setTitle(rs.getString("title"));
         p.setSummary(rs.getString("summary"));
         p.setContent(rs.getString("content"));
-        p.setThumbnailPath(rs.getString("thumbnail_path"));
         p.setStatus(rs.getString("status"));
 
         Timestamp publishedAt = rs.getTimestamp("published_at");

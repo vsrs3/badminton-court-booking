@@ -831,32 +831,43 @@ GO
  -- ============================================================
 -- 13. Blog
 -- ============================================================
- SET IDENTITY_INSERT [dbo].[BlogPost] ON
-    INSERT [dbo].[BlogPost] ([post_id], [author_account_id], [title], [summary], [content], [thumbnail_path], [status], [published_at], [created_at], [updated_at], [is_deleted])
-    VALUES
-    (1, 1, N'Chào mừng đến với Cộng đồng', N'Bài viết demo để test danh sách/chi tiết.', N'Nội dung demo\n\n- Có comment\n- Có reaction\n- Có kiểm duyệt', NULL, N'PUBLISHED', CAST(N'2026-03-13T12:36:20.010' AS DateTime), CAST(N'2026-03-15T12:36:20.010' AS DateTime), NULL, 0),
-    (3, 6, N'cách bảo quản đồ', N'Rat gap can chu y', N'Việc xây dựng nội dung cho blog ("blog nội dung") là yếu tố cốt lõi...', N'https://trungtamthanhcong.net/wp-content/uploads/2015/07/bien_nguy_hiem.jpg', N'PUBLISHED', CAST(N'2026-03-15T13:14:17.623' AS DateTime), CAST(N'2026-03-15T13:13:26.860' AS DateTime), CAST(N'2026-03-15T13:14:17.643' AS DateTime), 0)
--- ... (các bài khác bạn có thể thêm tiếp nếu cần)
-    SET IDENTITY_INSERT [dbo].[BlogPost] OFF
-    GO
+-- 13. Blog
+-- ============================================================
+ USE [badminton_court_booking]
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogComment] ON
-    INSERT [dbo].[BlogComment] ([comment_id], [post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
-    VALUES
+-- BlogPost
+SET IDENTITY_INSERT [dbo].[BlogPost] ON
+INSERT [dbo].[BlogPost]
+    ([post_id], [author_account_id], [title], [summary], [content], [status], [published_at], [created_at], [updated_at], [is_deleted])
+VALUES
+    (1, 1, N'Chào mừng đến với Cộng đồng', N'Bài viết demo để test danh sách/chi tiết.',
+     N'Nội dung demo\n\n- Có comment\n- Có reaction\n- Có kiểm duyệt',
+     N'PUBLISHED', CAST(N'2026-03-13T12:36:20.010' AS DateTime), CAST(N'2026-03-15T12:36:20.010' AS DateTime), NULL, 0),
+    (2, 6, N'Cách bảo quản đồ', N'Rat gap can chu y',
+     N'Việc xây dựng nội dung cho blog ("blog nội dung") là yếu tố cốt lõi...',
+     N'PUBLISHED', CAST(N'2026-03-15T13:14:17.623' AS DateTime), CAST(N'2026-03-15T13:13:26.860' AS DateTime), CAST(N'2026-03-15T13:14:17.643' AS DateTime), 0)
+SET IDENTITY_INSERT [dbo].[BlogPost] OFF
+GO
+
+-- BlogComment
+SET IDENTITY_INSERT [dbo].[BlogComment] ON
+INSERT [dbo].[BlogComment]
+    ([comment_id], [post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
+VALUES
     (1, 1, 3, N'Bài viết hay quá!', N'APPROVED', 1, CAST(N'2026-03-15T12:36:20.013' AS DateTime), CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
     (2, 1, 3, N'Khi nào có thêm bài mới ạ?', N'PENDING', NULL, NULL, CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
-    (4, 3, 13, N'minh thay bai viet rat hay', N'APPROVED', 6, CAST(N'2026-03-15T17:27:42.530' AS DateTime), CAST(N'2026-03-15T13:15:56.497' AS DateTime), CAST(N'2026-03-15T17:28:14.550' AS DateTime), 1)
--- ... (các comment khác)
-    SET IDENTITY_INSERT [dbo].[BlogComment] OFF
-    GO
+    (3, 2, 6, N'Mình thấy bài viết rất hay', N'APPROVED', 6, CAST(N'2026-03-15T17:27:42.530' AS DateTime), CAST(N'2026-03-15T13:15:56.497' AS DateTime), CAST(N'2026-03-15T17:28:14.550' AS DateTime), 0)
+SET IDENTITY_INSERT [dbo].[BlogComment] OFF
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogReaction] ON
-    INSERT [dbo].[BlogReaction] ([reaction_id], [post_id], [account_id], [emoji_code], [created_at])
-    VALUES
+-- BlogReaction
+SET IDENTITY_INSERT [dbo].[BlogReaction] ON
+INSERT [dbo].[BlogReaction]
+    ([reaction_id], [post_id], [account_id], [emoji_code], [created_at])
+VALUES
     (1, 1, 3, N'LIKE', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
     (2, 1, 1, N'HEART', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
-    (4, 3, 6, N'LIKE', CAST(N'2026-03-15T13:15:10.287' AS DateTime)),
-    (13, 3, 13, N'SAD', CAST(N'2026-03-15T17:32:09.753' AS DateTime))
--- ... (các reaction khác)
-    SET IDENTITY_INSERT [dbo].[BlogReaction] OFF
-    GO
+    (3, 2, 6, N'LIKE', CAST(N'2026-03-15T13:15:10.287' AS DateTime))
+SET IDENTITY_INSERT [dbo].[BlogReaction] OFF
+GO
