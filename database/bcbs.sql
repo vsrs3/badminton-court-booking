@@ -547,7 +547,6 @@ CREATE TABLE Payment (
     expire_at DATETIME NULL,                  -- thời hạn thanh toán
     created_at DATETIME DEFAULT GETDATE(),    -- thời điểm tạo payment
 
-    gateway VARCHAR(20) DEFAULT 'VNPAY',
     transaction_code NVARCHAR(100),
     paid_amount DECIMAL(12,2),
     payment_time DATETIME,
