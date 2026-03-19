@@ -17,7 +17,7 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
 
     @Override
     public List<StaffRentalInventoryItemDTO> findRentalItemsForSlot(
-            int facilityId, LocalDate bookingDate, int courtId, int slotId, String keyword, int page, int pageSize)
+            int facilityId, LocalDate bookingDate, int courtId, int slotId, String keyword, String priceSort, int page, int pageSize)
             throws Exception {
 
         String sql = """
@@ -61,7 +61,7 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
                         OR i.brand LIKE ?
                         OR i.description LIKE ?
                   )
-                ORDER BY i.name ASC
+                """ + resolveRentalOrderBy(priceSort) + """
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 """;
 
@@ -295,5 +295,17 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
 
     private String normalizeKeyword(String keyword) {
         return (keyword == null || keyword.trim().isEmpty()) ? null : "%" + keyword.trim() + "%";
+    }
+
+    private String resolveRentalOrderBy(String priceSort) {
+        if ("price_desc".equals(priceSort)) {
+            return " ORDER BY i.rental_price DESC, i.inventory_id ASC ";
+        }
+
+        if ("price_asc".equals(priceSort)) {
+            return " ORDER BY i.rental_price ASC, i.inventory_id ASC ";
+        }
+
+        return " ORDER BY i.inventory_id ASC ";
     }
 }

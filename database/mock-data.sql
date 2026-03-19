@@ -337,9 +337,28 @@ IF NOT EXISTS (SELECT 1 FROM Inventory WHERE name = N'Vợt Yonex Astrox 88D')
 BEGIN
 INSERT INTO Inventory (name, brand, description, rental_price, is_active)
 VALUES
-    (N'Vợt Yonex Astrox 88D', 'Yonex', N'Vợt tấn công chuyên nghiệp', 50000, 1),
-    (N'Vợt Lining Windstorm 72', 'Lining', N'Vợt nhẹ, phù hợp phòng thủ', 40000, 1),
-    (N'Vợt Victor Thruster K 9900', 'Victor', N'Vợt cao cấp', 60000, 1);
+    (N'Vợt Yonex Astrox 88D',           N'Yonex',      N'Vợt tấn công chuyên nghiệp',                        50000, 1),
+    (N'Vợt Lining Windstorm 72',        N'Lining',     N'Vợt nhẹ, phù hợp lối chơi phòng thủ',               40000, 1),
+    (N'Vợt Victor Thruster K 9900',     N'Victor',     N'Vợt cao cấp, thiên về sức mạnh',                    60000, 1),
+    (N'Vợt Yonex Nanoflare 700',        N'Yonex',      N'Vợt nhẹ, hỗ trợ phản tạt nhanh',                    55000, 1),
+    (N'Vợt Yonex Arcsaber 11 Pro',      N'Yonex',      N'Vợt cân bằng, kiểm soát tốt',                       65000, 1),
+    (N'Vợt Lining Aeronaut 9000C',      N'Lining',     N'Vợt thiên công, phù hợp người chơi mạnh',           70000, 1),
+    (N'Vợt Lining Tectonic 7',          N'Lining',     N'Vợt trợ lực, dễ sử dụng cho người mới',             45000, 1),
+    (N'Vợt Victor Auraspeed 90K',       N'Victor',     N'Vợt tốc độ cao, phản xạ tốt',                       68000, 1),
+    (N'Vợt Victor DriveX 10',           N'Victor',     N'Vợt công thủ toàn diện',                             60000, 1),
+    (N'Vợt Mizuno Fortius 11 Quick',    N'Mizuno',     N'Vợt linh hoạt, dễ xoay trở',                         58000, 1),
+    (N'Vợt Apacs Z-Ziggler',            N'Apacs',      N'Vợt giá tốt, phù hợp người chơi phong trào',        35000, 1),
+    (N'Ống cầu Yonex AS-30',            N'Yonex',      N'Ống cầu lông 12 quả, độ bền cao',                    30000, 1),
+    (N'Ống cầu Lining A+90',            N'Lining',     N'Cầu lông ổn định, dùng cho sân trong nhà',          28000, 1),
+    (N'Quấn cán Yonex AC102EX',         N'Yonex',      N'Quấn cán thấm hút mồ hôi tốt',                       10000, 1),
+    (N'Quấn cán Victor GR233',          N'Victor',     N'Quấn cán mềm, bám tay tốt',                           9000, 1),
+    (N'Giày Yonex Power Cushion 65Z',   N'Yonex',      N'Giày cầu lông cao cấp, êm và bám sân tốt',          80000, 1),
+    (N'Giày Lining AYTS020',            N'Lining',     N'Giày nhẹ, phù hợp tập luyện và thi đấu',            65000, 1),
+    (N'Túi đựng vợt Yonex Pro',         N'Yonex',      N'Túi đựng 2 đến 3 cây vợt và phụ kiện',              25000, 1),
+    (N'Băng bảo vệ đầu gối',            N'Kawasaki',   N'Phụ kiện hỗ trợ bảo vệ đầu gối khi vận động',       15000, 1),
+    (N'Bình nước thể thao 750ml',       N'Lock&Lock',  N'Bình nước tiện dụng cho người chơi thể thao',       12000, 1);
+
+
 END
 GO
 
@@ -518,7 +537,6 @@ VALUES (@bk3, 300000, 300000, 100, 'PAID');
 -- ============================================================
 INSERT INTO Booking (facility_id, booking_date, account_id, booking_status, created_at)
 VALUES (1, @twoDaysAgo, @cust1Id, 'CANCELLED', DATEADD(DAY, -3, GETDATE()));
-
 DECLARE @bk4 INT = SCOPE_IDENTITY();
 
 INSERT INTO BookingSlot (booking_id, court_id, slot_id, price, slot_status)
