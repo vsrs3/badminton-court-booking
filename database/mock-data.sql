@@ -849,32 +849,39 @@ GO
  -- ============================================================
 -- 13. Blog
 -- ============================================================
- SET IDENTITY_INSERT [dbo].[BlogPost] ON
-    INSERT [dbo].[BlogPost] ([post_id], [author_account_id], [title], [summary], [content], [thumbnail_path], [status], [published_at], [created_at], [updated_at], [is_deleted])
-    VALUES
-    (1, 1, N'Chào mừng đến với Cộng đồng', N'Bài viết demo để test danh sách/chi tiết.', N'Nội dung demo\n\n- Có comment\n- Có reaction\n- Có kiểm duyệt', NULL, N'PUBLISHED', CAST(N'2026-03-13T12:36:20.010' AS DateTime), CAST(N'2026-03-15T12:36:20.010' AS DateTime), NULL, 0),
-    (3, 6, N'cách bảo quản đồ', N'Rat gap can chu y', N'Việc xây dựng nội dung cho blog ("blog nội dung") là yếu tố cốt lõi...', N'https://trungtamthanhcong.net/wp-content/uploads/2015/07/bien_nguy_hiem.jpg', N'PUBLISHED', CAST(N'2026-03-15T13:14:17.623' AS DateTime), CAST(N'2026-03-15T13:13:26.860' AS DateTime), CAST(N'2026-03-15T13:14:17.643' AS DateTime), 0)
--- ... (các bài khác bạn có thể thêm tiếp nếu cần)
-    SET IDENTITY_INSERT [dbo].[BlogPost] OFF
-    GO
+ USE [badminton_court_booking];
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogComment] ON
-    INSERT [dbo].[BlogComment] ([comment_id], [post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
-    VALUES
-    (1, 1, 3, N'Bài viết hay quá!', N'APPROVED', 1, CAST(N'2026-03-15T12:36:20.013' AS DateTime), CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
-    (2, 1, 3, N'Khi nào có thêm bài mới ạ?', N'PENDING', NULL, NULL, CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
-    (4, 3, 13, N'minh thay bai viet rat hay', N'APPROVED', 6, CAST(N'2026-03-15T17:27:42.530' AS DateTime), CAST(N'2026-03-15T13:15:56.497' AS DateTime), CAST(N'2026-03-15T17:28:14.550' AS DateTime), 1)
--- ... (các comment khác)
-    SET IDENTITY_INSERT [dbo].[BlogComment] OFF
-    GO
+-- BlogPost
+INSERT INTO [dbo].[BlogPost]
+    ([author_account_id], [title], [summary], [content], [status], [published_at], [created_at], [updated_at], [is_deleted])
+VALUES
+    (1, N'Mẹo đặt sân nhanh giờ cao điểm', N'Cách tối ưu lịch đặt sân vào cuối tuần.', N'Nội dung bài viết 1...', 'PUBLISHED', DATEADD(DAY, -10, GETDATE()), GETDATE(), NULL, 0),
+    (2, N'Hướng dẫn chọn vợt phù hợp',      N'Chọn vợt theo trình độ và lối chơi.',  N'Nội dung bài viết 2...', 'PUBLISHED', DATEADD(DAY, -7,  GETDATE()), GETDATE(), NULL, 0),
+    (3, N'Quy định sử dụng sân',            N'Một số lưu ý quan trọng khi sử dụng sân.', N'Nội dung bài viết 3...', 'DRAFT',     NULL,                      GETDATE(), NULL, 0),
+    (4, N'Cách khởi động đúng chuẩn',       N'Giảm chấn thương khi chơi cầu lông.',  N'Nội dung bài viết 4...', 'PUBLISHED', DATEADD(DAY, -3,  GETDATE()), GETDATE(), NULL, 0),
+    (5, N'Ưu đãi tháng này',                N'Tổng hợp ưu đãi cho khách hàng thân thiết.', N'Nội dung bài viết 5...', 'PUBLISHED', DATEADD(DAY, -1, GETDATE()), GETDATE(), NULL, 0);
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogReaction] ON
-    INSERT [dbo].[BlogReaction] ([reaction_id], [post_id], [account_id], [emoji_code], [created_at])
-    VALUES
-    (1, 1, 3, N'LIKE', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
-    (2, 1, 1, N'HEART', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
-    (4, 3, 6, N'LIKE', CAST(N'2026-03-15T13:15:10.287' AS DateTime)),
-    (13, 3, 13, N'SAD', CAST(N'2026-03-15T17:32:09.753' AS DateTime))
--- ... (các reaction khác)
-    SET IDENTITY_INSERT [dbo].[BlogReaction] OFF
-    GO
+-- BlogComment
+INSERT INTO [dbo].[BlogComment]
+    ([post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
+VALUES
+    (1, 2, N'Bài viết rất hữu ích, cảm ơn!',          'APPROVED', 4, DATEADD(HOUR, -6, GETDATE()), GETDATE(), NULL, 0),
+    (1, 3, N'Mình áp dụng và thấy đặt sân nhanh hơn.', 'APPROVED', 4, DATEADD(HOUR, -5, GETDATE()), GETDATE(), NULL, 0),
+    (2, 1, N'Có thể gợi ý thêm vợt cho người mới?',   'PENDING',  NULL, NULL,                      GETDATE(), NULL, 0),
+    (4, 5, N'Khởi động kỹ giúp mình đỡ mỏi hẳn.',     'APPROVED', 4, DATEADD(HOUR, -2, GETDATE()), GETDATE(), NULL, 0),
+    (5, 2, N'Ưu đãi hấp dẫn quá!',                    'REJECTED', 4, DATEADD(HOUR, -1, GETDATE()), GETDATE(), NULL, 0);
+GO
+
+-- BlogReaction
+INSERT INTO [dbo].[BlogReaction]
+    ([post_id], [account_id], [emoji_code], [created_at])
+VALUES
+    (1, 2, 'LIKE',  GETDATE()),
+    (1, 3, 'HEART', GETDATE()),
+    (2, 1, 'WOW',   GETDATE()),
+    (2, 4, 'LIKE',  GETDATE()),
+    (4, 5, 'LAUGH', GETDATE()),
+    (5, 2, 'HEART', GETDATE());
+GO
