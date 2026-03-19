@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface StaffRentalScheduleRepository {
     List<StaffRentalInventoryItemDTO> findRentalItemsForSlot(
-            int facilityId, LocalDate bookingDate, int courtId, int slotId, String keyword, int page, int pageSize)
+            int facilityId, LocalDate bookingDate, int courtId, int slotId, String keyword, String priceSort, int page, int pageSize)
             throws Exception;
 
     int countRentalItems(int facilityId, String keyword) throws Exception;
