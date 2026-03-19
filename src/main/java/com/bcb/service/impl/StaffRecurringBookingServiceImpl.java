@@ -96,7 +96,9 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     return out(400, error(buildPastSessionMessage(plan.date)));
                 }
                 Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
-                boolean conflict = isConflict(booked, courtId, slotIds);
+                Map<Integer, List<Integer>> blocked = repository.findBlockedSlotsByException(conn, facilityId, plan.date);
+                Map<Integer, List<Integer>> occupied = mergeBookedAndBlocked(booked, blocked);
+                boolean conflict = isConflict(occupied, courtId, slotIds);
 
                 BigDecimal sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
 
@@ -113,7 +115,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     continue;
                 }
 
-                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, effectivePlan, booked, ctx);
+                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, effectivePlan, occupied, ctx);
                 sessions.add(SessionView.conflict(plan.date, courtId, slotIds, sessionAmount));
                 conflicts.add(new ConflictView(effectivePlan, suggestions));
             }
@@ -201,6 +203,8 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 for (DatePlan plan : datePlans) {
                     Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
+                    Map<Integer, List<Integer>> blocked = repository.findBlockedSlotsByException(conn, facilityId, plan.date);
+                    Map<Integer, List<Integer>> occupied = mergeBookedAndBlocked(booked, blocked);
 
                     SelectedSession override = overrides.get(plan.date);
                     int courtId = override != null ? override.courtId : plan.courtId;
@@ -211,7 +215,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                         return out(400, error(buildPastSessionMessage(plan.date)));
                     }
 
-                    boolean conflict = isConflict(booked, courtId, slotIds);
+                    boolean conflict = isConflict(occupied, courtId, slotIds);
                     if (conflict) {
                         if ("SKIP".equals(policy)) {
                             skippedDates.add(plan.date.toString());
@@ -224,6 +228,26 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                         }
                         conn.rollback();
                         return out(409, error("Phiên thay thế ngày " + plan.date + " vẫn bị trùng lịch."));
+                    }
+
+                    boolean blockedNow = false;
+                    for (Integer slotId : slotIds) {
+                        if (repository.isSlotBlockedByException(conn, facilityId, courtId, plan.date, slotId)) {
+                            blockedNow = true;
+                            break;
+                        }
+                    }
+                    if (blockedNow) {
+                        if ("SKIP".equals(policy)) {
+                            skippedDates.add(plan.date.toString());
+                            repository.insertBookingSkip(conn, recurringId, plan.date, "TrĂ¹ng lá»‹ch");
+                            continue;
+                        }
+                        conn.rollback();
+                        if (override == null) {
+                            return out(409, error("NgĂ y " + plan.date + " bá»‹ trĂ¹ng lá»‹ch. Vui lĂ²ng chá»n phiĂªn thay tháº¿."));
+                        }
+                        return out(409, error("PhiĂªn thay tháº¿ ngĂ y " + plan.date + " váº«n bá»‹ trĂ¹ng lá»‹ch."));
                     }
 
                     BigDecimal sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
@@ -484,6 +508,27 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             if (bookedSlots.contains(slotId)) return true;
         }
         return false;
+    }
+
+    private Map<Integer, List<Integer>> mergeBookedAndBlocked(Map<Integer, List<Integer>> booked,
+                                                              Map<Integer, List<Integer>> blocked) {
+        Map<Integer, List<Integer>> merged = new LinkedHashMap<>();
+        if (booked != null) {
+            for (Map.Entry<Integer, List<Integer>> entry : booked.entrySet()) {
+                merged.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+            }
+        }
+        if (blocked != null) {
+            for (Map.Entry<Integer, List<Integer>> entry : blocked.entrySet()) {
+                List<Integer> list = merged.computeIfAbsent(entry.getKey(), k -> new ArrayList<>());
+                for (Integer slotId : entry.getValue()) {
+                    if (!list.contains(slotId)) {
+                        list.add(slotId);
+                    }
+                }
+            }
+        }
+        return merged;
     }
 
     private List<SuggestionView> buildSuggestions(Connection conn, int facilityId, DatePlan plan,
