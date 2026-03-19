@@ -33,4 +33,4 @@ build/
 ### Mac OS ###
 .DS_Store
 
-/src/main/resources/chatbot.properties
+/src/main/resources/*.properties
