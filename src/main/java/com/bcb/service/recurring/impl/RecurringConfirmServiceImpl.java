@@ -158,6 +158,9 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             }
         }
 
+        // Re-check at confirm time to catch newly-booked or schedule-exception-blocked slots.
+        validateRuntimeAvailability(preview.getFacilityId(), runtimeSessionMap);
+
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<SessionSlotPrice> slotPrices = new ArrayList<>();
         for (RuntimeSession session : runtimeSessionMap.values()) {
@@ -406,6 +409,53 @@ public class RecurringConfirmServiceImpl implements RecurringConfirmService {
             parsed.add(skipDate);
         }
         return parsed;
+    }
+
+    private void validateRuntimeAvailability(int facilityId, Map<String, RuntimeSession> runtimeSessionMap) {
+        if (runtimeSessionMap == null || runtimeSessionMap.isEmpty()) {
+            return;
+        }
+
+        Map<LocalDate, List<RuntimeSession>> sessionsByDate = runtimeSessionMap.values().stream()
+                .collect(Collectors.groupingBy(s -> s.sessionDate));
+
+        for (Map.Entry<LocalDate, List<RuntimeSession>> entry : sessionsByDate.entrySet()) {
+            LocalDate bookingDate = entry.getKey();
+            Map<Integer, List<Integer>> unavailableByCourt = courtSlotBookingRepo.findUnavailableSlots(facilityId, bookingDate);
+
+            for (RuntimeSession session : entry.getValue()) {
+                List<Integer> conflictSlots = extractConflictSlots(unavailableByCourt, session.courtId, session.slotIds);
+                if (!conflictSlots.isEmpty()) {
+                    throw new RecurringConflictException(
+                            "SLOT_CONFLICT",
+                            "Khung giờ không còn khả dụng: courtId=" + session.courtId
+                                    + ", slots=" + conflictSlots
+                                    + ", date=" + bookingDate
+                    );
+                }
+            }
+        }
+    }
+
+    private List<Integer> extractConflictSlots(Map<Integer, List<Integer>> unavailableByCourt,
+                                               Integer courtId,
+                                               List<Integer> requestedSlots) {
+        if (courtId == null || requestedSlots == null || requestedSlots.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Integer> unavailable = unavailableByCourt.get(courtId);
+        if (unavailable == null || unavailable.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Set<Integer> unavailableSet = new HashSet<>(unavailable);
+        List<Integer> conflict = new ArrayList<>();
+        for (Integer slotId : requestedSlots) {
+            if (unavailableSet.contains(slotId)) {
+                conflict.add(slotId);
+            }
+        }
+        return conflict;
     }
 
     private void validateMinimumSessions(List<RecurringPreviewSessionDTO> previewSessions,
