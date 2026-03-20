@@ -21,13 +21,15 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
     /** {@inheritDoc} */
     @Override
     public List<MyBookingListDTO> findMyBookings(int accountId, String status,
+                                                 String bookingType,
                                                  LocalDate dateFrom, LocalDate dateTo,
                                                  int offset, int limit) {
-        return findMyBookingsInternal(accountId, status, dateFrom, dateTo,
+        return findMyBookingsInternal(accountId, status, bookingType, dateFrom, dateTo,
                 Math.max(0, offset), Math.max(1, limit));
     }
 
     private List<MyBookingListDTO> findMyBookingsInternal(int accountId, String status,
+                                                           String bookingType,
                                                            LocalDate dateFrom, LocalDate dateTo,
                                                            Integer offset, Integer limit) {
         StringBuilder sql = new StringBuilder();
@@ -72,6 +74,13 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
         if (status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status)) {
             sql.append("AND b.booking_status = ? ");
             params.add(status.toUpperCase());
+        }
+        if (bookingType != null && !bookingType.isEmpty() && !"all".equalsIgnoreCase(bookingType)) {
+            if ("SINGLE".equalsIgnoreCase(bookingType)) {
+                sql.append("AND b.recurring_id IS NULL ");
+            } else if ("RECURRING".equalsIgnoreCase(bookingType)) {
+                sql.append("AND b.recurring_id IS NOT NULL ");
+            }
         }
         if (dateFrom != null) {
             sql.append("AND ((b.recurring_id IS NULL AND b.booking_date >= ?) ")
