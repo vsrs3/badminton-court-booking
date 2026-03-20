@@ -22,9 +22,19 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
     private final StaffRentalScheduleRepository repository = new StaffRentalScheduleRepositoryImpl();
 
     @Override
-    public String getSlotInventoryJson(int facilityId, String bookingDate, int courtId, int slotId, String keyword, int page, int pageSize)
-            throws Exception {
+    public String getSlotInventoryJson(
+            int facilityId,
+            String bookingDate,
+            int courtId,
+            int slotId,
+            String keyword,
+            String priceSort,
+            int page,
+            int pageSize
+    ) throws Exception {
         LocalDate date = parseBookingDate(bookingDate);
+        String normalizedPriceSort = normalizePriceSort(priceSort);
+
         if (courtId <= 0 || slotId <= 0) {
             throw new IllegalArgumentException("Thiếu thông tin sân hoặc slot.");
         }
@@ -34,16 +44,23 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
         int normalizedPage = Math.min(Math.max(page, 1), totalPages);
 
         List<StaffRentalInventoryItemDTO> items = repository.findRentalItemsForSlot(
-                facilityId, date, courtId, slotId, keyword, normalizedPage, pageSize);
+                facilityId, date, courtId, slotId, keyword, normalizedPriceSort, normalizedPage, pageSize
+        );
+        List<StaffRentalInventoryItemDTO> suggestionItems = repository.findRentalItemsForSlot(
+                facilityId, date, courtId, slotId, keyword, normalizedPriceSort, 1, 50
+        );
         List<StaffRentalInventoryItemDTO> selectedItems = repository.findSelectedItemsForSlot(
-                facilityId, date, courtId, slotId);
+                facilityId, date, courtId, slotId
+        );
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("page", normalizedPage);
         data.put("pageSize", pageSize);
         data.put("total", total);
         data.put("totalPages", totalPages);
+        data.put("priceSort", normalizedPriceSort);
         data.put("items", items);
+        data.put("suggestionItems", suggestionItems);
         data.put("selectedItems", selectedItems);
 
         return JsonResponseUtil.success("Tải danh sách đồ thuê thành công", data);
@@ -65,11 +82,15 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
         if (itemsJson != null) {
             for (int i = 0; i < itemsJson.length(); i++) {
                 JSONObject itemJson = itemsJson.optJSONObject(i);
-                if (itemJson == null) continue;
+                if (itemJson == null) {
+                    continue;
+                }
 
                 int inventoryId = itemJson.optInt("inventoryId", 0);
                 int quantity = itemJson.optInt("quantity", 0);
-                if (inventoryId <= 0 || quantity <= 0) continue;
+                if (inventoryId <= 0 || quantity <= 0) {
+                    continue;
+                }
 
                 InventoryRentalScheduleSaveItemDTO item = new InventoryRentalScheduleSaveItemDTO();
                 item.setInventoryId(inventoryId);
@@ -92,7 +113,8 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
         }
 
         List<StaffRentalInventoryItemDTO> selectedItems = repository.findSelectedItemsForSlot(
-                facilityId, bookingDate, courtId, slotId);
+                facilityId, bookingDate, courtId, slotId
+        );
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("selectedItems", selectedItems);
@@ -104,5 +126,12 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
             throw new IllegalArgumentException("Thiếu ngày đặt sân.");
         }
         return LocalDate.parse(bookingDate.trim());
+    }
+
+    private String normalizePriceSort(String value) {
+        if ("price_desc".equals(value) || "price_asc".equals(value)) {
+            return value;
+        }
+        return "default";
     }
 }

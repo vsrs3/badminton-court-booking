@@ -287,4 +287,60 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         }
         return map;
     }
+
+    @Override
+    public Map<Integer, List<Integer>> findBlockedSlotsByException(Connection conn, int facilityId, LocalDate bookingDate) throws Exception {
+        String sql = """
+                SELECT cse.court_id, ts.slot_id
+                FROM CourtScheduleException cse
+                JOIN TimeSlot ts
+                  ON (
+                      (cse.start_time IS NULL AND cse.end_time IS NULL)
+                      OR (ts.start_time < cse.end_time AND ts.end_time > cse.start_time)
+                  )
+                WHERE cse.facility_id = ?
+                  AND cse.is_active = 1
+                  AND ? BETWEEN cse.start_date AND cse.end_date
+                """;
+        Map<Integer, List<Integer>> map = new LinkedHashMap<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, facilityId);
+            ps.setDate(2, Date.valueOf(bookingDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int courtId = rs.getInt("court_id");
+                    int slotId = rs.getInt("slot_id");
+                    map.computeIfAbsent(courtId, k -> new ArrayList<>()).add(slotId);
+                }
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public boolean isSlotBlockedByException(Connection conn, int facilityId, int courtId, LocalDate bookingDate, int slotId)
+            throws Exception {
+        String sql = """
+                SELECT TOP 1 1
+                FROM CourtScheduleException cse
+                JOIN TimeSlot ts ON ts.slot_id = ?
+                WHERE cse.facility_id = ?
+                  AND cse.court_id = ?
+                  AND cse.is_active = 1
+                  AND ? BETWEEN cse.start_date AND cse.end_date
+                  AND (
+                        (cse.start_time IS NULL AND cse.end_time IS NULL)
+                        OR (ts.start_time < cse.end_time AND ts.end_time > cse.start_time)
+                      )
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, slotId);
+            ps.setInt(2, facilityId);
+            ps.setInt(3, courtId);
+            ps.setDate(4, Date.valueOf(bookingDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 }

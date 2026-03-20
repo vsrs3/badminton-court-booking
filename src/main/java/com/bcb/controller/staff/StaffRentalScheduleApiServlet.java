@@ -29,6 +29,7 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
 
         String bookingDate = request.getParameter("bookingDate");
         String keyword = request.getParameter("q");
+        String priceSort = normalizePriceSort(request.getParameter("sort"));
         int courtId = parseInt(request.getParameter("courtId"), 0);
         int slotId = parseInt(request.getParameter("slotId"), 0);
         int page = parseInt(request.getParameter("page"), 1);
@@ -36,7 +37,7 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
 
         try {
             writeJson(response, service.getSlotInventoryJson(
-                    auth.facilityId, bookingDate, courtId, slotId, keyword, page, pageSize));
+                    auth.facilityId, bookingDate, courtId, slotId, keyword, priceSort, page, pageSize));
         } catch (IllegalArgumentException e) {
             writeError(response, 400, e.getMessage());
         } catch (Exception e) {
@@ -70,5 +71,12 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
         } catch (Exception e) {
             return defaultValue;
         }
+    }
+
+    private String normalizePriceSort(String value) {
+        if ("price_desc".equals(value) || "price_asc".equals(value)) {
+            return value;
+        }
+        return "default";
     }
 }

@@ -43,4 +43,8 @@ public interface StaffRecurringBookingRepository {
     List<Integer> loadCourtsByType(Connection conn, int facilityId, int courtTypeId) throws Exception;
 
     Map<Integer, List<Integer>> findBookedSlots(Connection conn, int facilityId, LocalDate bookingDate) throws Exception;
+
+    Map<Integer, List<Integer>> findBlockedSlotsByException(Connection conn, int facilityId, LocalDate bookingDate) throws Exception;
+
+    boolean isSlotBlockedByException(Connection conn, int facilityId, int courtId, LocalDate bookingDate, int slotId) throws Exception;
 }
