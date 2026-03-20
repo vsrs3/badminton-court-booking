@@ -17,7 +17,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
 
     @Override
     public List<Account> findAll(int limit, int offset) {
-        String sql = "SELECT * FROM Account ORDER BY account_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        String sql = "SELECT * FROM Account WHERE is_active = 1 ORDER BY account_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         List<Account> accounts = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
@@ -39,7 +39,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
 
     @Override
     public int count() {
-        String sql = "SELECT COUNT(*) FROM Account";
+        String sql = "SELECT COUNT(*) FROM Account WHERE is_active = 1";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -57,7 +57,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
     @Override
     public List<Account> findByKeyword(String keyword, int limit, int offset) {
         String sql = "SELECT * FROM Account "
-                + "WHERE (full_name LIKE ? OR email LIKE ? OR phone LIKE ?) "
+                + "WHERE is_active = 1 AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?) "
                 + "ORDER BY account_id DESC "
                 + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -87,7 +87,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
     @Override
     public int countByKeyword(String keyword) {
         String sql = "SELECT COUNT(*) FROM Account "
-                + "WHERE (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)";
+                + "WHERE is_active = 1 AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -111,7 +111,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
     @Override
     public List<Account> findByKeywordAndRole(String keyword, String role, int limit, int offset) {
         String sql = "SELECT * FROM Account "
-                + "WHERE [role] = ? AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?) "
+                + "WHERE is_active = 1 AND [role] = ? AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?) "
                 + "ORDER BY account_id DESC "
                 + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -142,7 +142,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
     @Override
     public int countByKeywordAndRole(String keyword, String role) {
         String sql = "SELECT COUNT(*) FROM Account "
-                + "WHERE [role] = ? AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)";
+                + "WHERE is_active = 1 AND [role] = ? AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -166,7 +166,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
 
     @Override
     public List<Account> findByRole(String role, int limit, int offset) {
-        String sql = "SELECT * FROM Account WHERE [role] = ? "
+        String sql = "SELECT * FROM Account WHERE is_active = 1 AND [role] = ? "
                 + "ORDER BY account_id DESC "
                 + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -192,7 +192,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
 
     @Override
     public int countByRole(String role) {
-        String sql = "SELECT COUNT(*) FROM Account WHERE [role] = ?";
+        String sql = "SELECT COUNT(*) FROM Account WHERE is_active = 1 AND [role] = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -217,7 +217,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
                 account_id, email, password_hash, google_id,
                 full_name, phone, avatar_path, role, is_active, created_at
             FROM Account
-            WHERE account_id = ?
+            WHERE account_id = ? AND is_active = 1
         """;
 
         try (Connection conn = DBContext.getConnection();
@@ -273,7 +273,8 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
 
     @Override
     public boolean deleteAccount(Integer accountId) {
-        String sql = "DELETE FROM Account WHERE account_id = ?";
+        // Soft delete
+        String sql = "UPDATE Account SET is_active = 0 WHERE account_id = ?";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -281,7 +282,7 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
             ps.setInt(1, accountId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new DataAccessException("Failed to delete account", e);
+            throw new DataAccessException("Failed to soft delete account", e);
         }
     }
 
@@ -343,4 +344,3 @@ public class AccountManagementRepositoryImpl implements AccountManagementReposit
         return account;
     }
 }
-
