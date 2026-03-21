@@ -35,6 +35,14 @@
     var paymentModalError   = document.getElementById('paymentModalError');
     var paymentInputHint    = document.getElementById('paymentInputHint');
 
+    // Rental detail modal DOM
+    var rentalDetailModal             = document.getElementById('rentalDetailModal');
+    var rentalDetailModalClose        = document.getElementById('rentalDetailModalClose');
+    var rentalDetailModalConfirmClose = document.getElementById('rentalDetailModalConfirmClose');
+    var rentalDetailContext           = document.getElementById('rentalDetailContext');
+    var rentalDetailTableBody         = document.getElementById('rentalDetailTableBody');
+    var rentalDetailTotal             = document.getElementById('rentalDetailTotal');
+
     // State
     var bookingData = null;
     var pendingAction = null;
@@ -75,9 +83,18 @@
             if (e.target === paymentModal) closePaymentModal();
         });
     }
+    if (rentalDetailModalClose) rentalDetailModalClose.addEventListener('click', closeRentalDetailModal);
+    if (rentalDetailModalConfirmClose) rentalDetailModalConfirmClose.addEventListener('click', closeRentalDetailModal);
+    if (rentalDetailModal) {
+        rentalDetailModal.addEventListener('click', function (e) {
+            if (e.target === rentalDetailModal) closeRentalDetailModal();
+        });
+    }
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && paymentModal && !paymentModal.classList.contains('d-none')) {
             closePaymentModal();
+        } else if (e.key === 'Escape' && rentalDetailModal && !rentalDetailModal.classList.contains('d-none')) {
+            closeRentalDetailModal();
         }
     });
 
@@ -85,6 +102,7 @@
     loadDetail();
 
     function loadDetail() {
+        closeRentalDetailModal();
         stateLoading.classList.remove('d-none');
         stateError.classList.add('d-none');
         detailContent.classList.add('d-none');
@@ -427,6 +445,7 @@
                 }
             });
             container.appendChild(btnOut);
+            appendRentalActionControl(container, session, idx, isPaid);
             return;
         }
 
@@ -463,6 +482,7 @@
                 }
             });
             container.appendChild(btnIn);
+            appendRentalActionControl(container, session, idx, isPaid);
 
             if (isSessionPastDue(session)) {
                 var btnNs = document.createElement('button');
@@ -502,28 +522,162 @@
         var matchedRows = findRentalRowsForSession(session, rentalRows);
         if (!matchedRows.length) return;
 
-        var rentalEl = document.createElement('div');
-        rentalEl.className = 'sbd-session-time-info';
-        rentalEl.textContent = 'Đồ thuê: ' + matchedRows.map(function (row) {
-            var label = row.rentalItemsText || 'Đã chọn đồ thuê';
-            var sameWindow = row.startTime === session.startTime && row.endTime === session.endTime;
+        var rentalEl = document.createElement('button');
+        rentalEl.type = 'button';
+        rentalEl.className = 'sbd-rental-detail-trigger';
+        rentalEl.innerHTML = '<i class="bi bi-bag-check me-1"></i>Chi tiết đồ thuê';
+        rentalEl.addEventListener('click', function () {
+            openRentalDetailModal(session);
+        });
+        infoEl.appendChild(rentalEl);
+    }
 
-            if (!sameWindow) {
-                label = row.startTime + ' - ' + row.endTime + ': ' + label;
+    function appendRentalActionControl(container, session, sessionIndex, isPaid) {
+        if (!hasRentalActionItems(session)) return;
+
+        var currentStatus = getSessionRentalActionStatus(session);
+        if (currentStatus === 'RETURNED') {
+            var returnedLabel = document.createElement('span');
+            returnedLabel.className = 'sbd-session-status sbd-ss-label-rental-returned';
+            returnedLabel.innerHTML = '<i class="bi bi-bag-check-fill me-1"></i>Đã trả đồ';
+            container.appendChild(returnedLabel);
+            return;
+        }
+
+        var nextStatus = currentStatus === 'RENTING' ? 'RETURNED' : 'RENTING';
+        var buttonLabel = currentStatus === 'RENTING' ? 'Đã trả đồ' : 'Đang thuê đồ';
+        var buttonClass = currentStatus === 'RENTING' ? 'sbd-btn-rental-return' : 'sbd-btn-rental-start';
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sbd-btn ' + buttonClass + ' js-rental-action';
+        btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + buttonLabel;
+        btn.addEventListener('click', function () {
+            if (!isPaid) {
+                pendingAction = {
+                    type: nextStatus === 'RENTING' ? 'rental-start' : 'rental-return',
+                    sessionIndex: sessionIndex
+                };
+                openPaymentModal();
+                return;
             }
 
-            return label + ' (' + formatMoney(row.rentalTotal || 0) + ')';
-        }).join(' · ');
-        infoEl.appendChild(rentalEl);
+            handleRentalStatusUpdate(sessionIndex, nextStatus);
+        });
+        container.appendChild(btn);
+    }
+
+    function openRentalDetailModal(session) {
+        if (!rentalDetailModal) return;
+
+        var items = summarizeSessionRentalItems(session);
+        var sessionDate = session.sessionDate ? formatDate(session.sessionDate) + ' · ' : '';
+
+        if (rentalDetailContext) {
+            rentalDetailContext.textContent = session.courtName + ' · ' + sessionDate + session.startTime + ' - ' + session.endTime;
+        }
+
+        if (rentalDetailTableBody) {
+            if (!items.length) {
+                rentalDetailTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu đồ thuê.</td></tr>';
+            } else {
+                rentalDetailTableBody.innerHTML = items.map(function (item, index) {
+                    return '' +
+                        '<tr>' +
+                        '   <td>' + (index + 1) + '</td>' +
+                        '   <td>' + escapeHtml(item.inventoryName) + '</td>' +
+                        '   <td>' + formatMoney(item.unitPrice || 0) + '</td>' +
+                        '   <td>' + item.quantity + '</td>' +
+                        '</tr>';
+                }).join('');
+            }
+        }
+
+        if (rentalDetailTotal) {
+            rentalDetailTotal.textContent = formatMoney(items.reduce(function (sum, item) {
+                return sum + Number(item.lineTotal || 0);
+            }, 0));
+        }
+
+        rentalDetailModal.classList.remove('d-none');
+    }
+
+    function closeRentalDetailModal() {
+        if (rentalDetailModal) {
+            rentalDetailModal.classList.add('d-none');
+        }
+    }
+
+    function getSessionRentalRows(session) {
+        return findRentalRowsForSession(session, bookingData ? (bookingData.rentalRows || []) : []);
+    }
+
+    function summarizeSessionRentalItems(session) {
+        var groupedItems = {};
+        getSessionRentalRows(session).forEach(function (row) {
+            (row.items || []).forEach(function (item) {
+                var key = String(item.inventoryId || 0) + '_' + String(item.unitPrice || 0);
+                if (!groupedItems[key]) {
+                    groupedItems[key] = {
+                        inventoryId: Number(item.inventoryId || 0),
+                        inventoryName: item.inventoryName || item.name || 'Đồ thuê',
+                        unitPrice: Number(item.unitPrice || 0),
+                        quantity: 0,
+                        lineTotal: 0,
+                        scheduleIds: [],
+                        statuses: []
+                    };
+                }
+
+                groupedItems[key].quantity += Number(item.quantity || 0);
+                groupedItems[key].lineTotal += Number(item.lineTotal || (Number(item.unitPrice || 0) * Number(item.quantity || 0)));
+                if (item.scheduleId != null) {
+                    groupedItems[key].scheduleIds.push(Number(item.scheduleId));
+                }
+                if (item.status) {
+                    groupedItems[key].statuses.push(String(item.status).toUpperCase());
+                }
+            });
+        });
+
+        return Object.keys(groupedItems).map(function (key) {
+            return groupedItems[key];
+        }).sort(function (a, b) {
+            return String(a.inventoryName || '').localeCompare(String(b.inventoryName || ''));
+        });
+    }
+
+    function hasRentalActionItems(session) {
+        return summarizeSessionRentalItems(session).some(function (item) {
+            return (item.scheduleIds || []).length > 0;
+        });
+    }
+
+    function getSessionRentalActionStatus(session) {
+        var summaryItems = summarizeSessionRentalItems(session);
+        var statuses = [];
+
+        summaryItems.forEach(function (item) {
+            (item.statuses || []).forEach(function (status) {
+                statuses.push(String(status || '').toUpperCase());
+            });
+        });
+
+        if (!statuses.length) return '';
+        if (statuses.some(function (status) { return status === 'RENTING'; })) return 'RENTING';
+        if (statuses.every(function (status) { return status === 'RETURNED'; })) return 'RETURNED';
+        return 'RENTED';
     }
 
     function findRentalRowsForSession(session, rentalRows) {
         var sessionStart = toMinutes(session.startTime);
         var sessionEnd = toMinutes(session.endTime);
+        var sessionDate = session.sessionDate || bookingData.bookingDate;
 
         return (rentalRows || []).filter(function (row) {
             if (!row) return false;
-            if (row.courtName !== session.courtName) return false;
+            if (Number(row.courtId || 0) !== Number(session.courtId || 0)) return false;
+            if ((row.bookingDate || bookingData.bookingDate) !== sessionDate) return false;
 
             var rowStart = toMinutes(row.startTime);
             var rowEnd = toMinutes(row.endTime);
@@ -670,17 +824,18 @@
                     bookingData.grandTotal = body.data.totalAmount;
                 }
                 showToast('Xác nhận thanh toán thành công!', 'success');
+                var action = pendingAction;
                 closePaymentModal();
                 resetConfirmButton();
                 renderInvoice(bookingData);
                 renderSessions(bookingData);
 
-                if (pendingAction) {
-                    var action = pendingAction;
-                    pendingAction = null;
+                if (action) {
                     setTimeout(function () {
                         if (action.type === 'checkin') handleCheckin(action.sessionIndex);
                         else if (action.type === 'checkout') handleCheckout(action.sessionIndex);
+                        else if (action.type === 'rental-start') handleRentalStatusUpdate(action.sessionIndex, 'RENTING');
+                        else if (action.type === 'rental-return') handleRentalStatusUpdate(action.sessionIndex, 'RETURNED');
                     }, 500);
                 }
             })
@@ -855,6 +1010,56 @@
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
+                }
+            });
+    }
+
+    async function handleRentalStatusUpdate(sessionIndex, nextStatus) {
+        var session = bookingData.sessions[sessionIndex];
+        var isReturnAction = nextStatus === 'RETURNED';
+        var confirmTitle = isReturnAction ? 'Xác nhận trả đồ' : 'Xác nhận đang thuê đồ';
+        var confirmMsg = (isReturnAction ? 'Xác nhận đã trả đồ cho phiên ' : 'Xác nhận bàn giao đồ thuê cho phiên ')
+            + (sessionIndex + 1) + '\n'
+            + session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')';
+
+        if (!(await uiConfirm(confirmMsg, confirmTitle))) return;
+
+        var btn = document.querySelector('#session-action-' + sessionIndex + ' .js-rental-action');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
+        }
+
+        fetch(CTX + '/api/staff/booking/rental-status', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+                bookingId: parseInt(bookingId, 10),
+                sessionIndex: sessionIndex,
+                status: nextStatus
+            })
+        })
+            .then(function (res) { return res.json(); })
+            .then(function (body) {
+                if (!body.success) {
+                    showToast(body.message || 'Cập nhật trạng thái đồ thuê thất bại', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + (isReturnAction ? 'Đã trả đồ' : 'Đang thuê đồ');
+                    }
+                    return;
+                }
+
+                showToast(body.message || 'Cập nhật trạng thái đồ thuê thành công', 'success');
+                loadDetail();
+            })
+            .catch(function (err) {
+                console.error('Rental status update error:', err);
+                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + (isReturnAction ? 'Đã trả đồ' : 'Đang thuê đồ');
                 }
             });
     }
@@ -1065,6 +1270,16 @@
 
     function isSameMoney(a, b) {
         return Math.abs(toMoneyNumber(a) - toMoneyNumber(b)) < 0.01;
+    }
+
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function toMinutes(timeText) {

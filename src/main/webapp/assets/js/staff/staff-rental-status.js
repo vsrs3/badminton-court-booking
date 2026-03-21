@@ -90,6 +90,13 @@
             }
         }
 
+        if (inventoryToolbar) {
+            var legacyNote = inventoryToolbar.querySelector('.srs-inventory-toolbar-note');
+            if (legacyNote) {
+                legacyNote.remove();
+            }
+        }
+
         if (inventorySearchInput.parentElement) {
             inventorySuggestionMenu = document.getElementById('inventorySuggestionMenu');
 
@@ -489,6 +496,7 @@
             var emptyState = document.createElement('div');
             emptyState.className = 'search-suggestion-empty';
             emptyState.textContent = 'Không có gợi ý trong 50 dữ liệu đầu tiên. Bấm Tìm kiếm để tra toàn bộ dữ liệu.';
+            emptyState.textContent = 'Khong tim thay do phu hop.';
             inventorySuggestionMenu.appendChild(emptyState);
             inventorySuggestionMenu.classList.add('is-visible');
             return;
@@ -1283,6 +1291,13 @@
             }
         }
 
+        if (inventoryToolbar) {
+            var legacyNote = inventoryToolbar.querySelector('.srs-inventory-toolbar-note');
+            if (legacyNote) {
+                legacyNote.remove();
+            }
+        }
+
         if (inventorySearchInput.parentElement) {
             inventorySuggestionMenu = document.getElementById('inventorySuggestionMenu');
 
@@ -1491,6 +1506,7 @@
             var emptyState = document.createElement('div');
             emptyState.className = 'search-suggestion-empty';
             emptyState.textContent = 'Không có gợi ý trong 50 dữ liệu đầu tiên. Bấm Tìm kiếm để tra toàn bộ dữ liệu.';
+            emptyState.textContent = 'Khong tim thay do phu hop.';
             inventorySuggestionMenu.appendChild(emptyState);
             inventorySuggestionMenu.classList.add('is-visible');
             return;

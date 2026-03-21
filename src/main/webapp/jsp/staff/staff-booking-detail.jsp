@@ -5,7 +5,7 @@
 <%@ include file="layout/staff-layout.jsp"%>
 
 <%-- Page CSS --%>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/staff-booking-detail.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/staff-booking-detail.css?v=<%= System.currentTimeMillis() %>">
 
 <%-- 2. Sidebar --%>
 <%@ include file="layout/staff-sidebar.jsp"%>
@@ -249,6 +249,47 @@
     </div>
 </div>
 
+<%-- Rental Detail Modal --%>
+<div class="sbd-modal-overlay d-none" id="rentalDetailModal">
+    <div class="sbd-modal sbd-rental-modal">
+        <div class="sbd-modal-header">
+            <h5 class="sbd-modal-title">
+                <i class="bi bi-bag-check me-2"></i>Chi tiết đồ thuê
+            </h5>
+            <button type="button" class="sbd-modal-close" id="rentalDetailModalClose">&times;</button>
+        </div>
+        <div class="sbd-modal-body">
+            <div class="sbd-rental-modal-context" id="rentalDetailContext"></div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th style="width:72px;">STT</th>
+                        <th>Tên</th>
+                        <th style="width:160px;">Tiền thuê/30 phút</th>
+                        <th style="width:120px;">Số lượng</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rentalDetailTableBody">
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Không có dữ liệu đồ thuê.</td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Tổng tiền</th>
+                        <th id="rentalDetailTotal">0 VND</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="sbd-modal-footer">
+            <button type="button" class="sbd-btn sbd-btn-cancel" id="rentalDetailModalConfirmClose">Đóng</button>
+        </div>
+    </div>
+</div>
+
 <%-- Footer --%>
 <footer class="staff-footer">
     <p class="mb-0">&copy; 2026 Badminton Court Booking System. All rights reserved.</p>
@@ -257,8 +298,8 @@
 <script>
     window.ST_CTX = '${pageContext.request.contextPath}';
 </script>
-<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-detail.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-dialog.js?v=<%= System.currentTimeMillis() %>"></script>
+<script src="${pageContext.request.contextPath}/assets/js/staff/staff-booking-detail.js?v=<%= System.currentTimeMillis() %>"></script>
 
 </body>
 </html>

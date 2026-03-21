@@ -705,6 +705,96 @@
     font-size: 0.95rem;
 }
 
+.sbc-rental-fee-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.sbc-rental-fee-item:first-child {
+    padding-top: 0;
+}
+
+.sbc-rental-fee-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.sbc-rental-fee-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sbc-rental-fee-court {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sbc-rental-fee-slots-wrap {
+    min-width: 0;
+    margin-top: 0.55rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(6, 78, 59, 0.35) transparent;
+}
+
+.sbc-rental-fee-slots-wrap.has-scroll {
+    max-width: calc((6.75rem * 4) + (0.5rem * 3));
+}
+
+.sbc-rental-fee-slots-wrap::-webkit-scrollbar {
+    height: 6px;
+}
+
+.sbc-rental-fee-slots-wrap::-webkit-scrollbar-track {
+    background: #E5E7EB;
+    border-radius: 999px;
+}
+
+.sbc-rental-fee-slots-wrap::-webkit-scrollbar-thumb {
+    background: rgba(6, 78, 59, 0.35);
+    border-radius: 999px;
+}
+
+.sbc-rental-fee-slots {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(6.75rem, max-content);
+    gap: 0.5rem;
+    width: max-content;
+    min-width: 100%;
+}
+
+.sbc-rental-fee-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid #A7F3D0;
+    border-radius: 999px;
+    background: #ECFDF5;
+    color: #065F46;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.sbc-rental-fee-total {
+    flex-shrink: 0;
+    padding-top: 0.05rem;
+    color: #064E3B;
+    font-size: 0.95rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
 @media (max-width: 767.98px) {
     .sbc-rental-toolbar {
         flex-direction: column;
@@ -731,6 +821,15 @@
     .sbc-rental-court-summary {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .sbc-rental-fee-item {
+        flex-direction: column;
+        gap: 0.7rem;
+    }
+
+    .sbc-rental-fee-slots-wrap.has-scroll {
+        max-width: 100%;
     }
 
     .sbc-rental-modal-footerbar {

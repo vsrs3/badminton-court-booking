@@ -182,24 +182,7 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                StaffRentalStatusRawRowDTO row = loadScheduleRowForUpdate(conn, facilityId, scheduleId);
-                if (row == null) {
-                    conn.rollback();
-                    return 0;
-                }
-
-                String currentStatus = row.getStatus();
-                int delta = calculateInventoryDelta(currentStatus, nextStatus, row.getQuantity());
-                if (delta != 0) {
-                    adjustFacilityInventory(conn, facilityId, row.getInventoryId(), delta);
-                }
-
-                int latestAvailable = loadCurrentAvailableQuantity(conn, facilityId, row.getInventoryId());
-                int updated = updateScheduleRow(conn, facilityId, scheduleId, nextStatus, latestAvailable);
-                if (updated > 0) {
-                    syncRacketRentalLogStatus(conn, facilityId, row, STATUS_RETURNED.equals(nextStatus));
-                }
-
+                int updated = updateScheduleStatus(conn, facilityId, scheduleId, nextStatus);
                 conn.commit();
                 return updated;
             } catch (Exception e) {
@@ -209,6 +192,26 @@ public class StaffRentalStatusRepositoryImpl implements StaffRentalStatusReposit
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public int updateScheduleStatus(Connection conn, int facilityId, int scheduleId, String nextStatus) throws Exception {
+        StaffRentalStatusRawRowDTO row = loadScheduleRowForUpdate(conn, facilityId, scheduleId);
+        if (row == null) {
+            return 0;
+        }
+
+        String currentStatus = row.getStatus();
+        int delta = calculateInventoryDelta(currentStatus, nextStatus, row.getQuantity());
+        if (delta != 0) {
+            adjustFacilityInventory(conn, facilityId, row.getInventoryId(), delta);
+        }
+
+        int latestAvailable = loadCurrentAvailableQuantity(conn, facilityId, row.getInventoryId());
+        int updated = updateScheduleRow(conn, facilityId, scheduleId, nextStatus, latestAvailable);
+        if (updated > 0) {
+            syncRacketRentalLogStatus(conn, facilityId, row, STATUS_RETURNED.equals(nextStatus));
+        }
+        return updated;
     }
 
     public StaffRentalStatusRawRowDTO findScheduleRowById(Connection conn, int facilityId, int scheduleId) throws Exception {

@@ -188,7 +188,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                     BigDecimal price = lookupPrice(slot, priceCache, courtTypeMap, slotTimeMap);
                     totalAmount = totalAmount.add(price);
 
-                    int bookingSlotId = repository.insertBookingSlot(conn, bookingId, slot, price);
+                    int bookingSlotId = repository.insertBookingSlot(conn, bookingId, bookingDate, slot, price);
                     try {
                         repository.insertCourtSlotBooking(conn, slot, bookingDate, bookingSlotId);
                     } catch (SQLException e) {

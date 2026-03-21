@@ -10,12 +10,12 @@
 <c:if test="${not empty sessionScope.successMessage}"><div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">${sessionScope.successMessage}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button></div><c:remove var="successMessage" scope="session"/></c:if>
 <c:if test="${not empty sessionScope.errorMessage}"><div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">${sessionScope.errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button></div><c:remove var="errorMessage" scope="session"/></c:if>
 
-<div class="mb-5">
-<div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold text-dark mb-1">Đồ gán sân</h5><p class="text-muted mb-0">Danh sách sản phẩm đã được gán cho sân hiện tại.</p></div></div>
-<form method="get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
-<div class="col-lg-5 col-md-7 inventory-search-input">
-<div class="search-suggestion-wrap">
-<input type="text" id="assignedKeywordInput" name="assignedKeyword" value="${assignedKeyword}" class="form-control rounded-3" placeholder="Tìm theo tên sản phẩm đã gán" aria-label="Tìm theo tên sản phẩm đã gán" autocomplete="off">
+<div class ="mb-5">
+<div class ="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold text-dark mb-1">Đồ gán sân</h5><p class="text-muted mb-0">Danh sách sản phẩm đã được gán cho sân hiện tại.</p></div></div>
+<form method ="get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
+<div class ="col-lg-5 col-md-7 inventory-search-input">
+<div class ="search-suggestion-wrap">
+<input type ="text" id="assignedKeywordInput" name="assignedKeyword" value="${assignedKeyword}" class="form-control rounded-3" placeholder="Tìm theo tên sản phẩm đã gán" aria-label="Tìm theo tên sản phẩm đã gán" autocomplete="off">
 <div id="assignedSuggestionMenu" class="search-suggestion-menu"></div>
 </div>
 <div class="form-text">Gợi ý lấy trong ${suggestionLimit} dữ liệu đầu tiên. Bấm tìm kiếm để tra toàn bộ dữ liệu.</div>
