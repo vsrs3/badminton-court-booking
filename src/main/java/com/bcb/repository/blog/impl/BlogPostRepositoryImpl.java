@@ -192,7 +192,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
                     dto.setPostId(rs.getInt("post_id"));
                     dto.setTitle(rs.getString("title"));
                     dto.setSummary(rs.getString("summary"));
-                    dto.setThumbnailPath(rs.getString("thumbnail_path"));
+					/* dto.setThumbnailPath(rs.getString("thumbnail_path")); */
                     dto.setStatus(rs.getString("status"));
                     Timestamp pub = rs.getTimestamp("published_at");
                     if (pub != null) dto.setPublishedAt(pub.toLocalDateTime());
