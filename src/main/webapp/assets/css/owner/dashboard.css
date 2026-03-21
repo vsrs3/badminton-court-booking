@@ -325,6 +325,46 @@
   width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0;
 }
 
+/* ── Quick Actions ──────────────────────────────────────────── */
+.dov-quick-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dov-qa-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    text-decoration: none;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all .15s;
+    flex: 1;
+    min-width: 160px;
+}
+
+.dov-qa-btn:hover {
+    border-color: #A3E635;
+    box-shadow: 0 4px 12px rgba(0,0,0,.07);
+    color: #064E3B;
+    transform: translateY(-1px);
+}
+
+.dov-qa-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 /* ── Override content-area ──────────────────────────────────────── */
 .content-area:has(.dov-wrap) { padding: 0 !important; }
 .content-area > .dov-wrap    { margin: 0; }
