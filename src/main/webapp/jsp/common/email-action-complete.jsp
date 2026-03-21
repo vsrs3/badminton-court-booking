@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String syncKey = request.getAttribute("syncKey") == null ? "" : request.getAttribute("syncKey").toString();
     String syncToken = request.getAttribute("syncToken") == null ? "" : request.getAttribute("syncToken").toString();
@@ -46,7 +46,7 @@
 <input type="hidden" id="syncRedirectUrl" value="<%= syncRedirectUrl %>">
 
 <script>
-    (function() {
+    (function () {
         const syncKey = document.getElementById("syncKey").value;
         const syncToken = document.getElementById("syncToken").value;
         const syncEmail = document.getElementById("syncEmail").value;
@@ -69,7 +69,7 @@
         }
     })();
 
-    document.getElementById("closePageBtn").addEventListener("click", function() {
+    document.getElementById("closePageBtn").addEventListener("click", function () {
         window.close();
     });
 </script>

@@ -337,9 +337,28 @@ IF NOT EXISTS (SELECT 1 FROM Inventory WHERE name = N'Vợt Yonex Astrox 88D')
 BEGIN
 INSERT INTO Inventory (name, brand, description, rental_price, is_active)
 VALUES
-    (N'Vợt Yonex Astrox 88D', 'Yonex', N'Vợt tấn công chuyên nghiệp', 50000, 1),
-    (N'Vợt Lining Windstorm 72', 'Lining', N'Vợt nhẹ, phù hợp phòng thủ', 40000, 1),
-    (N'Vợt Victor Thruster K 9900', 'Victor', N'Vợt cao cấp', 60000, 1);
+    (N'Vợt Yonex Astrox 88D',           N'Yonex',      N'Vợt tấn công chuyên nghiệp',                        50000, 1),
+    (N'Vợt Lining Windstorm 72',        N'Lining',     N'Vợt nhẹ, phù hợp lối chơi phòng thủ',               40000, 1),
+    (N'Vợt Victor Thruster K 9900',     N'Victor',     N'Vợt cao cấp, thiên về sức mạnh',                    60000, 1),
+    (N'Vợt Yonex Nanoflare 700',        N'Yonex',      N'Vợt nhẹ, hỗ trợ phản tạt nhanh',                    55000, 1),
+    (N'Vợt Yonex Arcsaber 11 Pro',      N'Yonex',      N'Vợt cân bằng, kiểm soát tốt',                       65000, 1),
+    (N'Vợt Lining Aeronaut 9000C',      N'Lining',     N'Vợt thiên công, phù hợp người chơi mạnh',           70000, 1),
+    (N'Vợt Lining Tectonic 7',          N'Lining',     N'Vợt trợ lực, dễ sử dụng cho người mới',             45000, 1),
+    (N'Vợt Victor Auraspeed 90K',       N'Victor',     N'Vợt tốc độ cao, phản xạ tốt',                       68000, 1),
+    (N'Vợt Victor DriveX 10',           N'Victor',     N'Vợt công thủ toàn diện',                             60000, 1),
+    (N'Vợt Mizuno Fortius 11 Quick',    N'Mizuno',     N'Vợt linh hoạt, dễ xoay trở',                         58000, 1),
+    (N'Vợt Apacs Z-Ziggler',            N'Apacs',      N'Vợt giá tốt, phù hợp người chơi phong trào',        35000, 1),
+    (N'Ống cầu Yonex AS-30',            N'Yonex',      N'Ống cầu lông 12 quả, độ bền cao',                    30000, 1),
+    (N'Ống cầu Lining A+90',            N'Lining',     N'Cầu lông ổn định, dùng cho sân trong nhà',          28000, 1),
+    (N'Quấn cán Yonex AC102EX',         N'Yonex',      N'Quấn cán thấm hút mồ hôi tốt',                       10000, 1),
+    (N'Quấn cán Victor GR233',          N'Victor',     N'Quấn cán mềm, bám tay tốt',                           9000, 1),
+    (N'Giày Yonex Power Cushion 65Z',   N'Yonex',      N'Giày cầu lông cao cấp, êm và bám sân tốt',          80000, 1),
+    (N'Giày Lining AYTS020',            N'Lining',     N'Giày nhẹ, phù hợp tập luyện và thi đấu',            65000, 1),
+    (N'Túi đựng vợt Yonex Pro',         N'Yonex',      N'Túi đựng 2 đến 3 cây vợt và phụ kiện',              25000, 1),
+    (N'Băng bảo vệ đầu gối',            N'Kawasaki',   N'Phụ kiện hỗ trợ bảo vệ đầu gối khi vận động',       15000, 1),
+    (N'Bình nước thể thao 750ml',       N'Lock&Lock',  N'Bình nước tiện dụng cho người chơi thể thao',       12000, 1);
+
+
 END
 GO
 
@@ -518,7 +537,6 @@ VALUES (@bk3, 300000, 300000, 100, 'PAID');
 -- ============================================================
 INSERT INTO Booking (facility_id, booking_date, account_id, booking_status, created_at)
 VALUES (1, @twoDaysAgo, @cust1Id, 'CANCELLED', DATEADD(DAY, -3, GETDATE()));
-
 DECLARE @bk4 INT = SCOPE_IDENTITY();
 
 INSERT INTO BookingSlot (booking_id, court_id, slot_id, price, slot_status)
@@ -831,32 +849,39 @@ GO
  -- ============================================================
 -- 13. Blog
 -- ============================================================
- SET IDENTITY_INSERT [dbo].[BlogPost] ON
-    INSERT [dbo].[BlogPost] ([post_id], [author_account_id], [title], [summary], [content], [thumbnail_path], [status], [published_at], [created_at], [updated_at], [is_deleted])
-    VALUES
-    (1, 1, N'Chào mừng đến với Cộng đồng', N'Bài viết demo để test danh sách/chi tiết.', N'Nội dung demo\n\n- Có comment\n- Có reaction\n- Có kiểm duyệt', NULL, N'PUBLISHED', CAST(N'2026-03-13T12:36:20.010' AS DateTime), CAST(N'2026-03-15T12:36:20.010' AS DateTime), NULL, 0),
-    (3, 6, N'cách bảo quản đồ', N'Rat gap can chu y', N'Việc xây dựng nội dung cho blog ("blog nội dung") là yếu tố cốt lõi...', N'https://trungtamthanhcong.net/wp-content/uploads/2015/07/bien_nguy_hiem.jpg', N'PUBLISHED', CAST(N'2026-03-15T13:14:17.623' AS DateTime), CAST(N'2026-03-15T13:13:26.860' AS DateTime), CAST(N'2026-03-15T13:14:17.643' AS DateTime), 0)
--- ... (các bài khác bạn có thể thêm tiếp nếu cần)
-    SET IDENTITY_INSERT [dbo].[BlogPost] OFF
-    GO
+ USE [badminton_court_booking];
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogComment] ON
-    INSERT [dbo].[BlogComment] ([comment_id], [post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
-    VALUES
-    (1, 1, 3, N'Bài viết hay quá!', N'APPROVED', 1, CAST(N'2026-03-15T12:36:20.013' AS DateTime), CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
-    (2, 1, 3, N'Khi nào có thêm bài mới ạ?', N'PENDING', NULL, NULL, CAST(N'2026-03-15T12:36:20.013' AS DateTime), NULL, 0),
-    (4, 3, 13, N'minh thay bai viet rat hay', N'APPROVED', 6, CAST(N'2026-03-15T17:27:42.530' AS DateTime), CAST(N'2026-03-15T13:15:56.497' AS DateTime), CAST(N'2026-03-15T17:28:14.550' AS DateTime), 1)
--- ... (các comment khác)
-    SET IDENTITY_INSERT [dbo].[BlogComment] OFF
-    GO
+-- BlogPost
+INSERT INTO [dbo].[BlogPost]
+    ([author_account_id], [title], [summary], [content], [status], [published_at], [created_at], [updated_at], [is_deleted])
+VALUES
+    (1, N'Mẹo đặt sân nhanh giờ cao điểm', N'Cách tối ưu lịch đặt sân vào cuối tuần.', N'Nội dung bài viết 1...', 'PUBLISHED', DATEADD(DAY, -10, GETDATE()), GETDATE(), NULL, 0),
+    (2, N'Hướng dẫn chọn vợt phù hợp',      N'Chọn vợt theo trình độ và lối chơi.',  N'Nội dung bài viết 2...', 'PUBLISHED', DATEADD(DAY, -7,  GETDATE()), GETDATE(), NULL, 0),
+    (3, N'Quy định sử dụng sân',            N'Một số lưu ý quan trọng khi sử dụng sân.', N'Nội dung bài viết 3...', 'DRAFT',     NULL,                      GETDATE(), NULL, 0),
+    (4, N'Cách khởi động đúng chuẩn',       N'Giảm chấn thương khi chơi cầu lông.',  N'Nội dung bài viết 4...', 'PUBLISHED', DATEADD(DAY, -3,  GETDATE()), GETDATE(), NULL, 0),
+    (5, N'Ưu đãi tháng này',                N'Tổng hợp ưu đãi cho khách hàng thân thiết.', N'Nội dung bài viết 5...', 'PUBLISHED', DATEADD(DAY, -1, GETDATE()), GETDATE(), NULL, 0);
+GO
 
-    SET IDENTITY_INSERT [dbo].[BlogReaction] ON
-    INSERT [dbo].[BlogReaction] ([reaction_id], [post_id], [account_id], [emoji_code], [created_at])
-    VALUES
-    (1, 1, 3, N'LIKE', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
-    (2, 1, 1, N'HEART', CAST(N'2026-03-15T12:36:20.013' AS DateTime)),
-    (4, 3, 6, N'LIKE', CAST(N'2026-03-15T13:15:10.287' AS DateTime)),
-    (13, 3, 13, N'SAD', CAST(N'2026-03-15T17:32:09.753' AS DateTime))
--- ... (các reaction khác)
-    SET IDENTITY_INSERT [dbo].[BlogReaction] OFF
-    GO
+-- BlogComment
+INSERT INTO [dbo].[BlogComment]
+    ([post_id], [author_account_id], [content], [status], [moderated_by_account_id], [moderated_at], [created_at], [updated_at], [is_deleted])
+VALUES
+    (1, 2, N'Bài viết rất hữu ích, cảm ơn!',          'APPROVED', 4, DATEADD(HOUR, -6, GETDATE()), GETDATE(), NULL, 0),
+    (1, 3, N'Mình áp dụng và thấy đặt sân nhanh hơn.', 'APPROVED', 4, DATEADD(HOUR, -5, GETDATE()), GETDATE(), NULL, 0),
+    (2, 1, N'Có thể gợi ý thêm vợt cho người mới?',   'PENDING',  NULL, NULL,                      GETDATE(), NULL, 0),
+    (4, 5, N'Khởi động kỹ giúp mình đỡ mỏi hẳn.',     'APPROVED', 4, DATEADD(HOUR, -2, GETDATE()), GETDATE(), NULL, 0),
+    (5, 2, N'Ưu đãi hấp dẫn quá!',                    'REJECTED', 4, DATEADD(HOUR, -1, GETDATE()), GETDATE(), NULL, 0);
+GO
+
+-- BlogReaction
+INSERT INTO [dbo].[BlogReaction]
+    ([post_id], [account_id], [emoji_code], [created_at])
+VALUES
+    (1, 2, 'LIKE',  GETDATE()),
+    (1, 3, 'HEART', GETDATE()),
+    (2, 1, 'WOW',   GETDATE()),
+    (2, 4, 'LIKE',  GETDATE()),
+    (4, 5, 'LAUGH', GETDATE()),
+    (5, 2, 'HEART', GETDATE());
+GO

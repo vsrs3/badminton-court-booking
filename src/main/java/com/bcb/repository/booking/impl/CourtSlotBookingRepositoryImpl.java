@@ -11,9 +11,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * JDBC implementation of {@link CourtSlotBookingRepository}.
@@ -46,6 +48,52 @@ public class CourtSlotBookingRepositoryImpl implements CourtSlotBookingRepositor
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to find booked slots", e);
+        }
+        return map;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Map<Integer, List<Integer>> findUnavailableSlots(int facilityId, LocalDate bookingDate) {
+        String sql = "SELECT src.court_id, src.slot_id "
+                   + "FROM ("
+                   + "  SELECT csb.court_id, csb.slot_id "
+                   + "  FROM CourtSlotBooking csb "
+                   + "  INNER JOIN Court c ON csb.court_id = c.court_id "
+                   + "  WHERE c.facility_id = ? AND csb.booking_date = ? "
+                   + "  UNION "
+                   + "  SELECT cse.court_id, ts.slot_id "
+                   + "  FROM CourtScheduleException cse "
+                   + "  INNER JOIN TimeSlot ts ON ("
+                   + "      (cse.start_time IS NULL AND cse.end_time IS NULL) "
+                   + "      OR (ts.start_time < cse.end_time AND ts.end_time > cse.start_time)"
+                   + "  ) "
+                   + "  WHERE cse.facility_id = ? "
+                   + "    AND cse.is_active = 1 "
+                   + "    AND ? BETWEEN cse.start_date AND cse.end_date"
+                   + ") src";
+
+        Map<Integer, Set<Integer>> raw = new LinkedHashMap<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, facilityId);
+            ps.setDate(2, Date.valueOf(bookingDate));
+            ps.setInt(3, facilityId);
+            ps.setDate(4, Date.valueOf(bookingDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int courtId = rs.getInt("court_id");
+                    int slotId = rs.getInt("slot_id");
+                    raw.computeIfAbsent(courtId, k -> new LinkedHashSet<>()).add(slotId);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to find unavailable slots", e);
+        }
+
+        Map<Integer, List<Integer>> map = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Set<Integer>> entry : raw.entrySet()) {
+            map.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
         return map;
     }

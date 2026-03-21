@@ -16,7 +16,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
             "FROM BlogPost p " +
             "JOIN Account a ON a.account_id = p.author_account_id " +
             "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
@@ -51,7 +51,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.thumbnail_path, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
             "FROM BlogPost p " +
             "JOIN Account a ON a.account_id = p.author_account_id " +
             "WHERE p.is_deleted = 0"
@@ -97,57 +97,96 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
 
     @Override
     public int insert(BlogPost post) {
-        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, thumbnail_path, status, published_at, created_at, is_deleted) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), 0)";
+        String sql = "INSERT INTO BlogPost (author_account_id, title, summary, content, status, published_at, created_at, is_deleted) " +
+                "VALUES (?, ?, ?, ?, ?, ?, GETDATE(), 0)";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            // 1. author_account_id
             ps.setInt(1, post.getAuthorAccountId());
+
+            // 2. title
             ps.setString(2, post.getTitle());
-            if (post.getSummary() != null) ps.setString(3, post.getSummary()); else ps.setNull(3, Types.NVARCHAR);
-            ps.setString(4, post.getContent());
-            if (post.getThumbnailPath() != null) ps.setString(5, post.getThumbnailPath()); else ps.setNull(5, Types.NVARCHAR);
-            ps.setString(6, post.getStatus());
-            if (post.getPublishedAt() != null) {
-                ps.setTimestamp(7, Timestamp.valueOf(post.getPublishedAt()));
+
+            // 3. summary
+            if (post.getSummary() != null) {
+                ps.setString(3, post.getSummary());
             } else {
-                ps.setNull(7, Types.TIMESTAMP);
+                ps.setNull(3, Types.NVARCHAR);
             }
-            ps.executeUpdate();
 
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Failed to insert blog post", e);
-        }
-        return 0;
-    }
+            // 4. content
+            ps.setString(4, post.getContent());
 
-    @Override
-    public int update(BlogPost post) {
-        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, thumbnail_path=?, status=?, published_at=?, updated_at=GETDATE() " +
-                     "WHERE post_id=? AND is_deleted=0";
-
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, post.getTitle());
-            if (post.getSummary() != null) ps.setString(2, post.getSummary()); else ps.setNull(2, Types.NVARCHAR);
-            ps.setString(3, post.getContent());
-            if (post.getThumbnailPath() != null) ps.setString(4, post.getThumbnailPath()); else ps.setNull(4, Types.NVARCHAR);
+            // 5. status
             ps.setString(5, post.getStatus());
+
+            // 6. published_at
             if (post.getPublishedAt() != null) {
                 ps.setTimestamp(6, Timestamp.valueOf(post.getPublishedAt()));
             } else {
                 ps.setNull(6, Types.TIMESTAMP);
             }
-            ps.setInt(7, post.getPostId());
+
+            // Execute
+            ps.executeUpdate();
+
+            // Get generated key
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DataAccessException("Failed to insert blog post", e);
+        }
+
+        return 0;
+    }
+
+    @Override
+    public int update(BlogPost post) {
+        String sql = "UPDATE BlogPost SET title=?, summary=?, content=?, status=?, published_at=?, updated_at=GETDATE() " +
+                "WHERE post_id=? AND is_deleted=0";
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            // 1. title
+            ps.setString(1, post.getTitle());
+
+            // 2. summary
+            if (post.getSummary() != null) {
+                ps.setString(2, post.getSummary());
+            } else {
+                ps.setNull(2, Types.NVARCHAR);
+            }
+
+            // 3. content
+            ps.setString(3, post.getContent());
+
+            // 4. status (SQL index 4)
+            ps.setString(4, post.getStatus());
+
+            // 5. published_at
+            if (post.getPublishedAt() != null) {
+                ps.setTimestamp(5, Timestamp.valueOf(post.getPublishedAt()));
+            } else {
+                ps.setNull(5, Types.TIMESTAMP);
+            }
+
+            // 6. post_id (WHERE clause)
+            ps.setInt(6, post.getPostId());
+
+            // Execute update
             return ps.executeUpdate();
+
         } catch (SQLException e) {
             throw new DataAccessException("Failed to update blog post", e);
         }
     }
-
     @Override
     public int softDelete(int postId) {
         String sql = "UPDATE BlogPost SET is_deleted=1, updated_at=GETDATE() WHERE post_id=? AND is_deleted=0";
@@ -192,7 +231,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
                     dto.setPostId(rs.getInt("post_id"));
                     dto.setTitle(rs.getString("title"));
                     dto.setSummary(rs.getString("summary"));
-					/* dto.setThumbnailPath(rs.getString("thumbnail_path")); */
                     dto.setStatus(rs.getString("status"));
                     Timestamp pub = rs.getTimestamp("published_at");
                     if (pub != null) dto.setPublishedAt(pub.toLocalDateTime());
@@ -243,7 +281,6 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
         p.setTitle(rs.getString("title"));
         p.setSummary(rs.getString("summary"));
         p.setContent(rs.getString("content"));
-        p.setThumbnailPath(rs.getString("thumbnail_path"));
         p.setStatus(rs.getString("status"));
 
         Timestamp publishedAt = rs.getTimestamp("published_at");

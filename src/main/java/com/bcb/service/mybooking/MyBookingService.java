@@ -16,6 +16,7 @@ public interface MyBookingService {
      * Gets list of customer's bookings with paging support.
      */
     List<MyBookingListDTO> getMyBookings(int accountId, String status,
+                                         String bookingType,
                                          LocalDate dateFrom, LocalDate dateTo,
                                          int offset, int limit);
 
