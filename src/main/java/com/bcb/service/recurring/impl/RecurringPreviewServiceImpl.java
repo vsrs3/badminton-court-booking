@@ -127,7 +127,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
             int dayOfWeek = toPlanDayOfWeek(current);
-            Map<Integer, List<Integer>> bookedByCourt = courtSlotBookingRepo.findBookedSlots(request.getFacilityId(), current);
+            Map<Integer, List<Integer>> unavailableByCourt = courtSlotBookingRepo.findUnavailableSlots(request.getFacilityId(), current);
 
             for (PatternPrepared prepared : preparedPatterns) {
                 if (prepared.dayOfWeek != dayOfWeek) {
@@ -143,7 +143,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                         priceRuleCache
                 );
 
-                List<Integer> conflictSlots = extractConflictSlots(bookedByCourt, prepared.court.getCourtId(), prepared.slotIds);
+                List<Integer> conflictSlots = extractConflictSlots(unavailableByCourt, prepared.court.getCourtId(), prepared.slotIds);
                 boolean hasConflict = !conflictSlots.isEmpty();
 
                 RecurringPreviewSessionDTO session = new RecurringPreviewSessionDTO();
@@ -164,7 +164,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                             current,
                             prepared,
                             courts,
-                            bookedByCourt,
+                            unavailableByCourt,
                             slots,
                             slotMap,
                             slotIndexMap,
