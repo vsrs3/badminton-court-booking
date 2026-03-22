@@ -18,6 +18,7 @@ public interface MyBookingRepository {
      * Finds bookings for a customer with paging support.
      */
     List<MyBookingListDTO> findMyBookings(int accountId, String status,
+                                          String bookingType,
                                           LocalDate dateFrom, LocalDate dateTo,
                                           int offset, int limit);
 

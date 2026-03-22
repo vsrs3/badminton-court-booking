@@ -47,9 +47,10 @@ public class MyBookingServiceImpl implements MyBookingService {
     /** {@inheritDoc} */
     @Override
     public List<MyBookingListDTO> getMyBookings(int accountId, String status,
+                                                 String bookingType,
                                                  LocalDate dateFrom, LocalDate dateTo,
                                                  int offset, int limit) {
-        List<MyBookingListDTO> bookings = bookingRepo.findMyBookings(accountId, status, dateFrom, dateTo,
+        List<MyBookingListDTO> bookings = bookingRepo.findMyBookings(accountId, status, bookingType, dateFrom, dateTo,
                 Math.max(0, offset), Math.max(1, limit));
         // Post-process: single booking keeps old slot merge, recurring shows weekly pattern summary.
         for (MyBookingListDTO b : bookings) {

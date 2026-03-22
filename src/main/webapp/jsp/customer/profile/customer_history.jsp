@@ -31,6 +31,8 @@
               action="${pageContext.request.contextPath}/my-bookings">
             <input type="hidden" name="status" id="hiddenStatus"
                    value="${selectedStatus}"/>
+            <input type="hidden" name="bookingType" id="hiddenBookingType"
+                   value="${selectedBookingType}"/>
             <input type="hidden" name="page" id="hiddenPage" value="1"/>
             <div class="history-filter-row">
                 <div class="history-date-group">
@@ -55,29 +57,45 @@
         <div
                 class="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar mt-3"
                 id="filter-tabs">
-            <button data-status="all"
+            <button type="button" data-status="all"
                     class="filter-btn ${(selectedStatus == 'all' || empty selectedStatus) ? 'active' : ''}"
                     onclick="filterByStatus(this, 'all')">Tất cả
             </button>
-            <button data-status="PENDING"
+            <button type="button" data-status="PENDING"
                     class="filter-btn ${selectedStatus == 'PENDING' ? 'active' : ''}"
                     onclick="filterByStatus(this, 'PENDING')">Chờ thanh toán
             </button>
-            <button data-status="CONFIRMED"
+            <button type="button" data-status="CONFIRMED"
                     class="filter-btn ${selectedStatus == 'CONFIRMED' ? 'active' : ''}"
                     onclick="filterByStatus(this, 'CONFIRMED')">Đã xác nhận
             </button>
-            <button data-status="COMPLETED"
+            <button type="button" data-status="COMPLETED"
                     class="filter-btn ${selectedStatus == 'COMPLETED' ? 'active' : ''}"
                     onclick="filterByStatus(this, 'COMPLETED')">Hoàn thành
             </button>
-            <button data-status="CANCELLED"
+            <button type="button" data-status="CANCELLED"
                     class="filter-btn ${selectedStatus == 'CANCELLED' ? 'active' : ''}"
                     onclick="filterByStatus(this, 'CANCELLED')">Đã hủy
             </button>
-            <button data-status="EXPIRED"
+            <button type="button" data-status="EXPIRED"
                     class="filter-btn ${selectedStatus == 'EXPIRED' ? 'active' : ''}"
                     onclick="filterByStatus(this, 'EXPIRED')">Hết hạn
+            </button>
+        </div>
+        <div
+                class="flex items-center space-x-2 overflow-x-auto pb-3 no-scrollbar"
+                id="booking-type-tabs">
+            <button type="button" data-booking-type="all"
+                    class="filter-btn ${(selectedBookingType == 'all' || empty selectedBookingType) ? 'active' : ''}"
+                    onclick="filterByBookingType(this, 'all')">All
+            </button>
+            <button type="button" data-booking-type="SINGLE"
+                    class="filter-btn ${selectedBookingType == 'SINGLE' ? 'active' : ''}"
+                    onclick="filterByBookingType(this, 'SINGLE')">Đặt lẻ
+            </button>
+            <button type="button" data-booking-type="RECURRING"
+                    class="filter-btn ${selectedBookingType == 'RECURRING' ? 'active' : ''}"
+                    onclick="filterByBookingType(this, 'RECURRING')">Đặt cố định
             </button>
         </div>
         <div class="h-[1px] bg-gray-100 w-full"></div>
@@ -321,14 +339,14 @@
                         <c:set var="prevPage" value="${currentPage - 1}"/>
                         <c:set var="nextPage" value="${currentPage + 1}"/>
 
-                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${prevPage}"
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&bookingType=${selectedBookingType}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${prevPage}"
                            class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${currentPage <= 1 ? 'pointer-events-none opacity-40' : 'hover:bg-gray-50'}">
                             Trang trước
                         </a>
 
                         <span class="text-xs text-gray-500">Trang ${currentPage}</span>
 
-                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${nextPage}"
+                        <a href="${pageContext.request.contextPath}/my-bookings?status=${selectedStatus}&bookingType=${selectedBookingType}&dateFrom=${dateFrom}&dateTo=${dateTo}&page=${nextPage}"
                            class="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 ${hasMore ? 'hover:bg-gray-50' : 'pointer-events-none opacity-40'}">
                             Trang sau
                         </a>
@@ -356,8 +374,41 @@
         btn.classList.add('active');
         var hiddenStatus = document.getElementById('hiddenStatus');
         if (hiddenStatus) hiddenStatus.value = status;
+        var hiddenBookingType = document.getElementById('hiddenBookingType');
         var params = new URLSearchParams(window.location.search);
         params.set('status', status);
+        if (hiddenBookingType && hiddenBookingType.value) {
+            params.set('bookingType', hiddenBookingType.value);
+        }
+        params.set('page', '1');
+        var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
+        var container = document.getElementById('booking-list-container');
+        if (window.loadContent && container) {
+            fetch(url).then(function(res) { return res.text(); }).then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var newList = doc.getElementById('booking-list-container');
+                if (newList) {
+                    container.innerHTML = newList.innerHTML;
+                    if (window.lucide) lucide.createIcons();
+                    if (window.MyBookingsCountdown && typeof window.MyBookingsCountdown.init === 'function') {
+                        window.MyBookingsCountdown.init();
+                    }
+                }
+            });
+        } else { window.location.href = url; }
+    }
+
+    function filterByBookingType(btn, bookingType) {
+        document.querySelectorAll('#booking-type-tabs .filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var hiddenBookingType = document.getElementById('hiddenBookingType');
+        if (hiddenBookingType) hiddenBookingType.value = bookingType;
+        var hiddenStatus = document.getElementById('hiddenStatus');
+        var params = new URLSearchParams(window.location.search);
+        params.set('bookingType', bookingType);
+        if (hiddenStatus && hiddenStatus.value) {
+            params.set('status', hiddenStatus.value);
+        }
         params.set('page', '1');
         var url = '${pageContext.request.contextPath}/my-bookings?' + params.toString();
         var container = document.getElementById('booking-list-container');

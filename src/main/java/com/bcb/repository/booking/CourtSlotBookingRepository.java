@@ -20,6 +20,12 @@ public interface CourtSlotBookingRepository {
     Map<Integer, List<Integer>> findBookedSlots(int facilityId, LocalDate bookingDate);
 
     /**
+     * Finds unavailable slot IDs grouped by courtId for a facility on a date.
+     * Unavailable includes both locked bookings and active court schedule exceptions.
+     */
+    Map<Integer, List<Integer>> findUnavailableSlots(int facilityId, LocalDate bookingDate);
+
+    /**
      * Inserts a court-slot lock row (within a transaction).
      *
      * @param conn          shared transaction connection
