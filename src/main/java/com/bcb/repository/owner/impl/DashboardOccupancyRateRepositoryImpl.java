@@ -22,23 +22,23 @@ public class DashboardOccupancyRateRepositoryImpl implements DashboardOccupancyR
 		    + "    (SELECT COUNT(*) FROM TimeSlot)                  AS slots, "
 
 		    + "    (SELECT COUNT(*) FROM BookingSlot "
-		    + "     WHERE slot_status != 'CANCELLED' "
+		    + "     WHERE slot_status IN ('CHECKED_IN', 'CHECK_OUT', 'NO_SHOW') "
 		    + "       AND booking_date = CAST(GETDATE() AS DATE)) AS day_occ, "
 
 		    + "    (SELECT COUNT(*) FROM BookingSlot "
-		    + "     WHERE slot_status != 'CANCELLED' "
+		    + "     WHERE slot_status IN ('CHECKED_IN', 'CHECK_OUT', 'NO_SHOW') "
 		    + "       AND booking_date >= CAST(DATEADD(DAY, -(DATEPART(WEEKDAY, GETDATE())+5)%7, GETDATE()) AS DATE) "
 		    + "       AND booking_date <= CAST(GETDATE() AS DATE)) AS week_occ, "
 		    + "    ((DATEPART(WEEKDAY, GETDATE()) + 5) % 7) + 1 AS week_days, "
 
 		    + "    (SELECT COUNT(*) FROM BookingSlot "
-		    + "     WHERE slot_status != 'CANCELLED' "
+		    + "     WHERE slot_status IN ('CHECKED_IN', 'CHECK_OUT', 'NO_SHOW') "
 		    + "       AND booking_date >= CAST(DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1) AS DATE) "
 		    + "       AND booking_date <= CAST(GETDATE() AS DATE)) AS mon_occ, "
 		    + "    DAY(GETDATE()) AS month_days, "
 
 		    + "    (SELECT COUNT(*) FROM BookingSlot "
-		    + "     WHERE slot_status != 'CANCELLED' "
+		    + "     WHERE slot_status IN ('CHECKED_IN', 'CHECK_OUT', 'NO_SHOW') "
 		    + "       AND booking_date >= CAST(DATEFROMPARTS(YEAR(GETDATE()), 1, 1) AS DATE) "
 		    + "       AND booking_date <= CAST(GETDATE() AS DATE)) AS year_occ, "
 		    + "    DATEDIFF(DAY, DATEFROMPARTS(YEAR(GETDATE()), 1, 1), GETDATE()) + 1 AS year_days "

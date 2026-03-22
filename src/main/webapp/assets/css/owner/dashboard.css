@@ -233,8 +233,8 @@
 
 /* Giữ nguyên — stat cards KHÔNG thay đổi */
 .dov-peak-stat--peak .dov-peak-stat-icon {
-  background: rgba(6,78,59,.10);
-  color: #064E3B;
+  background: rgba(239,68,68,0.10);
+  color: #EF4444;
 }
 .dov-peak-stat--low .dov-peak-stat-icon {
   background: rgba(163,230,53,.18);
@@ -258,7 +258,7 @@
 }
 .dov-peak-stat-sub { font-size: 11px; color: #9CA3AF; margin: 0; }
 
-.dov-peak-stat--peak   .dov-peak-stat-value { color: #064E3B; }
+.dov-peak-stat--peak   .dov-peak-stat-value { color: #EF4444; }
 .dov-peak-stat--low    .dov-peak-stat-value { color: #4d7c0f; }
 .dov-peak-stat--normal .dov-peak-stat-value { color: #111827; }
 

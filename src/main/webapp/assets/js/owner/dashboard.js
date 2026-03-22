@@ -242,7 +242,7 @@
 
     function getTypeBgColor(type) {
         switch (type) {
-            case 'PEAK':    return 'rgba(6,78,59,0.10)';
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
             case 'LOW':     return 'rgba(163,230,53,0.18)';
             case 'NORMAL':  return '#F8FAFC';
             default:        return '#F3F4F6';
@@ -252,7 +252,7 @@
     /* ── Peak Hour: type → text color ─────────────────────────── */
     function getTypeTextColor(type) {
         switch (type) {
-            case 'PEAK':    return '#064E3B';
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
             case 'LOW':     return '#A3E635';
             case 'NORMAL':  return '#111827';
             default:        return '#9CA3AF';
@@ -262,7 +262,7 @@
     /* ── Peak Hour: type → border color (cho legend swatch) ────── */
     function getTypeBorderColor(type) {
         switch (type) {
-            case 'PEAK':    return '#064E3B';
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
             case 'LOW':     return '#A3E635';
             case 'NORMAL':  return '#D1D5DB';
             default:        return '#9CA3AF';
