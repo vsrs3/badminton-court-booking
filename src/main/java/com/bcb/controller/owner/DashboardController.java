@@ -81,7 +81,7 @@ public class DashboardController extends HttpServlet {
    
 
         // Breadcrumb
-        BreadcrumbUtils.builder(request).active("Dashboard").build();
+        BreadcrumbUtils.builder(request).active("Báo cáo doanh thu đặt sân").build();
 
         // Forward to JSP
         request.getRequestDispatcher("/jsp/owner/dashboard.jsp").forward(request, response);
