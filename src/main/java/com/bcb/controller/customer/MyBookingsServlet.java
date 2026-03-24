@@ -99,7 +99,8 @@ public class MyBookingsServlet extends HttpServlet {
     private void showBookingList(HttpServletRequest request, HttpServletResponse response,
                                   Account account) throws ServletException, IOException {
         // Read filter params
-        String status     = request.getParameter("status");
+        String status       = request.getParameter("status");
+        String bookingType  = parseBookingType(request.getParameter("bookingType"));
         String dateFromStr = request.getParameter("dateFrom");
         String dateToStr   = request.getParameter("dateTo");
 
@@ -110,7 +111,7 @@ public class MyBookingsServlet extends HttpServlet {
 
         try {
             List<MyBookingListDTO> bookings = bookingService.getMyBookings(
-                    account.getAccountId(), status, dateFrom, dateTo, offset, BOOKING_PAGE_SIZE + 1);
+                    account.getAccountId(), status, bookingType, dateFrom, dateTo, offset, BOOKING_PAGE_SIZE + 1);
 
             boolean hasMore = bookings.size() > BOOKING_PAGE_SIZE;
             if (hasMore) {
@@ -127,6 +128,7 @@ public class MyBookingsServlet extends HttpServlet {
 
             request.setAttribute("bookings", bookings);
             request.setAttribute("selectedStatus", status != null ? status : "all");
+            request.setAttribute("selectedBookingType", bookingType);
             request.setAttribute("dateFrom", dateFromStr);
             request.setAttribute("dateTo", dateToStr);
             request.setAttribute("page", page);
@@ -399,6 +401,15 @@ public class MyBookingsServlet extends HttpServlet {
 
     private boolean parseBooleanFlag(String value) {
         return "1".equals(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value);
+    }
+
+    private String parseBookingType(String bookingType) {
+        if (bookingType == null || bookingType.trim().isEmpty()) return "all";
+        String normalized = bookingType.trim().toUpperCase();
+        if ("SINGLE".equals(normalized) || "RECURRING".equals(normalized)) {
+            return normalized;
+        }
+        return "all";
     }
 
     private void writeSessionJson(HttpServletResponse response,

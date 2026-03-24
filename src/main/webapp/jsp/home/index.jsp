@@ -23,6 +23,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/badminton-pro.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/components.css">
+
+    <!-- AI Chatbot CSS -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/chatbot.css">
 </head>
 <body>
 <div id="app" class="app-container">
@@ -107,19 +110,19 @@
         </div>
 
         <div id="profileTab" class="tab-content">
-        	<c:choose>
-           		<c:when test="${empty sessionScope.account}">
-           			<div class="coming-soon">
-		                <i class="bi bi-info-circle"></i>
-		                <h2>Tính năng đang phát triển</h2>
-		                <p>Vui lòng quay lại sau</p>
-		            </div>
-           		</c:when>
-           		
-           		<c:otherwise>
-           		    <jsp:include page="/jsp/customer/profile.jsp" />
-       			</c:otherwise>
-           	</c:choose>
+            <c:choose>
+                <c:when test="${empty sessionScope.account}">
+                    <div class="coming-soon">
+                        <i class="bi bi-info-circle"></i>
+                        <h2>Tính năng đang phát triển</h2>
+                        <p>Vui lòng quay lại sau</p>
+                    </div>
+                </c:when>
+
+                <c:otherwise>
+                    <jsp:include page="/jsp/customer/profile.jsp" />
+                </c:otherwise>
+            </c:choose>
         </div>
 
     </main>
@@ -144,6 +147,9 @@
 
     <!-- Booking Type Modal (Đặt lịch lẻ / Đặt lịch cố định) -->
     <jsp:include page="../components/booking-type-modal.jsp" />
+
+    <!-- AI Chatbot Widget -->
+    <jsp:include page="../common/chatbot.jsp" />
 
     <!-- Toast Notification -->
     <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
@@ -202,6 +208,9 @@
 <!-- Custom JavaScript -->
 <script src="${pageContext.request.contextPath}/assets/js/badminton-pro.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/map-handler.js"></script>
+
+<!-- AI Chatbot JavaScript -->
+<script src="${pageContext.request.contextPath}/assets/js/chatbot.js"></script>
 
 </body>
 </html>

@@ -4,80 +4,93 @@ import com.bcb.dto.RegisterRequestDTO;
 import com.bcb.exception.BusinessException;
 import com.bcb.model.Account;
 import com.bcb.model.EmailVerification;
+import com.bcb.model.PasswordResetToken;
 import com.bcb.repository.AccountRepository;
 import com.bcb.repository.EmailVerificationRepository;
+import com.bcb.repository.PasswordResetTokenRepository;
 import com.bcb.repository.impl.AccountRepositoryImpl;
 import com.bcb.repository.impl.EmailVerificationRepositoryImpl;
+import com.bcb.repository.impl.PasswordResetTokenRepositoryImpl;
 import com.bcb.service.AuthService;
 import com.bcb.utils.MailUtil;
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
+import java.text.Normalizer;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
-/**
- * Implementation of AuthService
- */
 public class AuthServiceImpl implements AuthService {
+    private static final int MIN_PASSWORD_LENGTH = 6;
+    private static final int FULL_NAME_MAX_LENGTH = 255;
+    private static final long REGISTER_TOKEN_TTL_MS = 60 * 1000L;
+    private static final long PASSWORD_RESET_TOKEN_TTL_MS = 15 * 60 * 1000L;
+    private static final Pattern FULL_NAME_PATTERN = Pattern.compile("^[\\p{L}\\s]+$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{10}$");
+
     private final AccountRepository accountRepository;
     private final EmailVerificationRepository emailVerificationRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+
     public AuthServiceImpl() {
-        this.accountRepository = new AccountRepositoryImpl();
-        this.emailVerificationRepository = new EmailVerificationRepositoryImpl();
+        this(
+                new AccountRepositoryImpl(),
+                new EmailVerificationRepositoryImpl(),
+                new PasswordResetTokenRepositoryImpl()
+        );
     }
-    // Constructor for dependency injection (testing)
-    public AuthServiceImpl(AccountRepository accountRepository, EmailVerificationRepository emailVerificationRepository) {
+
+    public AuthServiceImpl(AccountRepository accountRepository,
+                           EmailVerificationRepository emailVerificationRepository) {
+        this(accountRepository, emailVerificationRepository, new PasswordResetTokenRepositoryImpl());
+    }
+
+    public AuthServiceImpl(AccountRepository accountRepository,
+                           EmailVerificationRepository emailVerificationRepository,
+                           PasswordResetTokenRepository passwordResetTokenRepository) {
         this.accountRepository = accountRepository;
         this.emailVerificationRepository = emailVerificationRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     @Override
     public Account authenticate(String email, String password) {
-        System.out.println("🔐 Authenticating user: " + email);
-
-        // Find account by email
         Optional<Account> accountOpt = accountRepository.findByEmail(email);
-
         if (accountOpt.isEmpty()) {
-            System.out.println("❌ Account not found: " + email);
-            throw new RuntimeException("Invalid credentials");}
-        Account account = accountOpt.get();
+            throw new RuntimeException("Invalid credentials");
+        }
 
-        // Check if account is active
+        Account account = accountOpt.get();
         if (!account.getIsActive()) {
-            System.out.println("❌ Account is inactive: " + email);
-            throw new RuntimeException("Account is inactive");}
-        // Verify password
-        // String hashedPassword = hashPassword(password);
-        // System.out.println("CHẸKCE" + hashedPassword);
-        // System.out.println("Pass" + password);
+            throw new RuntimeException("Account is inactive");
+        }
+
         if (!BCrypt.checkpw(password, account.getPasswordHash())) {
-            System.out.println("❌ Invalid password for: " + email);
-            throw new RuntimeException("Invalid credentials");}
-        System.out.println("✅ Authentication successful: " + email + " (Role: " + account.getRole() + ")");
+            throw new RuntimeException("Invalid credentials");
+        }
+
         return account;
     }
 
     @Override
     public String register(RegisterRequestDTO dto) throws Exception {
+        normalizeRegisterRequest(dto);
+        validateRegisterRequest(dto);
 
         if (accountRepository.isEmailExists(dto.getEmail())) {
             throw new BusinessException("Email đã tồn tại");
         }
 
         if (accountRepository.isPhoneExists(dto.getPhone())) {
-            throw new BusinessException("SĐT đã tồn tại");
+            throw new BusinessException("Số điện thoại đã tồn tại");
         }
 
         String hash = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
         String token = UUID.randomUUID().toString();
-        Timestamp expireAt = new Timestamp(
-                System.currentTimeMillis() + 60 * 1000
-        );
+        Timestamp expireAt = new Timestamp(System.currentTimeMillis() + REGISTER_TOKEN_TTL_MS);
 
         emailVerificationRepository.savePendingRegister(
                 dto.getEmail(),
@@ -89,68 +102,179 @@ public class AuthServiceImpl implements AuthService {
                 expireAt
         );
 
-        String verifyLink =
-                "http://localhost:8080/badminton_court_booking/verify-email?token=" + token;
+        String verifyLink = "http://localhost:8080/badminton_court_booking/verify-email?purpose=register&token=" + token;
         MailUtil.sendVerifyEmail(dto.getEmail(), verifyLink);
-        return token; // 🔥 QUAN TRỌNG
+        return token;
     }
-
-
 
     @Override
     public void verifyEmail(String token) throws Exception {
-        EmailVerification ev =
-                emailVerificationRepository.findByToken(token);
-        if (ev == null)
+        EmailVerification emailVerification = emailVerificationRepository.findByToken(token);
+        if (emailVerification == null) {
             throw new BusinessException("Token không hợp lệ");
-        if (ev.isExpired()){
-            emailVerificationRepository.deleteByToken(token);
-            throw new BusinessException("Token hết hạn");}
-        if (accountRepository.findByEmail(ev.getEmail()).isPresent()){
-            emailVerificationRepository.deleteByToken(token);
-            return;}
+        }
 
-        Account acc = new Account();
-        acc.setEmail(ev.getEmail());
-        acc.setPasswordHash(ev.getPasswordHash());
-        acc.setFullName(ev.getFullName());
-        acc.setPhone(ev.getPhone());
-        acc.setRole(ev.getRole());
+        if (emailVerification.isExpired()) {
+            emailVerificationRepository.deleteByToken(token);
+            throw new BusinessException("Token đã hết hạn");
+        }
 
-        accountRepository.register(acc);
+        if (accountRepository.findByEmail(emailVerification.getEmail()).isPresent()) {
+            emailVerificationRepository.deleteByToken(token);
+            return;
+        }
+
+        Account account = new Account();
+        account.setEmail(emailVerification.getEmail());
+        account.setPasswordHash(emailVerification.getPasswordHash());
+        account.setFullName(emailVerification.getFullName());
+        account.setPhone(emailVerification.getPhone());
+        account.setRole(emailVerification.getRole());
+
+        accountRepository.register(account);
         emailVerificationRepository.deleteByToken(token);
     }
 
     @Override
-    public void forgotPassword(String email) throws BusinessException {
-        if (!accountRepository.existsByEmail(email)) {
+    public void forgotPassword(String email, String resetLinkBase) throws BusinessException {
+        String normalizedEmail = trimToEmpty(email);
+        if (normalizedEmail.isEmpty()) {
+            throw new BusinessException("Vui lòng nhập email.");
+        }
+
+        if (!accountRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException("Email không tồn tại.");
+        }
+
+        String token = UUID.randomUUID().toString();
+        Timestamp expireAt = new Timestamp(System.currentTimeMillis() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+        passwordResetTokenRepository.deleteExpiredTokens();
+        passwordResetTokenRepository.deleteByEmail(normalizedEmail);
+        passwordResetTokenRepository.save(normalizedEmail, token, expireAt);
+
+        String delimiter = resetLinkBase.contains("?") ? "&" : "?";
+        String resetLink = resetLinkBase + delimiter + "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        try {
+            MailUtil.sendPasswordResetEmail(normalizedEmail, resetLink);
+        } catch (RuntimeException e) {
+            passwordResetTokenRepository.deleteByToken(token);
+            throw new BusinessException("Không thể gửi email xác nhận lúc này. Vui lòng thử lại sau.");
         }
     }
 
+    @Override
+    public String getPasswordResetEmail(String token) throws BusinessException {
+        return getValidPasswordResetToken(token).getEmail();
+    }
 
     @Override
-    public void resetPassword(String email, String password) throws BusinessException {
-        if (!accountRepository.isEmailExists(email))
-            throw new BusinessException("Email không tồn tại");
-        String hash =
-                BCrypt.hashpw(password, BCrypt.gensalt());
-        accountRepository.updatePassword(email, hash);
+    public void resetPassword(String token, String password) throws BusinessException {
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
+            throw new BusinessException("Mật khẩu phải có ít nhất 6 ký tự.");
+        }
+
+        PasswordResetToken passwordResetToken = getValidPasswordResetToken(token);
+        String hash = BCrypt.hashpw(password, BCrypt.gensalt());
+        accountRepository.updatePassword(passwordResetToken.getEmail(), hash);
+        passwordResetTokenRepository.deleteByToken(token);
     }
 
     @Override
     public boolean verifyPassword(String plainPassword, String hashedPassword) {
-        String hashToCheck = hashPassword(plainPassword);
-        return hashToCheck.equals(hashedPassword);
+        return plainPassword != null
+                && hashedPassword != null
+                && BCrypt.checkpw(plainPassword, hashedPassword);
     }
 
     @Override
     public String hashPassword(String plainPassword) {
         if (plainPassword == null || plainPassword.isEmpty()) {
-        throw new IllegalArgumentException("Password cannot be null or empty");}
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        }
+
         return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
     }
 
+    private void normalizeRegisterRequest(RegisterRequestDTO dto) {
+        dto.setEmail(trimToEmpty(dto.getEmail()));
+        dto.setPhone(normalizePhone(dto.getPhone()));
+        dto.setFullName(normalizeFullName(dto.getFullName()));
+    }
+
+    private void validateRegisterRequest(RegisterRequestDTO dto) throws BusinessException {
+        if (dto.getEmail().isEmpty()) {
+            throw new BusinessException("Vui lòng nhập email");
+        }
+
+        if (dto.getPassword() == null || dto.getPassword().length() < MIN_PASSWORD_LENGTH) {
+            throw new BusinessException("Mật khẩu phải có ít nhất 6 ký tự");
+        }
+
+        if (dto.getFullName().isEmpty()) {
+            throw new BusinessException("Vui lòng nhập họ và tên");
+        }
+
+        if (dto.getFullName().length() > FULL_NAME_MAX_LENGTH) {
+            throw new BusinessException("Họ và tên không được vượt quá 255 ký tự");
+        }
+
+        if (!FULL_NAME_PATTERN.matcher(dto.getFullName()).matches()) {
+            throw new BusinessException("Họ và tên chỉ được chứa chữ cái và khoảng trắng");
+        }
+
+        if (dto.getPhone().isEmpty()) {
+            throw new BusinessException("Vui lòng nhập số điện thoại");
+        }
+
+        if (!PHONE_PATTERN.matcher(dto.getPhone()).matches()) {
+            throw new BusinessException("Số điện thoại phải gồm đúng 10 chữ số");
+        }
+    }
+
+    private PasswordResetToken getValidPasswordResetToken(String token) throws BusinessException {
+        String normalizedToken = trimToEmpty(token);
+        if (normalizedToken.isEmpty()) {
+            throw new BusinessException("Liên kết đổi mật khẩu không hợp lệ.");
+        }
+
+        PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(normalizedToken);
+        if (passwordResetToken == null) {
+            throw new BusinessException("Liên kết đổi mật khẩu không hợp lệ hoặc đã hết hạn.");
+        }
+
+        if (passwordResetToken.isExpired()) {
+            passwordResetTokenRepository.deleteByToken(normalizedToken);
+            throw new BusinessException("Liên kết đổi mật khẩu đã hết hạn.");
+        }
+
+        if (!accountRepository.existsByEmail(passwordResetToken.getEmail())) {
+            passwordResetTokenRepository.deleteByToken(normalizedToken);
+            throw new BusinessException("Liên kết đổi mật khẩu không hợp lệ hoặc đã hết hạn.");
+        }
+
+        return passwordResetToken;
+    }
+
+    private String normalizeFullName(String fullName) {
+        if (fullName == null) {
+            return "";
+        }
+
+        return Normalizer.normalize(fullName, Normalizer.Form.NFC)
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) {
+            return "";
+        }
+
+        return phone.replaceAll("\\s+", "").trim();
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
+    }
 }
-
-

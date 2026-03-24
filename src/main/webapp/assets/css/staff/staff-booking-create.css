@@ -63,6 +63,73 @@
     overflow: visible !important;
 }
 
+.sbc-rental-modal-toolbar .form-control,
+.sbc-rental-modal-toolbar .form-select,
+.sbc-rental-modal-toolbar .btn {
+    min-height: 44px;
+}
+
+.search-suggestion-wrap {
+    position: relative;
+}
+
+.search-suggestion-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: none;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+    max-height: 276px;
+    overflow-y: auto;
+    padding: 0.35rem;
+}
+
+.search-suggestion-menu.is-visible {
+    display: block;
+}
+
+.search-suggestion-item {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    text-align: left;
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item:focus {
+    background: #ECFDF5;
+    outline: none;
+}
+
+.search-suggestion-title {
+    color: #111827;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.search-suggestion-meta {
+    color: #6B7280;
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.search-suggestion-empty {
+    color: #6B7280;
+    font-size: 0.9rem;
+    padding: 0.8rem 0.9rem;
+}
+
 .sbc-card-header {
     background: #F8FAFC !important;
     font-size: 0.8125rem;
@@ -312,6 +379,17 @@
     margin-bottom: 1rem;
 }
 
+.sbc-rental-alert {
+    padding: 0.75rem 0.875rem;
+    margin-bottom: 1rem;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 0.625rem;
+    color: #B91C1C;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
 /* ===== SUBMIT BUTTON ===== */
 .sbc-btn-submit {
     display: flex;
@@ -349,6 +427,324 @@
 }
 @keyframes sbc-spin {
     to { transform: rotate(360deg); }
+}
+
+/* ===== RENTAL SLOT GRID ===== */
+.sbc-rental-court {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #FCFFFD;
+}
+
+.sbc-rental-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #D1E7DD;
+    border-radius: 0.75rem;
+    background: linear-gradient(180deg, #F8FFFB 0%, #F1FBF5 100%);
+}
+
+.sbc-rental-toolbar-copy {
+    min-width: 0;
+}
+
+.sbc-rental-toolbar-title {
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #14532D;
+    margin-bottom: 0.25rem;
+}
+
+.sbc-rental-toolbar-note {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #4B5563;
+}
+
+.sbc-rental-toolbar-btn {
+    flex-shrink: 0;
+    min-width: 168px;
+    font-weight: 700;
+}
+
+.sbc-rental-modal-footerbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.sbc-rental-modal-pagination {
+    margin-left: auto;
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-link,
+.sbc-rental-modal-pagination .compact-pagination .page-link-static {
+    min-width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px !important;
+    border: 1px solid #E5E7EB;
+    background-color: #fff;
+    font-weight: 600;
+    padding: 0 0.9rem;
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-link {
+    color: var(--color-green-brand, #064E3B);
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-link-static {
+    color: var(--color-green-brand, #064E3B);
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-item.active .page-link-static {
+    background-color: var(--color-green-brand, #064E3B);
+    border-color: var(--color-green-brand, #064E3B);
+    color: #fff;
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-item.disabled .page-link,
+.sbc-rental-modal-pagination .compact-pagination .page-item.disabled .page-link-static {
+    background-color: #F9FAFB;
+    border-color: #E5E7EB;
+    color: #9CA3AF;
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-link:hover {
+    background-color: #ECFDF5;
+    border-color: var(--color-green-brand, #064E3B);
+}
+
+.sbc-rental-modal-pagination .compact-pagination .page-item.active .page-link:hover {
+    color: #fff;
+    background-color: var(--color-green-brand, #064E3B);
+}
+
+.sbc-rental-modal-pagination .compact-pagination .pagination-ellipsis {
+    min-width: auto;
+    border: none;
+    background: transparent;
+    color: #6B7280;
+    padding: 0 0.25rem;
+}
+
+.sbc-rental-court-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.875rem;
+}
+
+.sbc-rental-court-name {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: #1F2937;
+}
+
+.sbc-rental-court-meta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6B7280;
+}
+
+.sbc-rental-court-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.875rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px dashed #D1D5DB;
+    border-radius: 0.625rem;
+    background: #F9FAFB;
+}
+
+.sbc-rental-court-actions-note {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #4B5563;
+}
+
+.sbc-rental-court-btn {
+    flex-shrink: 0;
+    min-width: 132px;
+    font-weight: 700;
+}
+
+.sbc-rental-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+}
+
+.sbc-rental-slot-card {
+    position: relative;
+}
+
+.sbc-rental-slot-clear {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    z-index: 2;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #DC2626;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.sbc-rental-slot-clear:hover {
+    background: #FEF2F2;
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.18);
+    transform: translateY(-1px);
+}
+
+.sbc-rental-slot-clear:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+}
+
+.sbc-rental-slot-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: 6.25rem;
+    padding: 0.875rem 2.75rem 0.875rem 0.875rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 0.75rem;
+    background: white;
+    color: #1F2937;
+    text-align: left;
+    transition: all 0.16s ease;
+}
+
+.sbc-rental-slot-btn:hover {
+    border-color: #059669;
+    box-shadow: 0 8px 18px rgba(5, 150, 105, 0.08);
+    transform: translateY(-1px);
+}
+
+.sbc-rental-slot-btn.is-configured {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+
+.sbc-rental-slot-btn.is-active {
+    border-color: #064E3B;
+    box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.12);
+}
+
+.sbc-rental-slot-time {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #111827;
+}
+
+.sbc-rental-slot-state {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #047857;
+}
+
+.sbc-rental-slot-sub {
+    font-size: 0.72rem;
+    color: #6B7280;
+    min-height: 1rem;
+}
+
+.sbc-rental-slot-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    margin-top: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6B7280;
+}
+
+.sbc-rental-court-summary {
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px dashed #D1D5DB;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.sbc-rental-court-summary-title {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #374151;
+}
+
+.sbc-rental-court-summary-total {
+    color: #064E3B;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 767.98px) {
+    .sbc-rental-toolbar {
+        flex-direction: column;
+    }
+
+    .sbc-rental-toolbar-btn {
+        width: 100%;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .sbc-rental-court-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sbc-rental-court-btn {
+        width: 100%;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .sbc-rental-court-header,
+    .sbc-rental-court-summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sbc-rental-modal-footerbar {
+        align-items: stretch;
+    }
+
+    .sbc-rental-modal-pagination {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .sbc-rental-modal-pagination .pagination {
+        justify-content: flex-start !important;
+    }
 }
 
 /* ================================================================

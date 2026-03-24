@@ -118,6 +118,132 @@
         }
         .page-link { color: var(--color-green-brand); }
         .page-link:hover { color: var(--color-green-700); }
+        .compact-pagination .page-link,
+        .compact-pagination .page-link-static {
+            min-width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px !important;
+            border: 1px solid var(--color-gray-200);
+            background-color: #fff;
+            font-weight: 600;
+            padding: 0 0.9rem;
+        }
+        .compact-pagination .page-link-static {
+            color: var(--color-green-brand);
+        }
+        .compact-pagination .page-item.active .page-link-static {
+            background-color: var(--color-green-brand);
+            border-color: var(--color-green-brand);
+            color: #fff;
+        }
+        .compact-pagination .page-item.disabled .page-link,
+        .compact-pagination .page-item.disabled .page-link-static {
+            background-color: var(--color-gray-50);
+            border-color: var(--color-gray-200);
+            color: var(--color-gray-400);
+        }
+        .compact-pagination .page-link:hover {
+            background-color: var(--color-green-50);
+            border-color: var(--color-green-brand);
+        }
+        .compact-pagination .page-item.active .page-link:hover {
+            color: #fff;
+            background-color: var(--color-green-brand);
+        }
+        .compact-pagination .pagination-ellipsis {
+            min-width: auto;
+            border: none;
+            background: transparent;
+            color: var(--color-gray-500);
+            padding: 0 0.25rem;
+        }
+        .search-suggestion-wrap {
+            position: relative;
+        }
+        .search-suggestion-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: none;
+            background: #fff;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+            max-height: 276px;
+            overflow-y: auto;
+            padding: 0.35rem;
+        }
+        .search-suggestion-menu.is-visible {
+            display: block;
+        }
+        .search-suggestion-item {
+            width: 100%;
+            border: none;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.15rem;
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+            text-align: left;
+        }
+        .search-suggestion-item:hover,
+        .search-suggestion-item:focus {
+            background: var(--color-green-50);
+            outline: none;
+        }
+        .search-suggestion-title {
+            color: var(--color-gray-900);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .search-suggestion-meta {
+            color: var(--color-gray-500);
+            font-size: 0.82rem;
+            line-height: 1.2;
+        }
+        .search-suggestion-empty {
+            color: var(--color-gray-500);
+            font-size: 0.9rem;
+            padding: 0.8rem 0.9rem;
+        }
+        .inventory-search-form {
+            align-items: stretch !important;
+        }
+        .inventory-search-form .inventory-search-input {
+            display: flex;
+            align-items: stretch;
+        }
+        .inventory-search-form .inventory-search-input .search-suggestion-wrap {
+            width: 100%;
+        }
+        .inventory-search-form .search-suggestion-wrap + .form-text {
+            display: none !important;
+        }
+        .inventory-search-form .form-control,
+        .inventory-search-form .form-select,
+        .inventory-search-form .btn {
+            min-height: 44px;
+        }
+        .inventory-search-form > .col-auto {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+        .inventory-search-form > .col-auto .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 132px;
+            padding-inline: 1rem;
+        }
 
         /* ===== BADGE UTILITIES ===== */
         .badge-active   { background-color: var(--color-green-100); color: var(--color-green-800); }

@@ -104,7 +104,13 @@
             if (!validateScheduleForNext()) {
                 return;
             }
-            showStep(3);
+            btnStep2Next.disabled = true;
+            onPreview(false).then(function (ok) {
+                if (!ok) return;
+                showStep(3);
+            }).finally(function () {
+                btnStep2Next.disabled = false;
+            });
         });
         btnStep3Back.addEventListener('click', function () { showStep(2); });
         btnStep3Next.addEventListener('click', function () {
@@ -313,21 +319,23 @@
     function onPreview(includeSelections) {
         hideError();
         var req = buildRequestBody();
-        if (!req) return;
+        if (!req) return Promise.resolve(false);
 
         if (includeSelections) {
             updateSelectionMapFromUI();
             var selected = buildSelectedSessionsFromMap();
-            if (selected == null) return;
+            if (selected == null) return Promise.resolve(false);
             if (selected.length) {
                 req.selectedSessions = selected;
             }
         }
 
-        btnPreview.disabled = true;
-        btnPreview.textContent = 'Đang xem trước...';
+        if (btnPreview) {
+            btnPreview.disabled = true;
+            btnPreview.textContent = 'Đang xem trước...';
+        }
 
-        fetch(CTX + '/api/staff/recurring-booking/preview', {
+        return fetch(CTX + '/api/staff/recurring-booking/preview', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -338,19 +346,23 @@
                 if (!body.success) {
                     handleGuestPhoneMatched(body);
                     showError(body.message || 'Xem trước thất bại');
-                    return;
+                    return false;
                 }
                 previewData = body.data;
                 renderPreview(body.data);
                 btnConfirm.disabled = false;
                 updateStepProgress();
+                return true;
             })
             .catch(function (err) {
                 showError('Lỗi kết nối: ' + err.message);
+                return false;
             })
             .finally(function () {
-                btnPreview.disabled = false;
-                btnPreview.innerHTML = '<i class="bi bi-eye"></i>Xem trước';
+                if (btnPreview) {
+                    btnPreview.disabled = false;
+                    btnPreview.innerHTML = '<i class="bi bi-eye"></i>Xem trước';
+                }
             });
     }
 
@@ -435,6 +447,10 @@
         var endDate = endDateEl.value;
         if (!startDate || !endDate) {
             showError('Vui lòng chọn ngày bắt đầu và ngày kết thúc');
+            return null;
+        }
+        if (isEndDateBeforeStart(startDate, endDate)) {
+            showError('Ngày kết thúc phải sau hoặc bằng ngày bắt đầu');
             return null;
         }
         if (!isMinFourWeeks(startDate, endDate)) {
@@ -935,6 +951,12 @@
         return diffDays >= 28;
     }
 
+    function isEndDateBeforeStart(start, end) {
+        var s = new Date(start + 'T00:00:00');
+        var e = new Date(end + 'T00:00:00');
+        return e.getTime() < s.getTime();
+    }
+
     function isValidEmail(email) {
         var cleaned = (email || '').trim();
         if (!cleaned) return true;
@@ -1132,12 +1154,28 @@
         var nowMinutes = timeToMinutes(new Date().toTimeString().slice(0, 5));
         for (var i = 0; i < patterns.length; i++) {
             if (patterns[i].dayOfWeek !== todayDay) continue;
+            var startTime = getSessionStartTimeFromSlotIds(patterns[i].slotIds);
+            if (startTime && timeToMinutes(startTime) <= nowMinutes - 30) {
+                return true;
+            }
             var endTime = getSessionEndTimeFromSlotIds(patterns[i].slotIds);
             if (endTime && timeToMinutes(endTime) <= nowMinutes) {
                 return true;
             }
         }
         return false;
+    }
+
+    function getSessionStartTimeFromSlotIds(slotIds) {
+        var startTime = null;
+        for (var i = 0; i < slotIds.length; i++) {
+            var slot = findSlotById(slotIds[i]);
+            if (!slot) continue;
+            if (!startTime || timeToMinutes(slot.startTime) < timeToMinutes(startTime)) {
+                startTime = slot.startTime;
+            }
+        }
+        return startTime;
     }
 
     function getSessionEndTimeFromSlotIds(slotIds) {
@@ -1153,7 +1191,7 @@
     }
 
     function buildPastSessionMessage() {
-        var nowStr = new Date().toTimeString().slice(0, 5);
+        var nowStr = new Date(Date.now() - 30 * 60 * 1000).toTimeString().slice(0, 5);
         return 'Bạn đang đặt lịch cho hôm nay. Vui lòng chọn các khung giờ từ ' + nowStr + ' trở đi.';
     }
 

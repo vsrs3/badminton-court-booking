@@ -96,9 +96,16 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     return out(400, error(buildPastSessionMessage(plan.date)));
                 }
                 Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
-                boolean conflict = isConflict(booked, courtId, slotIds);
+                Map<Integer, List<Integer>> blocked = repository.findBlockedSlotsByException(conn, facilityId, plan.date);
+                Map<Integer, List<Integer>> occupied = mergeBookedAndBlocked(booked, blocked);
+                boolean conflict = isConflict(occupied, courtId, slotIds);
 
-                BigDecimal sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
+                BigDecimal sessionAmount;
+                try {
+                    sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
+                } catch (Exception ex) {
+                    return out(400, error(ex.getMessage()));
+                }
 
                 if (!conflict) {
                     totalAmount = totalAmount.add(sessionAmount);
@@ -113,7 +120,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     continue;
                 }
 
-                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, effectivePlan, booked, ctx);
+                List<SuggestionView> suggestions = buildSuggestions(conn, facilityId, effectivePlan, occupied, ctx);
                 sessions.add(SessionView.conflict(plan.date, courtId, slotIds, sessionAmount));
                 conflicts.add(new ConflictView(effectivePlan, suggestions));
             }
@@ -201,6 +208,8 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 for (DatePlan plan : datePlans) {
                     Map<Integer, List<Integer>> booked = repository.findBookedSlots(conn, facilityId, plan.date);
+                    Map<Integer, List<Integer>> blocked = repository.findBlockedSlotsByException(conn, facilityId, plan.date);
+                    Map<Integer, List<Integer>> occupied = mergeBookedAndBlocked(booked, blocked);
 
                     SelectedSession override = overrides.get(plan.date);
                     int courtId = override != null ? override.courtId : plan.courtId;
@@ -211,7 +220,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                         return out(400, error(buildPastSessionMessage(plan.date)));
                     }
 
-                    boolean conflict = isConflict(booked, courtId, slotIds);
+                    boolean conflict = isConflict(occupied, courtId, slotIds);
                     if (conflict) {
                         if ("SKIP".equals(policy)) {
                             skippedDates.add(plan.date.toString());
@@ -226,9 +235,41 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                         return out(409, error("Phiên thay thế ngày " + plan.date + " vẫn bị trùng lịch."));
                     }
 
-                    BigDecimal sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
+                    boolean blockedNow = false;
                     for (Integer slotId : slotIds) {
-                        BigDecimal slotAmount = sessionAmountForSlot(courtId, slotId, plan.date, ctx);
+                        if (repository.isSlotBlockedByException(conn, facilityId, courtId, plan.date, slotId)) {
+                            blockedNow = true;
+                            break;
+                        }
+                    }
+                    if (blockedNow) {
+                        if ("SKIP".equals(policy)) {
+                            skippedDates.add(plan.date.toString());
+                            repository.insertBookingSkip(conn, recurringId, plan.date, "TrĂ¹ng lá»‹ch");
+                            continue;
+                        }
+                        conn.rollback();
+                        if (override == null) {
+                            return out(409, error("NgĂ y " + plan.date + " bá»‹ trĂ¹ng lá»‹ch. Vui lĂ²ng chá»n phiĂªn thay tháº¿."));
+                        }
+                        return out(409, error("PhiĂªn thay tháº¿ ngĂ y " + plan.date + " váº«n bá»‹ trĂ¹ng lá»‹ch."));
+                    }
+
+                    BigDecimal sessionAmount;
+                    try {
+                        sessionAmount = calcSessionAmount(courtId, slotIds, plan.date, ctx);
+                    } catch (Exception ex) {
+                        conn.rollback();
+                        return out(400, error(ex.getMessage()));
+                    }
+                    for (Integer slotId : slotIds) {
+                        BigDecimal slotAmount;
+                        try {
+                            slotAmount = resolveSlotPriceStrict(courtId, slotId, plan.date, ctx);
+                        } catch (Exception ex) {
+                            conn.rollback();
+                            return out(400, error(ex.getMessage()));
+                        }
                         int bookingSlotId = repository.insertBookingSlot(conn, bookingId, courtId, plan.date, slotId, slotAmount);
                         try {
                             repository.insertCourtSlotBooking(conn, courtId, plan.date, slotId, bookingSlotId);
@@ -249,7 +290,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 int invoiceId = repository.insertInvoice(conn, bookingId, totalAmount);
                 paymentRepository.insertPayment(conn, invoiceId, totalAmount, "FULL", paymentMethod, staffId);
-                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount);
+                paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount, totalAmount);
                 repository.updateBookingStatus(conn, bookingId, "CONFIRMED");
 
                 conn.commit();
@@ -486,6 +527,27 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         return false;
     }
 
+    private Map<Integer, List<Integer>> mergeBookedAndBlocked(Map<Integer, List<Integer>> booked,
+                                                              Map<Integer, List<Integer>> blocked) {
+        Map<Integer, List<Integer>> merged = new LinkedHashMap<>();
+        if (booked != null) {
+            for (Map.Entry<Integer, List<Integer>> entry : booked.entrySet()) {
+                merged.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+            }
+        }
+        if (blocked != null) {
+            for (Map.Entry<Integer, List<Integer>> entry : blocked.entrySet()) {
+                List<Integer> list = merged.computeIfAbsent(entry.getKey(), k -> new ArrayList<>());
+                for (Integer slotId : entry.getValue()) {
+                    if (!list.contains(slotId)) {
+                        list.add(slotId);
+                    }
+                }
+            }
+        }
+        return merged;
+    }
+
     private List<SuggestionView> buildSuggestions(Connection conn, int facilityId, DatePlan plan,
                                                   Map<Integer, List<Integer>> booked, PlanningContext ctx) throws Exception {
         List<SuggestionView> suggestions = new ArrayList<>();
@@ -556,7 +618,12 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         if (!hasValidPrice(courtId, slotIds, date, ctx)) {
             return null;
         }
-        BigDecimal amount = calcSessionAmount(courtId, slotIds, date, ctx);
+        BigDecimal amount;
+        try {
+            amount = calcSessionAmount(courtId, slotIds, date, ctx);
+        } catch (Exception ex) {
+            return null;
+        }
         LocalTime start = ctx.slotTimes.get(slotIds.get(0))[0];
         LocalTime end = ctx.slotTimes.get(slotIds.get(slotIds.size() - 1))[1];
         return new SuggestionView(courtId, slotIds, amount, start.toString(), end.toString());
@@ -564,7 +631,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
     private boolean hasValidPrice(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {
         for (Integer slotId : slotIds) {
-            BigDecimal price = sessionAmountForSlot(courtId, slotId, date, ctx);
+            BigDecimal price = resolveSlotPrice(courtId, slotId, date, ctx);
             if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
                 return false;
             }
@@ -572,21 +639,21 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         return true;
     }
 
-    private BigDecimal calcSessionAmount(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) {
+    private BigDecimal calcSessionAmount(int courtId, List<Integer> slotIds, LocalDate date, PlanningContext ctx) throws Exception {
         BigDecimal total = BigDecimal.ZERO;
         for (Integer slotId : slotIds) {
-            total = total.add(sessionAmountForSlot(courtId, slotId, date, ctx));
+            total = total.add(resolveSlotPriceStrict(courtId, slotId, date, ctx));
         }
         return total;
     }
 
-    private BigDecimal sessionAmountForSlot(int courtId, int slotId, LocalDate date, PlanningContext ctx) {
+    private BigDecimal resolveSlotPrice(int courtId, int slotId, LocalDate date, PlanningContext ctx) {
         String dayType = isWeekend(date) ? "WEEKEND" : "WEEKDAY";
         Map<String, BigDecimal> priceCache = "WEEKEND".equals(dayType) ? ctx.pricesWeekend : ctx.pricesWeekday;
 
         Integer courtTypeId = ctx.courtTypes.get(courtId);
         LocalTime[] times = ctx.slotTimes.get(slotId);
-        if (courtTypeId == null || times == null) return BigDecimal.ZERO;
+        if (courtTypeId == null || times == null) return null;
 
         for (Map.Entry<String, BigDecimal> entry : priceCache.entrySet()) {
             String[] parts = entry.getKey().split("\\|");
@@ -597,7 +664,24 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                 return entry.getValue();
             }
         }
-        return BigDecimal.ZERO;
+        return null;
+    }
+
+    private BigDecimal resolveSlotPriceStrict(int courtId, int slotId, LocalDate date, PlanningContext ctx) throws Exception {
+        BigDecimal price = resolveSlotPrice(courtId, slotId, date, ctx);
+        if (price == null) {
+            String slotLabel = buildSlotLabel(slotId, ctx);
+            throw new Exception("Slot " + slotLabel + " (" + date + ") chưa được cấu hình giá");
+        }
+        return price;
+    }
+
+    private String buildSlotLabel(int slotId, PlanningContext ctx) {
+        LocalTime[] times = ctx.slotTimes.get(slotId);
+        if (times == null || times[0] == null || times[1] == null) {
+            return "#" + slotId;
+        }
+        return times[0] + "-" + times[1];
     }
 
     private boolean isWeekend(LocalDate date) {
@@ -606,7 +690,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
     }
 
     private String buildPastSessionMessage(LocalDate date) {
-        String time = LocalTime.now().format(TIME_FMT);
+        String time = LocalTime.now().minusMinutes(30).format(TIME_FMT);
         return "Bạn đang đặt lịch cho ngày " + date + ". Vui lòng chọn các khung giờ từ " + time + " trở đi.";
     }
 
@@ -616,9 +700,15 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         if (date.isBefore(today)) return true;
         if (!date.isEqual(today)) return false;
 
+        LocalTime now = LocalTime.now();
+        LocalTime sessionStart = getSessionStartTime(slotIds, ctx);
+        if (sessionStart != null && !now.isBefore(sessionStart.plusMinutes(30))) {
+            return true;
+        }
+
         LocalTime sessionEnd = getSessionEndTime(slotIds, ctx);
         if (sessionEnd == null) return false;
-        return !LocalTime.now().isBefore(sessionEnd);
+        return !now.isBefore(sessionEnd);
     }
 
     private LocalTime getSessionStartTime(List<Integer> slotIds, PlanningContext ctx) {

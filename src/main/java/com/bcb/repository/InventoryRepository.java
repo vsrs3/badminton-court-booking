@@ -17,9 +17,9 @@ public interface InventoryRepository {
 
     void delete(int id);
 
-    List<Inventory> findWithPagination(int limit, int offset, String keyword);
+    List<Inventory> findWithPagination(int limit, int offset, String keyword, Boolean activeStatus, String priceSort);
 
-    int countInventory(String keyword);
+    int countInventory(String keyword, Boolean activeStatus);
 
     List<Inventory> findActiveNotAssignedToFacility(int facilityId, String keyword);
 

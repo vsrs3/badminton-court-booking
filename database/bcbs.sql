@@ -48,6 +48,19 @@ CREATE TABLE [dbo].[EmailVerification](
 );
 GO
 
+CREATE TABLE [dbo].[PasswordResetToken](
+    [id] [int] IDENTITY(1,1) NOT NULL,
+    [email] [nvarchar](255) NOT NULL,
+    [token] [nvarchar](255) NOT NULL,
+    [expire_at] [datetime] NOT NULL,
+    [created_at] [datetime] NOT NULL CONSTRAINT [DF_PasswordResetToken_CreatedAt] DEFAULT (GETDATE())
+);
+GO
+
+CREATE UNIQUE INDEX [UX_PasswordResetToken_Token]
+    ON [dbo].[PasswordResetToken]([token]);
+GO
+
 -- Facility
 CREATE TABLE Facility (
     facility_id INT IDENTITY PRIMARY KEY,
@@ -504,6 +517,26 @@ CREATE TABLE RacketRentalLog (
 );
 GO
 
+CREATE TABLE InventoryRentalSchedule (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    facility_id INT NOT NULL,
+    booking_date DATE NOT NULL,
+    court_id INT NOT NULL,
+    slot_id INT NOT NULL,
+    inventory_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    availableItem INT NOT NULL CHECK (availableItem >= 0),
+    status NVARCHAR(20) NOT NULL
+        CHECK (status IN (N'RENTED', N'RENTING', N'RETURNED')),
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (facility_id) REFERENCES Facility(facility_id),
+    FOREIGN KEY (court_id) REFERENCES Court(court_id),
+    FOREIGN KEY (slot_id) REFERENCES TimeSlot(slot_id),
+    FOREIGN KEY (inventory_id) REFERENCES Inventory(inventory_id),
+    UNIQUE (facility_id, booking_date, court_id, slot_id, inventory_id)
+);
+GO
+
 -- Payment
 CREATE TABLE Payment (
     payment_id INT IDENTITY PRIMARY KEY,
@@ -514,7 +547,6 @@ CREATE TABLE Payment (
     expire_at DATETIME NULL,                  -- thời hạn thanh toán
     created_at DATETIME DEFAULT GETDATE(),    -- thời điểm tạo payment
 
-    gateway VARCHAR(20) DEFAULT 'VNPAY',
     transaction_code NVARCHAR(100),
     paid_amount DECIMAL(12,2),
     payment_time DATETIME,
@@ -741,3 +773,87 @@ ON CourtSlotBooking(booking_slot_id);
 CREATE NONCLUSTERED INDEX IX_FacilityPriceRule_Main
 ON FacilityPriceRule(facility_id, court_type_id, day_type)
 INCLUDE (start_time, end_time, price);
+
+ /* ======================================================
+
+   ====================================================== */
+-- ============================================================================
+-- BLOG & COMMENT RELATED TABLES + DATA
+-- ============================================================================
+
+USE [badminton_court_booking]
+GO
+
+-- 1. BlogPost
+CREATE TABLE [dbo].[BlogPost](
+    [post_id] INT IDENTITY(1,1) PRIMARY KEY,
+    [author_account_id] INT NOT NULL,
+    [title] NVARCHAR(200) NOT NULL,
+    [summary] NVARCHAR(500) NULL,
+    [content] NVARCHAR(MAX) NOT NULL,
+    [status] VARCHAR(20) NOT NULL
+    CHECK ([status] IN ('PUBLISHED','DRAFT')),
+    [published_at] DATETIME NULL,
+    [created_at] DATETIME DEFAULT GETDATE(),
+    [updated_at] DATETIME NULL,
+    [is_deleted] BIT DEFAULT 0,
+
+    CONSTRAINT FK_BlogPost_Account
+    FOREIGN KEY ([author_account_id])
+    REFERENCES [dbo].[Account]([account_id])
+    )
+    GO
+
+
+-- 2. BlogComment
+CREATE TABLE [dbo].[BlogComment](
+    [comment_id] INT IDENTITY(1,1) PRIMARY KEY,
+    [post_id] INT NOT NULL,
+    [author_account_id] INT NOT NULL,
+    [content] NVARCHAR(1000) NOT NULL,
+    [status] VARCHAR(20) NOT NULL
+    CHECK ([status] IN ('PENDING','APPROVED','REJECTED')),
+    [moderated_by_account_id] INT NULL,
+    [moderated_at] DATETIME NULL,
+    [created_at] DATETIME DEFAULT GETDATE(),
+    [updated_at] DATETIME NULL,
+    [is_deleted] BIT DEFAULT 0,
+
+    CONSTRAINT FK_BlogComment_Post
+    FOREIGN KEY ([post_id])
+    REFERENCES [dbo].[BlogPost]([post_id])
+    ON DELETE CASCADE,
+
+    CONSTRAINT FK_BlogComment_Author
+    FOREIGN KEY ([author_account_id])
+    REFERENCES [dbo].[Account]([account_id]),
+
+    CONSTRAINT FK_BlogComment_Moderator
+    FOREIGN KEY ([moderated_by_account_id])
+    REFERENCES [dbo].[Account]([account_id])
+    )
+    GO
+
+
+-- 3. BlogReaction
+CREATE TABLE [dbo].[BlogReaction](
+    [reaction_id] INT IDENTITY(1,1) PRIMARY KEY,
+    [post_id] INT NOT NULL,
+    [account_id] INT NOT NULL,
+    [emoji_code] VARCHAR(30) NOT NULL
+    CHECK ([emoji_code] IN ('LIKE','HEART','WOW','SAD','ANGRY','LAUGH')),
+    [created_at] DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT UQ_BlogReaction UNIQUE ([post_id], [account_id], [emoji_code]),
+
+    CONSTRAINT FK_BlogReaction_Post
+    FOREIGN KEY ([post_id])
+    REFERENCES [dbo].[BlogPost]([post_id])
+    ON DELETE CASCADE,
+
+    CONSTRAINT FK_BlogReaction_Account
+    FOREIGN KEY ([account_id])
+    REFERENCES [dbo].[Account]([account_id])
+    ON DELETE CASCADE
+    )
+    GO

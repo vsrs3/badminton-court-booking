@@ -23,29 +23,28 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     @Override
     public int insertPayment(Connection conn, Payment p) {
         String sql = "INSERT INTO Payment "
-                + "(invoice_id, gateway, transaction_code, paid_amount, payment_time, "
+                + "(invoice_id, transaction_code, paid_amount, payment_time, "
                 + " payment_type, method, payment_status, "
                 + " vnpay_txn_no, vnpay_response_code, expire_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, p.getInvoiceId());
-            ps.setString(2, p.getGateway() != null ? p.getGateway() : "VNPAY");
-            ps.setString(3, p.getTransactionCode());
-            ps.setBigDecimal(4, p.getPaidAmount());
+            ps.setString(2, p.getTransactionCode());
+            ps.setBigDecimal(3, p.getPaidAmount());
             if (p.getPaymentTime() != null) {
-                ps.setTimestamp(5, Timestamp.valueOf(p.getPaymentTime()));
+                ps.setTimestamp(4, Timestamp.valueOf(p.getPaymentTime()));
             } else {
-                ps.setNull(5, Types.TIMESTAMP);
+                ps.setNull(4, Types.TIMESTAMP);
             }
-            ps.setString(6, p.getPaymentType());
-            ps.setString(7, p.getMethod() != null ? p.getMethod() : "VNPAY");
-            ps.setString(8, p.getPaymentStatus() != null ? p.getPaymentStatus() : "PENDING");
-            ps.setString(9, p.getVnpayTxnNo());
-            ps.setString(10, p.getVnpayResponseCode());
+            ps.setString(5, p.getPaymentType());
+            ps.setString(6, p.getMethod() != null ? p.getMethod() : "VNPAY");
+            ps.setString(7, p.getPaymentStatus() != null ? p.getPaymentStatus() : "PENDING");
+            ps.setString(8, p.getVnpayTxnNo());
+            ps.setString(9, p.getVnpayResponseCode());
             if (p.getExpireAt() != null) {
-                ps.setTimestamp(11, Timestamp.valueOf(p.getExpireAt()));
+                ps.setTimestamp(10, Timestamp.valueOf(p.getExpireAt()));
             } else {
-                ps.setNull(11, Types.TIMESTAMP);
+                ps.setNull(10, Types.TIMESTAMP);
             }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -145,7 +144,6 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         Payment p = new Payment();
         p.setPaymentId(rs.getInt("payment_id"));
         p.setInvoiceId(rs.getInt("invoice_id"));
-        p.setGateway(rs.getString("gateway"));
         p.setTransactionCode(rs.getString("transaction_code"));
         p.setPaidAmount(rs.getBigDecimal("paid_amount"));
 

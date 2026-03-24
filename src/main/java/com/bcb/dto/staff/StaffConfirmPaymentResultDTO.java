@@ -6,6 +6,7 @@ public class StaffConfirmPaymentResultDTO {
     private boolean success;
     private String message;
     private BigDecimal paidAmount;
+    private BigDecimal totalAmount;
     private String paymentStatus;
     private String method;
 
@@ -31,6 +32,14 @@ public class StaffConfirmPaymentResultDTO {
 
     public void setPaidAmount(BigDecimal paidAmount) {
         this.paidAmount = paidAmount;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
     public String getPaymentStatus() {

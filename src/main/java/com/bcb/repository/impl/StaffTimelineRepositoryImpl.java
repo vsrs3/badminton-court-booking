@@ -21,11 +21,16 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
 
     @Override
     public StaffTimelineFacilityDTO findFacilityInfo(int facilityId) throws Exception {
+        try (Connection conn = DBContext.getConnection()) {
+            return findFacilityInfo(conn, facilityId);
+        }
+    }
+
+    public StaffTimelineFacilityDTO findFacilityInfo(Connection conn, int facilityId) throws Exception {
         StaffTimelineFacilityDTO facility = new StaffTimelineFacilityDTO();
         String sql = "SELECT name, open_time, close_time FROM Facility WHERE facility_id = ?";
 
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, facilityId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -64,12 +69,18 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
 
     @Override
     public List<StaffTimelineSlotDTO> findSlotsWithinHours(String openTime, String closeTime) throws Exception {
+        try (Connection conn = DBContext.getConnection()) {
+            return findSlotsWithinHours(conn, openTime, closeTime);
+        }
+    }
+
+    public List<StaffTimelineSlotDTO> findSlotsWithinHours(Connection conn, String openTime, String closeTime)
+            throws Exception {
         String sql = "SELECT slot_id, start_time, end_time FROM TimeSlot " +
                 "WHERE start_time >= CAST(? AS TIME) AND end_time <= CAST(? AS TIME) ORDER BY start_time";
         List<StaffTimelineSlotDTO> slots = new ArrayList<>();
 
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, openTime);
             ps.setString(2, closeTime);
             try (ResultSet rs = ps.executeQuery()) {

@@ -117,7 +117,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         Map<String, BigDecimal> suggestionPriceCache = new HashMap<>();
 
         List<PatternPrepared> preparedPatterns = preparePatterns(request.getPatterns(), facility, courtMap, slots);
-        validateNoPastTimeWhenStartDateIsToday(startDate, preparedPatterns);
+        validateNoPastTimeWhenStartDateIsToday(startDate, preparedPatterns, slotMap);
 
         List<RecurringPreviewSessionDTO> sessions = new ArrayList<>();
         int conflictSessions = 0;
@@ -127,7 +127,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
             int dayOfWeek = toPlanDayOfWeek(current);
-            Map<Integer, List<Integer>> bookedByCourt = courtSlotBookingRepo.findBookedSlots(request.getFacilityId(), current);
+            Map<Integer, List<Integer>> unavailableByCourt = courtSlotBookingRepo.findUnavailableSlots(request.getFacilityId(), current);
 
             for (PatternPrepared prepared : preparedPatterns) {
                 if (prepared.dayOfWeek != dayOfWeek) {
@@ -143,7 +143,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                         priceRuleCache
                 );
 
-                List<Integer> conflictSlots = extractConflictSlots(bookedByCourt, prepared.court.getCourtId(), prepared.slotIds);
+                List<Integer> conflictSlots = extractConflictSlots(unavailableByCourt, prepared.court.getCourtId(), prepared.slotIds);
                 boolean hasConflict = !conflictSlots.isEmpty();
 
                 RecurringPreviewSessionDTO session = new RecurringPreviewSessionDTO();
@@ -164,7 +164,7 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                             current,
                             prepared,
                             courts,
-                            bookedByCourt,
+                            unavailableByCourt,
                             slots,
                             slotMap,
                             slotIndexMap,
@@ -536,7 +536,9 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
         return map;
     }
 
-    private void validateNoPastTimeWhenStartDateIsToday(LocalDate startDate, List<PatternPrepared> preparedPatterns) {
+    private void validateNoPastTimeWhenStartDateIsToday(LocalDate startDate,
+                                                        List<PatternPrepared> preparedPatterns,
+                                                        Map<Integer, SingleBookingMatrixTimeSlotDTO> slotMap) {
         if (startDate == null || preparedPatterns == null || preparedPatterns.isEmpty()) {
             return;
         }
@@ -552,8 +554,19 @@ public class RecurringPreviewServiceImpl implements RecurringPreviewService {
                 continue;
             }
 
-            LocalTime startTime = parseTime(prepared.pattern.getStartTime(), "patterns.startTime");
-            if (!startTime.isAfter(now)) {
+            if (prepared.slotIds == null || prepared.slotIds.isEmpty()) {
+                throw new RecurringValidationException("INVALID_TIME_RANGE", "Khoảng thời gian không khớp với slot đã cấu hình.");
+            }
+
+            Integer firstSlotId = prepared.slotIds.get(0);
+            SingleBookingMatrixTimeSlotDTO firstSlot = slotMap.get(firstSlotId);
+            if (firstSlot == null) {
+                throw new RecurringValidationException("INVALID_SLOT", "Không tìm thấy slot: " + firstSlotId);
+            }
+
+            // Reject when current time has passed the end of the first slot in today's pattern.
+            LocalTime firstSlotEnd = parseTime(firstSlot.getEndTime(), "slot.endTime");
+            if (now.isAfter(firstSlotEnd)) {
                 String message = "Khung giờ " + prepared.pattern.getStartTime() + "-" + prepared.pattern.getEndTime()
                         + " của " + toVietnameseDayName(todayPlanDay)
                         + " đã ở quá khứ so với hiện tại (" + now.format(TF) + "). Vui lòng chọn giờ bắt đầu muộn hơn.";
