@@ -104,7 +104,13 @@
             if (!validateScheduleForNext()) {
                 return;
             }
-            showStep(3);
+            btnStep2Next.disabled = true;
+            onPreview(false).then(function (ok) {
+                if (!ok) return;
+                showStep(3);
+            }).finally(function () {
+                btnStep2Next.disabled = false;
+            });
         });
         btnStep3Back.addEventListener('click', function () { showStep(2); });
         btnStep3Next.addEventListener('click', function () {
@@ -313,21 +319,23 @@
     function onPreview(includeSelections) {
         hideError();
         var req = buildRequestBody();
-        if (!req) return;
+        if (!req) return Promise.resolve(false);
 
         if (includeSelections) {
             updateSelectionMapFromUI();
             var selected = buildSelectedSessionsFromMap();
-            if (selected == null) return;
+            if (selected == null) return Promise.resolve(false);
             if (selected.length) {
                 req.selectedSessions = selected;
             }
         }
 
-        btnPreview.disabled = true;
-        btnPreview.textContent = 'Đang xem trước...';
+        if (btnPreview) {
+            btnPreview.disabled = true;
+            btnPreview.textContent = 'Đang xem trước...';
+        }
 
-        fetch(CTX + '/api/staff/recurring-booking/preview', {
+        return fetch(CTX + '/api/staff/recurring-booking/preview', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -338,19 +346,23 @@
                 if (!body.success) {
                     handleGuestPhoneMatched(body);
                     showError(body.message || 'Xem trước thất bại');
-                    return;
+                    return false;
                 }
                 previewData = body.data;
                 renderPreview(body.data);
                 btnConfirm.disabled = false;
                 updateStepProgress();
+                return true;
             })
             .catch(function (err) {
                 showError('Lỗi kết nối: ' + err.message);
+                return false;
             })
             .finally(function () {
-                btnPreview.disabled = false;
-                btnPreview.innerHTML = '<i class="bi bi-eye"></i>Xem trước';
+                if (btnPreview) {
+                    btnPreview.disabled = false;
+                    btnPreview.innerHTML = '<i class="bi bi-eye"></i>Xem trước';
+                }
             });
     }
 
