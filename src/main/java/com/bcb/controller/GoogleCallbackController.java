@@ -43,13 +43,13 @@ public class GoogleCallbackController extends HttpServlet {
 
             Account account = googleAuthService.handleGoogleLogin(code);
             if (account == null) {
-                request.setAttribute("error", "Tai khoan Google nay khong ton tai trong he thong.");
+                request.setAttribute("error", "Tài khoản Google này không tồn tại trong hệ thống.");
                 request.getRequestDispatcher("/jsp/auth/login.jsp").forward(request, response);
                 return;
             }
 
             if (!account.getIsActive()) {
-                request.setAttribute("error", "Tai khoan da bi khoa.");
+                request.setAttribute("error", "Tài khoản đã bị khóa.");
                 request.getRequestDispatcher("/jsp/auth/login.jsp").forward(request, response);
                 return;
             }
