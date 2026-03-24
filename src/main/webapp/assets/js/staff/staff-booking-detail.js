@@ -445,7 +445,6 @@
                 }
             });
             container.appendChild(btnOut);
-            appendRentalActionControl(container, session, idx, isPaid);
             return;
         }
 
@@ -482,7 +481,6 @@
                 }
             });
             container.appendChild(btnIn);
-            appendRentalActionControl(container, session, idx, isPaid);
 
             if (isSessionPastDue(session)) {
                 var btnNs = document.createElement('button');
@@ -530,41 +528,6 @@
             openRentalDetailModal(session);
         });
         infoEl.appendChild(rentalEl);
-    }
-
-    function appendRentalActionControl(container, session, sessionIndex, isPaid) {
-        if (!hasRentalActionItems(session)) return;
-
-        var currentStatus = getSessionRentalActionStatus(session);
-        if (currentStatus === 'RETURNED') {
-            var returnedLabel = document.createElement('span');
-            returnedLabel.className = 'sbd-session-status sbd-ss-label-rental-returned';
-            returnedLabel.innerHTML = '<i class="bi bi-bag-check-fill me-1"></i>Đã trả đồ';
-            container.appendChild(returnedLabel);
-            return;
-        }
-
-        var nextStatus = currentStatus === 'RENTING' ? 'RETURNED' : 'RENTING';
-        var buttonLabel = currentStatus === 'RENTING' ? 'Đã trả đồ' : 'Đang thuê đồ';
-        var buttonClass = currentStatus === 'RENTING' ? 'sbd-btn-rental-return' : 'sbd-btn-rental-start';
-
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'sbd-btn ' + buttonClass + ' js-rental-action';
-        btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + buttonLabel;
-        btn.addEventListener('click', function () {
-            if (!isPaid) {
-                pendingAction = {
-                    type: nextStatus === 'RENTING' ? 'rental-start' : 'rental-return',
-                    sessionIndex: sessionIndex
-                };
-                openPaymentModal();
-                return;
-            }
-
-            handleRentalStatusUpdate(sessionIndex, nextStatus);
-        });
-        container.appendChild(btn);
     }
 
     function openRentalDetailModal(session) {
@@ -623,20 +586,12 @@
                         inventoryName: item.inventoryName || item.name || 'Đồ thuê',
                         unitPrice: Number(item.unitPrice || 0),
                         quantity: 0,
-                        lineTotal: 0,
-                        scheduleIds: [],
-                        statuses: []
+                        lineTotal: 0
                     };
                 }
 
                 groupedItems[key].quantity += Number(item.quantity || 0);
                 groupedItems[key].lineTotal += Number(item.lineTotal || (Number(item.unitPrice || 0) * Number(item.quantity || 0)));
-                if (item.scheduleId != null) {
-                    groupedItems[key].scheduleIds.push(Number(item.scheduleId));
-                }
-                if (item.status) {
-                    groupedItems[key].statuses.push(String(item.status).toUpperCase());
-                }
             });
         });
 
@@ -645,28 +600,6 @@
         }).sort(function (a, b) {
             return String(a.inventoryName || '').localeCompare(String(b.inventoryName || ''));
         });
-    }
-
-    function hasRentalActionItems(session) {
-        return summarizeSessionRentalItems(session).some(function (item) {
-            return (item.scheduleIds || []).length > 0;
-        });
-    }
-
-    function getSessionRentalActionStatus(session) {
-        var summaryItems = summarizeSessionRentalItems(session);
-        var statuses = [];
-
-        summaryItems.forEach(function (item) {
-            (item.statuses || []).forEach(function (status) {
-                statuses.push(String(status || '').toUpperCase());
-            });
-        });
-
-        if (!statuses.length) return '';
-        if (statuses.some(function (status) { return status === 'RENTING'; })) return 'RENTING';
-        if (statuses.every(function (status) { return status === 'RETURNED'; })) return 'RETURNED';
-        return 'RENTED';
     }
 
     function findRentalRowsForSession(session, rentalRows) {
@@ -834,8 +767,6 @@
                     setTimeout(function () {
                         if (action.type === 'checkin') handleCheckin(action.sessionIndex);
                         else if (action.type === 'checkout') handleCheckout(action.sessionIndex);
-                        else if (action.type === 'rental-start') handleRentalStatusUpdate(action.sessionIndex, 'RENTING');
-                        else if (action.type === 'rental-return') handleRentalStatusUpdate(action.sessionIndex, 'RETURNED');
                     }, 500);
                 }
             })
@@ -1010,56 +941,6 @@
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-person-x me-1"></i>Đánh dấu vắng';
-                }
-            });
-    }
-
-    async function handleRentalStatusUpdate(sessionIndex, nextStatus) {
-        var session = bookingData.sessions[sessionIndex];
-        var isReturnAction = nextStatus === 'RETURNED';
-        var confirmTitle = isReturnAction ? 'Xác nhận trả đồ' : 'Xác nhận đang thuê đồ';
-        var confirmMsg = (isReturnAction ? 'Xác nhận đã trả đồ cho phiên ' : 'Xác nhận bàn giao đồ thuê cho phiên ')
-            + (sessionIndex + 1) + '\n'
-            + session.courtName + ' (' + session.startTime + ' → ' + session.endTime + ')';
-
-        if (!(await uiConfirm(confirmMsg, confirmTitle))) return;
-
-        var btn = document.querySelector('#session-action-' + sessionIndex + ' .js-rental-action');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
-        }
-
-        fetch(CTX + '/api/staff/booking/rental-status', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                bookingId: parseInt(bookingId, 10),
-                sessionIndex: sessionIndex,
-                status: nextStatus
-            })
-        })
-            .then(function (res) { return res.json(); })
-            .then(function (body) {
-                if (!body.success) {
-                    showToast(body.message || 'Cập nhật trạng thái đồ thuê thất bại', 'error');
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + (isReturnAction ? 'Đã trả đồ' : 'Đang thuê đồ');
-                    }
-                    return;
-                }
-
-                showToast(body.message || 'Cập nhật trạng thái đồ thuê thành công', 'success');
-                loadDetail();
-            })
-            .catch(function (err) {
-                console.error('Rental status update error:', err);
-                showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-bag-check me-1"></i>' + (isReturnAction ? 'Đã trả đồ' : 'Đang thuê đồ');
                 }
             });
     }

@@ -690,6 +690,28 @@
     color: #991B1B;
 }
 
+.srs-detail-bulk {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #F3F4F6;
+}
+
+.srs-detail-bulk-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6B7280;
+}
+
+.srs-detail-bulk .srs-status-select {
+    min-width: 180px;
+}
+
 .srs-row-updating {
     opacity: 0.55;
 }
@@ -751,5 +773,10 @@
 
     .srs-status-select {
         min-width: 100%;
+    }
+
+    .srs-detail-bulk {
+        flex-direction: column;
+        align-items: stretch;
     }
 }

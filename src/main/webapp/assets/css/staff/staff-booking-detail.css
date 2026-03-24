@@ -558,24 +558,6 @@
     box-shadow: 0 2px 8px rgba(30, 64, 175, 0.25);
 }
 
-.sbd-btn-rental-start {
-    background: #0F766E;
-    color: white;
-}
-.sbd-btn-rental-start:hover:not(:disabled) {
-    background: #0D9488;
-    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
-}
-
-.sbd-btn-rental-return {
-    background: #7C2D12;
-    color: white;
-}
-.sbd-btn-rental-return:hover:not(:disabled) {
-    background: #9A3412;
-    box-shadow: 0 2px 8px rgba(124, 45, 18, 0.25);
-}
-
 .sbd-btn-waiting {
     background: #F3F4F6;
     color: #9CA3AF;
@@ -698,11 +680,6 @@
 .sbd-btn-release:hover:not(:disabled) {
     background: #0D9488;
     box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
-}
-
-.sbd-ss-label-rental-returned {
-    background: #D1FAE5;
-    color: #065F46;
 }
 
 .sbd-rental-modal {

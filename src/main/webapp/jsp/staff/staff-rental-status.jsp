@@ -192,6 +192,16 @@
                 <div class="text-center text-muted py-3 d-none" id="rentalDetailEmpty">
                     Không có đồ thuê trong ô này.
                 </div>
+
+                <div class="srs-detail-bulk d-none" id="rentalDetailBulkWrap">
+                    <span class="srs-detail-bulk-label">Đổi trạng thái tất cả</span>
+                    <select class="form-select form-select-sm srs-status-select" id="rentalDetailBulkSelect">
+                        <option value="">Chọn trạng thái</option>
+                        <option value="RENTED">Đã thuê</option>
+                        <option value="RENTING">Đang thuê</option>
+                        <option value="RETURNED">Đã trả</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>

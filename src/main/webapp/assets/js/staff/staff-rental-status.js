@@ -27,6 +27,8 @@
     var rentalDetailModeHint = document.getElementById('rentalDetailModeHint');
     var rentalDetailBody = document.getElementById('rentalDetailBody');
     var rentalDetailEmpty = document.getElementById('rentalDetailEmpty');
+    var rentalDetailBulkWrap = document.getElementById('rentalDetailBulkWrap');
+    var rentalDetailBulkSelect = document.getElementById('rentalDetailBulkSelect');
     var rentalDetailModalEl = document.getElementById('rentalDetailModal');
     var detailModal = null;
     var liveClockTimerId = null;
@@ -194,6 +196,10 @@
 
         if (rentalDetailBody) {
             rentalDetailBody.addEventListener('change', handleStatusChange);
+        }
+
+        if (rentalDetailBulkSelect) {
+            rentalDetailBulkSelect.addEventListener('change', handleBulkStatusChange);
         }
 
         if (rentalDetailModalEl) {
@@ -868,6 +874,7 @@
         if (!items.length) {
             rentalDetailBody.innerHTML = '';
             rentalDetailEmpty.classList.remove('d-none');
+            renderBulkStatusControl([], editable);
             return;
         }
 
@@ -881,6 +888,7 @@
                 '   <td>' + buildStatusControl(item.scheduleId, status, editable) + '</td>' +
                 '</tr>';
         }).join('');
+        renderBulkStatusControl(items, editable);
     }
 
     function renderDetailModeHint(slot, editable) {
@@ -896,6 +904,170 @@
 
         rentalDetailModeHint.classList.remove('d-none');
         rentalDetailModeHint.textContent = buildReadonlyMessage(slot);
+    }
+
+    function renderBulkStatusControl(items, editable) {
+        if (!rentalDetailBulkWrap || !rentalDetailBulkSelect) {
+            return;
+        }
+
+        var hasItems = Array.isArray(items) && items.length > 0;
+        rentalDetailBulkWrap.classList.toggle('d-none', !hasItems);
+
+        if (!hasItems) {
+            rentalDetailBulkSelect.value = '';
+            rentalDetailBulkSelect.disabled = true;
+            rentalDetailBulkSelect.setAttribute('data-prev-status', '');
+            refreshBulkStatusSelectClass('');
+            return;
+        }
+
+        var bulkStatus = resolveBulkStatusValue(items);
+        rentalDetailBulkSelect.disabled = !editable;
+        rentalDetailBulkSelect.value = bulkStatus;
+        rentalDetailBulkSelect.setAttribute('data-prev-status', bulkStatus);
+        refreshBulkStatusSelectClass(bulkStatus);
+    }
+
+    function resolveBulkStatusValue(items) {
+        if (!Array.isArray(items) || !items.length) {
+            return '';
+        }
+
+        var firstStatus = normalizeStatus(items[0].status);
+        for (var i = 1; i < items.length; i++) {
+            if (normalizeStatus(items[i].status) !== firstStatus) {
+                return '';
+            }
+        }
+        return firstStatus;
+    }
+
+    function refreshBulkStatusSelectClass(status) {
+        if (!rentalDetailBulkSelect) {
+            return;
+        }
+
+        rentalDetailBulkSelect.classList.remove(
+            'srs-status-select-rented',
+            'srs-status-select-renting',
+            'srs-status-select-returned'
+        );
+
+        if (status) {
+            rentalDetailBulkSelect.classList.add('srs-status-select-' + normalizeStatus(status).toLowerCase());
+        }
+    }
+
+    function setDetailRowsBusy(busy) {
+        if (!rentalDetailBody) {
+            return [];
+        }
+
+        var selects = Array.prototype.slice.call(
+            rentalDetailBody.querySelectorAll('[data-role="detail-status"]')
+        );
+
+        selects.forEach(function (select) {
+            select.disabled = !!busy;
+            var row = select.closest('tr');
+            if (row) {
+                row.classList.toggle('srs-row-updating', !!busy);
+            }
+        });
+
+        if (rentalDetailBulkSelect) {
+            rentalDetailBulkSelect.disabled = !!busy;
+        }
+
+        return selects;
+    }
+
+    function sendRentalStatusUpdate(scheduleId, nextStatus) {
+        return fetch(CTX + '/api/staff/rental/status', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: new URLSearchParams({
+                scheduleId: String(scheduleId),
+                status: nextStatus
+            }).toString()
+        })
+            .then(handleJsonResponse)
+            .then(function (body) {
+                if (!body.success) {
+                    throw new Error(body.message || 'Khﾃｴng th盻・c蘯ｭp nh蘯ｭt tr蘯｡ng thﾃ｡i.');
+                }
+                return body;
+            });
+    }
+
+    function handleBulkStatusChange(event) {
+        var select = event.target;
+        if (!select || select !== rentalDetailBulkSelect) {
+            return;
+        }
+
+        var previousStatus = String(select.getAttribute('data-prev-status') || '');
+        var nextStatus = String(select.value || '').toUpperCase();
+        var modalCell = state.modalCellKey ? state.cellMap[state.modalCellKey] : null;
+        var modalSlot = modalCell ? findSlot(modalCell.slotId) : null;
+
+        if (!nextStatus) {
+            refreshBulkStatusSelectClass(previousStatus);
+            return;
+        }
+
+        if (!canEditSlot(modalSlot)) {
+            select.value = previousStatus;
+            refreshBulkStatusSelectClass(previousStatus);
+            window.alert(buildReadonlyMessage(modalSlot));
+            return;
+        }
+
+        var rowSelects = Array.prototype.slice.call(
+            rentalDetailBody ? rentalDetailBody.querySelectorAll('[data-role="detail-status"]') : []
+        );
+        var updates = rowSelects
+            .map(function (rowSelect) {
+                return {
+                    select: rowSelect,
+                    scheduleId: Number(rowSelect.getAttribute('data-schedule-id') || 0),
+                    previousStatus: normalizeStatus(rowSelect.getAttribute('data-prev-status'))
+                };
+            })
+            .filter(function (item) {
+                return item.scheduleId && item.previousStatus !== nextStatus;
+            });
+
+        refreshBulkStatusSelectClass(nextStatus);
+
+        if (!updates.length) {
+            select.setAttribute('data-prev-status', nextStatus);
+            return;
+        }
+
+        setDetailRowsBusy(true);
+        Promise.all(updates.map(function (item) {
+            return sendRentalStatusUpdate(item.scheduleId, nextStatus);
+        }))
+            .then(function () {
+                select.setAttribute('data-prev-status', nextStatus);
+                loadRentalStatus(state.selectedDate, state.modalCellKey);
+            })
+            .catch(function (error) {
+                console.error('Bulk rental status update error:', error);
+                select.value = previousStatus;
+                refreshBulkStatusSelectClass(previousStatus);
+                loadRentalStatus(state.selectedDate, state.modalCellKey);
+                window.alert(error.message || 'Khﾃｴng th盻・c蘯ｭp nh蘯ｭt t蘯･t c蘯｣ tr蘯｡ng thﾃ｡i.');
+            })
+            .finally(function () {
+                setDetailRowsBusy(false);
+            });
     }
 
     function buildStatusControl(scheduleId, status, editable) {
