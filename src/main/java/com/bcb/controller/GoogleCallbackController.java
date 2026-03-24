@@ -96,7 +96,7 @@ public class GoogleCallbackController extends HttpServlet {
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
             request.setAttribute("retryUrl", buildRetryUrl(request, token));
-            request.setAttribute("retryLabel", "Quay lai chon tai khoan khac");
+            request.setAttribute("retryLabel", "Quay lại chọn tài khoản khác");
             request.getRequestDispatcher("/jsp/common/google-error.jsp").forward(request, response);
         } catch (Exception e) {
             throw new ServletException(e);
