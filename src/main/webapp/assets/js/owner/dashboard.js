@@ -103,10 +103,7 @@
         inactiveList: document.getElementById('rentalInactiveList'),
         deactivateButton: document.getElementById('rentalDeactivateBtn'),
         detailTableBody: document.getElementById('rentalDetailTableBody'),
-        detailPagination: document.getElementById('rentalDetailPagination'),
-        purgeStart: document.getElementById('rentalPurgeStart'),
-        purgeEnd: document.getElementById('rentalPurgeEnd'),
-        purgeButton: document.getElementById('rentalPurgeBtn')
+        detailPagination: document.getElementById('rentalDetailPagination')
     };
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -568,10 +565,6 @@
             deactivateInactiveItems();
         });
 
-        rentalEls.purgeButton.addEventListener('click', function () {
-            purgeRentalData();
-        });
-
         if (rentalEls.detailPagination) {
             rentalEls.detailPagination.addEventListener('click', function (event) {
                 const link = event.target.closest('a[data-page]');
@@ -760,7 +753,6 @@
             rentalState.detailScope = 'month';
             rentalState.hourKey = null;
             rentalEls.inactiveMonthSelect.value = '1';
-            clearPurgeResult();
             await loadRentalSummary();
             closeFacilitySuggestions();
         } catch (error) {
@@ -1255,57 +1247,6 @@
         }
     }
 
-    async function purgeRentalData() {
-        const startAt = rentalEls.purgeStart ? rentalEls.purgeStart.value : '';
-        const endAt = rentalEls.purgeEnd ? rentalEls.purgeEnd.value : '';
-
-        if (!startAt || !endAt) {
-            setText('rentalPurgeResult', 'Vui lòng nhập đầy đủ thời điểm bắt đầu và kết thúc.');
-            return;
-        }
-
-        const confirmed = window.confirm(
-            'Xóa hoàn toàn dữ liệu trong RacketRentalLog, RacketRental và InventoryRentalSchedule trong khoảng đã chọn?'
-        );
-        if (!confirmed) {
-            return;
-        }
-
-        toggleButtonLoading(rentalEls.purgeButton, true, 'Đang xóa...');
-        try {
-            const response = await requestJson(buildApiUrl('/api/owner/rental-report/purge'), {
-                method: 'POST',
-                form: {
-                    startAt: startAt,
-                    endAt: endAt
-                }
-            });
-
-            const result = response.data || {};
-            setText(
-                'rentalPurgeResult',
-                'Đã xóa ' + numberFormatter.format(Number(result.rentalLogDeleted || 0)) +
-                ' dòng RacketRentalLog, ' + numberFormatter.format(Number(result.racketRentalDeleted || 0)) +
-                ' dòng RacketRental và ' + numberFormatter.format(Number(result.scheduleDeleted || 0)) +
-                ' dòng InventoryRentalSchedule.'
-            );
-
-            rentalState.year = null;
-            rentalState.month = 1;
-            rentalState.day = 1;
-            rentalState.inactiveMonth = 1;
-            rentalState.detailScope = 'month';
-            rentalState.hourKey = null;
-            rentalEls.inactiveMonthSelect.value = '1';
-            await loadRentalSummary();
-        } catch (error) {
-            console.error('Failed to purge rental data', error);
-            setText('rentalPurgeResult', error.message || 'Không thể xóa dữ liệu thuê đồ.');
-        } finally {
-            toggleButtonLoading(rentalEls.purgeButton, false, 'Xác nhận xóa');
-        }
-    }
-
     function setRentalLoadingState() {
         renderTopItems([]);
         renderInactiveItems([]);
@@ -1336,10 +1277,6 @@
         charts[key].data.datasets[0].backgroundColor = [];
         charts[key].data.datasets[0].hoverBackgroundColor = [];
         charts[key].update();
-    }
-
-    function clearPurgeResult() {
-        setText('rentalPurgeResult', '');
     }
 
     function buildApiUrl(path, params) {

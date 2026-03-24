@@ -156,27 +156,6 @@
                     </div>
                 </div>
 
-                <div class="dov-card owner-rental-purge-card">
-                    <div class="owner-rental-card-header">
-                        <div>
-                            <h3 class="owner-rental-title">Xóa toàn bộ dữ liệu thuê đồ theo khoảng thời gian</h3>
-                        </div>
-                    </div>
-                    <div class="owner-rental-purge-form">
-                        <div class="owner-rental-purge-field">
-                            <label class="owner-rental-label" for="rentalPurgeStart">Bắt đầu</label>
-                            <input type="datetime-local" class="form-control" id="rentalPurgeStart">
-                        </div>
-                        <div class="owner-rental-purge-field">
-                            <label class="owner-rental-label" for="rentalPurgeEnd">Kết thúc</label>
-                            <input type="datetime-local" class="form-control" id="rentalPurgeEnd">
-                        </div>
-                        <button type="button" class="btn btn-danger owner-rental-purge-btn" id="rentalPurgeBtn">
-                            Xác nhận xóa
-                        </button>
-                    </div>
-                    <div class="owner-rental-purge-result" id="rentalPurgeResult"></div>
-                </div>
             </div>
         </section>
     </div>

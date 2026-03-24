@@ -13,8 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 
 @WebServlet(name = "OwnerRentalReportApiController", urlPatterns = {"/api/owner/rental-report/*"})
 public class OwnerRentalReportApiController extends HttpServlet {
@@ -102,20 +100,6 @@ public class OwnerRentalReportApiController extends HttpServlet {
                 return;
             }
 
-            if ("/purge".equals(pathInfo)) {
-                LocalDateTime start = parseDateTime(request.getParameter("startAt"), "startAt");
-                LocalDateTime end = parseDateTime(request.getParameter("endAt"), "endAt");
-                if (end.isBefore(start)) {
-                    throw new IllegalArgumentException("Thời điểm kết thúc phải lớn hơn hoặc bằng thời điểm bắt đầu.");
-                }
-
-                writeJson(response, JsonResponseUtil.success(
-                        "Xóa dữ liệu thuê đồ thành công",
-                        service.purgeRentalData(start, end)
-                ));
-                return;
-            }
-
             writeJson(response, HttpServletResponse.SC_NOT_FOUND, JsonResponseUtil.error("Không tìm thấy endpoint"));
         } catch (IllegalArgumentException exception) {
             writeJson(response, HttpServletResponse.SC_BAD_REQUEST, JsonResponseUtil.error(exception.getMessage()));
@@ -168,17 +152,6 @@ public class OwnerRentalReportApiController extends HttpServlet {
             return Integer.parseInt(value);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Tham số số nguyên không hợp lệ: " + value);
-        }
-    }
-
-    private LocalDateTime parseDateTime(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Thiếu thời gian " + fieldName + ".");
-        }
-        try {
-            return LocalDateTime.parse(value);
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException("Thời gian " + fieldName + " không hợp lệ.");
         }
     }
 

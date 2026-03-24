@@ -563,8 +563,7 @@
 .owner-rental-top-card,
 .owner-rental-chart-card,
 .owner-rental-detail-card,
-.owner-rental-inactive-card,
-.owner-rental-purge-card {
+.owner-rental-inactive-card {
   height: 100%;
 }
 
@@ -696,28 +695,6 @@
   margin: 0.2rem 0 0;
 }
 
-.owner-rental-purge-form {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
-  gap: 1rem;
-  align-items: end;
-}
-
-.owner-rental-purge-btn {
-  min-height: 48px;
-  min-width: 150px;
-  border-radius: 14px;
-  font-weight: 700;
-}
-
-.owner-rental-purge-result {
-  margin-top: 1rem;
-  min-height: 1.25rem;
-  color: #374151;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
 .owner-rental-empty-state {
   display: flex;
   align-items: center;
@@ -739,13 +716,11 @@
 }
 
 @media (max-width: 900px) {
-  .owner-rental-search-layout,
-  .owner-rental-purge-form {
+  .owner-rental-search-layout {
     grid-template-columns: 1fr;
   }
 
-  .owner-rental-search-button,
-  .owner-rental-purge-btn {
+  .owner-rental-search-button {
     width: 100%;
   }
 }

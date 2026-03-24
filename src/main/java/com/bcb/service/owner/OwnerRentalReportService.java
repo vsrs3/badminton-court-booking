@@ -3,10 +3,8 @@ package com.bcb.service.owner;
 import com.bcb.dto.owner.OwnerRentalDeactivateResultDTO;
 import com.bcb.dto.owner.OwnerRentalDetailsDTO;
 import com.bcb.dto.owner.OwnerRentalFacilityOptionDTO;
-import com.bcb.dto.owner.OwnerRentalPurgeResultDTO;
 import com.bcb.dto.owner.OwnerRentalReportSummaryDTO;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OwnerRentalReportService {
@@ -33,6 +31,4 @@ public interface OwnerRentalReportService {
 
     OwnerRentalDeactivateResultDTO deactivateInactiveItems(Integer facilityId, Integer year, Integer month)
             throws Exception;
-
-    OwnerRentalPurgeResultDTO purgeRentalData(LocalDateTime start, LocalDateTime end) throws Exception;
 }

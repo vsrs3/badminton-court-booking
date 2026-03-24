@@ -4,11 +4,9 @@ import com.bcb.dto.owner.OwnerRentalDetailRowDTO;
 import com.bcb.dto.owner.OwnerRentalFacilityOptionDTO;
 import com.bcb.dto.owner.OwnerRentalInactiveItemDTO;
 import com.bcb.dto.owner.OwnerRentalPointDTO;
-import com.bcb.dto.owner.OwnerRentalPurgeResultDTO;
 import com.bcb.dto.owner.OwnerRentalTopItemDTO;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OwnerRentalReportRepository {
@@ -35,6 +33,4 @@ public interface OwnerRentalReportRepository {
     List<OwnerRentalInactiveItemDTO> findInactiveItems(int facilityId, int year, int month, int limit) throws Exception;
 
     int deactivateInactiveItems(int facilityId, int year, int month, int limit) throws Exception;
-
-    OwnerRentalPurgeResultDTO purgeRentalData(LocalDateTime start, LocalDateTime end) throws Exception;
 }

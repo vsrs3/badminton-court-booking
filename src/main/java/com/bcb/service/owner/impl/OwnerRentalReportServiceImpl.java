@@ -4,7 +4,6 @@ import com.bcb.dto.owner.OwnerRentalDeactivateResultDTO;
 import com.bcb.dto.owner.OwnerRentalDetailsDTO;
 import com.bcb.dto.owner.OwnerRentalFacilityOptionDTO;
 import com.bcb.dto.owner.OwnerRentalPointDTO;
-import com.bcb.dto.owner.OwnerRentalPurgeResultDTO;
 import com.bcb.dto.owner.OwnerRentalReportSummaryDTO;
 import com.bcb.repository.owner.OwnerRentalReportRepository;
 import com.bcb.repository.owner.impl.OwnerRentalReportRepositoryImpl;
@@ -125,12 +124,6 @@ public class OwnerRentalReportServiceImpl implements OwnerRentalReportService {
         result.setMonth(resolvedMonth);
         result.setDeactivatedCount(repository.deactivateInactiveItems(resolvedFacilityId, resolvedYear, resolvedMonth, 10));
         return result;
-    }
-
-    @Override
-    public OwnerRentalPurgeResultDTO purgeRentalData(java.time.LocalDateTime start, java.time.LocalDateTime end)
-            throws Exception {
-        return repository.purgeRentalData(start, end);
     }
 
     private OwnerRentalDetailsDTO buildDetails(

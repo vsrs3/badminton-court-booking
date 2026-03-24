@@ -4,7 +4,6 @@ import com.bcb.dto.owner.OwnerRentalDetailRowDTO;
 import com.bcb.dto.owner.OwnerRentalFacilityOptionDTO;
 import com.bcb.dto.owner.OwnerRentalInactiveItemDTO;
 import com.bcb.dto.owner.OwnerRentalPointDTO;
-import com.bcb.dto.owner.OwnerRentalPurgeResultDTO;
 import com.bcb.dto.owner.OwnerRentalTopItemDTO;
 import com.bcb.repository.owner.OwnerRentalReportRepository;
 import com.bcb.utils.DBContext;
@@ -14,9 +13,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -424,56 +421,6 @@ public class OwnerRentalReportRepositoryImpl implements OwnerRentalReportReposit
                 conn.setAutoCommit(true);
             }
         }
-    }
-
-    @Override
-    public OwnerRentalPurgeResultDTO purgeRentalData(LocalDateTime start, LocalDateTime end) throws Exception {
-        String deleteLogSql = """
-                DELETE FROM RacketRentalLog
-                WHERE rented_at BETWEEN ? AND ?
-                """;
-        String deleteRentalSql = """
-                DELETE FROM RacketRental
-                WHERE created_at BETWEEN ? AND ?
-                """;
-        String deleteScheduleSql = """
-                DELETE FROM InventoryRentalSchedule
-                WHERE created_at BETWEEN ? AND ?
-                """;
-
-        OwnerRentalPurgeResultDTO result = new OwnerRentalPurgeResultDTO();
-
-        try (Connection conn = DBContext.getConnection()) {
-            conn.setAutoCommit(false);
-            try (PreparedStatement deleteLogPs = conn.prepareStatement(deleteLogSql);
-                 PreparedStatement deleteRentalPs = conn.prepareStatement(deleteRentalSql);
-                 PreparedStatement deleteSchedulePs = conn.prepareStatement(deleteScheduleSql)) {
-
-                Timestamp startTimestamp = Timestamp.valueOf(start);
-                Timestamp endTimestamp = Timestamp.valueOf(end);
-
-                deleteLogPs.setTimestamp(1, startTimestamp);
-                deleteLogPs.setTimestamp(2, endTimestamp);
-                result.setRentalLogDeleted(deleteLogPs.executeUpdate());
-
-                deleteRentalPs.setTimestamp(1, startTimestamp);
-                deleteRentalPs.setTimestamp(2, endTimestamp);
-                result.setRacketRentalDeleted(deleteRentalPs.executeUpdate());
-
-                deleteSchedulePs.setTimestamp(1, startTimestamp);
-                deleteSchedulePs.setTimestamp(2, endTimestamp);
-                result.setScheduleDeleted(deleteSchedulePs.executeUpdate());
-
-                conn.commit();
-            } catch (Exception exception) {
-                conn.rollback();
-                throw exception;
-            } finally {
-                conn.setAutoCommit(true);
-            }
-        }
-
-        return result;
     }
 
     private List<OwnerRentalInactiveItemDTO> loadInactiveItems(
