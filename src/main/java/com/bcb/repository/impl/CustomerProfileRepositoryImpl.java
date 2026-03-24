@@ -33,9 +33,7 @@ public class CustomerProfileRepositoryImpl implements CustomerProfileRepository 
     @Override
     public boolean updateAccountInfo(String avatarPath, String fullName, String email, String phone, Integer accountId) {
 
-        DBContext db = new DBContext();
-        Connection connect = db.getConnection();
-        try (PreparedStatement ps = connect.prepareStatement(UPDATE_PROFILE)) {
+        try (Connection connect = DBContext.getConnection();PreparedStatement ps = connect.prepareStatement(UPDATE_PROFILE)) {
             ps.setString(1, avatarPath);
             ps.setString(2, fullName);
             ps.setString(3, email);

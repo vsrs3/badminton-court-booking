@@ -203,22 +203,28 @@
         return true;
     }
 
-    function submitPwForm() {
-        var oldPw    = document.getElementById('oldPassword');
-        var newPw    = document.getElementById('newPassword');
+    async function submitPwForm() {
+        var oldPw     = document.getElementById('oldPassword');
+        var newPw     = document.getElementById('newPassword');
         var confirmPw = document.getElementById('confirmPassword');
 
         var ok1 = validatePwLength(oldPw);
         var ok2 = validatePwLength(newPw);
         var ok3 = checkConfirmInline();
 
-        if (!oldPw.value) { _setPwError(oldPw, 'oldPwError', 'Vui lòng nhập mật khẩu hiện tại'); ok1 = false; }
-        if (!newPw.value) { _setPwError(newPw, 'newPwError', 'Vui lòng nhập mật khẩu mới'); ok2 = false; }
-        if (!confirmPw.value) { _setPwError(confirmPw, 'confirmPwError', 'Vui lòng xác nhận mật khẩu'); ok3 = false; }
+        if (!oldPw.value)     { _setPwError(oldPw,     'oldPwError',     'Vui lòng nhập mật khẩu hiện tại'); ok1 = false; }
+        if (!newPw.value)     { _setPwError(newPw,     'newPwError',     'Vui lòng nhập mật khẩu mới');      ok2 = false; }
+        if (!confirmPw.value) { _setPwError(confirmPw, 'confirmPwError', 'Vui lòng xác nhận mật khẩu');      ok3 = false; }
 
         if (!ok1 || !ok2 || !ok3) return;
 
-        var confirmed = confirm('Bạn có chắc muốn lưu mật khẩu mới không?');
-        if (confirmed) document.getElementById('changePasswordForm').submit();
+        // ✅ Dùng SweetAlert2 thay confirm()
+        const ok = await showConfirm(
+            'Xác nhận đổi mật khẩu',
+            'Bạn có chắc muốn lưu mật khẩu mới không?',
+            'question',
+            'Lưu thay đổi'
+        );
+        if (ok) document.getElementById('changePasswordForm').submit();
     }
 </script>

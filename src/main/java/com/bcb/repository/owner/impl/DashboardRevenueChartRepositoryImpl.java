@@ -11,12 +11,60 @@ import com.bcb.dto.owner.OwnerRevenueChartDTO;
 import com.bcb.repository.owner.DashboardRevenueChartRepository;
 import com.bcb.utils.DBContext;
 
+/**
+ * CHART REVENUE LOGIC — nhất quán với DashBoardRevenueRepositoryImpl:
+ *
+ *   Phần 1 — Thu tiền: revenue = +Payment.paid_amount, date = Payment.payment_time
+ *   Phần 2 — Hoàn tiền: revenue = -Invoice.refund_due, date = Invoice.created_at
+ *
+ * Không dùng Booking.booking_date, không dùng Invoice.paid_amount trực tiếp.
+ *
+ * CTE_BASE được tái sử dụng cho tất cả query bằng cách thêm WHERE
+ * khác nhau ở bên ngoài thông qua {DATE_FILTER} và {GROUP_BY_EXPR}.
+ */
 public class DashboardRevenueChartRepositoryImpl implements DashboardRevenueChartRepository {
 
-    // query: execute sql to DTO
+    // ─────────────────────────────────────────────────────────────────────
+    // CTE dùng chung — {DATE_FILTER_PAYMENT} và {DATE_FILTER_REFUND}
+    // giới hạn khoảng quét để tránh full scan.
+    // ─────────────────────────────────────────────────────────────────────
+    private static final String CTE_TEMPLATE =
+        "WITH RevenueByDate AS ( "
+        // Phần 1: Cộng tiền đã thu
+        + "  SELECT CAST(p.payment_time AS DATE) AS rev_date, p.paid_amount AS revenue "
+        + "  FROM Payment p "
+        + "  WHERE p.payment_status = 'SUCCESS' "
+        + "    AND p.payment_time IS NOT NULL "
+        + "    AND {DATE_FILTER_PAYMENT} "
+        + "  UNION ALL "
+        // Phần 2: Trừ tiền đã hoàn
+        + "  SELECT CAST(i.created_at AS DATE) AS rev_date, -i.refund_due AS revenue "
+        + "  FROM Invoice i "
+        + "  WHERE i.refund_status = 'REFUNDED' "
+        + "    AND i.refund_due > 0 "
+        + "    AND {DATE_FILTER_REFUND} "
+        + ") ";
+
+    private String buildCte(String paymentFilter, String refundFilter) {
+        return CTE_TEMPLATE
+                .replace("{DATE_FILTER_PAYMENT}", paymentFilter)
+                .replace("{DATE_FILTER_REFUND}",  refundFilter);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Hằng số ngày — Monday-based week
+    // ─────────────────────────────────────────────────────────────────────
+    private static final String DAYS_TO_MON = "((DATEPART(WEEKDAY, GETDATE()) + 5) % 7)";
+    private static final String THIS_MON    = "CAST(DATEADD(DAY, -"     + DAYS_TO_MON + ",     GETDATE()) AS DATE)";
+    private static final String LAST_MON    = "CAST(DATEADD(DAY, -"     + DAYS_TO_MON + " - 7, GETDATE()) AS DATE)";
+    private static final String LAST_SUN    = "CAST(DATEADD(DAY, -"     + DAYS_TO_MON + " - 1, GETDATE()) AS DATE)";
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Helper: thực thi SQL → OwnerRevenueChartDTO
+    // ─────────────────────────────────────────────────────────────────────
     private OwnerRevenueChartDTO query(String sql, String labelCol, String dataCol) {
-        List<String> labels = new ArrayList<>();
-        List<BigDecimal>   data   = new ArrayList<>();
+        List<String>     labels = new ArrayList<>();
+        List<BigDecimal> data   = new ArrayList<>();
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -30,138 +78,89 @@ public class DashboardRevenueChartRepositoryImpl implements DashboardRevenueChar
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("Lỗi truy vấn chart: " + sql, e);
+            throw new RuntimeException("Lỗi truy vấn chart: " + e.getMessage(), e);
         }
     }
 
-    // Daily Revenue - This Week
-    private static final String SQL_DAILY_THIS_WEEK = "SELECT "
-									        + "    LEFT(DATENAME(WEEKDAY, b.booking_date), 3) AS day_label, "
-									        + "    ISNULL(SUM(i.paid_amount), 0)              AS revenue "
-									        
-										        + "FROM Invoice i "
-											        + "JOIN Booking b ON i.booking_id = b.booking_id "
-											        + "WHERE b.booking_status = 'COMPLETED' "
-											        + "  AND b.booking_date >= CAST(DATEADD(DAY, -(DATEPART(WEEKDAY, GETDATE())+5)%7,   GETDATE()) AS DATE) "
-											        + "  AND b.booking_date <= CAST(GETDATE() AS DATE) "
-									        
-											+ "GROUP BY b.booking_date, DATENAME(WEEKDAY, b.booking_date) "
-									        + "ORDER BY b.booking_date";
-
-    // Daily Revenue — Previous Week 
-    private static final String SQL_DAILY_PREV_WEEK = "SELECT "
-									        + "LEFT(DATENAME(WEEKDAY, b.booking_date), 3) 	AS day_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)              	AS revenue "
-									        
-									        	+ "FROM Invoice i "
-											        + "JOIN Booking b ON i.booking_id = b.booking_id "
-											        + "WHERE b.booking_status = 'COMPLETED' "
-											        + "  AND b.booking_date >= CAST(DATEADD(DAY, -(DATEPART(WEEKDAY, GETDATE())+5)%7-7, GETDATE()) AS DATE) "
-											        + "  AND b.booking_date <= CAST(DATEADD(DAY, -(DATEPART(WEEKDAY, GETDATE())+5)%7-1, GETDATE()) AS DATE) "
-									        
-									        + "GROUP BY b.booking_date, DATENAME(WEEKDAY, b.booking_date) "
-									        + "ORDER BY b.booking_date";
-
-    // Monthly Revenue — This Year
-    private static final String SQL_MONTHLY_THIS_YEAR = "SELECT "
-									        + "LEFT(DATENAME(MONTH, b.booking_date), 3) 	AS month_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)            	AS revenue "
-									        
-									        	+ "FROM Invoice i "
-											        + "JOIN Booking b ON i.booking_id = b.booking_id "
-											        + "WHERE b.booking_status = 'COMPLETED' "
-											        + "  AND YEAR(b.booking_date) = YEAR(GETDATE()) "
-											        
-									        + "GROUP BY MONTH(b.booking_date), DATENAME(MONTH, b.booking_date) "
-									        + "ORDER BY MONTH(b.booking_date)";
-
-    // Monthly Revenue — Previous Year
-    private static final String SQL_MONTHLY_PREV_YEAR = "SELECT "
-									        + "LEFT(DATENAME(MONTH, b.booking_date), 3) 	AS month_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)             	AS revenue "
-									        	+ "FROM Invoice i "
-											        + "JOIN Booking b ON i.booking_id = b.booking_id "
-											        + "WHERE b.booking_status = 'COMPLETED' "
-											        + "  AND YEAR(b.booking_date) = YEAR(GETDATE()) - 1 "
-											        
-									        + "GROUP BY MONTH(b.booking_date), DATENAME(MONTH, b.booking_date) "
-									        + "ORDER BY MONTH(b.booking_date)";
-
-    // Revenue Trend — Monthly
-    /** private static final String SQL_TREND_MONTHLY = "SELECT "
-						    			    + "LEFT(DATENAME(MONTH, b.booking_date), 3) AS month_label, "
-						    			    + "ISNULL(SUM(i.paid_amount), 0)            AS revenue "
-						    			    + "FROM Invoice i "
-						    			    + "JOIN Booking b ON i.booking_id = b.booking_id "
-						    			    + "WHERE b.booking_status = 'COMPLETED' "
-						    			    + "  AND YEAR(b.booking_date) = YEAR(GETDATE()) " // ← chỉ năm hiện tại
-						    			    + "GROUP BY MONTH(b.booking_date), DATENAME(MONTH, b.booking_date) "
-						    			    + "ORDER BY MONTH(b.booking_date)";
-						    			    **/
-
-    // 5 năm trước — currentYear-4 → currentYear
-    private static final String SQL_TREND_YEARLY_PAST = "SELECT "
-									        + "CAST(YEAR(b.booking_date) AS NVARCHAR) AS year_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)          AS revenue "
-									        + "FROM Invoice i "
-									        + "JOIN Booking b ON i.booking_id = b.booking_id "
-									        + "WHERE b.booking_status = 'COMPLETED' "
-									        + "  AND YEAR(b.booking_date) >= YEAR(GETDATE()) - 4 "
-									        + "  AND YEAR(b.booking_date) <= YEAR(GETDATE()) "
-									        + "GROUP BY YEAR(b.booking_date) "
-									        + "ORDER BY YEAR(b.booking_date)";
-
-    // 5 năm tới — currentYear → currentYear+4
-    private static final String SQL_TREND_YEARLY_FUTURE = "SELECT "
-									        + "CAST(YEAR(b.booking_date) AS NVARCHAR) AS year_label, "
-									        + "ISNULL(SUM(i.paid_amount), 0)          AS revenue "
-									        + "FROM Invoice i "
-									        + "JOIN Booking b ON i.booking_id = b.booking_id "
-									        + "WHERE b.booking_status = 'COMPLETED' "
-									        + "  AND YEAR(b.booking_date) >= YEAR(GETDATE()) "
-									        + "  AND YEAR(b.booking_date) <= YEAR(GETDATE()) + 4 "
-									        + "GROUP BY YEAR(b.booking_date) "
-									        + "ORDER BY YEAR(b.booking_date)";
-
-    // Override methods
+    // =====================================================================
+    // DAILY THIS WEEK — nhóm theo ngày trong tuần hiện tại
+    // Label: 3 ký tự đầu tên thứ tiếng Anh (Mon, Tue, ...)
+    // =====================================================================
     @Override
-    public OwnerRevenueChartDTO getDailyRevenueThisWeek() { 
-    	return query(SQL_DAILY_THIS_WEEK, "day_label", "revenue"); 
-    }
-    
-    @Override
-    public OwnerRevenueChartDTO getDailyRevenuePreviousWeek() { 
-    	return query(SQL_DAILY_PREV_WEEK, "day_label", "revenue"); 
-    }
-    
-    @Override
-    public OwnerRevenueChartDTO getMonthlyRevenueThisYear() { 
-    	return query(SQL_MONTHLY_THIS_YEAR, "month_label", "revenue"); 
-    }
-    
-    @Override
-    public OwnerRevenueChartDTO getMonthlyRevenuePreviousYear() { 
-    	return query(SQL_MONTHLY_PREV_YEAR, "month_label", "revenue"); 
-    }
-    
-    @Override
-    public OwnerRevenueChartDTO getRevenueTrendYearlyPast() {
-        return query(SQL_TREND_YEARLY_PAST, "year_label", "revenue");
+    public OwnerRevenueChartDTO getDailyRevenueThisWeek() {
+        String sql = buildCte(
+                "CAST(p.payment_time AS DATE) >= " + THIS_MON
+                + " AND CAST(p.payment_time AS DATE) <= CAST(GETDATE() AS DATE)",
+                "CAST(i.created_at AS DATE) >= " + THIS_MON
+                + " AND CAST(i.created_at AS DATE) <= CAST(GETDATE() AS DATE)"
+        )
+            + "SELECT "
+            + "  LEFT(DATENAME(WEEKDAY, rev_date), 3) AS day_label, "
+            + "  ISNULL(SUM(revenue), 0)              AS revenue "
+            + "FROM RevenueByDate "
+            + "GROUP BY rev_date, DATENAME(WEEKDAY, rev_date) "
+            + "ORDER BY rev_date";
+
+        return query(sql, "day_label", "revenue");
     }
 
+    // =====================================================================
+    // DAILY PREV WEEK — nhóm theo ngày trong tuần trước
+    // =====================================================================
     @Override
-    public OwnerRevenueChartDTO getRevenueTrendYearlyFuture() {
-        return query(SQL_TREND_YEARLY_FUTURE, "year_label", "revenue");
+    public OwnerRevenueChartDTO getDailyRevenuePreviousWeek() {
+        String sql = buildCte(
+                "CAST(p.payment_time AS DATE) >= " + LAST_MON
+                + " AND CAST(p.payment_time AS DATE) <= " + LAST_SUN,
+                "CAST(i.created_at AS DATE) >= " + LAST_MON
+                + " AND CAST(i.created_at AS DATE) <= " + LAST_SUN
+        )
+            + "SELECT "
+            + "  LEFT(DATENAME(WEEKDAY, rev_date), 3) AS day_label, "
+            + "  ISNULL(SUM(revenue), 0)              AS revenue "
+            + "FROM RevenueByDate "
+            + "GROUP BY rev_date, DATENAME(WEEKDAY, rev_date) "
+            + "ORDER BY rev_date";
+
+        return query(sql, "day_label", "revenue");
     }
 
-    
-	/*
-	 * @Override public OwnerRevenueChartDTO getRevenueTrendMonthly() { return
-	 * query(SQL_TREND_MONTHLY, "month_label", "revenue"); }
-	 */
-    
-	/*
-	 * @Override public OwnerRevenueChartDTO getRevenueTrendYearly() { return
-	 * query(SQL_TREND_YEARLY, "year_label", "revenue"); }
-	 */
+    // =====================================================================
+    // MONTHLY THIS YEAR — nhóm theo tháng trong năm nay
+    // Label: 3 ký tự đầu tên tháng tiếng Anh (Jan, Feb, ...)
+    // =====================================================================
+    @Override
+    public OwnerRevenueChartDTO getMonthlyRevenueThisYear() {
+        String sql = buildCte(
+                "YEAR(p.payment_time) = YEAR(GETDATE())",
+                "YEAR(i.created_at)   = YEAR(GETDATE())"
+        )
+            + "SELECT "
+            + "  LEFT(DATENAME(MONTH, rev_date), 3) AS month_label, "
+            + "  ISNULL(SUM(revenue), 0)            AS revenue "
+            + "FROM RevenueByDate "
+            + "GROUP BY MONTH(rev_date), DATENAME(MONTH, rev_date) "
+            + "ORDER BY MONTH(rev_date)";
+
+        return query(sql, "month_label", "revenue");
+    }
+
+    // =====================================================================
+    // MONTHLY PREV YEAR — nhóm theo tháng trong năm ngoái
+    // =====================================================================
+    @Override
+    public OwnerRevenueChartDTO getMonthlyRevenuePreviousYear() {
+        String sql = buildCte(
+                "YEAR(p.payment_time) = YEAR(GETDATE()) - 1",
+                "YEAR(i.created_at)   = YEAR(GETDATE()) - 1"
+        )
+            + "SELECT "
+            + "  LEFT(DATENAME(MONTH, rev_date), 3) AS month_label, "
+            + "  ISNULL(SUM(revenue), 0)            AS revenue "
+            + "FROM RevenueByDate "
+            + "GROUP BY MONTH(rev_date), DATENAME(MONTH, rev_date) "
+            + "ORDER BY MONTH(rev_date)";
+
+        return query(sql, "month_label", "revenue");
+    }
 }

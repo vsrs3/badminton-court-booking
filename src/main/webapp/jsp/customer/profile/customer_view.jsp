@@ -27,15 +27,13 @@
 	<form action="customerController" method="POST"
 		enctype="multipart/form-data" class="p-6 space-y-6" id="profileForm"
         onsubmit="
-            var nameOk   = validateFullNameInline();
-            var emailOk  = validateEmailInline();
-            var phoneOk  = validatePhoneInline();
-            if (!nameOk || !emailOk || !phoneOk) {
-                event.preventDefault();
-                return false;
-            }
-            var ok = confirm('Bạn có chắc muốn lưu thông tin không?');
-            if (!ok) { event.preventDefault(); return false; }
+	        var nameOk  = validateFullNameInline();
+	        var emailOk = validateEmailInline();
+	        var phoneOk = validatePhoneInline();
+	        if (!nameOk || !emailOk || !phoneOk) {
+	            event.preventDefault();
+	            return false;
+	        }
         ">
 		<input type="hidden" name="action" value="updateProfile" />
 
@@ -277,5 +275,39 @@
     validateFullNameInline();
     validateEmailInline();
     validatePhoneInline();
+</script>
+
+<script>
+(function () {
+    var form = document.getElementById('profileForm');
+    if (!form) return;
+
+    // Đánh dấu để biết đã được xác nhận rồi, tránh loop vô hạn
+    var _confirmed = false;
+
+    form.addEventListener('submit', async function (e) {
+        if (_confirmed) return; // Đã xác nhận → cho submit thật
+        e.preventDefault();    // Chặn submit lần đầu
+
+        // Kiểm tra validation trước
+        var nameOk  = validateFullNameInline();
+        var emailOk = validateEmailInline();
+        var phoneOk = validatePhoneInline();
+        if (!nameOk || !emailOk || !phoneOk) return;
+
+        // Gọi SweetAlert2
+        const ok = await showConfirm(
+            'Xác nhận lưu',
+            'Bạn có chắc muốn lưu thông tin không?',
+            'question',
+            'Lưu thay đổi'
+        );
+
+        if (ok) {
+            _confirmed = true;
+            form.submit(); // Submit thật sau khi xác nhận
+        }
+    });
+})();
 </script>
  
