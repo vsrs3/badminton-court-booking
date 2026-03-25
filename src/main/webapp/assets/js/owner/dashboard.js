@@ -105,6 +105,12 @@
         detailTableBody: document.getElementById('rentalDetailTableBody'),
         detailPagination: document.getElementById('rentalDetailPagination')
     };
+    try {
+        REVENUE_CHART_DATA = JSON.parse(document.getElementById('revenueChartRaw').textContent);
+    } catch (e) {
+        console.error('revenueChartRaw parse failed:', e);
+        REVENUE_CHART_DATA = { weekly: {}, yearly: {} };
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         initReportSwitch();
@@ -240,6 +246,13 @@
             });
         });
     }
+    /* ── Dataset registry ──────────────────────────────────────── */
+    const DATA = {
+        booking:   BOOKING_STATUS_DATA,
+        occupancy: OCCUPANCY_DATA,
+        weekly:    REVENUE_CHART_DATA.weekly,
+        yearly:    REVENUE_CHART_DATA.yearly,
+    };
 
     function bindChartTabs(selector, onSelect) {
         document.querySelectorAll(selector).forEach(function (button) {
@@ -271,10 +284,42 @@
         const canvas = document.getElementById(canvasId);
         if (!canvas) {
             return;
+    /* ── Format VND ────────────────────────────────────────────── */
+    // Dùng cho trục Y (rút gọn)
+    function formatVNDShort(v) {
+        if (v >= 1_000_000) {
+            return (v / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'tr';
         }
+        return v.toLocaleString('vi-VN');
+    }
+
+    // Dùng cho tooltip (hiện đầy đủ)
+    function formatVND(v) {
+        return ' ' + v.toLocaleString('vi-VN') + ' VND';
+    }
 
         destroyChart(key);
         charts[key] = new Chart(canvas.getContext('2d'), {
+    /* ── Shared tooltip ────────────────────────────────────────── */
+    const limeTooltip = {
+        backgroundColor: '#fff',
+        titleColor: G400,
+        bodyColor: BRAND,
+        borderColor: G200,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 10,
+        titleFont: { size: 10, weight: '700' },
+        bodyFont:  { size: 14, weight: '800' },
+        callbacks: {
+            label: ctx => formatVND(ctx.parsed.y)
+        }
+    };
+
+    /* ── Build bar chart ───────────────────────────────────────── */
+    function makeBarChart(canvasId, dataset) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        return new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: dataset.labels || [],
@@ -396,6 +441,131 @@
                 }
             }
         };
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: limeTooltip },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { font: { size: 11, weight: '600' }, color: G400 }
+                    },
+                    y: {
+                        grid: { color: G100 },
+                        border: { display: false },
+                        ticks: {
+                            font: { size: 11 }, color: G400,
+                            callback: v => formatVNDShort(v)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /* ── Update chart data in-place ────────────────────────────── */
+    function updateChart(chart, dataset) {
+        chart.data.labels = dataset.labels;
+        chart.data.datasets[0].data = dataset.data;
+        chart.update('active');
+    }
+
+    /* ── Booking Status bars + tooltip ────────────────────────── */
+    function renderBookingStatus(period) {
+        const rows = DATA.booking[period];
+        const list = document.getElementById('bookingStatusList');
+        list.innerHTML = '';
+
+        if (!rows || rows.length === 0) {
+            list.innerHTML = '<p style="color:#9CA3AF;font-size:13px;padding:16px 0;">Không có dữ liệu</p>';
+            return;
+        }
+
+        rows.forEach(function (row) {
+            var html = '<div class="dov-status-row">'
+                + '<span class="dov-status-name">' + row.label + '</span>'
+                + '<div class="dov-status-track">'
+                + '<div class="dov-status-bar"'
+                + '     style="width:' + row.pct + '%;background:' + row.color + ';"'
+                + '     data-count="' + row.count + '"'
+                + '     data-label="' + row.label + '">'
+                + '</div>'
+                + '</div>'
+                + '<span class="dov-status-pct">' + row.pct + '%</span>'
+                + '</div>';
+            list.insertAdjacentHTML('beforeend', html);
+        });
+
+        attachBarTooltips();
+    }
+
+    /* ── Custom tooltip hover thanh bar ────────────────────────── */
+    function attachBarTooltips() {
+        const tooltip = document.getElementById('statusTooltip') || createTooltipEl('statusTooltip');
+
+        document.querySelectorAll('.dov-status-bar').forEach(bar => {
+            bar.addEventListener('mouseenter', function () {
+                tooltip.textContent   = this.dataset.label + ': '
+                                      + Number(this.dataset.count).toLocaleString('vi-VN')
+                                      + ' lượt đặt';
+                tooltip.style.display = 'block';
+            });
+            bar.addEventListener('mousemove', function (e) {
+                tooltip.style.left = (e.clientX + 12) + 'px';
+                tooltip.style.top  = (e.clientY - 36) + 'px';
+            });
+            bar.addEventListener('mouseleave', function () {
+                tooltip.style.display = 'none';
+            });
+        });
+    }
+
+    /* ── Tạo tooltip element dùng chung ────────────────────────── */
+    function createTooltipEl(id) {
+        const el = document.createElement('div');
+        el.id = id;
+        el.style.cssText = `
+            position: fixed;
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 8px 14px;
+            pointer-events: none;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        `;
+        document.body.appendChild(el);
+        return el;
+    }
+
+    /* ── Occupancy donut ───────────────────────────────────────── */
+    const CIRC = 2 * Math.PI * 68;
+
+    function renderOccupancy(period) {
+        const pct      = parseFloat(DATA.occupancy[period]) || 0;
+        const dashArr  = (pct / 100) * CIRC;
+        const arc      = document.getElementById('donutArc');
+        const txtpct   = document.getElementById('donutpctText');
+        const lblOcc   = document.getElementById('occpctOccupied');
+        const lblAvail = document.getElementById('occpctAvailable');
+
+        arc.setAttribute('stroke-dasharray', dashArr.toFixed(2) + ' ' + (CIRC - dashArr).toFixed(2));
+        txtpct.textContent   = pct.toFixed(2) + '%';
+        lblOcc.textContent   = pct.toFixed(2) + '%';
+        lblAvail.textContent = (100 - pct).toFixed(2) + '%';
+    }
+
+    /* ── Peak Hour: type → background color ───────────────────── */
+    const DAY_LABELS_VI = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+    function getTypeBgColor(type) {
+        switch (type) {
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
+            case 'LOW':     return 'rgba(163,230,53,0.18)';
+            case 'NORMAL':  return '#F8FAFC';
+            default:        return '#F3F4F6';
+        }
     }
 
     function buildRevenueTooltip() {
@@ -421,6 +591,24 @@
                 }
             }
         };
+    /* ── Peak Hour: type → text color ─────────────────────────── */
+    function getTypeTextColor(type) {
+        switch (type) {
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
+            case 'LOW':     return '#A3E635';
+            case 'NORMAL':  return '#111827';
+            default:        return '#9CA3AF';
+        }
+    }
+
+    /* ── Peak Hour: type → border color (cho legend swatch) ────── */
+    function getTypeBorderColor(type) {
+        switch (type) {
+            case 'PEAK':    return 'rgba(239,68,68,0.10)';
+            case 'LOW':     return '#A3E635';
+            case 'NORMAL':  return '#D1D5DB';
+            default:        return '#9CA3AF';
+        }
     }
 
     function renderPeakStats() {
@@ -429,6 +617,70 @@
         const peakText = peakSlots.length ? peakSlots.join(', ') : '--';
         const lowText = lowSlots.length ? lowSlots.join(', ') : '--';
         const normalText = peakHourData.normalTimeRange || '--';
+        const peak   = PEAK_HOUR_DATA.peakSlots   || [];
+        const low    = PEAK_HOUR_DATA.lowSlots    || [];
+        const normal = PEAK_HOUR_DATA.normalTimeRange || 'Không xác định';
+
+        const peakEl    = document.getElementById('peakSlotTime');
+        const peakPctEl = document.getElementById('peakSlotPct');
+        if (peakEl) {
+            if (peak.length === 0) {
+                peakEl.textContent    = '--';
+                peakPctEl.textContent = 'Chưa có dữ liệu';
+            } else if (peak.length === 1) {
+                peakEl.textContent    = peak[0];
+                peakPctEl.textContent = 'Khung giờ bận nhất';
+            } else {
+                peakEl.textContent    = peak[0] + ' – ' + peak[peak.length - 1];
+                peakPctEl.textContent = peak.length + ' khung giờ cao điểm';
+            }
+        }
+
+        const lowEl    = document.getElementById('lowSlotTime');
+        const lowPctEl = document.getElementById('lowSlotPct');
+        if (lowEl) {
+            if (low.length === 0) {
+                lowEl.textContent    = '--';
+                lowPctEl.textContent = 'Chưa có dữ liệu';
+            } else if (low.length === 1) {
+                lowEl.textContent    = low[0];
+                lowPctEl.textContent = 'Khung giờ ít khách nhất';
+            } else {
+                lowEl.textContent    = low[0] + ' – ' + low[low.length - 1];
+                lowPctEl.textContent = low.length + ' khung giờ thấp điểm';
+            }
+        }
+
+        const normalEl    = document.getElementById('normalSlotTime');
+        const normalPctEl = document.getElementById('normalSlotPct');
+        if (normalEl) {
+            normalEl.textContent    = normal;
+            normalPctEl.textContent = 'Nhu cầu đặt sân ổn định';
+        }
+    }
+
+    /* ── Render legend động theo dữ liệu thực ─────────────────── */
+    function renderPeakLegend(afterEl) {
+        const peak = PEAK_HOUR_DATA.peakSlots  || [];
+        const low  = PEAK_HOUR_DATA.lowSlots   || [];
+
+        var items = [];
+        if (peak.length > 0) {
+            items.push({ type: 'PEAK',    label: 'Giờ cao điểm' });
+        }
+        if (low.length > 0) {
+            items.push({ type: 'LOW',     label: 'Giờ thấp điểm' });
+        }
+        items.push({ type: 'NORMAL',  label: 'Giờ bình thường' });
+        items.push({ type: 'NO_DATA', label: 'Chưa có lịch đặt' });
+
+        var html = '<div class="dov-peak-legend">'
+            + '<span class="dov-peak-legend-title">Chú thích:</span>';
+
+        items.forEach(function (item) {
+            var bg     = getTypeBgColor(item.type);
+            var border = getTypeBorderColor(item.type);
+            var color  = getTypeTextColor(item.type);
 
         setText('peakSlotTime', peakText);
         setText('peakSlotPct', peakSlots.length ? peakSlots.length + ' khung giờ có lượt đặt cao nhất' : 'Chưa có dữ liệu');
@@ -564,6 +816,9 @@
         rentalEls.deactivateButton.addEventListener('click', function () {
             deactivateInactiveItems();
         });
+        renderPeakStats();
+        renderPeakHeatmap();
+    });
 
         if (rentalEls.detailPagination) {
             rentalEls.detailPagination.addEventListener('click', function (event) {
@@ -1461,4 +1716,6 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
     }
+})();
+
 })();

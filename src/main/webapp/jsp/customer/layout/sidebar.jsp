@@ -152,7 +152,8 @@
 		<div class="px-2 pt-4">
 			<form action="customerController" method="GET" id="logoutForm">
 				<input type="hidden" name="action" value="logout">
-				<button type="submit"
+				<button type="button"
+					onclick="handleSidebarLogout()"
 					class="sidebar-logout-btn w-full flex items-center justify-between px-4 py-3 rounded-xl"
 					style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
 					<div class="flex items-center space-x-3">
@@ -168,6 +169,20 @@
 
 	</div>
 </div>
+
+<script>
+async function handleSidebarLogout() {
+    const ok = await showConfirm(
+        'Đăng xuất',
+        'Bạn có chắc muốn đăng xuất không?',
+        'warning',
+        'Đăng xuất'
+    );
+    if (ok) {
+        document.getElementById('logoutForm').submit();
+    }
+}
+</script>
 
 <style>
 /*  MENU ITEMS */

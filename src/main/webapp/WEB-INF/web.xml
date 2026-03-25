@@ -122,14 +122,30 @@
     </servlet-mapping>
 
     <servlet>
-    <servlet-name>OwnerFacilityInventoryController</servlet-name>
-    <servlet-class>
-        com.bcb.controller.owner.OwnerFacilityInventoryController
-    </servlet-class>
-</servlet>
+    	<servlet-name>OwnerFacilityInventoryController</servlet-name>
+    	<servlet-class>com.bcb.controller.owner.OwnerFacilityInventoryController</servlet-class>
+	</servlet>
 
-<servlet-mapping>
-    <servlet-name>OwnerFacilityInventoryController</servlet-name>
-    <url-pattern>/owner/facility/inventory/*</url-pattern>
-</servlet-mapping>
+	<servlet-mapping>
+	    <servlet-name>OwnerFacilityInventoryController</servlet-name>
+	    <url-pattern>/owner/facility/inventory/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+	    <servlet-name>OwnerSettingController</servlet-name>
+	    <servlet-class>com.bcb.controller.owner.OwnerSettingController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	    <servlet-name>OwnerSettingController</servlet-name>
+	    <url-pattern>/owner/setting/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+	    <servlet-name>StaffSettingController</servlet-name>
+	    <servlet-class>com.bcb.controller.staff.StaffSettingController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+	    <servlet-name>StaffSettingController</servlet-name>
+	    <url-pattern>/staff/setting/*</url-pattern>
+	</servlet-mapping>
 </web-app>

@@ -10,58 +10,69 @@ import com.bcb.dto.owner.OwnerBookingStatusChartDTO;
 import com.bcb.repository.owner.DashboardBookingStatusRepository;
 import com.bcb.utils.DBContext;
 
-public class DashboardBookingStatusRepositoryImpl implements DashboardBookingStatusRepository{
-	
-	private String buildDateFilter(String period) {
-	    return switch (period) {
-	        case "Day"   -> "b.booking_date = CAST(GETDATE() AS DATE)";
-	        
-	        case "Week"  -> "b.booking_date >= CAST( DATEADD( DAY, - ( DATEPART( WEEKDAY, GETDATE() ) + 5) % 7, GETDATE()) AS DATE) "
-	                      + "AND b.booking_date <= CAST( GETDATE() AS DATE )";
-	                      
-	        case "Month" -> "MONTH(b.booking_date) = MONTH( GETDATE()) AND YEAR( b.booking_date) = YEAR( GETDATE())";
-	        
-	        case "Year"  -> "YEAR(b.booking_date) = YEAR(GETDATE())";
-	        
-	        default      -> "1=1";
-	    };
-	}
+public class DashboardBookingStatusRepositoryImpl implements DashboardBookingStatusRepository {
 
-	@Override
-	public List<OwnerBookingStatusChartDTO> getBookingStatusDistribution(String period) {
-		String dateFilter = buildDateFilter(period);
+    /**
+     * Tính eff_date = COALESCE(booking_date, CAST(created_at AS DATE))
+     *   - Normal booking  : dùng booking_date
+     *   - Recurring booking: booking_date = NULL → fallback về created_at
+     *
+     * buildDateFilter nhận alias eff_date từ subquery bên dưới.
+     */
+    private String buildDateFilter(String period) {
+        return switch (period) {
+            case "Day"   -> "eff_date = CAST(GETDATE() AS DATE)";
 
-	    String sql =
-	        "SELECT "
-	        + "    booking_status AS status, "
-	        + "    COUNT(*) AS booking_count, "
-	        + "    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) AS pct "
-	        + "FROM Booking b "
-	        + "WHERE b.booking_status IN ('PENDING','CONFIRMED','EXPIRED','CANCELLED','COMPLETED') "
-	        + "  AND " + dateFilter + " "
-	        + "GROUP BY booking_status "
-	        + "ORDER BY booking_count DESC ";
+            case "Week"  -> "eff_date >= CAST(DATEADD(DAY, -((DATEPART(WEEKDAY, GETDATE())+5)%7), GETDATE()) AS DATE) "
+                          + "AND eff_date <= CAST(GETDATE() AS DATE)";
 
-	    List<OwnerBookingStatusChartDTO> result = new ArrayList<>();
+            case "Month" -> "MONTH(eff_date) = MONTH(GETDATE()) AND YEAR(eff_date) = YEAR(GETDATE())";
 
-	    try (Connection conn = DBContext.getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+            case "Year"  -> "YEAR(eff_date) = YEAR(GETDATE())";
 
-	        while (rs.next()) {
-	            result.add(new OwnerBookingStatusChartDTO(
-	                rs.getString("status"),
-	                rs.getInt("booking_count"),
-	                rs.getBigDecimal("pct")
-	            ));
-	        }
+            default      -> "1=1";
+        };
+    }
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        throw new RuntimeException("Lỗi khi truy vấn Booking Status Distribution [" + period + "]", e);
-	    }
+    @Override
+    public List<OwnerBookingStatusChartDTO> getBookingStatusDistribution(String period) {
+        String dateFilter = buildDateFilter(period);
 
-	    return result;
-	}
+        String sql =
+            "SELECT "
+            + "  booking_status AS status, "
+            + "  COUNT(*) AS booking_count, "
+            + "  ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 1) AS pct "
+            + "FROM ( "
+            + "  SELECT "
+            + "    booking_status, "
+            + "    COALESCE(booking_date, CAST(created_at AS DATE)) AS eff_date "
+            + "  FROM Booking "
+            + "  WHERE booking_status IN ('PENDING','CONFIRMED','EXPIRED','CANCELLED','COMPLETED') "
+            + ") sub "
+            + "WHERE " + dateFilter + " "
+            + "GROUP BY booking_status "
+            + "ORDER BY booking_count DESC";
 
+        List<OwnerBookingStatusChartDTO> result = new ArrayList<>();
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                result.add(new OwnerBookingStatusChartDTO(
+                    rs.getString("status"),
+                    rs.getInt("booking_count"),
+                    rs.getBigDecimal("pct")
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi truy vấn Booking Status Distribution [" + period + "]", e);
+        }
+
+        return result;
+    }
 }

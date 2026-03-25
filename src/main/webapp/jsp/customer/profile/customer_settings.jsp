@@ -54,14 +54,3 @@
 
     </div>
 </div>
-
-<script>
-    var logoutForm = document.getElementById('logoutForm');
-    if (logoutForm) {
-        logoutForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            var ok = confirm('Bạn có chắc muốn đăng xuất không?');
-            if (ok) e.target.submit();
-        });
-    }
-</script>
