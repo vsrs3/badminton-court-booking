@@ -184,6 +184,22 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
+    public BigDecimal sumRentalAmount(Connection conn, int bookingId) throws Exception {
+        String sql = """
+                SELECT COALESCE(SUM(rr.quantity * rr.unit_price), 0) AS rental_total
+                FROM RacketRental rr
+                JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
+                WHERE bs.booking_id = ?
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getBigDecimal("rental_total") : BigDecimal.ZERO;
+            }
+        }
+    }
+
+    @Override
     public BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT paid_amount FROM Invoice WHERE booking_id = ?")) {
             ps.setInt(1, bookingId);
