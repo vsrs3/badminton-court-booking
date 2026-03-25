@@ -15,16 +15,15 @@ public class BlogCommentRepositoryImpl implements BlogCommentRepository {
     @Override
     public List<BlogCommentViewDTO> findApprovedByPostId(int postId) {
         String sql = "SELECT c.comment_id, c.post_id, c.author_account_id, a.full_name AS author_name, c.content, c.status, c.created_at " +
-            "FROM BlogComment c JOIN Account a ON a.account_id = c.author_account_id " +
-            "WHERE c.post_id = ? AND c.is_deleted = 0 AND c.status = 'APPROVED' ORDER BY c.created_at DESC";
+                "FROM BlogComment c JOIN Account a ON a.account_id = c.author_account_id " +
+                "WHERE c.post_id = ? AND c.is_deleted = 0 AND c.status = 'APPROVED' ORDER BY c.created_at DESC";
         return queryList(sql, postId);
     }
-
     @Override
     public List<BlogCommentViewDTO> findByPostIdForModeration(int postId) {
         String sql = "SELECT c.comment_id, c.post_id, c.author_account_id, a.full_name AS author_name, c.content, c.status, c.created_at " +
             "FROM BlogComment c JOIN Account a ON a.account_id = c.author_account_id " +
-            "WHERE c.post_id = ? AND c.is_deleted = 0 ORDER BY c.created_at DESC";
+            "WHERE c.post_id = ? AND c.is_deleted = 0 AND c.status = 'PENDING' ORDER BY c.created_at DESC";
         return queryList(sql, postId);
     }
 
