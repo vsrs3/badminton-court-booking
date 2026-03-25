@@ -4,7 +4,7 @@
 <%@ include file="layout/sidebar.jsp"%>
 
 <link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/owner/dashboard.css?v=20260322-rental-fix-2">
+      href="${pageContext.request.contextPath}/assets/css/owner/dashboard.css?v=20260325-owner-dashboard-merge-fix">
 <style>
     .content-area {
         padding: 0 !important;
@@ -22,16 +22,13 @@
             </div>
         </c:if>
 
-        <div class="owner-report-switch"
-             style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:28px;padding:0;border:none;background:transparent;box-shadow:none;">
+        <div class="owner-report-switch">
             <a href="${pageContext.request.contextPath}/owner/dashboard"
-               class="owner-report-tab"
-               style="display:inline-flex;align-items:center;justify-content:center;padding:12px 20px;border:2px solid #064E3B;border-radius:10px;background:#FFFFFF;color:#064E3B;text-decoration:none;font-weight:700;line-height:1;box-shadow:none;">
+               class="owner-report-tab">
                 Báo cáo doanh thu đặt sân
             </a>
             <a href="${pageContext.request.contextPath}/owner/rental-report"
-               class="owner-report-tab is-active"
-               style="display:inline-flex;align-items:center;justify-content:center;padding:12px 20px;border:2px solid #064E3B;border-radius:10px;background:#ECFDF5;color:#064E3B;text-decoration:none;font-weight:700;line-height:1;box-shadow:none;">
+               class="owner-report-tab is-active">
                 Báo cáo doanh thu thuê đồ
             </a>
         </div>
@@ -76,7 +73,7 @@
                     <div class="dov-card owner-rental-top-card">
                         <div class="owner-rental-card-header">
                             <div>
-                                <h3 class="owner-rental-title">Top 10 Đồ thuê nổi bật</h3>
+                                <h3 class="owner-rental-title">Top 10 đồ thuê nổi bật</h3>
                             </div>
                         </div>
                         <div class="owner-rental-top-items" id="rentalTopItems"></div>
@@ -161,5 +158,5 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <script src="${pageContext.request.contextPath}/assets/js/owner/dashboard.js?v=20260322-rental-fix-2"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/owner/dashboard.js?v=20260325-owner-dashboard-merge-fix"></script>
 </div>
