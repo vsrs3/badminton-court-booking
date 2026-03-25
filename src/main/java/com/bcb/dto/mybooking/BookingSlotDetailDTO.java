@@ -2,6 +2,8 @@ package com.bcb.dto.mybooking;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DTO for individual slot detail within a booking detail view.
@@ -14,6 +16,8 @@ public class BookingSlotDetailDTO {
     private BigDecimal price;
     private String slotStatus;      // PENDING, CHECKED_IN, CHECK_OUT, NO_SHOW, CANCELLED
     private LocalDate bookingDate;
+    private BigDecimal rentalTotal = BigDecimal.ZERO;
+    private List<BookingSlotRentalItemDTO> rentalItems = new ArrayList<>();
 
     public BookingSlotDetailDTO() {}
 
@@ -37,5 +41,11 @@ public class BookingSlotDetailDTO {
 
     public LocalDate getBookingDate() { return bookingDate; }
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
+
+    public BigDecimal getRentalTotal() { return rentalTotal; }
+    public void setRentalTotal(BigDecimal rentalTotal) { this.rentalTotal = rentalTotal; }
+
+    public List<BookingSlotRentalItemDTO> getRentalItems() { return rentalItems; }
+    public void setRentalItems(List<BookingSlotRentalItemDTO> rentalItems) { this.rentalItems = rentalItems; }
 }
 

@@ -27,7 +27,8 @@ public interface StaffBookingCreateRepository {
 
     Map<Integer, Integer> loadSlotOrder(Connection conn) throws Exception;
 
-    int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception;
+    int insertBookingSlot(Connection conn, int bookingId, java.time.LocalDate bookingDate,
+                          StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception;
 
     void insertCourtSlotBooking(Connection conn, StaffBookingCreateSlotDTO slot,
                                 java.time.LocalDate bookingDate, int bookingSlotId) throws Exception;

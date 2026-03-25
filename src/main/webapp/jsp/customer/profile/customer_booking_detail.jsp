@@ -5,7 +5,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-booking-detail.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer/customer-booking-detail.css?v=<%= System.currentTimeMillis() %>">
 
 <div class="flex flex-col h-full bg-gray-50">
     <c:choose>
@@ -312,6 +312,16 @@
                                             </c:if>
                                             <span class="text-xs font-semibold text-gray-700">${slot.courtName}</span>
                                             <span class="text-xs text-gray-500 ml-1">${slot.startTime} - ${slot.endTime}</span>
+                                            <c:if test="${not empty slot.rentalItems}">
+                                                <div class="mt-1">
+                                                    <button type="button"
+                                                            class="slot-rental-trigger"
+                                                            onclick="openSlotRentalModal('slot-rental-modal-${slot.bookingSlotId}')">
+                                                        <i data-lucide="package" class="w-3 h-3"></i>
+                                                        Chi tiết đồ thuê
+                                                    </button>
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </div>
                                     <span class="text-xs font-bold text-gray-700">
@@ -349,6 +359,16 @@
                                         <div>
                                             <span class="text-xs text-gray-600">${slot.courtName}</span>
                                             <span class="text-xs text-gray-400 ml-1">${slot.startTime}-${slot.endTime}</span>
+                                            <c:if test="${not empty slot.rentalItems}">
+                                                <div class="mt-1">
+                                                    <button type="button"
+                                                            class="slot-rental-trigger"
+                                                            onclick="openSlotRentalModal('slot-rental-modal-${slot.bookingSlotId}')">
+                                                        <i data-lucide="package" class="w-3 h-3"></i>
+                                                        Chi tiết đồ thuê
+                                                    </button>
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </div>
                                     <span class="text-xs text-gray-500">
@@ -358,6 +378,83 @@
                             </c:forEach>
                         </div>
                     </div>
+                </c:if>
+
+                <c:if test="${not empty d.slots}">
+                    <c:forEach var="slot" items="${d.slots}">
+                        <c:if test="${not empty slot.rentalItems}">
+                            <div id="slot-rental-modal-${slot.bookingSlotId}"
+                                 class="slot-rental-modal hidden"
+                                 onclick="handleSlotRentalBackdrop(event, 'slot-rental-modal-${slot.bookingSlotId}')">
+                                <div class="slot-rental-dialog" role="dialog" aria-modal="true"
+                                     aria-labelledby="slot-rental-title-${slot.bookingSlotId}">
+                                    <div class="slot-rental-header">
+                                        <div>
+                                            <h4 id="slot-rental-title-${slot.bookingSlotId}">Chi tiết đồ thuê</h4>
+                                            <p>
+                                                ${slot.courtName} · ${slot.startTime} - ${slot.endTime}
+                                                <c:if test="${not empty slot.bookingDate}">
+                                                    ·
+                                                    <fmt:parseDate value="${slot.bookingDate}" pattern="yyyy-MM-dd" var="parsedRentalSlotDate" type="date" />
+                                                    <fmt:formatDate value="${parsedRentalSlotDate}" pattern="dd/MM/yyyy" />
+                                                </c:if>
+                                            </p>
+                                        </div>
+                                        <button type="button"
+                                                class="slot-rental-close"
+                                                aria-label="Đóng"
+                                                onclick="closeSlotRentalModal('slot-rental-modal-${slot.bookingSlotId}')">
+                                            &times;
+                                        </button>
+                                    </div>
+
+                                    <div class="slot-rental-table-wrap">
+                                        <table class="slot-rental-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>STT</th>
+                                                    <th>Tên đồ</th>
+                                                    <th>Số lượng</th>
+                                                    <th>Giá thuê/30 phút</th>
+                                                    <th>Tổng giá</th>
+                                                </tr>
+                                                <tr class="slot-rental-head-fixed">
+                                                    <th>STT</th>
+                                                    <th>T&ecirc;n &#273;&#7891;</th>
+                                                    <th>S&#7889; l&#432;&#7907;ng</th>
+                                                    <th>Gi&aacute; thu&ecirc;/30 ph&uacute;t</th>
+                                                    <th>T&#7893;ng gi&aacute;</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <c:forEach var="item" items="${slot.rentalItems}" varStatus="rentalStatus">
+                                                    <tr>
+                                                        <td>${rentalStatus.index + 1}</td>
+                                                        <td>${item.inventoryName}</td>
+                                                        <td>${item.quantity}</td>
+                                                        <td>
+                                                            <fmt:formatNumber value="${item.unitPrice}" type="number" groupingUsed="true" />đ
+                                                        </td>
+                                                        <td>
+                                                            <fmt:formatNumber value="${item.lineTotal}" type="number" groupingUsed="true" />đ
+                                                        </td>
+                                                    </tr>
+                                                </c:forEach>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <th colspan="4">Tổng đồ thuê slot này</th>
+                                                    <th>
+                                                        <fmt:formatNumber value="${slot.rentalTotal}" type="number" groupingUsed="true" />đ
+                                                    </th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </c:if>
+                    </c:forEach>
                 </c:if>
 
                 <!-- Payment Info -->
@@ -503,6 +600,35 @@
 </div>
 
 <script>
+    function openSlotRentalModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSlotRentalModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.add('hidden');
+
+        if (!document.querySelector('.slot-rental-modal:not(.hidden)')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleSlotRentalBackdrop(event, modalId) {
+        if (event.target && event.target.id === modalId) {
+            closeSlotRentalModal(modalId);
+        }
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        var openedModal = document.querySelector('.slot-rental-modal:not(.hidden)');
+        if (!openedModal) return;
+        closeSlotRentalModal(openedModal.id);
+    });
     /* ── Toggle slot breakdown ── */
     function toggleSlotBreakdown(btn) {
         var panel   = document.getElementById('slot-breakdown');

@@ -5,7 +5,7 @@
     String retryLabel = (String) request.getAttribute("retryLabel");
 
     if (error == null || error.isBlank()) {
-        error = "Co loi xay ra khi xu ly tai khoan Google.";
+        error = "Có lỗi xảy ra khi xử lý tài khoản Google.";
     }
 
     if (retryUrl == null || retryUrl.isBlank()) {
@@ -13,7 +13,7 @@
     }
 
     if (retryLabel == null || retryLabel.isBlank()) {
-        retryLabel = "Chon lai tai khoan Google";
+        retryLabel = "Chọn lại tài khoản Google";
     }
 %>
 

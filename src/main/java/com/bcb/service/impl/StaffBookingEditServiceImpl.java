@@ -464,7 +464,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
     private InvoiceUpdateResult recalcInvoice(Connection conn, int bookingId, String reason,
                                               StaffBookingSnapshotTokenUtil.Snapshot before,
                                               StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
-        BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId);
+        BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId)
+                .add(repository.sumRentalAmount(conn, bookingId));
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
 
         BigDecimal overpaid = paidAmount.subtract(totalAmount);

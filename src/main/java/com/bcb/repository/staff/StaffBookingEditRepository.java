@@ -33,6 +33,8 @@ public interface StaffBookingEditRepository {
 
     BigDecimal sumActiveAmount(Connection conn, int bookingId) throws Exception;
 
+    BigDecimal sumRentalAmount(Connection conn, int bookingId) throws Exception;
+
     BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception;
 
     java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception;

@@ -57,8 +57,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             data.setSessions(sessions);
 
             // Rental rows
-            List<StaffBookingDetailRentalRowDTO> rawRentalRows = repository.findBookingRentalRows(conn, bookingId);
-            List<StaffBookingDetailRentalRowDTO> rentalRows = buildRentalRows(rawRentalRows);
+            List<StaffBookingDetailRentalRowDTO> rentalRows = repository.findBookingRentalRows(conn, bookingId);
             data.setRentalRows(rentalRows);
 
             BigDecimal courtTotal = calculateCourtTotal(allSlots);
@@ -172,58 +171,6 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
      * rawRows đầu vào nên được repository trả về theo thứ tự:
      * court_name ASC, start_time ASC
      */
-    private List<StaffBookingDetailRentalRowDTO> buildRentalRows(List<StaffBookingDetailRentalRowDTO> rawRows) {
-        List<StaffBookingDetailRentalRowDTO> result = new ArrayList<>();
-        if (rawRows == null || rawRows.isEmpty()) {
-            return result;
-        }
-
-        StaffBookingDetailRentalRowDTO current = cloneRentalRow(rawRows.get(0));
-
-        for (int i = 1; i < rawRows.size(); i++) {
-            StaffBookingDetailRentalRowDTO next = rawRows.get(i);
-
-            boolean sameCourt = safeEquals(current.getCourtName(), next.getCourtName());
-            boolean consecutive = safeEquals(current.getEndTime(), next.getStartTime());
-            boolean sameItems = safeEquals(current.getRentalItemsText(), next.getRentalItemsText());
-
-            if (sameCourt && consecutive && sameItems) {
-                current.setEndTime(next.getEndTime());
-
-                BigDecimal currTotal = current.getRentalTotal() != null
-                        ? current.getRentalTotal()
-                        : BigDecimal.ZERO;
-                BigDecimal nextTotal = next.getRentalTotal() != null
-                        ? next.getRentalTotal()
-                        : BigDecimal.ZERO;
-
-                current.setRentalTotal(currTotal.add(nextTotal));
-            } else {
-                result.add(current);
-                current = cloneRentalRow(next);
-            }
-        }
-
-        result.add(current);
-        return result;
-    }
-
-    private StaffBookingDetailRentalRowDTO cloneRentalRow(StaffBookingDetailRentalRowDTO src) {
-        StaffBookingDetailRentalRowDTO dto = new StaffBookingDetailRentalRowDTO();
-        dto.setCourtName(src.getCourtName());
-        dto.setStartTime(src.getStartTime());
-        dto.setEndTime(src.getEndTime());
-        dto.setRentalItemsText(src.getRentalItemsText());
-        dto.setRentalTotal(src.getRentalTotal());
-        return dto;
-    }
-
-    private boolean safeEquals(String a, String b) {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        return a.equals(b);
-    }
-
     private List<List<StaffBookingDetailSlotDTO>> groupIntoSessions(List<StaffBookingDetailSlotDTO> slots) {
         List<List<StaffBookingDetailSlotDTO>> sessions = new ArrayList<>();
         if (slots.isEmpty()) return sessions;

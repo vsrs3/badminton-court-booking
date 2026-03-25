@@ -43,13 +43,13 @@ public class GoogleCallbackController extends HttpServlet {
 
             Account account = googleAuthService.handleGoogleLogin(code);
             if (account == null) {
-                request.setAttribute("error", "Tai khoan Google nay khong ton tai trong he thong.");
+                request.setAttribute("error", "Tài khoản Google này không tồn tại trong hệ thống.");
                 request.getRequestDispatcher("/jsp/auth/login.jsp").forward(request, response);
                 return;
             }
 
             if (!account.getIsActive()) {
-                request.setAttribute("error", "Tai khoan da bi khoa.");
+                request.setAttribute("error", "Tài khoản đã bị khóa.");
                 request.getRequestDispatcher("/jsp/auth/login.jsp").forward(request, response);
                 return;
             }
@@ -96,7 +96,7 @@ public class GoogleCallbackController extends HttpServlet {
         } catch (BusinessException e) {
             request.setAttribute("error", e.getMessage());
             request.setAttribute("retryUrl", buildRetryUrl(request, token));
-            request.setAttribute("retryLabel", "Quay lai chon tai khoan khac");
+            request.setAttribute("retryLabel", "Quay lại chọn tài khoản khác");
             request.getRequestDispatcher("/jsp/common/google-error.jsp").forward(request, response);
         } catch (Exception e) {
             throw new ServletException(e);
