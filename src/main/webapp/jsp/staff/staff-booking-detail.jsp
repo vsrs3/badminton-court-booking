@@ -267,7 +267,7 @@
                         <th style="width:72px;">STT</th>
                         <th>Tên</th>
                         <th style="width:160px;">Tiền thuê/30 phút</th>
-                        <th style="width:120px;">Số lượng</th>
+                        <th style="width:120px;">Số lần</th>
                     </tr>
                     </thead>
                     <tbody id="rentalDetailTableBody">

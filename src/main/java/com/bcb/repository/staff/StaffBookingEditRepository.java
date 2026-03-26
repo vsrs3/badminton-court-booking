@@ -36,6 +36,7 @@ public interface StaffBookingEditRepository {
     BigDecimal sumActiveAmount(Connection conn, int bookingId) throws Exception;
 
     BigDecimal sumRentalAmount(Connection conn, int bookingId) throws Exception;
+    BigDecimal sumRentalAmountByBookingSlotId(Connection conn, int bookingSlotId) throws Exception;
 
     BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception;
 
