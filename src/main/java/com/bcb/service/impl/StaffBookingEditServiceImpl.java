@@ -262,7 +262,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 cancelPendingSlot(conn, bookingId, bookingSlotId);
             }
 
-            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                 StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots = StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);
+            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -431,6 +432,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         if (affected == 0) {
             throw new ApiException(400, "Không thể hủy slot không ở trạng thái PENDING");
         }
+        repository.deleteInventoryRentalScheduleByBookingSlotId(conn, bookingSlotId);
+        repository.deleteRacketRentalByBookingSlotId(conn, bookingSlotId);
         repository.deleteCourtSlotBooking(conn, bookingSlotId);
     }
 

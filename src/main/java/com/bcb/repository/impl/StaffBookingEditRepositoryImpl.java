@@ -91,6 +91,32 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
+    public void deleteRacketRentalByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM RacketRental WHERE booking_slot_id = ?")) {
+            ps.setInt(1, bookingSlotId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteInventoryRentalScheduleByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
+        String sql = """
+                DELETE irs
+                FROM InventoryRentalSchedule irs
+                JOIN BookingSlot bs ON bs.booking_slot_id = ?
+                JOIN Booking b ON b.booking_id = bs.booking_id
+                WHERE irs.facility_id = b.facility_id
+                  AND irs.court_id = bs.court_id
+                  AND irs.slot_id = bs.slot_id
+                  AND irs.booking_date = COALESCE(bs.booking_date, b.booking_date)
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingSlotId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
     public StaffBookingEditExistingSlotDTO findExistingSlot(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
         String sql = "SELECT booking_slot_id, slot_status FROM BookingSlot WHERE booking_id = ? AND court_id = ? AND slot_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -190,6 +216,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
                 FROM RacketRental rr
                 JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
                 WHERE bs.booking_id = ?
+                  AND bs.slot_status <> 'CANCELLED'
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
