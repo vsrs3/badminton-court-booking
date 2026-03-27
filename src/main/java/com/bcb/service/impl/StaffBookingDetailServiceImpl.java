@@ -21,6 +21,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
 
     private final StaffBookingDetailRepository repository = new StaffBookingDetailRepositoryImpl();
 
+    /**
+     * Builds booking detail with sessions, invoice, rental rows, totals, and etag.
+     */
     @Override
     public StaffBookingDetailDataDTO getBookingDetail(int bookingId, int staffFacilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
@@ -45,6 +48,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             data.setCustomerType(header.getCustomerType());
             data.setSlots(allSlots);
 
+            // Invoice totals include court + rental totals.
             // Invoice
             StaffBookingDetailInvoiceDTO invoice = repository.findInvoice(conn, bookingId);
             data.setInvoice(invoice);
@@ -78,6 +82,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             BigDecimal originalGrandTotal = originalCourtTotal.add(rentalTotal);
             data.setOriginalGrandTotal(originalGrandTotal);
 
+            // Etag computed from booking snapshot for optimistic updates.
             // Snapshot / Etag
             StaffBookingSnapshotTokenUtil.Snapshot snapshot =
                     StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, staffFacilityId);
@@ -142,7 +147,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
     }
 
     /**
-     * Tính tổng tiền thuê đồ từ danh sách rental rows đã gộp.
+     * Calculates total rental amount from aggregated rental rows.
      */
     private BigDecimal calculateRentalTotal(List<StaffBookingDetailRentalRowDTO> rentalRows) {
         BigDecimal total = BigDecimal.ZERO;
@@ -192,14 +197,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
     }
 
     /**
-     * Gộp các dòng thuê đồ theo rule:
-     * - cùng sân
-     * - slot liền kề
-     * - danh sách đồ thuê giống nhau
-     * thì gộp thành 1 dòng
-     *
-     * rawRows đầu vào nên được repository trả về theo thứ tự:
-     * court_name ASC, start_time ASC
+     * Groups slots into sessions by court, date, consecutive time, and status boundaries.
      */
     private List<List<StaffBookingDetailSlotDTO>> groupIntoSessions(List<StaffBookingDetailSlotDTO> slots) {
         List<List<StaffBookingDetailSlotDTO>> sessions = new ArrayList<>();

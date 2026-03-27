@@ -27,7 +27,6 @@ public class OwnerAuthorizationFilter implements Filter {
         HttpSession session = httpRequest.getSession(false);
 
         if (session == null) {
-            System.out.println("❌ Owner access denied: Not logged in");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -36,7 +35,6 @@ public class OwnerAuthorizationFilter implements Filter {
         Account currentUser = (Account) session.getAttribute("account");
 
         if (currentUser == null) {
-            System.out.println("❌ Owner access denied: No account in session");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -45,12 +43,10 @@ public class OwnerAuthorizationFilter implements Filter {
         String role = currentUser.getRole();
 
         if (!"OWNER".equals(role)) {
-            System.out.println("❌ Owner access denied: User has role " + role);
             httpRequest.getRequestDispatcher("/jsp/error/403.jsp").forward(httpRequest, httpResponse);
             return;
         }
 
-        System.out.println("✅ Owner access granted: " + currentUser.getEmail());
         chain.doFilter(request, response);
     }
 }

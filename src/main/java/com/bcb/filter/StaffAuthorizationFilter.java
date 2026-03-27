@@ -27,7 +27,6 @@ public class StaffAuthorizationFilter implements Filter {
         HttpSession session = httpRequest.getSession(false);
 
         if (session == null) {
-            System.out.println("❌ Staff access denied: Not logged in");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -36,7 +35,6 @@ public class StaffAuthorizationFilter implements Filter {
         Account currentUser = (Account) session.getAttribute("account");
 
         if (currentUser == null) {
-            System.out.println("❌ Staff access denied: No account in session");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -45,12 +43,9 @@ public class StaffAuthorizationFilter implements Filter {
         String role = currentUser.getRole();
 
         if (!"STAFF".equals(role)) {
-            System.out.println("❌ Staff access denied: User has role " + role);
             httpRequest.getRequestDispatcher("/jsp/error/403.jsp").forward(httpRequest, httpResponse);
             return;
         }
-
-        System.out.println("✅ Staff access granted: " + currentUser.getEmail());
         chain.doFilter(request, response);
     }
 }

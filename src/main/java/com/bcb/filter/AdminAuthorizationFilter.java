@@ -28,7 +28,6 @@ public class AdminAuthorizationFilter implements Filter {
 
         if (session == null) {
             // Not logged in - redirect to login
-            System.out.println("❌ Admin access denied: Not logged in");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -38,7 +37,6 @@ public class AdminAuthorizationFilter implements Filter {
 
         if (currentUser == null) {
             // Not logged in - redirect to login
-            System.out.println("❌ Admin access denied: No account in session");
             String contextPath = httpRequest.getContextPath();
             httpResponse.sendRedirect(contextPath + "/auth/login");
             return;
@@ -48,13 +46,11 @@ public class AdminAuthorizationFilter implements Filter {
 
         if (!"ADMIN".equals(role)) {
             // Wrong role - show 403
-            System.out.println("❌ Admin access denied: User has role " + role);
             httpRequest.getRequestDispatcher("/jsp/error/403.jsp").forward(httpRequest, httpResponse);
             return;
         }
 
         // Authorized - continue
-        System.out.println("✅ Admin access granted: " + currentUser.getEmail());
         chain.doFilter(request, response);
     }
 }

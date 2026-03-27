@@ -14,6 +14,9 @@ import java.util.List;
 
 public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
 
+    /**
+     * Loads booking header for session validation (status/date/facility).
+     */
     @Override
     public StaffCheckinBookingDTO findBooking(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT booking_status, booking_date, facility_id FROM Booking WHERE booking_id = ?";
@@ -32,6 +35,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Loads invoice payment status for check-in/out eligibility.
+     */
     @Override
     public String findInvoicePaymentStatus(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT payment_status FROM Invoice WHERE booking_id = ?";
@@ -44,6 +50,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Loads slot rows for session grouping and status checks.
+     */
     @Override
     public List<StaffCheckinSessionSlotRowDTO> findSessionSlotRows(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -110,6 +119,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         return statuses;
     }
 
+    /**
+     * Updates slots to CHECKED_IN with a shared timestamp.
+     */
     @Override
     public void updateSlotsCheckedIn(Connection conn, List<Integer> slotIds, Timestamp checkinTime) throws Exception {
         for (int slotId : slotIds) {
@@ -122,6 +134,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Updates slots to CHECK_OUT with a shared timestamp.
+     */
     @Override
     public void updateSlotsCheckedOut(Connection conn, List<Integer> slotIds, Timestamp checkoutTime) throws Exception {
         for (int slotId : slotIds) {
@@ -134,6 +149,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Marks slots as NO_SHOW.
+     */
     @Override
     public void updateSlotsNoShow(Connection conn, List<Integer> slotIds) throws Exception {
         for (int slotId : slotIds) {

@@ -21,6 +21,9 @@ import java.util.StringJoiner;
 
 public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepository {
 
+    /**
+     * Loads booking header with customer and recurring metadata.
+     */
     @Override
     public StaffBookingDetailHeaderDTO findBookingHeader(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -58,6 +61,9 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         }
     }
 
+    /**
+     * Loads all booking slots needed for session grouping and detail display.
+     */
     @Override
     public List<StaffBookingDetailSlotDTO> findBookingSlots(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -98,6 +104,9 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         return slots;
     }
 
+    /**
+     * Loads invoice totals and payment status for the booking detail.
+     */
     @Override
     public StaffBookingDetailInvoiceDTO findInvoice(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT total_amount, paid_amount, payment_status, refund_due, refund_status FROM Invoice WHERE booking_id = ?";
@@ -127,6 +136,9 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         return ts.toLocalDateTime().toString().replace("T", " ").substring(0, 16);
     }
 
+    /**
+     * Loads rental rows and aggregates rental items per slot for the detail view.
+     */
     @Override
     public List<StaffBookingDetailRentalRowDTO> findBookingRentalRows(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -170,6 +182,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                 i.name ASC
             """;
 
+        /* Aggregate rental rows by booking date + court + slot. */
         Map<String, StaffBookingDetailRentalRowDTO> rowMap = new LinkedHashMap<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

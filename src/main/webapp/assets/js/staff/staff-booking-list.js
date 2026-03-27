@@ -45,12 +45,14 @@
         }
     });
 
+    // Render quick filters (today/status) and search input.
     filterChips.forEach(function (chip) {
         chip.addEventListener('click', function () {
             var type = chip.getAttribute('data-filter');
             var value = chip.getAttribute('data-value');
             setActiveChip(type, value);
             currentPage = 1;
+            // Update list + pagination after filter/search change.
             loadBookings();
         });
     });

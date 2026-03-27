@@ -107,6 +107,7 @@
         stateError.classList.add('d-none');
         detailContent.classList.add('d-none');
 
+        // Load detail payload (sessions, invoice, rentals, etag).
         fetch(CTX + '/api/staff/booking/detail/' + bookingId, {
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
@@ -783,6 +784,7 @@
         paymentModalConfirm.disabled = true;
         paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
 
+        // Confirm full payment via staff API.
         fetch(CTX + '/api/staff/payment/confirm', {
             method: 'POST',
             credentials: 'same-origin',
@@ -844,6 +846,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Check-in per session.
         fetch(CTX + '/api/staff/checkin', {
             method: 'POST',
             credentials: 'same-origin',
@@ -905,6 +908,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Check-out per session.
         fetch(CTX + '/api/staff/checkout', {
             method: 'POST',
             credentials: 'same-origin',
@@ -955,6 +959,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Mark no-show per session.
         fetch(CTX + '/api/staff/noshow', {
             method: 'POST',
             credentials: 'same-origin',
@@ -1011,6 +1016,7 @@
 
     async function handleReleaseSession(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
+        // Only allow release before session end (backend enforces too).
         if (isSessionEnded(session)) {
             showToast('Phiên đã quá giờ, không thể giải phóng slot', 'warning');
             return;
@@ -1038,6 +1044,7 @@
                 return;
             }
 
+            // Release each NO_SHOW slot with optimistic etag to avoid stale updates.
             fetch(CTX + '/api/staff/booking/release-slot', {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -1076,6 +1083,7 @@
 
     async function handleCancelRemaining() {
         if (!bookingData || bookingData.bookingStatus !== 'CONFIRMED') return;
+        // Require confirmation + reason before canceling all remaining PENDING slots.
         if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này (bao gồm cả các đồ thuê)', 'Xác nhận hủy phần còn lại'))) return;
 
         var reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');

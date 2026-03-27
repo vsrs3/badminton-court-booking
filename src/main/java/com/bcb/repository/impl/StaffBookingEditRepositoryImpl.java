@@ -19,6 +19,9 @@ import java.util.List;
 
 public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepository {
 
+    /**
+     * Returns booking slot ids that are still PENDING (editable in timeline).
+     */
     @Override
     public List<Integer> findPendingSlotIds(Connection conn, int bookingId) throws Exception {
         List<Integer> ids = new ArrayList<>();
@@ -32,6 +35,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         return ids;
     }
 
+    /**
+     * Loads booking slot cells with time ranges to validate session rules after edits.
+     */
     @Override
     public List<StaffBookingEditSessionCellDTO> findSessionCellsByBookingId(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT bs.booking_slot_id, bs.court_id, bs.slot_id, bs.slot_status, ts.start_time, ts.end_time " +
@@ -72,6 +78,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Cancels a PENDING slot and marks it released when removed from the booking.
+     */
     @Override
     public int cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
@@ -84,6 +93,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
 
     @Override
     public void deleteCourtSlotBooking(Connection conn, int bookingSlotId) throws Exception {
+        // Remove the court-time lock so the slot can be reused.
         try (PreparedStatement ps = conn.prepareStatement("DELETE FROM CourtSlotBooking WHERE booking_slot_id = ?")) {
             ps.setInt(1, bookingSlotId);
             ps.executeUpdate();
@@ -168,6 +178,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Inserts a new PENDING slot when editing adds a court/slot pair.
+     */
     @Override
     public int insertPendingSlot(Connection conn, int bookingId, int courtId, int slotId, BigDecimal price) throws Exception {
         String sql = "INSERT INTO BookingSlot (booking_id, court_id, slot_id, price, is_released, slot_status) VALUES (?, ?, ?, ?, 0, 'PENDING')";
@@ -186,6 +199,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Creates the court-time lock row for an added slot.
+     */
     @Override
     public void insertCourtSlotBooking(Connection conn, int courtId, LocalDate bookingDate, int slotId, int bookingSlotId) throws Exception {
         String sql = "INSERT INTO CourtSlotBooking (court_id, booking_date, slot_id, booking_slot_id) VALUES (?, ?, ?, ?)";
@@ -198,6 +214,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Sums active (non-cancelled) slot prices for invoice recalculation after edits.
+     */
     @Override
     public BigDecimal sumActiveAmount(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
@@ -209,6 +228,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Sums rental totals for all active (non-cancelled) slots.
+     */
     @Override
     public BigDecimal sumRentalAmount(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -226,6 +248,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Sums rental total for a specific booking slot (used when canceling/removing).
+     */
     @Override
     public BigDecimal sumRentalAmountByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
         String sql = """
@@ -241,6 +266,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Returns paid amount from invoice for recalculation checks.
+     */
     @Override
     public BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT paid_amount FROM Invoice WHERE booking_id = ?")) {
@@ -252,6 +280,9 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    /**
+     * Returns previous payment status so it can be preserved when total becomes zero.
+     */
     @Override
     public String findPaymentStatus(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT payment_status FROM Invoice WHERE booking_id = ?")) {
@@ -299,7 +330,10 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
-        @Override
+    /**
+     * Returns booking creation time to enforce refund eligibility window.
+     */
+    @Override
     public java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT created_at FROM Booking WHERE booking_id = ?")) {
             ps.setInt(1, bookingId);
@@ -312,7 +346,10 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
-@Override
+    /**
+     * Persists invoice totals and refund fields after recalculation.
+     */
+    @Override
     public void updateInvoiceAfterRecalc(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal refundDue,
                                          String refundStatus, String refundNote, String paymentStatus) throws Exception {
         String sql = "UPDATE Invoice SET total_amount = ?, refund_due = ?, refund_status = ?, refund_note = ?, payment_status = ? WHERE booking_id = ?";
@@ -368,6 +405,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
 
     @Override
     public StaffBookingEditSlotStateDTO findSlotState(Connection conn, int bookingId, int bookingSlotId) throws Exception {
+        // Fetch status + release flag to validate NO_SHOW release eligibility.
         try (PreparedStatement ps = conn.prepareStatement(
                 "SELECT slot_status, is_released FROM BookingSlot WHERE booking_id = ? AND booking_slot_id = ?")) {
             ps.setInt(1, bookingId);
@@ -384,6 +422,7 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
 
     @Override
     public void markSlotReleased(Connection conn, int bookingSlotId) throws Exception {
+        // Mark slot as released so UI can hide release actions.
         try (PreparedStatement ps = conn.prepareStatement("UPDATE BookingSlot SET is_released = 1 WHERE booking_slot_id = ?")) {
             ps.setInt(1, bookingSlotId);
             ps.executeUpdate();

@@ -34,21 +34,33 @@ public class EmailQueueServiceImpl implements EmailQueueService {
     private final BookingEmailRepository bookingEmailRepository = new BookingEmailRepositoryImpl();
     private final SendEmailService sendEmailService = new SendEmailServiceImpl();
 
+    /**
+     * Enqueues a booking created email (staff-created only).
+     */
     @Override
     public EmailEnqueueResult enqueueBookingCreated(int bookingId) {
         return enqueueIfPossible("CREATE", bookingId, null);
     }
 
+    /**
+     * Enqueues a recurring booking created email (staff-created only).
+     */
     @Override
     public EmailEnqueueResult enqueueRecurringBookingCreated(int bookingId) {
         return enqueueIfPossible("CREATE_RECURRING", bookingId, null);
     }
 
+    /**
+     * Enqueues a booking update email (staff-created only).
+     */
     @Override
     public void enqueueBookingUpdated(int bookingId, String payloadJson) {
         enqueueIfPossible("UPDATE", bookingId, payloadJson);
     }
 
+    /**
+     * Enqueues a booking cancel email (staff-created only).
+     */
     @Override
     public void enqueueBookingCancelled(int bookingId, String payloadJson) {
         enqueueIfPossible("CANCEL", bookingId, payloadJson);
@@ -67,8 +79,17 @@ public class EmailQueueServiceImpl implements EmailQueueService {
         return enqueueForCustomer("PAY_REMAINING", bookingId, "{\"paymentType\":\"REMAINING\"}");
     }
 
+    /**
+     * Processes pending emails and updates queue status with retry/backoff.
+     */
     @Override
     public void processPendingEmails() {
+        /*
+         * Queue processing loop:
+         * - Fetch pending rows and mark as SENDING.
+         * - Build email content and send.
+         * - Mark SENT or FAILED with backoff.
+         */
         List<EmailQueueItemDTO> items;
         try {
             items = emailQueueRepository.findAndMarkPending(20);
@@ -98,10 +119,12 @@ public class EmailQueueServiceImpl implements EmailQueueService {
     private EmailEnqueueResult enqueueIfPossible(String emailType, int bookingId, String payloadJson) {
         try {
             BookingRecipientDTO recipient = bookingEmailRepository.findRecipient(bookingId);
+            // Only enqueue emails for staff-created bookings.
             if (recipient == null || recipient.getStaffId() == null) {
                 return new EmailEnqueueResult(false, "Không phải booking do staff tạo. Không xếp email.");
             }
             String toEmail = recipient.getEmail();
+            // Skip enqueue when recipient email is missing.
             if (toEmail == null || toEmail.trim().isEmpty()) {
                 return new EmailEnqueueResult(false, "Không có email. Không xếp thông báo.");
             }
@@ -116,6 +139,7 @@ public class EmailQueueServiceImpl implements EmailQueueService {
         int nextRetry = item.getRetryCount() + 1;
         boolean exhausted = nextRetry >= MAX_RETRY;
         String status = (forceFailed || exhausted) ? "FAILED" : "PENDING";
+        // Update status to SENT/FAILED with retry backoff.
         int backoffIndex = Math.min(nextRetry - 1, BACKOFF_MINUTES.length - 1);
         LocalDateTime nextAttempt = LocalDateTime.now().plusMinutes(BACKOFF_MINUTES[backoffIndex]);
         try {
@@ -158,6 +182,7 @@ public class EmailQueueServiceImpl implements EmailQueueService {
     private EmailEnqueueResult enqueueForCustomer(String emailType, int bookingId, String payloadJson) {
         try {
             BookingRecipientDTO recipient = bookingEmailRepository.findRecipient(bookingId);
+            // Only enqueue emails for staff-created bookings.
             if (recipient == null) {
                 return new EmailEnqueueResult(false, "Không tìm thấy người nhận.");
             }
@@ -165,6 +190,7 @@ public class EmailQueueServiceImpl implements EmailQueueService {
                 return new EmailEnqueueResult(false, "Booking do staff tạo. Bỏ qua email customer.");
             }
             String toEmail = recipient.getEmail();
+            // Skip enqueue when recipient email is missing.
             if (toEmail == null || toEmail.trim().isEmpty()) {
                 return new EmailEnqueueResult(false, "Không có email. Không xếp thông báo.");
             }
@@ -808,6 +834,8 @@ private void appendHeader(StringBuilder body, BookingEmailHeaderDTO header) {
         }
     }
 }
+
+
 
 
 

@@ -19,6 +19,9 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
 
     private final StaffRentalScheduleService service = new StaffRentalScheduleServiceImpl();
 
+    /**
+     * Loads rental inventory for a slot to support proxy booking rentals.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -36,6 +39,7 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
         int pageSize = 5;
 
         try {
+            // Load rentable inventory for the selected slot.
             writeJson(response, service.getSlotInventoryJson(
                     auth.facilityId, bookingDate, courtId, slotId, keyword, priceSort, page, pageSize));
         } catch (IllegalArgumentException e) {
@@ -46,6 +50,9 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
         }
     }
 
+    /**
+     * Saves rental selections for the current slot in proxy booking.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -56,6 +63,7 @@ public class StaffRentalScheduleApiServlet extends BaseStaffApiServlet {
         if (!auth.valid) return;
 
         try {
+            // Save per-slot rental selections tied to proxy booking.
             writeJson(response, service.saveSlotRentalSchedule(readRequestBody(request), auth.facilityId));
         } catch (IllegalArgumentException e) {
             writeError(response, 400, e.getMessage());

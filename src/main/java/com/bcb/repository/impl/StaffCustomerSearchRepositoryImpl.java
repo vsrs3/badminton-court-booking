@@ -12,8 +12,12 @@ import java.util.List;
 
 public class StaffCustomerSearchRepositoryImpl implements StaffCustomerSearchRepository {
 
+    /**
+     * Searches active customer accounts for autocomplete suggestions.
+     */
     @Override
     public List<StaffCustomerSearchItemDTO> searchActiveCustomers(String keyword, int limit) throws Exception {
+        // Limit and order results for responsive autocomplete dropdowns.
         String sql = "SELECT TOP " + limit + " account_id, full_name, phone, email " +
                 "FROM Account " +
                 "WHERE role = 'CUSTOMER' AND is_active = 1 " +

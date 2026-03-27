@@ -23,6 +23,9 @@ public class StaffCheckinApiServlet extends BaseStaffApiServlet {
 
     private final StaffCheckinService staffCheckinService = new StaffCheckinServiceImpl();
 
+    /**
+     * Routes staff check-in/check-out/no-show per session.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

@@ -8,6 +8,9 @@ import java.util.List;
 
 public class StaffRefundRepositoryImpl implements StaffRefundRepository {
 
+    /**
+     * Counts pending manual refunds with optional phone/booking search.
+     */
     @Override
     public int countPendingRefunds(Connection conn, int facilityId, String search) throws Exception {
         StringBuilder sql = new StringBuilder();
@@ -49,8 +52,16 @@ public class StaffRefundRepositoryImpl implements StaffRefundRepository {
         }
     }
 
+    /**
+     * Returns pending manual refunds with search and paging.
+     */
     @Override
     public List<StaffRefundListItemDTO> findPendingRefunds(Connection conn, int facilityId, int offset, int size, String search)            throws Exception {
+        /* Refund list query:
+         * - Join booking + account/guest for customer info.
+         * - Use latest refund-related change log time for ordering.
+         * - Filter only PENDING_MANUAL with refund_due > 0.
+         */
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT b.booking_id, b.booking_date, b.created_at, ")
            .append("COALESCE(a.full_name, g.guest_name) AS customer_name, ")
@@ -121,6 +132,9 @@ public class StaffRefundRepositoryImpl implements StaffRefundRepository {
         return results;
     }
 
+    /**
+     * Returns current refund_note only if refund is still pending manual.
+     */
     @Override
     public String findRefundNote(Connection conn, int bookingId, int facilityId) throws Exception {        String sql = "SELECT i.refund_note " +
             "FROM Invoice i JOIN Booking b ON i.booking_id = b.booking_id " +
@@ -135,6 +149,9 @@ public class StaffRefundRepositoryImpl implements StaffRefundRepository {
         }
     }
 
+    /**
+     * Marks refund as REFUNDED and persists the merged refund note.
+     */
     @Override
     public int markRefunded(Connection conn, int bookingId, int facilityId, String refundNote) throws Exception {
         String sql = "UPDATE i SET i.refund_status = 'REFUNDED', i.refund_note = ? " +

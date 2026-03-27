@@ -26,6 +26,9 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
 
     private final StaffScheduleExceptionRepository repository = new StaffScheduleExceptionRepositoryImpl();
 
+    /**
+     * Handles schedule exception create/delete (block/unblock) for staff.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -81,6 +84,12 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                /*
+                 * Block transaction:
+                 * - Validate slot time and ensure it is in the future.
+                 * - Reject if slot already booked or blocked.
+                 * - Insert CourtScheduleException for the slot time range.
+                 */
                 LocalTime[] slotTimes = repository.findSlotTime(conn, slotId);
                 if (slotTimes == null) {
                     throw new ApiException(404, "Không tìm thấy slot");
@@ -88,10 +97,11 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
 
                 LocalDate today = LocalDate.now();
                 LocalTime now = LocalTime.now();
+                // Block only future slots; reject past time.
                 if (date.isBefore(today) || (date.equals(today) && now.isAfter(slotTimes[1]))) {
                     throw new ApiException(400, "Slot đã quá giờ, không thể block");
                 }
-
+                // Prevent block if slot already booked or already blocked.
                 if (repository.hasBooking(conn, facilityId, courtId, date, slotId)) {
                     throw new ApiException(409, "Slot đang có booking, vui lòng xử lý booking trước");
                 }
@@ -146,6 +156,12 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                /*
+                 * Unblock transaction:
+                 * - Load active exception and validate same-day delete.
+                 * - If exact match, deactivate exception.
+                 * - Otherwise split into before/after ranges and deactivate original.
+                 */
                 CourtScheduleException ex = repository.findActiveExceptionById(conn, facilityId, exceptionId);
                 if (ex == null) {
                     throw new ApiException(404, "Không tìm thấy block");
@@ -156,6 +172,7 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
                 if (date.isBefore(ex.getStartDate()) || date.isAfter(ex.getEndDate())) {
                     throw new ApiException(400, "Ngày không thuộc khoảng block");
                 }
+                // Unblock supports same-day only; split exception into before/after.
                 if (!date.equals(ex.getStartDate()) || !date.equals(ex.getEndDate())) {
                     throw new ApiException(400, "Chỉ hỗ trợ gỡ block trong ngày");
                 }
@@ -184,6 +201,7 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
 
                 boolean exactMatch = slotStart.equals(exStart) && slotEnd.equals(exEnd);
                 if (exactMatch) {
+                    // Deactivate exception when exact match.
                     repository.deactivateException(conn, exceptionId);
                 } else {
                     if (exStart.isBefore(slotStart)) {
@@ -258,3 +276,5 @@ public class StaffScheduleExceptionApiServlet extends BaseStaffApiServlet {
         }
     }
 }
+
+

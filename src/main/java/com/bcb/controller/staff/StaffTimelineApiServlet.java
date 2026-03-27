@@ -23,6 +23,9 @@ public class StaffTimelineApiServlet extends BaseStaffApiServlet {
 
     private final StaffTimelineService staffTimelineService = new StaffTimelineServiceImpl();
 
+    /**
+     * Loads the staff timeline for a given date (default: today) and returns courts, slots, and cell states.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -32,6 +35,7 @@ public class StaffTimelineApiServlet extends BaseStaffApiServlet {
         AuthResult auth = StaffAuthUtil.validateStaff(request, response);
         if (!auth.valid) return;
 
+        // Quick date switch: today or user-selected date.
         String dateParam = request.getParameter("date");
         LocalDate bookingDate;
         try {

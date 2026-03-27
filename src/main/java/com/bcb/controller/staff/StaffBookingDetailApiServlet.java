@@ -25,6 +25,9 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingDetailService staffBookingDetailService = new StaffBookingDetailServiceImpl();
 
+    /**
+     * Loads booking detail and returns sessions, invoice, rental rows, totals, and etag.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -61,6 +64,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         }
     }
 
+    /* Build detail response with sessions, slots, invoice, rental rows, totals, and etag. */
     private String buildDetailJson(StaffBookingDetailDataDTO data) {
         StringBuilder json = new StringBuilder(8192);
         json.append("{\"success\":true,\"data\":{");

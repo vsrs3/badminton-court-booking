@@ -10,6 +10,9 @@ import java.sql.ResultSet;
 
 public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRepository {
 
+    /**
+     * Resolves facility ownership for booking validation.
+     */
     @Override
     public Integer findFacilityIdByBookingId(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT facility_id FROM Booking WHERE booking_id = ?";
@@ -24,6 +27,9 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
         }
     }
 
+    /**
+     * Locks invoice row for consistent payment updates.
+     */
     @Override
     public StaffConfirmPaymentInvoiceDTO findInvoiceForUpdate(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT invoice_id, total_amount, paid_amount, payment_status " +
@@ -46,6 +52,9 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
         }
     }
 
+    /**
+     * Inserts a payment record for staff-confirmed full payment.
+     */
     @Override
     public void insertPayment(Connection conn, int invoiceId, BigDecimal amount, String paymentType, String method, int staffId)
             throws Exception {
@@ -61,6 +70,9 @@ public class StaffConfirmPaymentRepositoryImpl implements StaffConfirmPaymentRep
         }
     }
 
+    /**
+     * Marks invoice as PAID with updated totals.
+     */
     @Override
     public void updateInvoiceAsPaid(Connection conn, int bookingId, BigDecimal totalAmount, BigDecimal paidAmount) throws Exception {
         String sql = "UPDATE Invoice SET total_amount = ?, paid_amount = ?, payment_status = 'PAID' WHERE booking_id = ?";
