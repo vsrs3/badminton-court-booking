@@ -161,12 +161,16 @@
                                 <span class="sbd-field-label">Tiền sân</span>
                                 <span class="sbd-field-value sbd-money" id="dCourtAmount"></span>
                             </div>
+                            <div class="sbd-field mb-3 d-none" id="dCurrentCourtField">
+                                <span class="sbd-field-label">Tiền sân hiện tại</span>
+                                <span class="sbd-field-value sbd-money" id="dCurrentCourtAmount"></span>
+                            </div>
                             <div class="sbd-field mb-3">
                                 <span class="sbd-field-label">Tiền thuê đồ</span>
                                 <span class="sbd-field-value sbd-money" id="dRentalAmount"></span>
                             </div>
                             <div class="sbd-field mb-3 d-none" id="dOriginalTotalField">
-                                <span class="sbd-field-label">Tổng tiền ban đầu</span>
+                                <span class="sbd-field-label">Tổng tiền hiện tại</span>
                                 <span class="sbd-field-value sbd-money" id="dOriginalTotalAmount"></span>
                             </div>
                             <div class="sbd-field mb-3">

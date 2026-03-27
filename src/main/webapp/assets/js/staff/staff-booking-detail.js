@@ -204,6 +204,8 @@
         var rentalAmount = toMoneyNumber(d.rentalTotal);
         var originalTotalField = document.getElementById('dOriginalTotalField');
         var originalTotalAmountEl = document.getElementById('dOriginalTotalAmount');
+        var currentCourtField = document.getElementById('dCurrentCourtField');
+        var currentCourtAmountEl = document.getElementById('dCurrentCourtAmount');
 
         if (d.invoice) {
             var totalAmount = d.invoice.totalAmount != null ? toMoneyNumber(d.invoice.totalAmount) : toMoneyNumber(d.grandTotal);
@@ -212,16 +214,35 @@
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
             var originalGrandTotal = toMoneyNumber(d.originalGrandTotal);
+            var originalCourtTotal = toMoneyNumber(d.originalCourtTotal);
+            var showOriginalCourt = originalCourtTotal > 0 && !isSameMoney(originalCourtTotal, courtAmount);
+            var showOriginalTotal = originalGrandTotal > 0 && !isSameMoney(originalGrandTotal, totalAmount);
 
-            setText('dCourtAmount', formatMoney(courtAmount));
+            if (showOriginalCourt) {
+                setText('dCourtAmount', formatMoney(originalCourtTotal));
+                if (currentCourtField && currentCourtAmountEl) {
+                    currentCourtField.classList.remove('d-none');
+                    currentCourtAmountEl.textContent = formatMoney(courtAmount);
+                }
+            } else {
+                setText('dCourtAmount', formatMoney(courtAmount));
+                if (currentCourtField && currentCourtAmountEl) {
+                    currentCourtField.classList.add('d-none');
+                    currentCourtAmountEl.textContent = '';
+                }
+            }
             setText('dRentalAmount', formatMoney(rentalAmount));
-            setText('dTotalAmount', formatMoney(totalAmount));
+            if (showOriginalTotal) {
+                setText('dTotalAmount', formatMoney(originalGrandTotal));
+            } else {
+                setText('dTotalAmount', formatMoney(totalAmount));
+            }
             setText('dPaidAmount', formatMoney(paidAmount));
 
             if (originalTotalField && originalTotalAmountEl) {
-                if (d.bookingStatus === 'CANCELLED' && originalGrandTotal > 0 && !isSameMoney(originalGrandTotal, totalAmount)) {
+                if (showOriginalTotal) {
                     originalTotalField.classList.remove('d-none');
-                    originalTotalAmountEl.textContent = formatMoney(originalGrandTotal);
+                    originalTotalAmountEl.textContent = formatMoney(totalAmount);
                 } else {
                     originalTotalField.classList.add('d-none');
                     originalTotalAmountEl.textContent = '';
@@ -259,6 +280,10 @@
             if (originalTotalField && originalTotalAmountEl) {
                 originalTotalField.classList.add('d-none');
                 originalTotalAmountEl.textContent = '';
+            }
+            if (currentCourtField && currentCourtAmountEl) {
+                currentCourtField.classList.add('d-none');
+                currentCourtAmountEl.textContent = '';
             }
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
