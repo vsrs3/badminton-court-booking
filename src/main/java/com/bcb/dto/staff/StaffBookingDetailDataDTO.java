@@ -23,6 +23,8 @@ public class StaffBookingDetailDataDTO {
     private BigDecimal courtTotal;
     private BigDecimal rentalTotal;
     private BigDecimal grandTotal;
+    private BigDecimal originalCourtTotal;
+    private BigDecimal originalGrandTotal;
 
 
     public int getBookingId() {
@@ -169,6 +171,22 @@ public class StaffBookingDetailDataDTO {
 
     public void setGrandTotal(BigDecimal grandTotal) {
         this.grandTotal = grandTotal;
+    }
+
+    public BigDecimal getOriginalCourtTotal() {
+        return originalCourtTotal;
+    }
+
+    public void setOriginalCourtTotal(BigDecimal originalCourtTotal) {
+        this.originalCourtTotal = originalCourtTotal;
+    }
+
+    public BigDecimal getOriginalGrandTotal() {
+        return originalGrandTotal;
+    }
+
+    public void setOriginalGrandTotal(BigDecimal originalGrandTotal) {
+        this.originalGrandTotal = originalGrandTotal;
     }
 }
 

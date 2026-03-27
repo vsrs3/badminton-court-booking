@@ -484,6 +484,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId)
                 .add(repository.sumRentalAmount(conn, bookingId));
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
+        String previousPaymentStatus = repository.findPaymentStatus(conn, bookingId);
 
         BigDecimal overpaid = paidAmount.subtract(totalAmount);
         if (overpaid.compareTo(BigDecimal.ZERO) < 0) {
@@ -524,7 +525,13 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
         String paymentStatus;
         if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
-            paymentStatus = "PAID";
+            if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+                paymentStatus = (previousPaymentStatus != null && !previousPaymentStatus.isEmpty())
+                        ? previousPaymentStatus
+                        : "UNPAID";
+            } else {
+                paymentStatus = "PAID";
+            }
         } else if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
             paymentStatus = "UNPAID";
         } else if (paidAmount.compareTo(totalAmount) >= 0) {

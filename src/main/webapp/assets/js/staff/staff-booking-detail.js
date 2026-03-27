@@ -202,6 +202,8 @@
     function renderInvoice(d) {
         var courtAmount = toMoneyNumber(d.courtTotal);
         var rentalAmount = toMoneyNumber(d.rentalTotal);
+        var originalTotalField = document.getElementById('dOriginalTotalField');
+        var originalTotalAmountEl = document.getElementById('dOriginalTotalAmount');
 
         if (d.invoice) {
             var totalAmount = d.invoice.totalAmount != null ? toMoneyNumber(d.invoice.totalAmount) : toMoneyNumber(d.grandTotal);
@@ -209,11 +211,22 @@
             var remaining = Math.max(0, totalAmount - paidAmount);
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
+            var originalGrandTotal = toMoneyNumber(d.originalGrandTotal);
 
             setText('dCourtAmount', formatMoney(courtAmount));
             setText('dRentalAmount', formatMoney(rentalAmount));
             setText('dTotalAmount', formatMoney(totalAmount));
             setText('dPaidAmount', formatMoney(paidAmount));
+
+            if (originalTotalField && originalTotalAmountEl) {
+                if (d.bookingStatus === 'CANCELLED' && originalGrandTotal > 0 && !isSameMoney(originalGrandTotal, totalAmount)) {
+                    originalTotalField.classList.remove('d-none');
+                    originalTotalAmountEl.textContent = formatMoney(originalGrandTotal);
+                } else {
+                    originalTotalField.classList.add('d-none');
+                    originalTotalAmountEl.textContent = '';
+                }
+            }
 
             if (isPaid || !isConfirmed) {
                 remainingField.classList.add('d-none');
@@ -243,6 +256,10 @@
             setText('dRentalAmount', formatMoney(rentalAmount));
             setText('dTotalAmount', formatMoney(toMoneyNumber(d.grandTotal)));
             setText('dPaidAmount', formatMoney(0));
+            if (originalTotalField && originalTotalAmountEl) {
+                originalTotalField.classList.add('d-none');
+                originalTotalAmountEl.textContent = '';
+            }
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
             confirmPaymentBtnWrap.classList.add('d-none');
@@ -321,11 +338,15 @@
             if (d.isRecurring && sessionDate) {
                 dateHtml = '<span><i class="bi bi-calendar3"></i>' + formatDate(sessionDate) + '</span>';
             }
+            var displaySessionTotal = s.totalPrice;
+            if (s.sessionStatus === 'CANCELLED' && s.originalTotalPrice != null) {
+                displaySessionTotal = s.originalTotalPrice;
+            }
             metaEl.innerHTML =
                 dateHtml +
                 '<span><i class="bi bi-clock"></i>' + s.startTime + ' → ' + s.endTime + '</span>' +
                 '<span><i class="bi bi-layers"></i>' + s.slotCount + ' slot</span>' +
-                '<span class="sbd-session-price">' + formatMoney(s.totalPrice) + '</span>';
+                '<span class="sbd-session-price">' + formatMoney(displaySessionTotal) + '</span>';
             infoEl.appendChild(metaEl);
 
             // Time info
@@ -1030,7 +1051,7 @@
 
     async function handleCancelRemaining() {
         if (!bookingData || bookingData.bookingStatus !== 'CONFIRMED') return;
-        if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này', 'Xác nhận hủy phần còn lại'))) return;
+        if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này (bao gồm cả các đồ thuê)', 'Xác nhận hủy phần còn lại'))) return;
 
         var reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');
         if (reason == null) return;

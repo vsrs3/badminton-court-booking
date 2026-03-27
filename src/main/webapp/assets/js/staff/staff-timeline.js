@@ -663,7 +663,7 @@
                 return;
             }
         } else {
-            reason = await uiPrompt('Nhập ghi chú thay đổi (không bắt buộc):', '', 'Ghi chú thay đổi');
+            reason = await uiPrompt('Chú ý: nếu bỏ slot có đồ thuê thì sẽ bỏ cả đồ thuê. Nhập ghi chú thay đổi (không bắt buộc):', '', 'Ghi chú thay đổi');
             if (reason == null) return;
         }
 

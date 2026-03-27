@@ -72,6 +72,12 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             }
             data.setGrandTotal(grandTotal);
 
+            BigDecimal originalCourtTotal = calculateCourtTotalIncludingCancelled(allSlots);
+            data.setOriginalCourtTotal(originalCourtTotal);
+
+            BigDecimal originalGrandTotal = originalCourtTotal.add(rentalTotal);
+            data.setOriginalGrandTotal(originalGrandTotal);
+
             // Snapshot / Etag
             StaffBookingSnapshotTokenUtil.Snapshot snapshot =
                     StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, staffFacilityId);
@@ -102,6 +108,13 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             }
         }
 
+        BigDecimal originalTotalPrice = BigDecimal.ZERO;
+        for (StaffBookingDetailSlotDTO slot : session) {
+            if (slot.getPrice() != null) {
+                originalTotalPrice = originalTotalPrice.add(slot.getPrice());
+            }
+        }
+
         int displaySlotCount = activeSlots.isEmpty() ? session.size() : activeSlots.size();
 
         StaffBookingDetailSessionDTO dto = new StaffBookingDetailSessionDTO();
@@ -113,6 +126,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         dto.setEndTime(last.getEndTime());
         dto.setSlotCount(displaySlotCount);
         dto.setTotalPrice(totalPrice);
+        dto.setOriginalTotalPrice(originalTotalPrice);
         dto.setSessionStatus(sessionStatus);
         dto.setCheckinTime(first.getCheckinTime());
         dto.setCheckoutTime(last.getCheckoutTime());
@@ -153,6 +167,22 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         for (StaffBookingDetailSlotDTO slot : slots) {
             if (slot == null) continue;
             if ("CANCELLED".equals(slot.getSlotStatus())) continue;
+            if (slot.getPrice() != null) {
+                total = total.add(slot.getPrice());
+            }
+        }
+
+        return total;
+    }
+
+    private BigDecimal calculateCourtTotalIncludingCancelled(List<StaffBookingDetailSlotDTO> slots) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (slots == null) {
+            return total;
+        }
+
+        for (StaffBookingDetailSlotDTO slot : slots) {
+            if (slot == null) continue;
             if (slot.getPrice() != null) {
                 total = total.add(slot.getPrice());
             }

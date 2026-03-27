@@ -88,6 +88,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
             json.append(",\"endTime\":\"").append(session.getEndTime()).append("\"");
             json.append(",\"slotCount\":").append(session.getSlotCount());
             json.append(",\"totalPrice\":").append(session.getTotalPrice());
+            json.append(",\"originalTotalPrice\":").append(session.getOriginalTotalPrice());
             json.append(",\"sessionStatus\":\"").append(session.getSessionStatus()).append("\"");
             json.append(",\"checkinTime\":").append(esc(session.getCheckinTime()));
             json.append(",\"checkoutTime\":").append(esc(session.getCheckoutTime()));
@@ -164,6 +165,8 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         json.append(",\"courtTotal\":").append(data.getCourtTotal());
         json.append(",\"rentalTotal\":").append(data.getRentalTotal());
         json.append(",\"grandTotal\":").append(data.getGrandTotal());
+        json.append(",\"originalCourtTotal\":").append(data.getOriginalCourtTotal());
+        json.append(",\"originalGrandTotal\":").append(data.getOriginalGrandTotal());
 
         json.append(",\"etag\":").append(esc(data.getEtag()));
         json.append("}}");
@@ -177,6 +180,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         json.append(",\"slotId\":").append(slot.getSlotId());
         json.append(",\"startTime\":\"").append(slot.getStartTime()).append("\"");
         json.append(",\"endTime\":\"").append(slot.getEndTime()).append("\"");
+        json.append(",\"price\":").append(slot.getPrice());
         json.append(",\"slotStatus\":\"").append(slot.getSlotStatus()).append("\"");
         json.append(",\"released\":").append(slot.isReleased());
         json.append("}");

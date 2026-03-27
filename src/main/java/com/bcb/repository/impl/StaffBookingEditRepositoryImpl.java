@@ -252,6 +252,17 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    @Override
+    public String findPaymentStatus(Connection conn, int bookingId) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT payment_status FROM Invoice WHERE booking_id = ?")) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("payment_status");
+                throw new Exception("Invoice not found");
+            }
+        }
+    }
+
         @Override
     public java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT created_at FROM Booking WHERE booking_id = ?")) {
