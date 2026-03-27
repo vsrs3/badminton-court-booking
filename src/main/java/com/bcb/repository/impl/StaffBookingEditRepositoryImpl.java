@@ -91,6 +91,32 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
     }
 
     @Override
+    public void deleteRacketRentalByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM RacketRental WHERE booking_slot_id = ?")) {
+            ps.setInt(1, bookingSlotId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteInventoryRentalScheduleByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
+        String sql = """
+                DELETE irs
+                FROM InventoryRentalSchedule irs
+                JOIN BookingSlot bs ON bs.booking_slot_id = ?
+                JOIN Booking b ON b.booking_id = bs.booking_id
+                WHERE irs.facility_id = b.facility_id
+                  AND irs.court_id = bs.court_id
+                  AND irs.slot_id = bs.slot_id
+                  AND irs.booking_date = COALESCE(bs.booking_date, b.booking_date)
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingSlotId);
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
     public StaffBookingEditExistingSlotDTO findExistingSlot(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
         String sql = "SELECT booking_slot_id, slot_status FROM BookingSlot WHERE booking_id = ? AND court_id = ? AND slot_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -190,9 +216,25 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
                 FROM RacketRental rr
                 JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
                 WHERE bs.booking_id = ?
+                  AND bs.slot_status <> 'CANCELLED'
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getBigDecimal("rental_total") : BigDecimal.ZERO;
+            }
+        }
+    }
+
+    @Override
+    public BigDecimal sumRentalAmountByBookingSlotId(Connection conn, int bookingSlotId) throws Exception {
+        String sql = """
+                SELECT COALESCE(SUM(quantity * unit_price), 0) AS rental_total
+                FROM RacketRental
+                WHERE booking_slot_id = ?
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, bookingSlotId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getBigDecimal("rental_total") : BigDecimal.ZERO;
             }
@@ -207,6 +249,53 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
                 if (rs.next()) return rs.getBigDecimal("paid_amount");
                 throw new Exception("Invoice not found");
             }
+        }
+    }
+
+    @Override
+    public String findPaymentStatus(Connection conn, int bookingId) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT payment_status FROM Invoice WHERE booking_id = ?")) {
+            ps.setInt(1, bookingId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString("payment_status");
+                throw new Exception("Invoice not found");
+            }
+        }
+    }
+
+    @Override
+    public java.sql.Timestamp findAdjacentCheckedInTime(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
+        String sql = """
+                SELECT TOP 1 bs.checkin_time
+                FROM BookingSlot bs
+                JOIN TimeSlot ts_existing ON ts_existing.slot_id = bs.slot_id
+                JOIN TimeSlot ts_target   ON ts_target.slot_id = ?
+                WHERE bs.booking_id = ?
+                  AND bs.court_id = ?
+                  AND bs.slot_status = 'CHECKED_IN'
+                  AND (ts_existing.end_time = ts_target.start_time
+                       OR ts_existing.start_time = ts_target.end_time)
+                  AND bs.checkin_time IS NOT NULL
+                ORDER BY bs.checkin_time DESC
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, slotId);
+            ps.setInt(2, bookingId);
+            ps.setInt(3, courtId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getTimestamp("checkin_time");
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public void updateSlotCheckedIn(Connection conn, int bookingSlotId, java.sql.Timestamp checkinTime) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE BookingSlot SET slot_status = 'CHECKED_IN', checkin_time = ? WHERE booking_slot_id = ?")) {
+            ps.setTimestamp(1, checkinTime);
+            ps.setInt(2, bookingSlotId);
+            ps.executeUpdate();
         }
     }
 

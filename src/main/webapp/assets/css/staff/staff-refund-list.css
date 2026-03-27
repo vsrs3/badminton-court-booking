@@ -35,51 +35,99 @@
     min-width: 260px;
 }
 
-.srl-search {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+.srl-toolbar-row {
+    margin-bottom: 1rem;
 }
 
-.srl-search-group {
+.srl-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
     border: 1px solid #E5E7EB;
     border-radius: 0.75rem;
-    overflow: hidden;
-    background: #FFFFFF;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex-wrap: nowrap;
 }
 
-.srl-search-icon {
-    background: #F8FAFC;
-    border: none;
-    color: #6B7280;
+.srl-search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.srl-search-input-wrap > i {
+    position: absolute;
+    left: 0.75rem;
+    color: #9CA3AF;
+    font-size: 0.875rem;
+    pointer-events: none;
 }
 
 .srl-search-input {
-    border: none;
+    width: 100%;
+    padding: 0.6rem 2.5rem 0.6rem 2.5rem;
     font-size: 0.875rem;
-    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    color: #374151;
+    background: #F3F4F6;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    transition: border-color 0.15s;
 }
 
 .srl-search-input:focus {
-    box-shadow: none;
+    outline: none;
+    border-color: var(--primary-color, #064e3b);
+    box-shadow: 0 0 0 2px rgba(6, 78, 59, 0.1);
+    background: white;
+}
+
+.srl-search-input::placeholder {
+    color: #9CA3AF;
+    font-weight: 400;
 }
 
 .srl-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    background: none;
     border: none;
-    font-weight: 600;
-    color: #065F46;
-    background: #ECFDF3;
+    color: #9CA3AF;
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border-radius: 50%;
+    transition: color 0.15s;
 }
 
 .srl-search-clear:hover {
-    background: #D1FAE5;
-    color: #065F46;
+    color: #374151;
 }
 
-.srl-search-hint {
-    font-size: 0.75rem;
-    color: #9CA3AF;
+.srl-search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: white;
+    background: var(--primary-color, #064e3b);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.srl-search-btn:hover {
+    opacity: 0.9;
 }
 
 .srl-table {

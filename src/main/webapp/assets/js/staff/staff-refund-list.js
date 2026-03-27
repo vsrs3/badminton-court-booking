@@ -14,6 +14,7 @@
     var errorMessage  = document.getElementById('errorMessage');
     var searchInput   = document.getElementById('searchInput');
     var searchClear   = document.getElementById('searchClear');
+    var searchBtn     = document.getElementById('searchBtn');
 
     var currentPage = 1;
     var pageSize = 10;
@@ -262,6 +263,7 @@
     function updateSearchClear() {
         if (!searchClear) return;
         searchClear.disabled = !currentQuery;
+        searchClear.classList.toggle('d-none', !currentQuery);
     }
 
     function bindSearch() {
@@ -296,6 +298,12 @@
                 if (!currentQuery) return;
                 searchInput.value = '';
                 applySearch('');
+            });
+        }
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function () {
+                applySearch(searchInput.value);
             });
         }
 

@@ -117,8 +117,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             ensureNoDuplicateAddPairs(addSlots);
             validateSessionRuleAfterEdit(conn, bookingId, removeSlotIds, addSlots);
 
+            Map<Integer, BigDecimal> removedRentalBySlotId = new HashMap<>();
             for (Integer bookingSlotId : removeSlotIds) {
-                cancelPendingSlot(conn, bookingId, bookingSlotId);
+                BigDecimal rentalRemoved = cancelPendingSlot(conn, bookingId, bookingSlotId);
+                if (rentalRemoved.compareTo(BigDecimal.ZERO) > 0) {
+                    removedRentalBySlotId.put(bookingSlotId, rentalRemoved);
+                }
             }
 
             LocalDate bookingDate = LocalDate.parse(before.bookingDate);
@@ -127,7 +131,9 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 upsertPendingSlot(conn, bookingId, facilityId, bookingDate, slot);
             }
 
-            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =
+                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);
+            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots, removedRentalBySlotId);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -258,11 +264,17 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             if (pendingSlotIds.isEmpty()) {
                 throw new ApiException(400, "Không còn slot PENDING để hủy");
             }
+            Map<Integer, BigDecimal> removedRentalBySlotId = new HashMap<>();
             for (Integer bookingSlotId : pendingSlotIds) {
-                cancelPendingSlot(conn, bookingId, bookingSlotId);
+                BigDecimal rentalRemoved = cancelPendingSlot(conn, bookingId, bookingSlotId);
+                if (rentalRemoved.compareTo(BigDecimal.ZERO) > 0) {
+                    removedRentalBySlotId.put(bookingSlotId, rentalRemoved);
+                }
             }
 
-            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                 StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =
+                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);
+            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots, removedRentalBySlotId);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -426,12 +438,16 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 
-    private void cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
+    private BigDecimal cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
         int affected = repository.cancelPendingSlot(conn, bookingId, bookingSlotId);
         if (affected == 0) {
             throw new ApiException(400, "Không thể hủy slot không ở trạng thái PENDING");
         }
+        BigDecimal rentalTotal = repository.sumRentalAmountByBookingSlotId(conn, bookingSlotId);
+        repository.deleteInventoryRentalScheduleByBookingSlotId(conn, bookingSlotId);
+        repository.deleteRacketRentalByBookingSlotId(conn, bookingSlotId);
         repository.deleteCourtSlotBooking(conn, bookingSlotId);
+        return rentalTotal != null ? rentalTotal : BigDecimal.ZERO;
     }
 
     private void upsertPendingSlot(Connection conn, int bookingId, int facilityId,
@@ -442,6 +458,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         if (price == null) {
             throw new ApiException(400, "Không tìm thấy giá cho slot thêm mới");
         }
+
+        java.sql.Timestamp adjacentCheckinTime =
+                repository.findAdjacentCheckedInTime(conn, bookingId, slot.courtId, slot.slotId);
+        boolean shouldInheritCheckedIn = adjacentCheckinTime != null;
 
         int bookingSlotId;
         if (existing != null && existing.getBookingSlotId() != null) {
@@ -454,6 +474,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             bookingSlotId = repository.insertPendingSlot(conn, bookingId, slot.courtId, slot.slotId, price);
         }
 
+        if (shouldInheritCheckedIn) {
+            repository.updateSlotCheckedIn(conn, bookingSlotId, adjacentCheckinTime);
+        }
+
         try {
             repository.insertCourtSlotBooking(conn, slot.courtId, bookingDate, slot.slotId, bookingSlotId);
         } catch (SQLException e) {
@@ -463,10 +487,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private InvoiceUpdateResult recalcInvoice(Connection conn, int bookingId, String reason,
                                               StaffBookingSnapshotTokenUtil.Snapshot before,
-                                              StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
+                                              StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
+                                              Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
         BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId)
                 .add(repository.sumRentalAmount(conn, bookingId));
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
+        String previousPaymentStatus = repository.findPaymentStatus(conn, bookingId);
 
         BigDecimal overpaid = paidAmount.subtract(totalAmount);
         if (overpaid.compareTo(BigDecimal.ZERO) < 0) {
@@ -490,7 +516,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             }
 
             if (eligible) {
-                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots);
+                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots, removedRentalBySlotId);
                 refundDue = overpaid.min(eligibleDiff);
                 if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
                     refundStatus = "PENDING_MANUAL";
@@ -507,7 +533,13 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
         String paymentStatus;
         if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
-            paymentStatus = "PAID";
+            if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+                paymentStatus = (previousPaymentStatus != null && !previousPaymentStatus.isEmpty())
+                        ? previousPaymentStatus
+                        : "UNPAID";
+            } else {
+                paymentStatus = "PAID";
+            }
         } else if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
             paymentStatus = "UNPAID";
         } else if (paidAmount.compareTo(totalAmount) >= 0) {
@@ -540,7 +572,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
     private BigDecimal computeEligibleDiffAmount(Connection conn,
                                                  StaffBookingSnapshotTokenUtil.Snapshot before,
-                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
+                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
+                                                 Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
         if (before == null || afterSlots == null) return BigDecimal.ZERO;
 
         java.time.LocalDate bookingDate;
@@ -580,7 +613,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 afterAmt = parseMoney(after.price);
             }
 
-            BigDecimal delta = beforeAmt.subtract(afterAmt);
+            BigDecimal rentalDelta = BigDecimal.ZERO;
+            if (removedRentalBySlotId != null && (after == null || "CANCELLED".equals(after.slotStatus))) {
+                rentalDelta = removedRentalBySlotId.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO);
+            }
+
+            BigDecimal delta = beforeAmt.subtract(afterAmt).add(rentalDelta);
             if (delta.compareTo(BigDecimal.ZERO) <= 0) continue;
 
             java.time.LocalTime sessionStart = sessionStartBySlotId.get(slot.bookingSlotId);

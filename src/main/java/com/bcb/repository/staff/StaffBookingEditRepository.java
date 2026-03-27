@@ -20,6 +20,8 @@ public interface StaffBookingEditRepository {
     int cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception;
 
     void deleteCourtSlotBooking(Connection conn, int bookingSlotId) throws Exception;
+    void deleteRacketRentalByBookingSlotId(Connection conn, int bookingSlotId) throws Exception;
+    void deleteInventoryRentalScheduleByBookingSlotId(Connection conn, int bookingSlotId) throws Exception;
 
     StaffBookingEditExistingSlotDTO findExistingSlot(Connection conn, int bookingId, int courtId, int slotId) throws Exception;
 
@@ -34,8 +36,12 @@ public interface StaffBookingEditRepository {
     BigDecimal sumActiveAmount(Connection conn, int bookingId) throws Exception;
 
     BigDecimal sumRentalAmount(Connection conn, int bookingId) throws Exception;
+    BigDecimal sumRentalAmountByBookingSlotId(Connection conn, int bookingSlotId) throws Exception;
 
     BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception;
+    String findPaymentStatus(Connection conn, int bookingId) throws Exception;
+    java.sql.Timestamp findAdjacentCheckedInTime(Connection conn, int bookingId, int courtId, int slotId) throws Exception;
+    void updateSlotCheckedIn(Connection conn, int bookingSlotId, java.sql.Timestamp checkinTime) throws Exception;
 
     java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception;
 

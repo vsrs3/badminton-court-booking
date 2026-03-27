@@ -51,7 +51,8 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
                        bs.court_id,
                        COALESCE(bs.booking_date, b.booking_date) AS session_date,
                        ts.start_time,
-                       ts.end_time
+                       ts.end_time,
+                       bs.slot_status
                 FROM BookingSlot bs
                 JOIN Booking b ON b.booking_id = bs.booking_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
@@ -71,6 +72,7 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
                     row.setSessionDate(sessionDate != null ? sessionDate.toLocalDate() : null);
                     row.setStartTime(rs.getTime("start_time").toLocalTime());
                     row.setEndTime(rs.getTime("end_time").toLocalTime());
+                    row.setSlotStatus(rs.getString("slot_status"));
                     rows.add(row);
                 }
             }

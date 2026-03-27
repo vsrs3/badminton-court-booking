@@ -13,7 +13,7 @@
 
     <div class="content-area">
 
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
             <div>
                 <h1 class="fw-bold mb-1" style="font-size:1.75rem; color:#111827; letter-spacing:-0.02em;">
                     <i class="bi bi-arrow-counterclockwise me-2" style="color:var(--primary-color);"></i>Danh Sách Hoàn Tiền
@@ -25,18 +25,20 @@
                     </strong>
                 </p>
             </div>
-            <div class="srl-toolbar">
-                <div class="srl-search">
-                    <div class="input-group srl-search-group">
-                        <span class="input-group-text srl-search-icon">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input id="searchInput" type="text" class="form-control srl-search-input"
-                               placeholder="Tìm theo mã booking hoặc số điện thoại" autocomplete="off">
-                        <button id="searchClear" class="btn btn-outline-secondary srl-search-clear" type="button">Xóa</button>
-                    </div>
-                    <div class="srl-search-hint">Tìm theo mã booking hoặc số điện thoại</div>
+        </div>
+        <div class="srl-toolbar srl-toolbar-row">
+            <div class="srl-search-bar">
+                <div class="srl-search-input-wrap">
+                    <i class="bi bi-search"></i>
+                    <input id="searchInput" type="text" class="srl-search-input"
+                           placeholder="Tìm theo mã booking hoặc số điện thoại" autocomplete="off">
+                    <button type="button" class="srl-search-clear d-none" id="searchClear">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 </div>
+                <button type="button" class="srl-search-btn" id="searchBtn">
+                    <i class="bi bi-search me-1"></i>Tìm kiếm
+                </button>
             </div>
         </div>
 

@@ -162,6 +162,7 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
                AND irs.slot_id = bs.slot_id
                AND irs.inventory_id = rr.inventory_id
             WHERE bs.booking_id = ?
+              AND bs.slot_status <> 'CANCELLED'
             ORDER BY
                 COALESCE(bs.booking_date, b.booking_date) ASC,
                 c.court_name ASC,
