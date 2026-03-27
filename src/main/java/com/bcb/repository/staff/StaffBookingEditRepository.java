@@ -40,6 +40,8 @@ public interface StaffBookingEditRepository {
 
     BigDecimal findPaidAmount(Connection conn, int bookingId) throws Exception;
     String findPaymentStatus(Connection conn, int bookingId) throws Exception;
+    java.sql.Timestamp findAdjacentCheckedInTime(Connection conn, int bookingId, int courtId, int slotId) throws Exception;
+    void updateSlotCheckedIn(Connection conn, int bookingSlotId, java.sql.Timestamp checkinTime) throws Exception;
 
     java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception;
 

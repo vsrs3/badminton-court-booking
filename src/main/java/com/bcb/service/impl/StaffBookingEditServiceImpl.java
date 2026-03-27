@@ -459,6 +459,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             throw new ApiException(400, "Không tìm thấy giá cho slot thêm mới");
         }
 
+        java.sql.Timestamp adjacentCheckinTime =
+                repository.findAdjacentCheckedInTime(conn, bookingId, slot.courtId, slot.slotId);
+        boolean shouldInheritCheckedIn = adjacentCheckinTime != null;
+
         int bookingSlotId;
         if (existing != null && existing.getBookingSlotId() != null) {
             if (!"CANCELLED".equals(existing.getSlotStatus())) {
@@ -468,6 +472,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             bookingSlotId = existing.getBookingSlotId();
         } else {
             bookingSlotId = repository.insertPendingSlot(conn, bookingId, slot.courtId, slot.slotId, price);
+        }
+
+        if (shouldInheritCheckedIn) {
+            repository.updateSlotCheckedIn(conn, bookingSlotId, adjacentCheckinTime);
         }
 
         try {

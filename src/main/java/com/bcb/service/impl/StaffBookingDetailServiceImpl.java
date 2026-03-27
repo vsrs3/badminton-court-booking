@@ -215,8 +215,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             boolean sameCourt = prev.getCourtId() == curr.getCourtId();
             boolean consecutive = prev.getEndTime().equals(curr.getStartTime());
             boolean sameDate = safeDate(prev.getBookingDate()).equals(safeDate(curr.getBookingDate()));
+            boolean splitByStatus = shouldSplitByStatus(prev.getSlotStatus(), curr.getSlotStatus());
 
-            if (sameCourt && consecutive && sameDate) {
+            if (sameCourt && consecutive && sameDate && !splitByStatus) {
                 current.add(curr);
             } else {
                 sessions.add(current);
@@ -238,6 +239,18 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
 
     private String safeDate(String date) {
         return date == null ? "" : date;
+    }
+
+    private boolean shouldSplitByStatus(String prevStatus, String currStatus) {
+        boolean prevFinished = isFinishedStatus(prevStatus);
+        boolean currFinished = isFinishedStatus(currStatus);
+        boolean prevPending = "PENDING".equals(prevStatus);
+        boolean currPending = "PENDING".equals(currStatus);
+        return (prevFinished && currPending) || (prevPending && currFinished);
+    }
+
+    private boolean isFinishedStatus(String status) {
+        return "CHECK_OUT".equals(status) || "NO_SHOW".equals(status);
     }
 
     private String deriveSessionStatus(List<StaffBookingDetailSlotDTO> session) {

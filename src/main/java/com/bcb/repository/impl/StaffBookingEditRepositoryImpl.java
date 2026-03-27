@@ -263,6 +263,42 @@ public class StaffBookingEditRepositoryImpl implements StaffBookingEditRepositor
         }
     }
 
+    @Override
+    public java.sql.Timestamp findAdjacentCheckedInTime(Connection conn, int bookingId, int courtId, int slotId) throws Exception {
+        String sql = """
+                SELECT TOP 1 bs.checkin_time
+                FROM BookingSlot bs
+                JOIN TimeSlot ts_existing ON ts_existing.slot_id = bs.slot_id
+                JOIN TimeSlot ts_target   ON ts_target.slot_id = ?
+                WHERE bs.booking_id = ?
+                  AND bs.court_id = ?
+                  AND bs.slot_status = 'CHECKED_IN'
+                  AND (ts_existing.end_time = ts_target.start_time
+                       OR ts_existing.start_time = ts_target.end_time)
+                  AND bs.checkin_time IS NOT NULL
+                ORDER BY bs.checkin_time DESC
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, slotId);
+            ps.setInt(2, bookingId);
+            ps.setInt(3, courtId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getTimestamp("checkin_time");
+                return null;
+            }
+        }
+    }
+
+    @Override
+    public void updateSlotCheckedIn(Connection conn, int bookingSlotId, java.sql.Timestamp checkinTime) throws Exception {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE BookingSlot SET slot_status = 'CHECKED_IN', checkin_time = ? WHERE booking_slot_id = ?")) {
+            ps.setTimestamp(1, checkinTime);
+            ps.setInt(2, bookingSlotId);
+            ps.executeUpdate();
+        }
+    }
+
         @Override
     public java.time.LocalDateTime findBookingCreatedAt(Connection conn, int bookingId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement("SELECT created_at FROM Booking WHERE booking_id = ?")) {

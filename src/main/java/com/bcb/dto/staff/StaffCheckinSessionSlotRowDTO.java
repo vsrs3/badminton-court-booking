@@ -9,6 +9,7 @@ public class StaffCheckinSessionSlotRowDTO {
     private LocalDate sessionDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private String slotStatus;
 
     public int getBookingSlotId() {
         return bookingSlotId;
@@ -48,6 +49,14 @@ public class StaffCheckinSessionSlotRowDTO {
 
     public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
+    }
+
+    public String getSlotStatus() {
+        return slotStatus;
+    }
+
+    public void setSlotStatus(String slotStatus) {
+        this.slotStatus = slotStatus;
     }
 }
 
