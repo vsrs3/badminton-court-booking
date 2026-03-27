@@ -19,40 +19,47 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
     private final StaffConfirmPaymentRepository repository = new StaffConfirmPaymentRepositoryImpl();
     private final StaffRentalRepository rentalRepository = new StaffRentalRepositoryImpl();
 
+    /**
+     * Confirms full payment and updates invoice/payment records in a transaction.
+     */
     @Override
     public StaffConfirmPaymentResultDTO confirmPayment(int bookingId, BigDecimal amount, String method,
                                                        int facilityId, int staffId) throws Exception {
+        // Transaction flow: validate, insert payment, update invoice, and log rentals.
         Connection conn = null;
         try {
             conn = DBContext.getConnection();
             conn.setAutoCommit(false);
 
+            // Validate booking ownership and payment method.
             Integer bookingFacilityId = repository.findFacilityIdByBookingId(conn, bookingId);
             if (bookingFacilityId == null) {
                 conn.rollback();
-                return fail("Khong tim thay booking");
+                return fail("Không tìm thấy booking");
             }
             if (bookingFacilityId != facilityId) {
                 conn.rollback();
-                return fail("Booking khong thuoc co so cua ban");
+                return fail("Booking không thuộc cơ sở của bạn");
             }
 
+            // Lock invoice row before updating payment status.
             StaffConfirmPaymentInvoiceDTO invoice = repository.findInvoiceForUpdate(conn, bookingId);
             if (invoice == null) {
                 conn.rollback();
-                return fail("Khong tim thay hoa don cho booking nay");
+                return fail("Không tìm thấy hóa đơn cho booking này");
             }
 
             if ("PAID".equals(invoice.getPaymentStatus())) {
                 conn.rollback();
-                return fail("Booking da duoc thanh toan day du");
+                return fail("Booking đã được thanh toán đầy đủ");
             }
 
             if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                 conn.rollback();
-                return fail("So tien thanh toan khong hop le");
+                return fail("Số tiền thanh toán không hợp lệ");
             }
 
+            // Compute remaining amount and require exact full payment.
             BigDecimal actualTotalAmount = loadCurrentGrandTotal(conn, bookingId);
             BigDecimal currentPaid = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
             BigDecimal remaining = actualTotalAmount.subtract(currentPaid);
@@ -60,13 +67,15 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
             BigDecimal newPaidAmount = currentPaid.add(amount);
             if (newPaidAmount.compareTo(actualTotalAmount) != 0) {
                 conn.rollback();
-                return fail("So tien khong hop le. Can thu them dung " + formatMoney(remaining) + " de du tong tien.");
+                return fail("Số tiền không hợp lệ. Cần thu thêm đúng " + formatMoney(remaining) + " để đủ tổng tiền.");
             }
 
             String paymentType = currentPaid.compareTo(BigDecimal.ZERO) == 0 ? "FULL" : "REMAINING";
+            // Insert payment record and mark invoice PAID in one transaction.
             repository.insertPayment(conn, invoice.getInvoiceId(), amount, paymentType, method, staffId);
             repository.updateInvoiceAsPaid(conn, bookingId, actualTotalAmount, actualTotalAmount);
 
+            // Update rental logs after payment confirm.
             // Insert rental logs if needed, but do not change FacilityInventory.available_quantity.
             rentalRepository.insertRentalLogAndDecreaseStock(conn, bookingId, facilityId, staffId);
 
@@ -74,7 +83,7 @@ public class StaffConfirmPaymentServiceImpl implements StaffConfirmPaymentServic
 
             StaffConfirmPaymentResultDTO result = new StaffConfirmPaymentResultDTO();
             result.setSuccess(true);
-            result.setMessage("Xac nhan thanh toan thanh cong");
+            result.setMessage("Xác nhận thanh toán thành công");
             result.setPaidAmount(actualTotalAmount);
             result.setTotalAmount(actualTotalAmount);
             result.setPaymentStatus("PAID");

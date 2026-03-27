@@ -18,6 +18,9 @@ public class EmailQueueWorkerListener implements ServletContextListener {
     private static final Logger LOG = Logger.getLogger(EmailQueueWorkerListener.class.getName());
     private ScheduledExecutorService scheduler;
 
+    /**
+     * Starts the email queue worker to process pending emails periodically.
+     */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         LOG.info("Starting email queue worker (every 60 seconds)...");

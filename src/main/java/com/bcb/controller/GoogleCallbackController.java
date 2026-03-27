@@ -119,6 +119,9 @@ public class GoogleCallbackController extends HttpServlet {
         request.getRequestDispatcher("/jsp/common/email-action-complete.jsp").forward(request, response);
     }
 
+    /**
+     * Creates a session for the authenticated user and redirects by role.
+     */
     private void loginAndRedirect(HttpServletRequest request, HttpServletResponse response, Account account)
             throws IOException {
         HttpSession session = request.getSession(true);

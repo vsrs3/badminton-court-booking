@@ -20,11 +20,16 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     private static final int AUTO_CHECKOUT_GRACE_MINUTES = 15;
     private final StaffCheckinRepository repository = new StaffCheckinRepositoryImpl();
 
+    /**
+     * Checks in a session and auto-marks prior overdue sessions as NO_SHOW.
+     */
     @Override
     public String doCheckin(int bookingId, int sessionIndex, int facilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // Validate booking belongs to facility and is CONFIRMED.
+                // Require booking PAID before check-in/check-out.
                 String valResult = validateBooking(conn, bookingId, facilityId);
                 if (valResult != null) {
                     conn.rollback();
@@ -62,6 +67,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 LocalTime now = LocalTime.now();
                 int autoNoShowCount = 0;
 
+                // Auto-mark previous PENDING sessions as NO_SHOW when checking in later session.
                 for (int i = 0; i < sessionIndex; i++) {
                     StaffCheckinSessionDTO prev = sessions.get(i);
                     String prevStatus = getSessionStatus(conn, prev.getSlotIds());
@@ -102,11 +108,16 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         }
     }
 
+    /**
+     * Checks out a session and completes booking when all sessions finished.
+     */
     @Override
     public String doCheckout(int bookingId, int sessionIndex, int facilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // Validate booking belongs to facility and is CONFIRMED.
+                // Require booking PAID before check-in/check-out.
                 String valResult = validateBooking(conn, bookingId, facilityId);
                 if (valResult != null) {
                     conn.rollback();
@@ -148,6 +159,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                 Timestamp nowTs = new Timestamp(System.currentTimeMillis());
                 repository.updateSlotsCheckedOut(conn, target.getSlotIds(), nowTs);
 
+                // Mark booking COMPLETED when all sessions finished.
                 boolean allFinished = checkAllSessionsFinished(conn, sessions, sessionIndex, "COMPLETED");
                 if (allFinished) {
                     repository.updateBookingStatus(conn, bookingId, "COMPLETED");
@@ -168,11 +180,15 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         }
     }
 
+    /**
+     * Marks a session as NO_SHOW after start time + buffer.
+     */
     @Override
     public String doNoShow(int bookingId, int sessionIndex, int facilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                // Validate booking belongs to facility and is CONFIRMED.
                 String valResult = validateBookingForNoShow(conn, bookingId, facilityId);
                 if (valResult != null) {
                     conn.rollback();
@@ -200,6 +216,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                     return "{\"success\":false,\"message\":\"Không thể đánh dấu vắng. Phiên đang ở trạng thái: " + label + "\"}";
                 }
 
+                // No-show allowed only after start time + buffer.
                 LocalTime now = LocalTime.now();
                 LocalTime deadline = target.getStartTime().plusMinutes(NO_SHOW_BUFFER_MINUTES);
                 if (!now.isAfter(deadline)) {
@@ -210,6 +227,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
 
                 repository.updateSlotsNoShow(conn, target.getSlotIds());
 
+                // Mark booking COMPLETED when all sessions finished.
                 boolean allFinished = checkAllSessionsFinished(conn, sessions, sessionIndex, "NO_SHOW");
                 if (allFinished) {
                     repository.updateBookingStatus(conn, bookingId, "COMPLETED");
@@ -227,6 +245,9 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         }
     }
 
+    /**
+     * Auto-checks out overdue CHECKED_IN sessions after grace period.
+     */
     public void runAutoCheckoutOverdueSessions() throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
@@ -241,16 +262,19 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                             StaffCheckinSessionBuilder.buildSessionsWithTime(repository, conn, bookingId);
                     boolean updatedAny = false;
 
+                    /* Auto checkout transaction flow per booking. */
                     for (StaffCheckinSessionDTO session : sessions) {
                         if (!"CHECKED_IN".equals(getSessionStatus(conn, session.getSlotIds()))) {
                             continue;
                         }
+                        // Grace period applies after session end time.
                         if (isOverdueForAutoCheckout(session, today, now)) {
                             repository.updateSlotsCheckedOut(conn, session.getSlotIds(), nowTs);
                             updatedAny = true;
                         }
                     }
 
+                    // Mark booking COMPLETED when all sessions finished.
                     if (updatedAny && isBookingFinished(conn, sessions)) {
                         repository.updateBookingStatus(conn, bookingId, "COMPLETED");
                     }
@@ -323,6 +347,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         return null;
     }
 
+    /* Session-status aggregation for a list of slot statuses. */
     private String getSessionStatus(Connection conn, List<Integer> slotIds) throws Exception {
         if (slotIds.isEmpty()) return "PENDING";
 

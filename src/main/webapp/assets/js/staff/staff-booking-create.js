@@ -71,6 +71,7 @@ var rentalState = {
 init();
 
 function init() {
+    // Read selected slots from timeline (sessionStorage) and build booking summary.
     var raw = sessionStorage.getItem('staffBookingSlots');
     if (!raw) {
         showNoData();
@@ -618,6 +619,7 @@ function loadRentalInventory() {
 
     var slot = rentalState.selectedSlot;
     var slotKey = slot.slotKey;
+    // Load rentable inventory for the selected slot.
     var url = CTX + '/api/staff/rental/schedule/inventory' +
         '?bookingDate=' + encodeURIComponent(bookingData.date || '') +
         '&courtId=' + encodeURIComponent(slot.courtId) +
@@ -810,6 +812,7 @@ function findInventoryItemById(inventoryId) {
 }
 
 async function requestSaveSlotRentalSchedule(slot, items) {
+    // Save per-slot rental selections for the proxy booking flow.
     var res = await fetch(CTX + '/api/staff/rental/schedule/save', {
         method: 'POST',
         credentials: 'same-origin',
@@ -1058,6 +1061,7 @@ function bindSearchEvents() {
         }
 
         clearTimeout(searchTimer);
+        // Debounce input and fetch suggestions after min 2 chars.
         searchTimer = setTimeout(function () {
             fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(keyword), {
                 credentials: 'same-origin',
@@ -1074,6 +1078,7 @@ function bindSearchEvents() {
         }, 300);
     });
 
+    // Hide dropdown when clicking outside.
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.sbc-search-wrap')) {
             searchDropdown.classList.add('d-none');
@@ -1243,6 +1248,7 @@ function bindSubmitEvent() {
     btnSubmit.addEventListener('click', async function () {
         hideError();
 
+        // Customer type: ACCOUNT vs GUEST with required fields.
         if (customerType === 'ACCOUNT') {
             if (!selectedAccountId || !selectedAccountId.value) {
                 showError('Vui lòng tìm và chọn khách hàng.');
@@ -1270,6 +1276,7 @@ function bindSubmitEvent() {
             return { courtId: slot.courtId, slotId: slot.slotId };
         });
 
+        // Build rental payload per slot and calculate totals.
         var rentalPayload = [];
         (rentalState.courts || []).forEach(function (court) {
             (court.slots || []).forEach(function (slot) {
@@ -1318,6 +1325,7 @@ function bindSubmitEvent() {
             var body = await res.json();
             if (!body.success) {
                 if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
+                    // Guest phone matches existing account -> prompt switch to ACCOUNT.
                     var confirmed = await confirmGuestPhoneMatched(body.data);
                     if (confirmed) {
                         switchToAccountMode(body.data);
@@ -1342,6 +1350,7 @@ function bindSubmitEvent() {
     });
 }
 
+/* Render autocomplete dropdown results and bind selection to accountId. */
 function renderSearchResults(customers) {
     if (!searchDropdown) return;
     searchDropdown.innerHTML = '';

@@ -81,6 +81,9 @@ public class AuthController extends HttpServlet {
         }
     }
 
+    /**
+     * Authenticates a user and initializes the session for role-based routing.
+     */
     private void handleLogin(HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
 

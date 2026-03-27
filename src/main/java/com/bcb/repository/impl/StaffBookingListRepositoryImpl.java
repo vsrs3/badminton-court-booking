@@ -13,6 +13,9 @@ import java.util.List;
 
 public class StaffBookingListRepositoryImpl implements StaffBookingListRepository {
 
+    /**
+     * Counts bookings with optional search and filter criteria.
+     */
     @Override
     public int countBookings(StaffBookingListSearchCriteriaDTO criteria) throws Exception {
         String fromJoin = " FROM Booking b " +
@@ -32,6 +35,9 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
         }
     }
 
+    /**
+     * Loads a paginated list of bookings with search and status filters applied.
+     */
     @Override
     public List<StaffBookingListItemDTO> findBookings(StaffBookingListSearchCriteriaDTO criteria, int offset, int size)
             throws Exception {
@@ -105,6 +111,7 @@ public class StaffBookingListRepositoryImpl implements StaffBookingListRepositor
                 ) eff
                 """;
 
+        /* Prioritize upcoming/active bookings before past/completed ones. */
         String orderBy = """
                  ORDER BY
                   CASE

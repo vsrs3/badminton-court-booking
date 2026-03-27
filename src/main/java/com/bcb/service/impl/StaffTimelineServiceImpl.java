@@ -18,6 +18,9 @@ public class StaffTimelineServiceImpl implements StaffTimelineService {
 
     private final StaffTimelineRepository repository = new StaffTimelineRepositoryImpl();
 
+    /**
+     * Builds a daily timeline view with courts, slots, bookings, and blocked cells for one facility.
+     */
     @Override
     public StaffTimelineDataDTO getTimeline(int facilityId, LocalDate bookingDate) throws Exception {
         StaffTimelineFacilityDTO facility = repository.findFacilityInfo(facilityId);
@@ -44,6 +47,7 @@ public class StaffTimelineServiceImpl implements StaffTimelineService {
             disabledMap.put(key, disabledCell);
         }
 
+        // Blocked/exception slots override booked cells in the grid.
         List<StaffTimelineBookedCellDTO> filteredBooked = new ArrayList<>();
         for (Map.Entry<String, StaffTimelineBookedCellDTO> entry : bookedMap.entrySet()) {
             if (!disabledMap.containsKey(entry.getKey())) {

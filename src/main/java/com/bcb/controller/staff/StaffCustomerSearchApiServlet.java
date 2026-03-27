@@ -18,6 +18,9 @@ public class StaffCustomerSearchApiServlet extends BaseStaffApiServlet {
 
     private final StaffCustomerSearchService staffCustomerSearchService = new StaffCustomerSearchServiceImpl();
 
+    /**
+     * Searches active customers for the proxy booking flow.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -28,6 +31,7 @@ public class StaffCustomerSearchApiServlet extends BaseStaffApiServlet {
         if (!auth.valid) return;
 
         String q = request.getParameter("q");
+        // Empty query returns an empty list to keep the UI responsive.
         if (q == null || q.trim().isEmpty()) {
             writeJson(response, "{\"success\":true,\"data\":{\"customers\":[]}}");
             return;

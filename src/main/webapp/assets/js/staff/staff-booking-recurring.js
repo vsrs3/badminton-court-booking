@@ -63,6 +63,7 @@
     var isRenderingPreview = false;
     var currentStep = 1;
 
+    // Step flow: customer -> weekly patterns -> preview/conflicts -> confirm & pay.
     init();
 
     function init() {
@@ -158,16 +159,17 @@
     function setupCustomerSearch() {
         customerSearch.addEventListener('input', function () {
             var q = this.value.trim();
-            if (q.length < 2) {
-                searchDropdown.classList.add('d-none');
-                return;
-            }
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function () {
-                fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                })
+        if (q.length < 2) {
+            searchDropdown.classList.add('d-none');
+            return;
+        }
+        clearTimeout(searchTimer);
+        // Debounce input and fetch suggestions after min 2 chars.
+        searchTimer = setTimeout(function () {
+            fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            })
                     .then(function (res) { return res.json(); })
                     .then(function (body) {
                         if (!body.success) return;
@@ -183,6 +185,7 @@
             updateStepProgress();
         });
 
+        // Hide dropdown when clicking outside.
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.sbr-search-wrap')) {
                 searchDropdown.classList.add('d-none');
@@ -190,6 +193,7 @@
         });
     }
 
+    /* Render autocomplete dropdown results and bind selection to accountId. */
     function renderSearchResults(customers) {
         searchDropdown.innerHTML = '';
         if (customers.length === 0) {
@@ -322,6 +326,7 @@
         var req = buildRequestBody();
         if (!req) return Promise.resolve(false);
 
+        // Include manual selections when resolving conflicts in SUGGEST mode.
         if (includeSelections) {
             updateSelectionMapFromUI();
             var selected = buildSelectedSessionsFromMap();
@@ -336,6 +341,7 @@
             btnPreview.textContent = 'Đang xem trước...';
         }
 
+        // Preview recurring sessions with conflict policy (SKIP/SUGGEST).
         return fetch(CTX + '/api/staff/recurring-booking/preview', {
             method: 'POST',
             credentials: 'same-origin',
@@ -413,6 +419,7 @@
                 return;
             }
 
+            // Confirm recurring booking and record full payment.
             fetch(CTX + '/api/staff/recurring-booking/confirm', {
                 method: 'POST',
                 credentials: 'same-origin',

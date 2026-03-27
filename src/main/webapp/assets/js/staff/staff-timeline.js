@@ -242,6 +242,12 @@
 
     function ensureEditContextLoaded() {
         if (!editBookingId) return;
+        /*
+         * Edit-mode flow:
+         * - Load booking detail to get etag and slot list.
+         * - Split slots into editable (PENDING) vs locked (active) sets.
+         * - Seed selected slots from editable set for add/remove delta.
+         */
         fetch(CTX + '/api/staff/booking/detail/' + editBookingId, {
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
@@ -319,6 +325,7 @@
     }
 
     function renderGrid() {
+        /* Build the grid by mixing AVAILABLE/BOOKED/DISABLED cells for the selected date. */
         gridHeaderRow.innerHTML = '<th class="st-grid-corner">Sân \\ Giờ</th>';
         gridBody.innerHTML = '';
 
@@ -399,6 +406,7 @@
                         }
                     }
                 } else if (cell.state === 'DISABLED') {
+                    // Show blocked slots from schedule exceptions (reason + exceptionId).
                     td.classList.add('st-cell-disabled');
                     if (mode !== MODE_NORMAL && past) td.classList.add('st-cell-past');
                     var reasonEl = document.createElement('span');
@@ -477,6 +485,7 @@
         if (currentlySelected) {
             selectedSlots.splice(idx, 1);
         } else {
+            // Disallow picking past slots or slots without price in edit mode.
             if (past) return;
             if (mode !== MODE_BLOCK && hasNoPrice(courtId, slotId)) return;
 
@@ -486,6 +495,7 @@
             if (mode === MODE_PROXY) {
                 if (cell && cell.state !== 'AVAILABLE' && cell.bookingStatus !== 'CANCELLED') return;
             } else if (mode === MODE_EDIT) {
+                // Only allow selecting own PENDING slots or new available slots.
                 var ownPending = !!editEditableKeySet[key];
                 if (cell && cell.state === 'BOOKED' && !ownPending) return;
                 if (cell && cell.state === 'DISABLED') return;
@@ -532,6 +542,7 @@
 
 
     function buildEditDelta() {
+        // Build add/remove delta based on differences from original editable slots.
         var selectedKeySet = {};
         selectedSlots.forEach(function (s) {
             selectedKeySet[cellKey(s.courtId, s.slotId)] = true;
@@ -722,6 +733,7 @@
         try {
             for (var i = 0; i < selectedSlots.length; i++) {
                 var s = selectedSlots[i];
+                // Block slot via schedule exception create.
                 var res = await fetch(CTX + '/api/staff/schedule-exception/create', {
                     method: 'POST',
                     credentials: 'same-origin',
@@ -760,6 +772,7 @@
         if (!ok) return;
 
         try {
+            // Unblock (or split exception) via delete endpoint.
             var res = await fetch(CTX + '/api/staff/schedule-exception/delete', {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -840,6 +853,7 @@
         fetchTimeline(currentDate || todayStr());
     };
 
+    // Quick date switch: today, tomorrow, or selected date.
     btnToday.addEventListener('click', function () { fetchTimeline(todayStr()); });
     btnTomorrow.addEventListener('click', function () { fetchTimeline(tomorrowStr()); });
     dateInput.addEventListener('change', function () {

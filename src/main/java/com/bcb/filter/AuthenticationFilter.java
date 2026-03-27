@@ -34,8 +34,6 @@ public class AuthenticationFilter implements Filter {
         String contextPath = httpRequest.getContextPath();
         String path = requestURI.substring(contextPath.length());
 
-        System.out.println("🔍 AuthenticationFilter: " + path);
-
         // Get session (don't create new one)
         HttpSession session = httpRequest.getSession(false);
         Account currentUser = null;
@@ -49,10 +47,8 @@ public class AuthenticationFilter implements Filter {
             httpRequest.setAttribute("currentUser", currentUser);
             httpRequest.setAttribute("currentRole", currentUser.getRole());
             httpRequest.setAttribute("isLoggedIn", true);
-            System.out.println("✅ User: " + currentUser.getEmail() + " (Role: " + currentUser.getRole() + ")");
         } else {
             httpRequest.setAttribute("isLoggedIn", false);
-            System.out.println("👤 Guest user");
         }
 
         // Continue filter chain

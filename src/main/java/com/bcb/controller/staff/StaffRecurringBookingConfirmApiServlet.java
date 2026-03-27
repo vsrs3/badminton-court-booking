@@ -20,6 +20,9 @@ public class StaffRecurringBookingConfirmApiServlet extends BaseStaffApiServlet 
 
     private final StaffRecurringBookingService service = new StaffRecurringBookingServiceImpl();
 
+    /**
+     * Confirms recurring booking and records full payment.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

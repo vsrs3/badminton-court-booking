@@ -21,6 +21,9 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
 
     private final StaffRentalScheduleRepository repository = new StaffRentalScheduleRepositoryImpl();
 
+    /**
+     * Returns rental inventory for a slot with paging and selected items.
+     */
     @Override
     public String getSlotInventoryJson(
             int facilityId,
@@ -66,6 +69,9 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
         return JsonResponseUtil.success("Tải danh sách đồ thuê thành công", data);
     }
 
+    /**
+     * Saves per-slot rental schedule by replacing existing rows for the slot.
+     */
     @Override
     public String saveSlotRentalSchedule(String body, int facilityId) throws Exception {
         JSONObject json = new JSONObject(body);
@@ -88,6 +94,7 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
 
                 int inventoryId = itemJson.optInt("inventoryId", 0);
                 int quantity = itemJson.optInt("quantity", 0);
+                // Validate quantities before saving schedule rows.
                 if (inventoryId <= 0 || quantity <= 0) {
                     continue;
                 }
@@ -102,6 +109,11 @@ public class StaffRentalScheduleServiceImpl implements StaffRentalScheduleServic
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                /*
+                 * Rental schedule save flow:
+                 * - Delete existing rows for the slot.
+                 * - Insert new rows for selected items.
+                 */
                 repository.replaceRentalSchedule(conn, facilityId, bookingDate, courtId, slotId, items);
                 conn.commit();
             } catch (Exception e) {

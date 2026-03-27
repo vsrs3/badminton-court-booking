@@ -14,6 +14,9 @@ import java.util.List;
 
 public class EmailQueueRepositoryImpl implements EmailQueueRepository {
 
+    /**
+     * Enqueues a new email queue row.
+     */
     @Override
     public void enqueue(String emailType, int bookingId, String toEmail, String payloadJson, LocalDateTime reminderAt)
             throws Exception {
@@ -38,6 +41,9 @@ public class EmailQueueRepositoryImpl implements EmailQueueRepository {
         }
     }
 
+    /**
+     * Fetches pending emails and marks them as SENDING to avoid double-send.
+     */
     @Override
     public List<EmailQueueItemDTO> findAndMarkPending(int limit) throws Exception {
         String selectSql = "SELECT TOP (?) email_id, email_type, booking_id, to_email, payload_json, retry_count " +
@@ -75,6 +81,9 @@ public class EmailQueueRepositoryImpl implements EmailQueueRepository {
         return results;
     }
 
+    /**
+     * Marks an email row as SENT.
+     */
     @Override
     public void markSent(int emailId) throws Exception {
         String sql = "UPDATE EmailQueue SET status = 'SENT', sent_at = GETDATE() WHERE email_id = ?";
@@ -85,6 +94,9 @@ public class EmailQueueRepositoryImpl implements EmailQueueRepository {
         }
     }
 
+    /**
+     * Updates retry state and marks FAILED/PENDING with next attempt time.
+     */
     @Override
     public void markFailed(int emailId, int retryCount, LocalDateTime nextAttemptAt, String lastError, String status)
             throws Exception {

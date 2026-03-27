@@ -15,6 +15,9 @@ import java.util.List;
 
 public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRepository {
 
+    /**
+     * Loads rentable inventory for a slot with availability and selected quantity.
+     */
     @Override
     public List<StaffRentalInventoryItemDTO> findRentalItemsForSlot(
             int facilityId, LocalDate bookingDate, int courtId, int slotId, String keyword, String priceSort, int page, int pageSize)
@@ -105,6 +108,9 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
         return items;
     }
 
+    /**
+     * Returns total count of active rental items for paging.
+     */
     @Override
     public int countRentalItems(int facilityId, String keyword) throws Exception {
         String sql = """
@@ -135,6 +141,9 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
         }
     }
 
+    /**
+     * Loads selected rental items for the slot to show current schedule.
+     */
     @Override
     public List<StaffRentalInventoryItemDTO> findSelectedItemsForSlot(
             int facilityId, LocalDate bookingDate, int courtId, int slotId) throws Exception {
@@ -181,6 +190,9 @@ public class StaffRentalScheduleRepositoryImpl implements StaffRentalScheduleRep
         return items;
     }
 
+    /**
+     * Replaces rental schedule rows for a slot.
+     */
     @Override
     public void replaceRentalSchedule(
             Connection conn,

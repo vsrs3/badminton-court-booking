@@ -21,6 +21,9 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingListService staffBookingListService = new StaffBookingListServiceImpl();
 
+    /**
+     * Returns the staff booking list with optional search and filters.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -30,6 +33,7 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
         AuthResult auth = StaffAuthUtil.validateStaff(request, response);
         if (!auth.valid) return;
 
+        // Normalize search/status params and map "ALL" to null.
         String search = request.getParameter("search");
         if (search != null) search = search.trim();
         if (search != null && search.isEmpty()) search = null;
@@ -38,6 +42,7 @@ public class StaffBookingListApiServlet extends BaseStaffApiServlet {
         if (status != null) status = status.trim();
         if (status != null && (status.isEmpty() || "ALL".equalsIgnoreCase(status))) status = null;
 
+        // Today filter applies to both single and recurring bookings.
         boolean todayOnly = false;
         String todayParam = request.getParameter("today");
         if (todayParam != null) {

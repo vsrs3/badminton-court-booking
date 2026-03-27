@@ -30,6 +30,9 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     private final StaffBookingCreateRepository repository = new StaffBookingCreateRepositoryImpl();
     private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
+    /**
+     * Validates input and orchestrates creation of a staff proxy booking.
+     */
     @Override
     public StaffBookingCreateOutcomeDTO createBooking(String body, int facilityId, Integer staffId) throws Exception {
         if (staffId == null) {
@@ -88,6 +91,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             }
         }
 
+        // Guest phone matches an existing account -> prompt client to switch to ACCOUNT.
         if ("GUEST".equals(customerType)) {
             StaffCustomerAccountDTO matchedAccount = repository.findActiveCustomerByPhone(guestPhone);
             if (matchedAccount != null) {
@@ -95,6 +99,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
             }
         }
 
+        // Business rule: each session must contain >= 2 consecutive slots on the same court.
         if (!validateSlotGroups(slots)) {
             return out(400, jsonError("Mỗi phiên chơi phải có ít nhất 2 slot liên tiếp trên cùng 1 sân"));
         }
@@ -120,6 +125,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                     slots,
                     rentals
             );
+            // Send booking confirmation email after successful creation.
             EmailQueueService.EmailEnqueueResult emailResult = emailQueueService.enqueueBookingCreated(bookingId);
             return out(200, buildSuccessJson(bookingId, emailResult));
         } catch (SlotConflictException e) {
@@ -130,7 +136,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
     /**
-     * Gi? nguyen ch? ky c? ?? khong ?nh h??ng logic c? n?u n?i khac con g?i.
+     * Backward-compatible overload for legacy callers without rentals.
      */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
                                          Integer accountId, String guestName, String guestPhone, String guestEmail,
@@ -150,7 +156,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
     }
 
     /**
-     * Ham m?i: m? r?ng them rentals nh?ng khong pha logic c?.
+     * Multi-step booking transaction: create booking, slots, rentals, and invoice atomically.
      */
     private int createBookingTransaction(int facilityId, LocalDate bookingDate, String customerType,
                                          Integer accountId, String guestName, String guestPhone, String guestEmail,
@@ -178,10 +184,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
 
                 BigDecimal totalAmount = BigDecimal.ZERO;
 
-                /**
-                 * Map ?? n?i slot v?a t?o v?i bookingSlotId m?i sinh ra.
-                 * Key: courtId_slotId
-                 */
+                /* Map newly created booking slots for linking rentals (key: courtId_slotId). */
                 Map<String, Integer> bookingSlotIdByCourtAndSlot = new HashMap<>();
 
                 for (StaffBookingCreateSlotDTO slot : slots) {
@@ -199,10 +202,7 @@ public class StaffBookingCreateServiceImpl implements StaffBookingCreateService 
                     bookingSlotIdByCourtAndSlot.put(buildCourtSlotKey(slot.getCourtId(), slot.getSlotId()), bookingSlotId);
                 }
 
-                /**
-                 * L?u ?? thue sau khi booking slots ?a co.
-                 * Khong ?nh h??ng logic c? n?u rentals r?ng.
-                 */
+                /* Persist rental items after booking slots are created (safe to skip when empty). */
                 BigDecimal rentalTotal = BigDecimal.ZERO;
 
                 for (RentalItemDTO rental : rentals) {

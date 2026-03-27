@@ -23,10 +23,14 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
     private static final Logger LOG = Logger.getLogger(StaffCheckinAutoNoShowServiceImpl.class.getName());
     private final StaffCheckinRepository repository = new StaffCheckinRepositoryImpl();
 
+    /**
+     * Scans for overdue PENDING sessions and marks them as NO_SHOW.
+     */
     @Override
     public void autoNoShowExpiredSessions() {
         List<Integer> bookingIds = new ArrayList<>();
         try (Connection conn = DBContext.getConnection()) {
+            // Only target CONFIRMED bookings with pending slots for today.
             bookingIds = repository.findConfirmedBookingIdsWithPendingSlots(conn, LocalDate.now());
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Failed to load bookings for auto no-show", e);
@@ -46,6 +50,7 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
                 conn = DBContext.getConnection();
                 conn.setAutoCommit(false);
 
+                /* Auto no-show transaction flow per booking. */
                 List<StaffCheckinSessionDTO> sessions =
                         StaffCheckinSessionBuilder.buildSessionsWithTime(repository, conn, bookingId);
                 if (sessions.isEmpty()) {
@@ -69,6 +74,7 @@ public class StaffCheckinAutoNoShowServiceImpl implements StaffCheckinAutoNoShow
                 }
 
                 if (autoNoShowCount > 0) {
+                    // Mark booking COMPLETED when all sessions finished.
                     boolean allFinished = checkAllSessionsFinished(conn, sessions);
                     if (allFinished) {
                         repository.updateBookingStatus(conn, bookingId, "COMPLETED");

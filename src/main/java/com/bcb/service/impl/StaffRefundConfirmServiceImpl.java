@@ -15,6 +15,9 @@ public class StaffRefundConfirmServiceImpl implements StaffRefundConfirmService 
     private static final DateTimeFormatter NOTE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private final StaffRefundRepository repository = new StaffRefundRepositoryImpl();
 
+    /**
+     * Confirms a pending manual refund and persists the merged refund note.
+     */
     @Override
     public StaffRefundConfirmResultDTO confirmRefund(int bookingId, int facilityId, int staffId, String note)
             throws Exception {
@@ -23,13 +26,19 @@ public class StaffRefundConfirmServiceImpl implements StaffRefundConfirmService 
         try (Connection conn = DBContext.getConnection()) {
             conn.setAutoCommit(false);
             try {
+                /*
+                 * Confirm refund transaction:
+                 * - Verify pending refund exists for facility.
+                 * - Merge staff note with existing note.
+                 * - Update invoice refund_status to REFUNDED.
+                 */
                 String existingNote = repository.findRefundNote(conn, bookingId, facilityId);
                 if (existingNote == null) {
                     result.setSuccess(false);
                     result.setMessage("Không tìm thấy yêu cầu hoàn tiền hoặc yêu cầu không ở trạng thái chờ xử lý");
                     return result;
                 }
-
+                // Confirm note is appended to existing note for audit.
                 String confirmNote = buildConfirmNote(staffId, note);
                 String mergedNote = mergeNotes(existingNote, confirmNote);
 
@@ -67,3 +76,5 @@ public class StaffRefundConfirmServiceImpl implements StaffRefundConfirmService 
         return existing.trim() + " | " + append;
     }
 }
+
+

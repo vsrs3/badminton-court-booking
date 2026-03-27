@@ -38,6 +38,7 @@
         showState('loading');
         resultsInfo.classList.add('d-none');
 
+        // Build refund list URL with paging + optional search query.
         var url = CTX + '/api/staff/refund/list?page=' + currentPage + '&size=' + pageSize;
         if (currentQuery) {
             url += '&q=' + encodeURIComponent(currentQuery);
@@ -124,6 +125,7 @@
             return;
         }
 
+        // Confirm refund requires a staff note (optional) before calling API.
         StaffDialog.confirm({
             title: 'Xác nhận',
             message: 'Xác nhận hoàn tiền cho booking #' + bookingId
@@ -161,6 +163,7 @@
                 });
             })
             .then(function () {
+                // Reload list after confirm to reflect updated status.
                 loadRefunds();
             })
             .catch(function (err) {

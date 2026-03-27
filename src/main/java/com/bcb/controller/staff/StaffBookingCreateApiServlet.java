@@ -20,6 +20,9 @@ public class StaffBookingCreateApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingCreateService staffBookingCreateService = new StaffBookingCreateServiceImpl();
 
+    /**
+     * Creates a staff proxy booking from timeline-selected slots.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
