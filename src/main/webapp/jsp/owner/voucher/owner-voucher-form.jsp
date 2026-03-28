@@ -24,6 +24,7 @@
 
         <c:set var="isEdit" value="${mode eq 'edit'}" />
         <c:set var="actionUrl" value="${pageContext.request.contextPath}/owner/vouchers/${isEdit ? 'update' : 'create'}" />
+        <c:set var="selectedFacilityScope" value="${not empty facilityScope ? facilityScope : (empty linkedFacilityIds ? 'all' : 'specific')}" />
 
         <form method="POST" action="${actionUrl}" id="voucherForm" novalidate>
             <c:if test="${isEdit}">
@@ -208,7 +209,7 @@
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="radio" name="facilityScope" id="scopeAll"
                                            value="all" onchange="toggleFacilitySelect()"
-                                           ${empty linkedFacilityIds ? 'checked' : ''}>
+                                           ${selectedFacilityScope eq 'all' ? 'checked' : ''}>
                                     <label class="form-check-label fw-semibold" for="scopeAll">
                                         <i class="bi bi-globe me-1"></i> Tất cả sân
                                     </label>
@@ -216,14 +217,14 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="facilityScope" id="scopeSpecific"
                                            value="specific" onchange="toggleFacilitySelect()"
-                                           ${not empty linkedFacilityIds ? 'checked' : ''}>
+                                           ${selectedFacilityScope eq 'specific' ? 'checked' : ''}>
                                     <label class="form-check-label fw-semibold" for="scopeSpecific">
                                         <i class="bi bi-pin-map me-1"></i> Chọn sân cụ thể
                                     </label>
                                 </div>
                             </div>
 
-                            <div id="facilitySelectWrapper" style="display:${not empty linkedFacilityIds ? 'block' : 'none'};">
+                            <div id="facilitySelectWrapper" style="display:${selectedFacilityScope eq 'specific' ? 'block' : 'none'};">
                                 <select id="facilitySelect" name="facilityIds" multiple>
                                     <c:forEach var="f" items="${facilities}">
                                         <option value="${f.facilityId}"
