@@ -511,7 +511,8 @@
     /** Calls confirm-and-pay API for recurring booking. */
     async function confirmRecurring() {
         clearAlerts();
-        let loadingSet = false;
+        // Always recover button state unless we are redirecting to payment page.
+        let shouldResetLoading = true;
         try {
             // Validate before showing loading
             const minRequired = getMinRequiredSessions();
@@ -523,7 +524,6 @@
             }
 
             setConfirmButtonLoading(true);
-            loadingSet = true;
 
             const payload = buildConfirmPayload();
             let res = await fetch(CTX + '/api/recurring/confirm-and-pay', {
@@ -568,7 +568,8 @@
 
             const data = json.data || {};
             if (data.paymentUrl) {
-                // Keep loading while redirecting
+                // Keep loading while redirecting.
+                shouldResetLoading = false;
                 window.location.href = data.paymentUrl;
                 return;
             }
@@ -578,10 +579,10 @@
             sessionStorage.removeItem('recurringCreatePayload');
         } catch (e) {
             showError(e.message || 'Không thể xác nhận recurring booking.');
-            if (loadingSet) setConfirmButtonLoading(false);
         } finally {
-            // If not redirecting, always reset button
-            if (loadingSet) setConfirmButtonLoading(false);
+            if (shouldResetLoading) {
+                setConfirmButtonLoading(false);
+            }
         }
     }
 
