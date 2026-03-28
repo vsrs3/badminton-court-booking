@@ -224,6 +224,13 @@
                                 </div>
                             </div>
 
+                            <div id="specificScopeHint"
+                                 class="small text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-3 px-3 py-2 mb-3"
+                                 style="display:${selectedFacilityScope eq 'specific' ? 'block' : 'none'};">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Nếu bạn chọn "Chọn sân cụ thể" nhưng không chọn sân nào, voucher sẽ mặc định áp dụng cho tất cả sân.
+                            </div>
+
                             <div id="facilitySelectWrapper" style="display:${selectedFacilityScope eq 'specific' ? 'block' : 'none'};">
                                 <select id="facilitySelect" name="facilityIds" multiple>
                                     <c:forEach var="f" items="${facilities}">
@@ -294,7 +301,11 @@
         window.toggleFacilitySelect = function() {
             var specific = document.getElementById('scopeSpecific').checked;
             var wrapper  = document.getElementById('facilitySelectWrapper');
+            var hint     = document.getElementById('specificScopeHint');
             wrapper.style.display = specific ? 'block' : 'none';
+            if (hint) {
+                hint.style.display = specific ? 'block' : 'none';
+            }
             if (specific) initMultiSelect();
         };
 
