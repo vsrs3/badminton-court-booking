@@ -13,6 +13,9 @@ import java.time.LocalTime;
 
 public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExceptionRepository {
 
+    /**
+     * Returns start/end time for a slot id.
+     */
     @Override
     public LocalTime[] findSlotTime(Connection conn, int slotId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
@@ -27,6 +30,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Returns earliest start and latest end time across all slots.
+     */
     @Override
     public LocalTime[] findTimeSlotBounds(Connection conn) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(
@@ -40,6 +46,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Checks whether a slot already has a booking on the date.
+     */
     @Override
     public boolean hasBooking(Connection conn, int facilityId, int courtId, LocalDate date, int slotId) throws Exception {
         String sql = """
@@ -59,6 +68,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Checks if an active exception overlaps the given slot time range.
+     */
     @Override
     public boolean hasActiveExceptionOverlap(Connection conn, int facilityId, int courtId, LocalDate date,
                                              LocalTime start, LocalTime end) throws Exception {
@@ -86,6 +98,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Loads active exception by id for validation before unblock.
+     */
     @Override
     public CourtScheduleException findActiveExceptionById(Connection conn, int facilityId, int exceptionId) throws Exception {
         String sql = """
@@ -122,6 +137,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Inserts a schedule exception row.
+     */
     @Override
     public int insertException(Connection conn, CourtScheduleException ex) throws Exception {
         String sql = """
@@ -152,6 +170,9 @@ public class StaffScheduleExceptionRepositoryImpl implements StaffScheduleExcept
         }
     }
 
+    /**
+     * Deactivates an exception (soft delete).
+     */
     @Override
     public void deactivateException(Connection conn, int exceptionId) throws Exception {
         try (PreparedStatement ps = conn.prepareStatement(

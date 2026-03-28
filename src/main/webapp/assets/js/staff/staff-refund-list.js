@@ -14,6 +14,7 @@
     var errorMessage  = document.getElementById('errorMessage');
     var searchInput   = document.getElementById('searchInput');
     var searchClear   = document.getElementById('searchClear');
+    var searchBtn     = document.getElementById('searchBtn');
 
     var currentPage = 1;
     var pageSize = 10;
@@ -37,6 +38,7 @@
         showState('loading');
         resultsInfo.classList.add('d-none');
 
+        // Build refund list URL with paging + optional search query.
         var url = CTX + '/api/staff/refund/list?page=' + currentPage + '&size=' + pageSize;
         if (currentQuery) {
             url += '&q=' + encodeURIComponent(currentQuery);
@@ -123,6 +125,7 @@
             return;
         }
 
+        // Confirm refund requires a staff note (optional) before calling API.
         StaffDialog.confirm({
             title: 'Xác nhận',
             message: 'Xác nhận hoàn tiền cho booking #' + bookingId
@@ -160,6 +163,7 @@
                 });
             })
             .then(function () {
+                // Reload list after confirm to reflect updated status.
                 loadRefunds();
             })
             .catch(function (err) {
@@ -262,6 +266,7 @@
     function updateSearchClear() {
         if (!searchClear) return;
         searchClear.disabled = !currentQuery;
+        searchClear.classList.toggle('d-none', !currentQuery);
     }
 
     function bindSearch() {
@@ -296,6 +301,12 @@
                 if (!currentQuery) return;
                 searchInput.value = '';
                 applySearch('');
+            });
+        }
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function () {
+                applySearch(searchInput.value);
             });
         }
 

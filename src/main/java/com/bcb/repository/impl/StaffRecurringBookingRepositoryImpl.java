@@ -78,6 +78,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         throw new Exception("Failed to create booking root");
     }
 
+    /**
+     * Creates the recurring booking root row.
+     */
     @Override
     public int insertRecurringBooking(Connection conn, int facilityId, LocalDate startDate, LocalDate endDate) throws Exception {
         String sql = "INSERT INTO RecurringBooking (facility_id, start_date, end_date) VALUES (?, ?, ?)";
@@ -93,6 +96,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         throw new Exception("Failed to create recurring booking");
     }
 
+    /**
+     * Links booking to recurring id after creation.
+     */
     @Override
     public void updateBookingRecurringId(Connection conn, int bookingId, int recurringId) throws Exception {
         String sql = "UPDATE Booking SET recurring_id = ? WHERE booking_id = ?";
@@ -113,6 +119,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         }
     }
 
+    /**
+     * Inserts a recurring pattern row (day + court + slot).
+     */
     @Override
     public void insertRecurringPattern(Connection conn, int recurringId, int courtId, int dayOfWeek, int slotId) throws Exception {
         String sql = "INSERT INTO RecurringPattern (recurring_id, court_id, day_of_week, slot_id) VALUES (?, ?, ?, ?)";
@@ -125,6 +134,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         }
     }
 
+    /**
+     * Inserts booking slot for a recurring date.
+     */
     @Override
     public int insertBookingSlot(Connection conn, int bookingId, int courtId, LocalDate bookingDate, int slotId, BigDecimal price)
             throws Exception {
@@ -143,6 +155,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         throw new Exception("Failed to insert booking slot");
     }
 
+    /**
+     * Creates the court-time lock for a recurring slot.
+     */
     @Override
     public void insertCourtSlotBooking(Connection conn, int courtId, LocalDate bookingDate, int slotId, int bookingSlotId)
             throws Exception {
@@ -156,6 +171,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         }
     }
 
+    /**
+     * Records skipped dates when conflict policy is SKIP.
+     */
     @Override
     public void insertBookingSkip(Connection conn, int recurringId, LocalDate skipDate, String reason) throws Exception {
         String sql = "INSERT INTO BookingSkip (recurring_id, skip_date, reason) VALUES (?, ?, ?)";
@@ -167,6 +185,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         }
     }
 
+    /**
+     * Inserts invoice for recurring booking totals.
+     */
     @Override
     public int insertInvoice(Connection conn, int bookingId, BigDecimal totalAmount) throws Exception {
         String sql = "INSERT INTO Invoice (booking_id, total_amount, paid_amount, deposit_percent, payment_status) " +
@@ -263,6 +284,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         return out;
     }
 
+    /**
+     * Loads already booked slots for conflict detection.
+     */
     @Override
     public Map<Integer, List<Integer>> findBookedSlots(Connection conn, int facilityId, LocalDate bookingDate) throws Exception {
         String sql = "SELECT bs.court_id, bs.slot_id " +
@@ -288,6 +312,9 @@ public class StaffRecurringBookingRepositoryImpl implements StaffRecurringBookin
         return map;
     }
 
+    /**
+     * Loads blocked slots from schedule exceptions for conflict detection.
+     */
     @Override
     public Map<Integer, List<Integer>> findBlockedSlotsByException(Connection conn, int facilityId, LocalDate bookingDate) throws Exception {
         String sql = """

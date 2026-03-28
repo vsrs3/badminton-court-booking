@@ -20,6 +20,9 @@ public class StaffRecurringBookingPreviewApiServlet extends BaseStaffApiServlet 
 
     private final StaffRecurringBookingService service = new StaffRecurringBookingServiceImpl();
 
+    /**
+     * Previews recurring booking sessions with conflict handling and totals.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

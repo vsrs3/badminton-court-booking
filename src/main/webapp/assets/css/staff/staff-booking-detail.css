@@ -491,6 +491,25 @@
     margin-top: 0.25rem;
 }
 
+.sbd-rental-detail-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #0F766E;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sbd-rental-detail-trigger:hover {
+    color: #0D9488;
+    text-decoration: underline;
+}
+
 .sbd-session-action {
     flex-shrink: 0;
     display: flex;
@@ -661,6 +680,35 @@
 .sbd-btn-release:hover:not(:disabled) {
     background: #0D9488;
     box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
+}
+
+.sbd-rental-modal {
+    max-width: 680px;
+}
+
+.sbd-rental-modal-context {
+    margin-bottom: 0.9rem;
+    color: #374151;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.sbd-rental-modal .table thead th {
+    font-size: 0.75rem;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.sbd-rental-modal .table tbody td,
+.sbd-rental-modal .table tfoot th {
+    font-size: 0.8125rem;
+    vertical-align: middle;
+}
+
+.sbd-rental-modal .table tfoot th:last-child {
+    color: #064E3B;
+    font-weight: 800;
 }
 
 /* Toast warning type (for no-show notifications) */

@@ -21,6 +21,9 @@ public class StaffConfirmPaymentApiServlet extends BaseStaffApiServlet {
 
     private final StaffConfirmPaymentService staffConfirmPaymentService = new StaffConfirmPaymentServiceImpl();
 
+    /**
+     * Confirms full payment for a booking by staff action.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -45,6 +48,7 @@ public class StaffConfirmPaymentApiServlet extends BaseStaffApiServlet {
             return;
         }
 
+        // Validate booking ownership and payment method.
         if (method == null || method.trim().isEmpty()) method = "CASH";
         method = method.trim().toUpperCase();
         if (!"CASH".equals(method) && !"BANK_TRANSFER".equals(method) && !"VNPAY".equals(method)) {

@@ -2,6 +2,7 @@ package com.bcb.controller.staff;
 
 import com.bcb.dto.staff.StaffBookingDetailDataDTO;
 import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailRentalItemDTO;
 import com.bcb.dto.staff.StaffBookingDetailRentalRowDTO;
 import com.bcb.dto.staff.StaffBookingDetailSessionDTO;
 import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
@@ -24,6 +25,9 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingDetailService staffBookingDetailService = new StaffBookingDetailServiceImpl();
 
+    /**
+     * Loads booking detail and returns sessions, invoice, rental rows, totals, and etag.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -60,6 +64,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         }
     }
 
+    /* Build detail response with sessions, slots, invoice, rental rows, totals, and etag. */
     private String buildDetailJson(StaffBookingDetailDataDTO data) {
         StringBuilder json = new StringBuilder(8192);
         json.append("{\"success\":true,\"data\":{");
@@ -87,6 +92,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
             json.append(",\"endTime\":\"").append(session.getEndTime()).append("\"");
             json.append(",\"slotCount\":").append(session.getSlotCount());
             json.append(",\"totalPrice\":").append(session.getTotalPrice());
+            json.append(",\"originalTotalPrice\":").append(session.getOriginalTotalPrice());
             json.append(",\"sessionStatus\":\"").append(session.getSessionStatus()).append("\"");
             json.append(",\"checkinTime\":").append(esc(session.getCheckinTime()));
             json.append(",\"checkoutTime\":").append(esc(session.getCheckoutTime()));
@@ -133,11 +139,29 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
             StaffBookingDetailRentalRowDTO row = data.getRentalRows().get(i);
 
             json.append("{");
-            json.append("\"courtName\":").append(esc(row.getCourtName()));
+            json.append("\"bookingDate\":").append(esc(row.getBookingDate()));
+            json.append(",\"courtId\":").append(row.getCourtId());
+            json.append(",\"courtName\":").append(esc(row.getCourtName()));
+            json.append(",\"slotId\":").append(row.getSlotId());
             json.append(",\"startTime\":\"").append(row.getStartTime()).append("\"");
             json.append(",\"endTime\":\"").append(row.getEndTime()).append("\"");
             json.append(",\"rentalItemsText\":").append(esc(row.getRentalItemsText()));
             json.append(",\"rentalTotal\":").append(row.getRentalTotal());
+            json.append(",\"items\":[");
+            for (int j = 0; j < row.getRentalItems().size(); j++) {
+                if (j > 0) json.append(",");
+                StaffBookingDetailRentalItemDTO item = row.getRentalItems().get(j);
+                json.append("{");
+                json.append("\"scheduleId\":").append(item.getScheduleId() == null ? "null" : item.getScheduleId());
+                json.append(",\"inventoryId\":").append(item.getInventoryId());
+                json.append(",\"inventoryName\":").append(esc(item.getInventoryName()));
+                json.append(",\"unitPrice\":").append(item.getUnitPrice());
+                json.append(",\"quantity\":").append(item.getQuantity());
+                json.append(",\"lineTotal\":").append(item.getLineTotal());
+                json.append(",\"status\":").append(esc(item.getStatus()));
+                json.append("}");
+            }
+            json.append("]");
             json.append("}");
         }
         json.append("]");
@@ -145,6 +169,8 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         json.append(",\"courtTotal\":").append(data.getCourtTotal());
         json.append(",\"rentalTotal\":").append(data.getRentalTotal());
         json.append(",\"grandTotal\":").append(data.getGrandTotal());
+        json.append(",\"originalCourtTotal\":").append(data.getOriginalCourtTotal());
+        json.append(",\"originalGrandTotal\":").append(data.getOriginalGrandTotal());
 
         json.append(",\"etag\":").append(esc(data.getEtag()));
         json.append("}}");
@@ -158,6 +184,7 @@ public class StaffBookingDetailApiServlet extends BaseStaffApiServlet {
         json.append(",\"slotId\":").append(slot.getSlotId());
         json.append(",\"startTime\":\"").append(slot.getStartTime()).append("\"");
         json.append(",\"endTime\":\"").append(slot.getEndTime()).append("\"");
+        json.append(",\"price\":").append(slot.getPrice());
         json.append(",\"slotStatus\":\"").append(slot.getSlotStatus()).append("\"");
         json.append(",\"released\":").append(slot.isReleased());
         json.append("}");

@@ -155,13 +155,15 @@ public class StaffBookingCreateRepositoryImpl implements StaffBookingCreateRepos
     }
 
     @Override
-    public int insertBookingSlot(Connection conn, int bookingId, StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception {
-        String sql = "INSERT INTO BookingSlot (booking_id, court_id, slot_id, price) VALUES (?, ?, ?, ?)";
+    public int insertBookingSlot(Connection conn, int bookingId, java.time.LocalDate bookingDate,
+                                 StaffBookingCreateSlotDTO slot, BigDecimal price) throws Exception {
+        String sql = "INSERT INTO BookingSlot (booking_id, booking_date, court_id, slot_id, price) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, bookingId);
-            ps.setInt(2, slot.getCourtId());
-            ps.setInt(3, slot.getSlotId());
-            ps.setBigDecimal(4, price);
+            ps.setDate(2, Date.valueOf(bookingDate));
+            ps.setInt(3, slot.getCourtId());
+            ps.setInt(4, slot.getSlotId());
+            ps.setBigDecimal(5, price);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) return keys.getInt(1);

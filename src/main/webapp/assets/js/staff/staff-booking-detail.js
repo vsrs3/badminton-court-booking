@@ -35,6 +35,14 @@
     var paymentModalError   = document.getElementById('paymentModalError');
     var paymentInputHint    = document.getElementById('paymentInputHint');
 
+    // Rental detail modal DOM
+    var rentalDetailModal             = document.getElementById('rentalDetailModal');
+    var rentalDetailModalClose        = document.getElementById('rentalDetailModalClose');
+    var rentalDetailModalConfirmClose = document.getElementById('rentalDetailModalConfirmClose');
+    var rentalDetailContext           = document.getElementById('rentalDetailContext');
+    var rentalDetailTableBody         = document.getElementById('rentalDetailTableBody');
+    var rentalDetailTotal             = document.getElementById('rentalDetailTotal');
+
     // State
     var bookingData = null;
     var pendingAction = null;
@@ -75,9 +83,18 @@
             if (e.target === paymentModal) closePaymentModal();
         });
     }
+    if (rentalDetailModalClose) rentalDetailModalClose.addEventListener('click', closeRentalDetailModal);
+    if (rentalDetailModalConfirmClose) rentalDetailModalConfirmClose.addEventListener('click', closeRentalDetailModal);
+    if (rentalDetailModal) {
+        rentalDetailModal.addEventListener('click', function (e) {
+            if (e.target === rentalDetailModal) closeRentalDetailModal();
+        });
+    }
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && paymentModal && !paymentModal.classList.contains('d-none')) {
             closePaymentModal();
+        } else if (e.key === 'Escape' && rentalDetailModal && !rentalDetailModal.classList.contains('d-none')) {
+            closeRentalDetailModal();
         }
     });
 
@@ -85,10 +102,12 @@
     loadDetail();
 
     function loadDetail() {
+        closeRentalDetailModal();
         stateLoading.classList.remove('d-none');
         stateError.classList.add('d-none');
         detailContent.classList.add('d-none');
 
+        // Load detail payload (sessions, invoice, rentals, etag).
         fetch(CTX + '/api/staff/booking/detail/' + bookingId, {
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
@@ -184,6 +203,10 @@
     function renderInvoice(d) {
         var courtAmount = toMoneyNumber(d.courtTotal);
         var rentalAmount = toMoneyNumber(d.rentalTotal);
+        var originalTotalField = document.getElementById('dOriginalTotalField');
+        var originalTotalAmountEl = document.getElementById('dOriginalTotalAmount');
+        var currentCourtField = document.getElementById('dCurrentCourtField');
+        var currentCourtAmountEl = document.getElementById('dCurrentCourtAmount');
 
         if (d.invoice) {
             var totalAmount = d.invoice.totalAmount != null ? toMoneyNumber(d.invoice.totalAmount) : toMoneyNumber(d.grandTotal);
@@ -191,11 +214,41 @@
             var remaining = Math.max(0, totalAmount - paidAmount);
             var isPaid = d.invoice.paymentStatus === 'PAID';
             var isConfirmed = (d.bookingStatus === 'CONFIRMED');
+            var originalGrandTotal = toMoneyNumber(d.originalGrandTotal);
+            var originalCourtTotal = toMoneyNumber(d.originalCourtTotal);
+            var showOriginalCourt = originalCourtTotal > 0 && !isSameMoney(originalCourtTotal, courtAmount);
+            var showOriginalTotal = originalGrandTotal > 0 && !isSameMoney(originalGrandTotal, totalAmount);
 
-            setText('dCourtAmount', formatMoney(courtAmount));
+            if (showOriginalCourt) {
+                setText('dCourtAmount', formatMoney(originalCourtTotal));
+                if (currentCourtField && currentCourtAmountEl) {
+                    currentCourtField.classList.remove('d-none');
+                    currentCourtAmountEl.textContent = formatMoney(courtAmount);
+                }
+            } else {
+                setText('dCourtAmount', formatMoney(courtAmount));
+                if (currentCourtField && currentCourtAmountEl) {
+                    currentCourtField.classList.add('d-none');
+                    currentCourtAmountEl.textContent = '';
+                }
+            }
             setText('dRentalAmount', formatMoney(rentalAmount));
-            setText('dTotalAmount', formatMoney(totalAmount));
+            if (showOriginalTotal) {
+                setText('dTotalAmount', formatMoney(originalGrandTotal));
+            } else {
+                setText('dTotalAmount', formatMoney(totalAmount));
+            }
             setText('dPaidAmount', formatMoney(paidAmount));
+
+            if (originalTotalField && originalTotalAmountEl) {
+                if (showOriginalTotal) {
+                    originalTotalField.classList.remove('d-none');
+                    originalTotalAmountEl.textContent = formatMoney(totalAmount);
+                } else {
+                    originalTotalField.classList.add('d-none');
+                    originalTotalAmountEl.textContent = '';
+                }
+            }
 
             if (isPaid || !isConfirmed) {
                 remainingField.classList.add('d-none');
@@ -225,6 +278,14 @@
             setText('dRentalAmount', formatMoney(rentalAmount));
             setText('dTotalAmount', formatMoney(toMoneyNumber(d.grandTotal)));
             setText('dPaidAmount', formatMoney(0));
+            if (originalTotalField && originalTotalAmountEl) {
+                originalTotalField.classList.add('d-none');
+                originalTotalAmountEl.textContent = '';
+            }
+            if (currentCourtField && currentCourtAmountEl) {
+                currentCourtField.classList.add('d-none');
+                currentCourtAmountEl.textContent = '';
+            }
             remainingField.classList.add('d-none');
             setText('dPaymentStatus', '—');
             confirmPaymentBtnWrap.classList.add('d-none');
@@ -303,11 +364,15 @@
             if (d.isRecurring && sessionDate) {
                 dateHtml = '<span><i class="bi bi-calendar3"></i>' + formatDate(sessionDate) + '</span>';
             }
+            var displaySessionTotal = s.totalPrice;
+            if (s.sessionStatus === 'CANCELLED' && s.originalTotalPrice != null) {
+                displaySessionTotal = s.originalTotalPrice;
+            }
             metaEl.innerHTML =
                 dateHtml +
                 '<span><i class="bi bi-clock"></i>' + s.startTime + ' → ' + s.endTime + '</span>' +
                 '<span><i class="bi bi-layers"></i>' + s.slotCount + ' slot</span>' +
-                '<span class="sbd-session-price">' + formatMoney(s.totalPrice) + '</span>';
+                '<span class="sbd-session-price">' + formatMoney(displaySessionTotal) + '</span>';
             infoEl.appendChild(metaEl);
 
             // Time info
@@ -502,28 +567,97 @@
         var matchedRows = findRentalRowsForSession(session, rentalRows);
         if (!matchedRows.length) return;
 
-        var rentalEl = document.createElement('div');
-        rentalEl.className = 'sbd-session-time-info';
-        rentalEl.textContent = 'Đồ thuê: ' + matchedRows.map(function (row) {
-            var label = row.rentalItemsText || 'Đã chọn đồ thuê';
-            var sameWindow = row.startTime === session.startTime && row.endTime === session.endTime;
-
-            if (!sameWindow) {
-                label = row.startTime + ' - ' + row.endTime + ': ' + label;
-            }
-
-            return label + ' (' + formatMoney(row.rentalTotal || 0) + ')';
-        }).join(' · ');
+        var rentalEl = document.createElement('button');
+        rentalEl.type = 'button';
+        rentalEl.className = 'sbd-rental-detail-trigger';
+        rentalEl.innerHTML = '<i class="bi bi-bag-check me-1"></i>Chi tiết đồ thuê';
+        rentalEl.addEventListener('click', function () {
+            openRentalDetailModal(session);
+        });
         infoEl.appendChild(rentalEl);
+    }
+
+    function openRentalDetailModal(session) {
+        if (!rentalDetailModal) return;
+
+        var items = summarizeSessionRentalItems(session);
+        var sessionDate = session.sessionDate ? formatDate(session.sessionDate) + ' · ' : '';
+
+        if (rentalDetailContext) {
+            rentalDetailContext.textContent = session.courtName + ' · ' + sessionDate + session.startTime + ' - ' + session.endTime;
+        }
+
+        if (rentalDetailTableBody) {
+            if (!items.length) {
+                rentalDetailTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu đồ thuê.</td></tr>';
+            } else {
+                rentalDetailTableBody.innerHTML = items.map(function (item, index) {
+                    return '' +
+                        '<tr>' +
+                        '   <td>' + (index + 1) + '</td>' +
+                        '   <td>' + escapeHtml(item.inventoryName) + '</td>' +
+                        '   <td>' + formatMoney(item.unitPrice || 0) + '</td>' +
+                        '   <td>' + item.quantity + '</td>' +
+                        '</tr>';
+                }).join('');
+            }
+        }
+
+        if (rentalDetailTotal) {
+            rentalDetailTotal.textContent = formatMoney(items.reduce(function (sum, item) {
+                return sum + Number(item.lineTotal || 0);
+            }, 0));
+        }
+
+        rentalDetailModal.classList.remove('d-none');
+    }
+
+    function closeRentalDetailModal() {
+        if (rentalDetailModal) {
+            rentalDetailModal.classList.add('d-none');
+        }
+    }
+
+    function getSessionRentalRows(session) {
+        return findRentalRowsForSession(session, bookingData ? (bookingData.rentalRows || []) : []);
+    }
+
+    function summarizeSessionRentalItems(session) {
+        var groupedItems = {};
+        getSessionRentalRows(session).forEach(function (row) {
+            (row.items || []).forEach(function (item) {
+                var key = String(item.inventoryId || 0) + '_' + String(item.unitPrice || 0);
+                if (!groupedItems[key]) {
+                    groupedItems[key] = {
+                        inventoryId: Number(item.inventoryId || 0),
+                        inventoryName: item.inventoryName || item.name || 'Đồ thuê',
+                        unitPrice: Number(item.unitPrice || 0),
+                        quantity: 0,
+                        lineTotal: 0
+                    };
+                }
+
+                groupedItems[key].quantity += Number(item.quantity || 0);
+                groupedItems[key].lineTotal += Number(item.lineTotal || (Number(item.unitPrice || 0) * Number(item.quantity || 0)));
+            });
+        });
+
+        return Object.keys(groupedItems).map(function (key) {
+            return groupedItems[key];
+        }).sort(function (a, b) {
+            return String(a.inventoryName || '').localeCompare(String(b.inventoryName || ''));
+        });
     }
 
     function findRentalRowsForSession(session, rentalRows) {
         var sessionStart = toMinutes(session.startTime);
         var sessionEnd = toMinutes(session.endTime);
+        var sessionDate = session.sessionDate || bookingData.bookingDate;
 
         return (rentalRows || []).filter(function (row) {
             if (!row) return false;
-            if (row.courtName !== session.courtName) return false;
+            if (Number(row.courtId || 0) !== Number(session.courtId || 0)) return false;
+            if ((row.bookingDate || bookingData.bookingDate) !== sessionDate) return false;
 
             var rowStart = toMinutes(row.startTime);
             var rowEnd = toMinutes(row.endTime);
@@ -650,6 +784,7 @@
         paymentModalConfirm.disabled = true;
         paymentModalConfirm.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
 
+        // Confirm full payment via staff API.
         fetch(CTX + '/api/staff/payment/confirm', {
             method: 'POST',
             credentials: 'same-origin',
@@ -670,14 +805,13 @@
                     bookingData.grandTotal = body.data.totalAmount;
                 }
                 showToast('Xác nhận thanh toán thành công!', 'success');
+                var action = pendingAction;
                 closePaymentModal();
                 resetConfirmButton();
                 renderInvoice(bookingData);
                 renderSessions(bookingData);
 
-                if (pendingAction) {
-                    var action = pendingAction;
-                    pendingAction = null;
+                if (action) {
                     setTimeout(function () {
                         if (action.type === 'checkin') handleCheckin(action.sessionIndex);
                         else if (action.type === 'checkout') handleCheckout(action.sessionIndex);
@@ -712,6 +846,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Check-in per session.
         fetch(CTX + '/api/staff/checkin', {
             method: 'POST',
             credentials: 'same-origin',
@@ -773,6 +908,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Check-out per session.
         fetch(CTX + '/api/staff/checkout', {
             method: 'POST',
             credentials: 'same-origin',
@@ -823,6 +959,7 @@
             btn.innerHTML = '<span class="sbd-btn-spinner"></span> Đang xử lý...';
         }
 
+        // Mark no-show per session.
         fetch(CTX + '/api/staff/noshow', {
             method: 'POST',
             credentials: 'same-origin',
@@ -879,6 +1016,7 @@
 
     async function handleReleaseSession(sessionIndex) {
         var session = bookingData.sessions[sessionIndex];
+        // Only allow release before session end (backend enforces too).
         if (isSessionEnded(session)) {
             showToast('Phiên đã quá giờ, không thể giải phóng slot', 'warning');
             return;
@@ -906,6 +1044,7 @@
                 return;
             }
 
+            // Release each NO_SHOW slot with optimistic etag to avoid stale updates.
             fetch(CTX + '/api/staff/booking/release-slot', {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -944,7 +1083,8 @@
 
     async function handleCancelRemaining() {
         if (!bookingData || bookingData.bookingStatus !== 'CONFIRMED') return;
-        if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này', 'Xác nhận hủy phần còn lại'))) return;
+        // Require confirmation + reason before canceling all remaining PENDING slots.
+        if (!(await uiConfirm('Hủy toàn bộ các slot còn lại của booking này (bao gồm cả các đồ thuê)', 'Xác nhận hủy phần còn lại'))) return;
 
         var reason = await uiPrompt('Nhập lý do hủy (bắt buộc):', '', 'Lý do hủy');
         if (reason == null) return;
@@ -1065,6 +1205,16 @@
 
     function isSameMoney(a, b) {
         return Math.abs(toMoneyNumber(a) - toMoneyNumber(b)) < 0.01;
+    }
+
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function toMinutes(timeText) {

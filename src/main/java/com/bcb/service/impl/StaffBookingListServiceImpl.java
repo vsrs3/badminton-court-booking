@@ -10,6 +10,9 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
 
     private final StaffBookingListRepository repository = new StaffBookingListRepositoryImpl();
 
+    /**
+     * Builds search criteria, runs paginated query, and returns booking list data.
+     */
     @Override
     public StaffBookingListDataDTO getBookingList(int facilityId, String search, String status, boolean todayOnly, int page, int size) throws Exception {
         StaffBookingListSearchCriteriaDTO criteria = new StaffBookingListSearchCriteriaDTO();
@@ -22,6 +25,7 @@ public class StaffBookingListServiceImpl implements StaffBookingListService {
         criteria.setTodayOnly(todayOnly);
         criteria.setTodayDate(java.sql.Date.valueOf(java.time.LocalDate.now()));
 
+        // Build query with pagination (page/size/offset).
         int totalRows = repository.countBookings(criteria);
         int totalPages = Math.max(1, (int) Math.ceil((double) totalRows / size));
         int normalizedPage = Math.min(page, totalPages);

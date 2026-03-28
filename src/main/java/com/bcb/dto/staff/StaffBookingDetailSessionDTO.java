@@ -13,6 +13,7 @@ public class StaffBookingDetailSessionDTO {
     private String endTime;
     private int slotCount;
     private BigDecimal totalPrice;
+    private BigDecimal originalTotalPrice;
     private String sessionStatus;
     private String checkinTime;
     private String checkoutTime;
@@ -81,6 +82,14 @@ public class StaffBookingDetailSessionDTO {
 
     public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public BigDecimal getOriginalTotalPrice() {
+        return originalTotalPrice;
+    }
+
+    public void setOriginalTotalPrice(BigDecimal originalTotalPrice) {
+        this.originalTotalPrice = originalTotalPrice;
     }
 
     public String getSessionStatus() {

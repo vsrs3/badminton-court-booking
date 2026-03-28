@@ -21,6 +21,9 @@ public class StaffRefundListApiServlet extends BaseStaffApiServlet {
 
     private final StaffRefundListService staffRefundListService = new StaffRefundListServiceImpl();
 
+    /**
+     * Returns the pending refund list with search and paging for the current facility.
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -41,8 +44,8 @@ public class StaffRefundListApiServlet extends BaseStaffApiServlet {
         }
 
         String search = request.getParameter("q");
-
         try {
+            // Filter by facility + search keyword; only pending manual refunds are returned.
             StaffRefundListDataDTO data = staffRefundListService.getRefundList(auth.facilityId, page, size, search);
             writeJson(response, buildListJson(data));
         } catch (Exception e) {
@@ -50,8 +53,8 @@ public class StaffRefundListApiServlet extends BaseStaffApiServlet {
             writeError(response, 500, "Lỗi hệ thống");
         }
     }
-
     private String buildListJson(StaffRefundListDataDTO data) {
+        // Build list payload with paging metadata and refund rows.
         StringBuilder json = new StringBuilder(1024);
         json.append("{\"success\":true,\"data\":{");
         json.append("\"page\":").append(data.getPage());
@@ -82,3 +85,5 @@ public class StaffRefundListApiServlet extends BaseStaffApiServlet {
         return json.toString();
     }
 }
+
+

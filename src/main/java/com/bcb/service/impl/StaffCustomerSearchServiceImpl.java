@@ -12,6 +12,9 @@ public class StaffCustomerSearchServiceImpl implements StaffCustomerSearchServic
     private static final int DEFAULT_LIMIT = 10;
     private final StaffCustomerSearchRepository repository = new StaffCustomerSearchRepositoryImpl();
 
+    /**
+     * Returns a limited list of active customers for autocomplete suggestions.
+     */
     @Override
     public List<StaffCustomerSearchItemDTO> searchCustomers(String keyword) throws Exception {
         return repository.searchActiveCustomers(keyword, DEFAULT_LIMIT);

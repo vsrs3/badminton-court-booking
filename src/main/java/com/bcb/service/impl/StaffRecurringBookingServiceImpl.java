@@ -43,6 +43,9 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
     private final StaffConfirmPaymentRepository paymentRepository = new StaffConfirmPaymentRepositoryImpl();
     private final EmailQueueService emailQueueService = new EmailQueueServiceImpl();
 
+    /**
+     * Previews recurring sessions, detects conflicts, and returns totals/suggestions.
+     */
     @Override
     public StaffRecurringBookingOutcomeDTO preview(String body, int facilityId, Integer staffId) throws Exception {
         if (staffId == null) {
@@ -60,6 +63,13 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         }
 
         try (Connection conn = DBContext.getConnection()) {
+            /*
+             * Preview flow:
+             * - Build context (slots, courts, prices).
+             * - Generate planned dates/patterns.
+             * - Detect conflicts and suggest alternatives or skip.
+             * - Compute total amount and return preview payload.
+             */
             PlanningContext ctx = buildContext(conn, facilityId);
             Map<Integer, PatternPlan> patternMap;
             try {
@@ -77,6 +87,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             List<String> skippedDates = new ArrayList<>();
 
             BigDecimal totalAmount = BigDecimal.ZERO;
+            // Conflict policy controls skip vs suggest behavior for preview.
             String policy = normalizePolicy(req.getConflictPolicy());
 
             Map<LocalDate, SelectedSession> overrides;
@@ -138,6 +149,9 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         }
     }
 
+    /**
+     * Confirms recurring booking: inserts booking, recurring patterns, slots, and payment.
+     */
     @Override
     public StaffRecurringBookingOutcomeDTO confirm(String body, int facilityId, Integer staffId) throws Exception {
         if (staffId == null) {
@@ -154,8 +168,10 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             return out(validation.status, validation.json);
         }
 
+        // Conflict policy controls whether to skip or require manual overrides.
         String policy = normalizePolicy(req.getConflictPolicy());
         String paymentMethod = normalizePaymentMethod(req.getPaymentMethod());
+        // Payment method must be CASH/BANK_TRANSFER/VNPAY.
         if (paymentMethod == null) {
             return out(400, error("Phương thức thanh toán không hợp lệ"));
         }
@@ -165,6 +181,13 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
             try {
+                /*
+                 * Confirm flow (transactional):
+                 * - Insert booking root + recurring pattern.
+                 * - Apply conflicts (skip or require manual override).
+                 * - Insert slots + court locks and compute totals.
+                 * - Insert invoice, record payment, mark booking CONFIRMED.
+                 */
                 PlanningContext ctx = buildContext(conn, facilityId);
                 Map<Integer, PatternPlan> patternMap;
                 try {
@@ -176,6 +199,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
 
                 Integer guestId = null;
                 if ("GUEST".equals(req.getCustomerType())) {
+                    // Validate guest info and create guest record when needed.
                     guestId = repository.insertGuest(conn, req.getGuestName(),
                             normalizePhone(req.getGuestPhone()), normalizeEmail(req.getGuestEmail()));
                 }
@@ -221,6 +245,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                     }
 
                     boolean conflict = isConflict(occupied, courtId, slotIds);
+                    // Skip conflict dates or require manual selection before confirm.
                     if (conflict) {
                         if ("SKIP".equals(policy)) {
                             skippedDates.add(plan.date.toString());
@@ -289,6 +314,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
                 }
 
                 int invoiceId = repository.insertInvoice(conn, bookingId, totalAmount);
+                // Record full payment for recurring booking with selected method.
                 paymentRepository.insertPayment(conn, invoiceId, totalAmount, "FULL", paymentMethod, staffId);
                 paymentRepository.updateInvoiceAsPaid(conn, bookingId, totalAmount, totalAmount);
                 repository.updateBookingStatus(conn, bookingId, "CONFIRMED");
@@ -330,6 +356,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
     }
 
     private ValidationResult validateRequest(StaffRecurringBookingRequestDTO req) throws Exception {
+        // Recurring range must include start/end dates.
         if (req.getStartDate() == null || req.getEndDate() == null) {
             return ValidationResult.fail(400, error("Thiếu ngày bắt đầu hoặc ngày kết thúc"));
         }
@@ -347,14 +374,17 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             return ValidationResult.fail(400, error("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu"));
         }
 
+        // Recurring window must be at least 4 weeks.
         if (endDate.isBefore(startDate.plusWeeks(4))) {
             return ValidationResult.fail(400, error("Thời gian định kỳ phải tối thiểu 4 tuần"));
         }
 
+        // Do not allow start dates in the past.
         if (startDate.isBefore(LocalDate.now())) {
             return ValidationResult.fail(400, error("Không thể đặt cho ngày trong quá khứ"));
         }
 
+        // Validate customer type and guest fields.
         if (!"ACCOUNT".equals(req.getCustomerType()) && !"GUEST".equals(req.getCustomerType())) {
             return ValidationResult.fail(400, error("Loại khách không hợp lệ"));
         }
@@ -384,6 +414,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             return ValidationResult.fail(400, error("Chưa chọn lịch đặt định kỳ"));
         }
 
+        // Conflict policy must be SKIP or SUGGEST.
         String policy = normalizePolicy(req.getConflictPolicy());
         if (!"SKIP".equals(policy) && !"SUGGEST".equals(policy)) {
             return ValidationResult.fail(400, error("Chính sách xử lý trùng lịch không hợp lệ"));
@@ -416,6 +447,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
             if (p.getCourtId() == null || p.getCourtId() <= 0) {
                 throw new Exception("Thiếu sân cho lịch định kỳ");
             }
+            // Session rule: at least 2 consecutive slots per pattern.
             if (p.getSlotIds() == null || p.getSlotIds().size() < 2) {
                 throw new Exception("Mỗi phiên phải có ít nhất 2 slot liên tiếp");
             }
@@ -950,6 +982,7 @@ public class StaffRecurringBookingServiceImpl implements StaffRecurringBookingSe
         }
     }
 }
+
 
 
 

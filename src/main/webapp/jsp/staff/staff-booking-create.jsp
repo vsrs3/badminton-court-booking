@@ -1,6 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-
 <%@ include file="layout/staff-layout.jsp"%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/staff-booking-create.css?v=<%= System.currentTimeMillis() %>">
 <%@ include file="layout/staff-sidebar.jsp"%>
@@ -22,11 +21,8 @@
                 <i class="bi bi-arrow-left me-1"></i>Quay lại Timeline
             </a>
         </div>
-
         <div class="row g-4 d-none" id="createContent">
-
             <div class="col-lg-5">
-
                 <div class="card sbc-card">
                     <div class="card-header sbc-card-header">
                         <i class="bi bi-receipt me-2"></i>Tóm tắt đặt sân

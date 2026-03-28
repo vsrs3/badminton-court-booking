@@ -295,6 +295,13 @@
                         </div>
                     </div>
 
+                    <div class="sbr-summary-list-wrap">
+                        <div class="sbr-summary-list-title">Danh sách phiên đã chọn</div>
+                        <div id="sbrSummarySessions" class="sbr-summary-list">
+                            <div class="sbr-summary-empty">Chưa có dữ liệu phiên chơi.</div>
+                        </div>
+                    </div>
+
                     <div class="sbr-field">
                         <label>Phương thức thanh toán</label>
                         <select id="paymentMethod" class="sbr-input">

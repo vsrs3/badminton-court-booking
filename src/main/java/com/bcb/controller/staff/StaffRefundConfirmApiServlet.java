@@ -18,6 +18,9 @@ public class StaffRefundConfirmApiServlet extends BaseStaffApiServlet {
 
     private final StaffRefundConfirmService staffRefundConfirmService = new StaffRefundConfirmServiceImpl();
 
+    /**
+     * Confirms a pending manual refund and updates refund status/note.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -40,8 +43,8 @@ public class StaffRefundConfirmApiServlet extends BaseStaffApiServlet {
             writeError(response, 401, "Không tìm thấy staff trong session");
             return;
         }
-
         try {
+            // Confirm refund requires staff note (merged with existing note if any).
             StaffRefundConfirmResultDTO result = staffRefundConfirmService.confirmRefund(
                     bookingId, auth.facilityId, staffId, note);
             String json = buildConfirmJson(result);
@@ -51,8 +54,8 @@ public class StaffRefundConfirmApiServlet extends BaseStaffApiServlet {
             writeError(response, 500, "Lỗi hệ thống");
         }
     }
-
     private String buildConfirmJson(StaffRefundConfirmResultDTO result) {
+        // Build confirm payload with updated refund status/note.
         StringBuilder json = new StringBuilder(256);
         json.append("{\"success\":").append(result.isSuccess());
         json.append(",\"message\":").append(StaffAuthUtil.escapeJson(result.getMessage()));
@@ -75,3 +78,5 @@ public class StaffRefundConfirmApiServlet extends BaseStaffApiServlet {
         }
     }
 }
+
+

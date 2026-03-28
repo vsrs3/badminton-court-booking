@@ -8,12 +8,16 @@ import java.sql.Connection;
 
 public class StaffRefundListServiceImpl implements StaffRefundListService {
     private final StaffRefundRepository repository = new StaffRefundRepositoryImpl();
+    /**
+     * Loads pending manual refunds with paging for a facility and optional search.
+     */
     @Override
     public StaffRefundListDataDTO getRefundList(int facilityId, int page, int size, String search) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
             int totalRows = repository.countPendingRefunds(conn, facilityId, search);
             int totalPages = Math.max(1, (int) Math.ceil((double) totalRows / size));
             int normalizedPage = Math.min(page, totalPages);
+            // Compute paging offset based on normalized page.
             int offset = (normalizedPage - 1) * size;
             StaffRefundListDataDTO data = new StaffRefundListDataDTO();
             data.setPage(normalizedPage);

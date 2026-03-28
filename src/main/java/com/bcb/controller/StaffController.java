@@ -30,7 +30,7 @@ public class StaffController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- Auth guard ---
+        // Require an authenticated STAFF session before entering the staff area.
         HttpSession session = request.getSession(false);
         if (session == null) {
             response.sendRedirect(request.getContextPath() + "/auth/login");
@@ -44,7 +44,7 @@ public class StaffController extends HttpServlet {
 
         request.setAttribute("staffAccount", staffAccount);
 
-        // Load staff session data (facility_id, etc.) if not yet loaded
+        // Load staffId/facilityId/facilityName into session for staff-scoped access.
         if (session.getAttribute("staffId") == null) {
             loadStaffSession(session, staffAccount);
         }
@@ -103,6 +103,9 @@ public class StaffController extends HttpServlet {
         request.getRequestDispatcher(jspPath).forward(request, response);
     }
 
+    /**
+     * Resolves staffId, facilityId, and facilityName for the current staff session.
+     */
     private void loadStaffSession(HttpSession session, Account account) {
         try {
             int accountId = account.getAccountId();

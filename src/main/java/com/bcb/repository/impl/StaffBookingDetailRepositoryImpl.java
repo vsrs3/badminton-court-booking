@@ -2,20 +2,28 @@ package com.bcb.repository.impl;
 
 import com.bcb.dto.staff.StaffBookingDetailHeaderDTO;
 import com.bcb.dto.staff.StaffBookingDetailInvoiceDTO;
+import com.bcb.dto.staff.StaffBookingDetailRentalItemDTO;
 import com.bcb.dto.staff.StaffBookingDetailRentalRowDTO;
 import com.bcb.dto.staff.StaffBookingDetailSlotDTO;
 import com.bcb.repository.staff.StaffBookingDetailRepository;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.sql.Time;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepository {
 
+    /**
+     * Loads booking header with customer and recurring metadata.
+     */
     @Override
     public StaffBookingDetailHeaderDTO findBookingHeader(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -53,17 +61,22 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         }
     }
 
+    /**
+     * Loads all booking slots needed for session grouping and detail display.
+     */
     @Override
     public List<StaffBookingDetailSlotDTO> findBookingSlots(Connection conn, int bookingId) throws Exception {
         String sql = """
-                SELECT bs.booking_slot_id, bs.court_id, c.court_name, bs.booking_date,
+                SELECT bs.booking_slot_id, bs.court_id, c.court_name,
+                       COALESCE(bs.booking_date, b.booking_date) AS booking_date,
                        bs.slot_id, ts.start_time, ts.end_time,
                        bs.price, bs.slot_status, bs.is_released, bs.checkin_time, bs.checkout_time
                 FROM BookingSlot bs
+                JOIN Booking b   ON bs.booking_id = b.booking_id
                 JOIN Court c     ON bs.court_id = c.court_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
                 WHERE bs.booking_id = ?
-                ORDER BY bs.booking_date, c.court_name, ts.start_time
+                ORDER BY COALESCE(bs.booking_date, b.booking_date), c.court_name, ts.start_time
                 """;
 
         List<StaffBookingDetailSlotDTO> slots = new ArrayList<>();
@@ -91,6 +104,9 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         return slots;
     }
 
+    /**
+     * Loads invoice totals and payment status for the booking detail.
+     */
     @Override
     public StaffBookingDetailInvoiceDTO findInvoice(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT total_amount, paid_amount, payment_status, refund_due, refund_status FROM Invoice WHERE booking_id = ?";
@@ -120,54 +136,103 @@ public class StaffBookingDetailRepositoryImpl implements StaffBookingDetailRepos
         return ts.toLocalDateTime().toString().replace("T", " ").substring(0, 16);
     }
 
+    /**
+     * Loads rental rows and aggregates rental items per slot for the detail view.
+     */
     @Override
     public List<StaffBookingDetailRentalRowDTO> findBookingRentalRows(Connection conn, int bookingId) throws Exception {
-        List<StaffBookingDetailRentalRowDTO> list = new ArrayList<>();
-
         String sql = """
             SELECT
+                COALESCE(bs.booking_date, b.booking_date) AS booking_date,
+                bs.court_id,
                 c.court_name,
+                bs.slot_id,
                 ts.start_time,
                 ts.end_time,
-                STRING_AGG(i.name, ', ') WITHIN GROUP (ORDER BY i.name) AS rental_items_text,
-                SUM(rr.quantity * rr.unit_price) AS rental_total
+                rr.inventory_id,
+                i.name AS inventory_name,
+                rr.unit_price,
+                rr.quantity,
+                (rr.quantity * rr.unit_price) AS line_total,
+                irs.id AS schedule_id,
+                irs.status AS schedule_status
             FROM RacketRental rr
             INNER JOIN BookingSlot bs
                 ON rr.booking_slot_id = bs.booking_slot_id
+            INNER JOIN Booking b
+                ON bs.booking_id = b.booking_id
             INNER JOIN Court c
                 ON bs.court_id = c.court_id
             INNER JOIN TimeSlot ts
                 ON bs.slot_id = ts.slot_id
             INNER JOIN Inventory i
                 ON rr.inventory_id = i.inventory_id
+            LEFT JOIN InventoryRentalSchedule irs
+                ON irs.facility_id = b.facility_id
+               AND irs.booking_date = COALESCE(bs.booking_date, b.booking_date)
+               AND irs.court_id = bs.court_id
+               AND irs.slot_id = bs.slot_id
+               AND irs.inventory_id = rr.inventory_id
             WHERE bs.booking_id = ?
-            GROUP BY
-                c.court_name,
-                ts.start_time,
-                ts.end_time,
-                bs.booking_slot_id
+              AND bs.slot_status <> 'CANCELLED'
             ORDER BY
+                COALESCE(bs.booking_date, b.booking_date) ASC,
                 c.court_name ASC,
                 ts.start_time ASC,
-                ts.end_time ASC
+                i.name ASC
             """;
+
+        /* Aggregate rental rows by booking date + court + slot. */
+        Map<String, StaffBookingDetailRentalRowDTO> rowMap = new LinkedHashMap<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, bookingId);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    StaffBookingDetailRentalRowDTO dto = new StaffBookingDetailRentalRowDTO();
-                    dto.setCourtName(rs.getString("court_name"));
-                    dto.setStartTime(fmtTime(rs.getTime("start_time")));
-                    dto.setEndTime(fmtTime(rs.getTime("end_time")));
-                    dto.setRentalItemsText(rs.getString("rental_items_text"));
-                    dto.setRentalTotal(rs.getBigDecimal("rental_total"));
-                    list.add(dto);
+                    String bookingDate = rs.getString("booking_date");
+                    int courtId = rs.getInt("court_id");
+                    int slotId = rs.getInt("slot_id");
+                    String rowKey = bookingDate + "_" + courtId + "_" + slotId;
+
+                    StaffBookingDetailRentalRowDTO dto = rowMap.get(rowKey);
+                    if (dto == null) {
+                        dto = new StaffBookingDetailRentalRowDTO();
+                        dto.setBookingDate(bookingDate);
+                        dto.setCourtId(courtId);
+                        dto.setCourtName(rs.getString("court_name"));
+                        dto.setSlotId(slotId);
+                        dto.setStartTime(fmtTime(rs.getTime("start_time")));
+                        dto.setEndTime(fmtTime(rs.getTime("end_time")));
+                        dto.setRentalTotal(BigDecimal.ZERO);
+                        rowMap.put(rowKey, dto);
+                    }
+
+                    StaffBookingDetailRentalItemDTO item = new StaffBookingDetailRentalItemDTO();
+                    item.setScheduleId((Integer) rs.getObject("schedule_id"));
+                    item.setInventoryId(rs.getInt("inventory_id"));
+                    item.setInventoryName(rs.getString("inventory_name"));
+                    item.setUnitPrice(rs.getBigDecimal("unit_price"));
+                    item.setQuantity(rs.getInt("quantity"));
+                    item.setLineTotal(rs.getBigDecimal("line_total"));
+                    item.setStatus(rs.getString("schedule_status"));
+                    dto.getRentalItems().add(item);
+
+                    BigDecimal currentTotal = dto.getRentalTotal() != null ? dto.getRentalTotal() : BigDecimal.ZERO;
+                    BigDecimal lineTotal = item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO;
+                    dto.setRentalTotal(currentTotal.add(lineTotal));
                 }
             }
         }
 
+        List<StaffBookingDetailRentalRowDTO> list = new ArrayList<>(rowMap.values());
+        for (StaffBookingDetailRentalRowDTO row : list) {
+            StringJoiner joiner = new StringJoiner(", ");
+            for (StaffBookingDetailRentalItemDTO item : row.getRentalItems()) {
+                joiner.add(item.getInventoryName());
+            }
+            row.setRentalItemsText(joiner.toString());
+        }
         return list;
     }
 

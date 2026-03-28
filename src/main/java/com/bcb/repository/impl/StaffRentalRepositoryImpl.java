@@ -175,6 +175,7 @@ public class StaffRentalRepositoryImpl implements StaffRentalRepository {
                 FROM RacketRental rr
                 JOIN BookingSlot bs ON bs.booking_slot_id = rr.booking_slot_id
                 WHERE bs.booking_id = ?
+                  AND bs.slot_status <> 'CANCELLED'
                 """;
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

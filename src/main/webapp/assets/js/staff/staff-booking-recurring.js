@@ -24,6 +24,7 @@
     var summaryPatterns = document.getElementById('sbrSummaryPatterns');
     var summaryPolicy = document.getElementById('sbrSummaryPolicy');
     var summaryTotal = document.getElementById('sbrSummaryTotal');
+    var summarySessions = document.getElementById('sbrSummarySessions');
     var customerTypeEl = document.getElementById('sbrCustomerType');
     var customerNameEl = document.getElementById('sbrCustomerName');
     var customerPhoneEl = document.getElementById('sbrCustomerPhone');
@@ -62,6 +63,7 @@
     var isRenderingPreview = false;
     var currentStep = 1;
 
+    // Step flow: customer -> weekly patterns -> preview/conflicts -> confirm & pay.
     init();
 
     function init() {
@@ -122,12 +124,12 @@
                 showError('Vui lòng xử lý trùng lịch và xem trước lại để cập nhật tổng tiền');
                 return;
             }
-            if (conflictPolicyEl.value === 'SUGGEST') {
-                var selected = collectSelectedSessions();
-                if (!selected) return;
-            }
-            showStep(4);
-        });
+        if (conflictPolicyEl.value === 'SUGGEST') {
+            var selected = collectSelectedSessions();
+            if (!selected) return;
+        }
+        showStep(4);
+    });
         btnStep4Back.addEventListener('click', function () { showStep(3); });
         loadTimelineMeta();
         addPatternRow();
@@ -157,16 +159,17 @@
     function setupCustomerSearch() {
         customerSearch.addEventListener('input', function () {
             var q = this.value.trim();
-            if (q.length < 2) {
-                searchDropdown.classList.add('d-none');
-                return;
-            }
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function () {
-                fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                })
+        if (q.length < 2) {
+            searchDropdown.classList.add('d-none');
+            return;
+        }
+        clearTimeout(searchTimer);
+        // Debounce input and fetch suggestions after min 2 chars.
+        searchTimer = setTimeout(function () {
+            fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(q), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            })
                     .then(function (res) { return res.json(); })
                     .then(function (body) {
                         if (!body.success) return;
@@ -182,6 +185,7 @@
             updateStepProgress();
         });
 
+        // Hide dropdown when clicking outside.
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.sbr-search-wrap')) {
                 searchDropdown.classList.add('d-none');
@@ -189,6 +193,7 @@
         });
     }
 
+    /* Render autocomplete dropdown results and bind selection to accountId. */
     function renderSearchResults(customers) {
         searchDropdown.innerHTML = '';
         if (customers.length === 0) {
@@ -321,6 +326,7 @@
         var req = buildRequestBody();
         if (!req) return Promise.resolve(false);
 
+        // Include manual selections when resolving conflicts in SUGGEST mode.
         if (includeSelections) {
             updateSelectionMapFromUI();
             var selected = buildSelectedSessionsFromMap();
@@ -335,6 +341,7 @@
             btnPreview.textContent = 'Đang xem trước...';
         }
 
+        // Preview recurring sessions with conflict policy (SKIP/SUGGEST).
         return fetch(CTX + '/api/staff/recurring-booking/preview', {
             method: 'POST',
             credentials: 'same-origin',
@@ -412,6 +419,7 @@
                 return;
             }
 
+            // Confirm recurring booking and record full payment.
             fetch(CTX + '/api/staff/recurring-booking/confirm', {
                 method: 'POST',
                 credentials: 'same-origin',
@@ -848,6 +856,108 @@
         summaryTotal.textContent = previewData ? formatMoney(previewData.totalAmount || 0) : '—';
 
         updateCustomerPanel();
+        renderSummarySessions();
+    }
+
+    function renderSummarySessions() {
+        if (!summarySessions) return;
+        summarySessions.innerHTML = '';
+        if (!previewData || !(previewData.sessions || []).length) {
+            summarySessions.innerHTML = '<div class="sbr-summary-empty">Chưa có dữ liệu phiên chơi.</div>';
+            return;
+        }
+
+        var policy = conflictPolicyEl.value || 'SKIP';
+        var hasAny = false;
+
+        (previewData.sessions || []).forEach(function (session) {
+            var status = session.status;
+            if (status === 'SKIPPED') {
+                appendSummaryItem(buildSummaryItem({
+                    date: session.date,
+                    courtId: session.courtId,
+                    slotIds: session.slotIds || [],
+                    amount: session.amount,
+                    badge: { text: 'Bỏ qua', cls: 'sbr-badge-skipped' }
+                }));
+                hasAny = true;
+                return;
+            }
+
+            if (status === 'CONFLICT') {
+                if (policy === 'SUGGEST') {
+                    var chosen = selectionMap && selectionMap[session.date];
+                    if (chosen) {
+                        appendSummaryItem(buildSummaryItem({
+                            date: session.date,
+                            courtId: chosen.courtId || session.courtId,
+                            slotIds: chosen.slotIds || [],
+                            amount: session.amount,
+                            badge: { text: 'Đã chọn', cls: 'sbr-badge-ok' }
+                        }));
+                        hasAny = true;
+                    } else {
+                        appendSummaryItem(buildSummaryItem({
+                            date: session.date,
+                            courtId: session.courtId,
+                            slotIds: session.slotIds || [],
+                            amount: session.amount,
+                            badge: { text: 'Chưa chọn', cls: 'sbr-badge-conflict' }
+                        }));
+                        hasAny = true;
+                    }
+                } else {
+                    appendSummaryItem(buildSummaryItem({
+                        date: session.date,
+                        courtId: session.courtId,
+                        slotIds: session.slotIds || [],
+                        amount: session.amount,
+                        badge: { text: 'Trùng lịch', cls: 'sbr-badge-conflict' }
+                    }));
+                    hasAny = true;
+                }
+                return;
+            }
+
+            appendSummaryItem(buildSummaryItem({
+                date: session.date,
+                courtId: session.courtId,
+                slotIds: session.slotIds || [],
+                amount: session.amount,
+                badge: { text: 'OK', cls: 'sbr-badge-ok' }
+            }));
+            hasAny = true;
+        });
+
+        if (!hasAny) {
+            summarySessions.innerHTML = '<div class="sbr-summary-empty">Chưa có dữ liệu phiên chơi.</div>';
+        }
+    }
+
+    function appendSummaryItem(node) {
+        if (!summarySessions) return;
+        summarySessions.appendChild(node);
+    }
+
+    function buildSummaryItem(data) {
+        var dateLabel = formatDate(data.date);
+        var courtLabel = courtNameById(data.courtId) || ('Sân #' + data.courtId);
+        var timeRange = getTimeRangeFromSlotIds(data.slotIds || []) || {};
+        var timeText = (timeRange.startTime && timeRange.endTime) ? (timeRange.startTime + ' → ' + timeRange.endTime) : '—';
+        var amountText = formatMoney(data.amount || 0);
+
+        var item = document.createElement('div');
+        item.className = 'sbr-summary-item-line';
+        item.innerHTML =
+            '<div class="sbr-summary-main">' +
+            '<div class="sbr-summary-title">' + dateLabel + ' · ' + courtLabel + '</div>' +
+            '<div class="sbr-summary-sub">' + timeText + '</div>' +
+            '</div>' +
+            '<div class="sbr-summary-meta">' +
+            '<span class="sbr-badge ' + (data.badge ? data.badge.cls : '') + '">' + (data.badge ? data.badge.text : '') + '</span>' +
+            '<span class="sbr-summary-amount">' + amountText + '</span>' +
+            '</div>';
+        return item;
     }
 
     function getCustomerSummary() {
@@ -1106,6 +1216,24 @@
             if (a[i] !== b[i]) return false;
         }
         return true;
+    }
+
+    function getTimeRangeFromSlotIds(slotIds) {
+        if (!slotIds || !slotIds.length) return null;
+        var startTime = null;
+        var endTime = null;
+        for (var i = 0; i < slotIds.length; i++) {
+            var slot = findSlotById(slotIds[i]);
+            if (!slot) continue;
+            if (!startTime || timeToMinutes(slot.startTime) < timeToMinutes(startTime)) {
+                startTime = slot.startTime;
+            }
+            if (!endTime || timeToMinutes(slot.endTime) > timeToMinutes(endTime)) {
+                endTime = slot.endTime;
+            }
+        }
+        if (!startTime || !endTime) return null;
+        return { startTime: startTime, endTime: endTime };
     }
 
     function getTimeRangeFromSlotIds(slotIds) {

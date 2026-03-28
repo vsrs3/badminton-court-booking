@@ -71,6 +71,7 @@ var rentalState = {
 init();
 
 function init() {
+    // Read selected slots from timeline (sessionStorage) and build booking summary.
     var raw = sessionStorage.getItem('staffBookingSlots');
     if (!raw) {
         showNoData();
@@ -502,12 +503,33 @@ function renderRentalFeeSummary() {
         return;
     }
 
-    rentalFeeSummary.innerHTML = entries.map(function (entry) {
-        return '<div class="d-flex justify-content-between align-items-start border-bottom py-2"><div class="me-3">' + escapeHtml(entry.courtName) + '</div><div class="fw-semibold text-nowrap">' + formatMoney(entry.total) + '</div></div>';
-    }).join('');
+    rentalFeeSummary.innerHTML = entries.map(buildRentalFeeEntry).join('');
 
     if (rentalGrandTotal) rentalGrandTotal.textContent = formatMoney(getRentalGrandTotal());
     updateGrandSummary();
+}
+
+function buildRentalFeeEntry(entry) {
+    var slotRanges = entry.slotRanges || [];
+    var wrapperClass = 'sbc-rental-fee-slots-wrap' + (slotRanges.length > 4 ? ' has-scroll' : '');
+    var slotsHtml = slotRanges.length
+        ? '<div class="' + wrapperClass + '">' +
+          '   <div class="sbc-rental-fee-slots">' +
+          slotRanges.map(function (label) {
+              return '<span class="sbc-rental-fee-slot">' + escapeHtml(label) + '</span>';
+          }).join('') +
+          '   </div>' +
+          '</div>'
+        : '';
+
+    return '' +
+        '<div class="sbc-rental-fee-item">' +
+        '   <div class="sbc-rental-fee-copy">' +
+        '       <div class="sbc-rental-fee-court">' + escapeHtml(entry.courtName) + '</div>' +
+        slotsHtml +
+        '   </div>' +
+        '   <div class="sbc-rental-fee-total">' + formatMoney(entry.total) + '</div>' +
+        '</div>';
 }
 
 function getRentalGrandTotal() {
@@ -521,13 +543,63 @@ function getCourtRentalEntries() {
         return {
             courtId: court.courtId,
             courtName: court.courtName,
-            total: getCourtRentalTotal(court)
+            total: getCourtRentalTotal(court),
+            slotRanges: buildCourtRentalSlotRanges(court)
         };
     }).filter(function (entry) {
         return Number(entry.total || 0) > 0;
     }).sort(function (a, b) {
         return String(a.courtName).localeCompare(String(b.courtName));
     });
+}
+
+function buildCourtRentalSlotRanges(court) {
+    var configuredSlots = getConfiguredRentalSlotsForFee(court);
+    if (!configuredSlots.length) return [];
+
+    var mergedRanges = [];
+    var currentRange = {
+        startTime: configuredSlots[0].startTime,
+        endTime: configuredSlots[0].endTime
+    };
+
+    for (var i = 1; i < configuredSlots.length; i++) {
+        var slot = configuredSlots[i];
+        if (toMinutes(currentRange.endTime) === toMinutes(slot.startTime)) {
+            currentRange.endTime = slot.endTime;
+        } else {
+            mergedRanges.push(formatRentalSlotRange(currentRange.startTime, currentRange.endTime));
+            currentRange = {
+                startTime: slot.startTime,
+                endTime: slot.endTime
+            };
+        }
+    }
+
+    mergedRanges.push(formatRentalSlotRange(currentRange.startTime, currentRange.endTime));
+    return mergedRanges;
+}
+
+function getConfiguredRentalSlotsForFee(court) {
+    return ((court && court.slots) || []).filter(function (slot) {
+        return (rentalState.savedBySlot[slot.slotKey] || []).length > 0;
+    }).slice().sort(function (a, b) {
+        if (toMinutes(a.startTime) === toMinutes(b.startTime)) {
+            return Number(a.slotId || 0) - Number(b.slotId || 0);
+        }
+        return toMinutes(a.startTime) - toMinutes(b.startTime);
+    });
+}
+
+function formatRentalSlotRange(startTime, endTime) {
+    return formatRentalSummaryTime(startTime) + '-' + formatRentalSummaryTime(endTime);
+}
+
+function formatRentalSummaryTime(timeText) {
+    var normalized = normalizeTime(timeText);
+    var parts = normalized.split(':');
+    if (parts.length < 2) return normalized;
+    return Number(parts[0]) + ':' + String(parts[1]).padStart(2, '0');
 }
 
 function computeItemsTotal(items) {
@@ -547,6 +619,7 @@ function loadRentalInventory() {
 
     var slot = rentalState.selectedSlot;
     var slotKey = slot.slotKey;
+    // Load rentable inventory for the selected slot.
     var url = CTX + '/api/staff/rental/schedule/inventory' +
         '?bookingDate=' + encodeURIComponent(bookingData.date || '') +
         '&courtId=' + encodeURIComponent(slot.courtId) +
@@ -739,6 +812,7 @@ function findInventoryItemById(inventoryId) {
 }
 
 async function requestSaveSlotRentalSchedule(slot, items) {
+    // Save per-slot rental selections for the proxy booking flow.
     var res = await fetch(CTX + '/api/staff/rental/schedule/save', {
         method: 'POST',
         credentials: 'same-origin',
@@ -987,6 +1061,7 @@ function bindSearchEvents() {
         }
 
         clearTimeout(searchTimer);
+        // Debounce input and fetch suggestions after min 2 chars.
         searchTimer = setTimeout(function () {
             fetch(CTX + '/api/staff/customer/search?q=' + encodeURIComponent(keyword), {
                 credentials: 'same-origin',
@@ -1003,6 +1078,7 @@ function bindSearchEvents() {
         }, 300);
     });
 
+    // Hide dropdown when clicking outside.
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.sbc-search-wrap')) {
             searchDropdown.classList.add('d-none');
@@ -1172,6 +1248,7 @@ function bindSubmitEvent() {
     btnSubmit.addEventListener('click', async function () {
         hideError();
 
+        // Customer type: ACCOUNT vs GUEST with required fields.
         if (customerType === 'ACCOUNT') {
             if (!selectedAccountId || !selectedAccountId.value) {
                 showError('Vui lòng tìm và chọn khách hàng.');
@@ -1199,6 +1276,7 @@ function bindSubmitEvent() {
             return { courtId: slot.courtId, slotId: slot.slotId };
         });
 
+        // Build rental payload per slot and calculate totals.
         var rentalPayload = [];
         (rentalState.courts || []).forEach(function (court) {
             (court.slots || []).forEach(function (slot) {
@@ -1247,6 +1325,7 @@ function bindSubmitEvent() {
             var body = await res.json();
             if (!body.success) {
                 if (body.code === 'GUEST_PHONE_MATCHED_ACCOUNT' && body.data && body.data.accountId) {
+                    // Guest phone matches existing account -> prompt switch to ACCOUNT.
                     var confirmed = await confirmGuestPhoneMatched(body.data);
                     if (confirmed) {
                         switchToAccountMode(body.data);
@@ -1271,6 +1350,7 @@ function bindSubmitEvent() {
     });
 }
 
+/* Render autocomplete dropdown results and bind selection to accountId. */
 function renderSearchResults(customers) {
     if (!searchDropdown) return;
     searchDropdown.innerHTML = '';

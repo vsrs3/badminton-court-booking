@@ -58,6 +58,9 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 
+    /**
+     * Builds a booking snapshot summary (slots + invoice + etag) for edit preview.
+     */
     private String handlePreview(Connection conn, int facilityId, String body) throws Exception {
         int bookingId = parseInt(StaffBookingSnapshotTokenUtil.extractString(body, "bookingId"));
         if (bookingId <= 0) {
@@ -92,6 +95,9 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         return json.toString();
     }
 
+    /**
+     * Saves timeline edit changes (add/remove slots) with optimistic snapshot validation.
+     */
     private String handleSave(Connection conn, int facilityId, int staffId, String body) throws Exception {
         int bookingId = parseInt(StaffBookingSnapshotTokenUtil.extractString(body, "bookingId"));
         String etag = StaffBookingSnapshotTokenUtil.extractString(body, "etag");
@@ -99,10 +105,11 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
         List<SlotPair> addSlots = parseSlotPairs(body, "addSlots");
         Set<Integer> removeSlotIds = parseIntSet(body, "removeBookingSlotIds");
-
+        // Require explicit confirmation before canceling all remaining slots.
         if (bookingId <= 0 || etag == null || etag.isEmpty()) {
             throw new ApiException(400, "Thiếu bookingId hoặc etag");
         }
+        // Reject empty edit payloads to avoid no-op saves.
         if (addSlots.isEmpty() && removeSlotIds.isEmpty()) {
             throw new ApiException(400, "Không có thay đổi để lưu");
         }
@@ -110,24 +117,42 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         conn.setAutoCommit(false);
         conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
         try {
+            /*
+             * Cancel-remaining transaction flow:
+             * 1) Validate snapshot + booking status with etag.
+             * 2) Cancel all remaining PENDING slots (removes attached rentals).
+             * 3) Recalculate invoice and recompute booking status.
+             * 4) Write audit log, enqueue email, return updated etag.
+             */
             StaffBookingSnapshotTokenUtil.Snapshot before = assertConfirmedSnapshot(conn, bookingId, facilityId, etag);
             String beforeEtag = StaffBookingSnapshotTokenUtil.computeEtag(before);
-
+            // Only allow removing PENDING slots from the original booking.
             ensureEditableRemovals(conn, bookingId, removeSlotIds);
+            // Avoid duplicate courtId-slotId pairs in the add list.
             ensureNoDuplicateAddPairs(addSlots);
+            // Enforce session rule (>= 2 consecutive slots per court) after edits.
             validateSessionRuleAfterEdit(conn, bookingId, removeSlotIds, addSlots);
 
+            Map<Integer, BigDecimal> removedRentalBySlotId = new HashMap<>();
             for (Integer bookingSlotId : removeSlotIds) {
-                cancelPendingSlot(conn, bookingId, bookingSlotId);
+                // Cancel only PENDING slots; leave other play history intact.
+                BigDecimal rentalRemoved = cancelPendingSlot(conn, bookingId, bookingSlotId);
+                if (rentalRemoved.compareTo(BigDecimal.ZERO) > 0) {
+                    removedRentalBySlotId.put(bookingSlotId, rentalRemoved);
+                }
             }
 
             LocalDate bookingDate = LocalDate.parse(before.bookingDate);
+            // Prevent adding slots that are already in the past.
             ensureAddSlotsNotExpired(conn, bookingDate, addSlots);
             for (SlotPair slot : addSlots) {
                 upsertPendingSlot(conn, bookingId, facilityId, bookingDate, slot);
             }
 
-            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =
+                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);
+            // Recompute invoice totals and booking status after slot changes.
+            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots, removedRentalBySlotId);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -175,6 +200,13 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         conn.setAutoCommit(false);
         conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
         try {
+            /*
+             * Release NO_SHOW slot before session end:
+             * 1) Validate snapshot + booking status (CONFIRMED/COMPLETED) with etag.
+             * 2) Ensure slot is NO_SHOW and session end is still in the future.
+             * 3) Remove CourtSlotBooking lock + mark BookingSlot as released.
+             * 4) Return updated etag for UI refresh.
+             */
             StaffBookingSnapshotTokenUtil.Snapshot before = assertReleaseSnapshot(conn, bookingId, facilityId, etag);
             String beforeEtag = StaffBookingSnapshotTokenUtil.computeEtag(before);
 
@@ -203,6 +235,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
 
             boolean changed = false;
             if (!slot.isReleased()) {
+                // Free the court-time lock then mark the slot as released.
                 repository.deleteCourtSlotBooking(conn, bookingSlotId);
                 repository.markSlotReleased(conn, bookingSlotId);
                 changed = true;
@@ -230,14 +263,16 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             conn.setAutoCommit(true);
         }
     }
-
+    /**
+     * Cancels all remaining PENDING slots in a booking and recomputes invoice/status.
+     */
     private String handleCancel(Connection conn, int facilityId, int staffId, String body) throws Exception {
         int bookingId = parseInt(StaffBookingSnapshotTokenUtil.extractString(body, "bookingId"));
         String etag = StaffBookingSnapshotTokenUtil.extractString(body, "etag");
         String reason = trimToNull(StaffBookingSnapshotTokenUtil.extractString(body, "reason"));
         boolean confirmAllRemaining = "true".equalsIgnoreCase(
                 String.valueOf(StaffBookingSnapshotTokenUtil.extractString(body, "confirmAllRemaining")));
-
+        // Require explicit confirmation before canceling all remaining slots.
         if (bookingId <= 0 || etag == null || etag.isEmpty()) {
             throw new ApiException(400, "Thiếu bookingId hoặc etag");
         }
@@ -251,6 +286,13 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         conn.setAutoCommit(false);
         conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
         try {
+            /*
+             * Cancel-remaining transaction flow:
+             * 1) Validate snapshot + booking status with etag.
+             * 2) Cancel all remaining PENDING slots (removes attached rentals).
+             * 3) Recalculate invoice and recompute booking status.
+             * 4) Write audit log, enqueue email, return updated etag.
+             */
             StaffBookingSnapshotTokenUtil.Snapshot before = assertConfirmedSnapshot(conn, bookingId, facilityId, etag);
             String beforeEtag = StaffBookingSnapshotTokenUtil.computeEtag(before);
 
@@ -258,11 +300,19 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             if (pendingSlotIds.isEmpty()) {
                 throw new ApiException(400, "Không còn slot PENDING để hủy");
             }
+            Map<Integer, BigDecimal> removedRentalBySlotId = new HashMap<>();
             for (Integer bookingSlotId : pendingSlotIds) {
-                cancelPendingSlot(conn, bookingId, bookingSlotId);
+                // Cancel only PENDING slots; leave other play history intact.
+                BigDecimal rentalRemoved = cancelPendingSlot(conn, bookingId, bookingSlotId);
+                if (rentalRemoved.compareTo(BigDecimal.ZERO) > 0) {
+                    removedRentalBySlotId.put(bookingSlotId, rentalRemoved);
+                }
             }
 
-            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =                 StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots);
+            StaffBookingSnapshotTokenUtil.Snapshot afterSlots =
+                    StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, facilityId);
+            // Recalculate invoice totals and booking status after cancel.
+            InvoiceUpdateResult invoice = recalcInvoice(conn, bookingId, reason, before, afterSlots, removedRentalBySlotId);
             String nextBookingStatus = recomputeBookingStatus(conn, bookingId);
             repository.updateBookingStatus(conn, bookingId, nextBookingStatus);
 
@@ -426,12 +476,16 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 
-    private void cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
+    private BigDecimal cancelPendingSlot(Connection conn, int bookingId, int bookingSlotId) throws Exception {
         int affected = repository.cancelPendingSlot(conn, bookingId, bookingSlotId);
         if (affected == 0) {
             throw new ApiException(400, "Không thể hủy slot không ở trạng thái PENDING");
         }
+        BigDecimal rentalTotal = repository.sumRentalAmountByBookingSlotId(conn, bookingSlotId);
+        repository.deleteInventoryRentalScheduleByBookingSlotId(conn, bookingSlotId);
+        repository.deleteRacketRentalByBookingSlotId(conn, bookingSlotId);
         repository.deleteCourtSlotBooking(conn, bookingSlotId);
+        return rentalTotal != null ? rentalTotal : BigDecimal.ZERO;
     }
 
     private void upsertPendingSlot(Connection conn, int bookingId, int facilityId,
@@ -442,6 +496,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         if (price == null) {
             throw new ApiException(400, "Không tìm thấy giá cho slot thêm mới");
         }
+
+        java.sql.Timestamp adjacentCheckinTime =
+                repository.findAdjacentCheckedInTime(conn, bookingId, slot.courtId, slot.slotId);
+        boolean shouldInheritCheckedIn = adjacentCheckinTime != null;
 
         int bookingSlotId;
         if (existing != null && existing.getBookingSlotId() != null) {
@@ -454,6 +512,10 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             bookingSlotId = repository.insertPendingSlot(conn, bookingId, slot.courtId, slot.slotId, price);
         }
 
+        if (shouldInheritCheckedIn) {
+            repository.updateSlotCheckedIn(conn, bookingSlotId, adjacentCheckinTime);
+        }
+
         try {
             repository.insertCourtSlotBooking(conn, slot.courtId, bookingDate, slot.slotId, bookingSlotId);
         } catch (SQLException e) {
@@ -461,11 +523,18 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 
+    /**
+     * Recalculates invoice totals and refund eligibility after edit/cancel/release.
+     */
     private InvoiceUpdateResult recalcInvoice(Connection conn, int bookingId, String reason,
                                               StaffBookingSnapshotTokenUtil.Snapshot before,
-                                              StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
-        BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId);
+                                              StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
+                                              Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
+        // Compute total = active slot prices + rentals.
+        BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId)
+                .add(repository.sumRentalAmount(conn, bookingId));
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
+        String previousPaymentStatus = repository.findPaymentStatus(conn, bookingId);
 
         BigDecimal overpaid = paidAmount.subtract(totalAmount);
         if (overpaid.compareTo(BigDecimal.ZERO) < 0) {
@@ -477,6 +546,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         String refundNote = null;
 
         if (overpaid.compareTo(BigDecimal.ZERO) > 0) {
+            // Refund eligibility: within 24 hours and no played/no-show slots.
             boolean eligible = true;
 
             java.time.LocalDateTime createdAt = repository.findBookingCreatedAt(conn, bookingId);
@@ -489,7 +559,8 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             }
 
             if (eligible) {
-                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots);
+                // RefundDue = min(overpaid, eligible diff from removed slots + rentals).
+                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots, removedRentalBySlotId);
                 refundDue = overpaid.min(eligibleDiff);
                 if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
                     refundStatus = "PENDING_MANUAL";
@@ -504,9 +575,16 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             }
         }
 
+        // Update paymentStatus based on total vs paid.
         String paymentStatus;
         if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
-            paymentStatus = "PAID";
+            if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+                paymentStatus = (previousPaymentStatus != null && !previousPaymentStatus.isEmpty())
+                        ? previousPaymentStatus
+                        : "UNPAID";
+            } else {
+                paymentStatus = "PAID";
+            }
         } else if (paidAmount.compareTo(BigDecimal.ZERO) == 0) {
             paymentStatus = "UNPAID";
         } else if (paidAmount.compareTo(totalAmount) >= 0) {
@@ -515,6 +593,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             paymentStatus = "PARTIAL";
         }
 
+        // Persist updated totals and refund fields.
         repository.updateInvoiceAfterRecalc(conn, bookingId, totalAmount, refundDue, refundStatus, refundNote, paymentStatus);
 
         InvoiceUpdateResult r = new InvoiceUpdateResult();
@@ -526,6 +605,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         return r;
     }
 
+    // Disallow refunds if any slot is already played or marked no-show.
     private boolean hasIneligiblePlayStatus(StaffBookingSnapshotTokenUtil.Snapshot before) {
         if (before == null || before.slots == null) return false;
         for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : before.slots) {
@@ -537,9 +617,15 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         return false;
     }
 
+    /*
+     * Refund eligibility calculation:
+     * - Compare before vs after slot amounts (plus removed rentals).
+     * - Only include sessions starting > 24h from now.
+     */
     private BigDecimal computeEligibleDiffAmount(Connection conn,
                                                  StaffBookingSnapshotTokenUtil.Snapshot before,
-                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots) throws Exception {
+                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
+                                                 Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
         if (before == null || afterSlots == null) return BigDecimal.ZERO;
 
         java.time.LocalDate bookingDate;
@@ -579,7 +665,12 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                 afterAmt = parseMoney(after.price);
             }
 
-            BigDecimal delta = beforeAmt.subtract(afterAmt);
+            BigDecimal rentalDelta = BigDecimal.ZERO;
+            if (removedRentalBySlotId != null && (after == null || "CANCELLED".equals(after.slotStatus))) {
+                rentalDelta = removedRentalBySlotId.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO);
+            }
+
+            BigDecimal delta = beforeAmt.subtract(afterAmt).add(rentalDelta);
             if (delta.compareTo(BigDecimal.ZERO) <= 0) continue;
 
             java.time.LocalTime sessionStart = sessionStartBySlotId.get(slot.bookingSlotId);
@@ -902,6 +993,13 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         }
     }
 }
+
+
+
+
+
+
+
 
 
 

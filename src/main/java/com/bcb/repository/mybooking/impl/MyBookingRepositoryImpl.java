@@ -1,6 +1,7 @@
 package com.bcb.repository.mybooking.impl;
 
 import com.bcb.dto.mybooking.BookingSlotDetailDTO;
+import com.bcb.dto.mybooking.BookingSlotRentalItemDTO;
 import com.bcb.dto.mybooking.MyBookingDetailDTO;
 import com.bcb.dto.mybooking.MyBookingListDTO;
 import com.bcb.exception.DataAccessException;
@@ -11,7 +12,9 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -268,39 +271,31 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             "SELECT bs.booking_slot_id, bs.booking_date, c.court_name, " +
             "       FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm') AS start_time, " +
             "       FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm') AS end_time, " +
-            "       bs.price, bs.slot_status " +
+            "       bs.price, bs.slot_status, " +
+            "       rr.inventory_id, i.name AS inventory_name, rr.unit_price, " +
+            "       ISNULL(SUM(rr.quantity), 0) AS rental_quantity, " +
+            "       ISNULL(SUM(rr.quantity * rr.unit_price), 0) AS rental_line_total " +
             "FROM BookingSlot bs " +
             "JOIN Court c ON bs.court_id = c.court_id " +
             "JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
+            "LEFT JOIN RacketRental rr ON rr.booking_slot_id = bs.booking_slot_id " +
+            "LEFT JOIN Inventory i ON rr.inventory_id = i.inventory_id " +
             "WHERE bs.booking_id = ? " +
-            "ORDER BY bs.booking_date, ts.start_time, c.court_name";
+            "GROUP BY bs.booking_slot_id, bs.booking_date, c.court_name, ts.start_time, ts.end_time, " +
+            "         bs.price, bs.slot_status, rr.inventory_id, i.name, rr.unit_price " +
+            "ORDER BY bs.booking_date, ts.start_time, c.court_name, i.name";
 
-        List<BookingSlotDetailDTO> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, bookingId);
 
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    BookingSlotDetailDTO dto = new BookingSlotDetailDTO();
-                    dto.setBookingSlotId(rs.getInt("booking_slot_id"));
-                    dto.setCourtName(rs.getString("court_name"));
-                    dto.setStartTime(rs.getString("start_time"));
-                    dto.setEndTime(rs.getString("end_time"));
-                    dto.setPrice(rs.getBigDecimal("price"));
-                    dto.setSlotStatus(rs.getString("slot_status"));
-                    Date bookingDate = rs.getDate("booking_date");
-                    if (bookingDate != null) {
-                        dto.setBookingDate(bookingDate.toLocalDate());
-                    }
-                    list.add(dto);
-                }
+                return extractSlotDetails(rs);
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to find slots by booking ID", e);
         }
-        return list;
     }
 
     /** {@inheritDoc} */
@@ -359,14 +354,20 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             "SELECT bs.booking_slot_id, bs.booking_date, c.court_name, " +
             "       FORMAT(CAST(ts.start_time AS DATETIME), 'HH:mm') AS start_time, " +
             "       FORMAT(CAST(ts.end_time AS DATETIME), 'HH:mm') AS end_time, " +
-            "       bs.price, bs.slot_status " +
+            "       bs.price, bs.slot_status, " +
+            "       rr.inventory_id, i.name AS inventory_name, rr.unit_price, " +
+            "       ISNULL(SUM(rr.quantity), 0) AS rental_quantity, " +
+            "       ISNULL(SUM(rr.quantity * rr.unit_price), 0) AS rental_line_total " +
             "FROM BookingSlot bs " +
             "JOIN Court c ON bs.court_id = c.court_id " +
             "JOIN TimeSlot ts ON bs.slot_id = ts.slot_id " +
+            "LEFT JOIN RacketRental rr ON rr.booking_slot_id = bs.booking_slot_id " +
+            "LEFT JOIN Inventory i ON rr.inventory_id = i.inventory_id " +
             "WHERE bs.booking_id = ? AND bs.booking_date IN (" + placeholders + ") " +
-            "ORDER BY bs.booking_date " + order + ", ts.start_time, c.court_name";
+            "GROUP BY bs.booking_slot_id, bs.booking_date, c.court_name, ts.start_time, ts.end_time, " +
+            "         bs.price, bs.slot_status, rr.inventory_id, i.name, rr.unit_price " +
+            "ORDER BY bs.booking_date " + order + ", ts.start_time, c.court_name, i.name";
 
-        List<BookingSlotDetailDTO> list = new ArrayList<>();
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -377,26 +378,54 @@ public class MyBookingRepositoryImpl implements MyBookingRepository {
             }
 
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    BookingSlotDetailDTO dto = new BookingSlotDetailDTO();
-                    dto.setBookingSlotId(rs.getInt("booking_slot_id"));
-                    dto.setCourtName(rs.getString("court_name"));
-                    dto.setStartTime(rs.getString("start_time"));
-                    dto.setEndTime(rs.getString("end_time"));
-                    dto.setPrice(rs.getBigDecimal("price"));
-                    dto.setSlotStatus(rs.getString("slot_status"));
-
-                    Date bookingDate = rs.getDate("booking_date");
-                    if (bookingDate != null) {
-                        dto.setBookingDate(bookingDate.toLocalDate());
-                    }
-                    list.add(dto);
-                }
+                return extractSlotDetails(rs);
             }
         } catch (SQLException e) {
             throw new DataAccessException("Failed to find slots by booking dates", e);
         }
-        return list;
+    }
+
+    private List<BookingSlotDetailDTO> extractSlotDetails(ResultSet rs) throws SQLException {
+        Map<Integer, BookingSlotDetailDTO> slotMap = new LinkedHashMap<>();
+
+        while (rs.next()) {
+            int bookingSlotId = rs.getInt("booking_slot_id");
+            BookingSlotDetailDTO dto = slotMap.get(bookingSlotId);
+            if (dto == null) {
+                dto = new BookingSlotDetailDTO();
+                dto.setBookingSlotId(bookingSlotId);
+                dto.setCourtName(rs.getString("court_name"));
+                dto.setStartTime(rs.getString("start_time"));
+                dto.setEndTime(rs.getString("end_time"));
+                dto.setPrice(rs.getBigDecimal("price"));
+                dto.setSlotStatus(rs.getString("slot_status"));
+
+                Date bookingDate = rs.getDate("booking_date");
+                if (bookingDate != null) {
+                    dto.setBookingDate(bookingDate.toLocalDate());
+                }
+                slotMap.put(bookingSlotId, dto);
+            }
+
+            Integer inventoryId = (Integer) rs.getObject("inventory_id");
+            if (inventoryId == null) {
+                continue;
+            }
+
+            BookingSlotRentalItemDTO item = new BookingSlotRentalItemDTO();
+            item.setInventoryId(inventoryId);
+            item.setInventoryName(rs.getString("inventory_name"));
+            item.setQuantity(rs.getInt("rental_quantity"));
+            item.setUnitPrice(rs.getBigDecimal("unit_price"));
+            item.setLineTotal(rs.getBigDecimal("rental_line_total"));
+            dto.getRentalItems().add(item);
+
+            BigDecimal currentTotal = dto.getRentalTotal() != null ? dto.getRentalTotal() : BigDecimal.ZERO;
+            BigDecimal lineTotal = item.getLineTotal() != null ? item.getLineTotal() : BigDecimal.ZERO;
+            dto.setRentalTotal(currentTotal.add(lineTotal));
+        }
+
+        return new ArrayList<>(slotMap.values());
     }
 
     /** {@inheritDoc} */

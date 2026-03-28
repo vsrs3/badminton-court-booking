@@ -11,7 +11,7 @@
 
     <div class="sidebar-nav">
         <a href="${pageContext.request.contextPath}/owner/dashboard"
-           class="nav-link ${pageContext.request.requestURI.contains('/dashboard') ? 'active' : ''}">
+           class="nav-link ${(pageContext.request.requestURI.contains('/dashboard') || pageContext.request.requestURI.contains('/rental-report')) ? 'active' : ''}">
             <i class="bi bi-speedometer2"></i>
             <span>Bảng điều khiển</span>
         </a>
@@ -46,7 +46,7 @@
 				<span>Cộng Đồng</span>
 			</a>
 		<%-- Settings --%>
-		<a href="#"
+		<a href="${pageContext.request.contextPath}/owner/setting/"
 			class="nav-link ${pageContext.request.requestURI.contains('/settings') ? 'active' : ''}">
 			<i class="bi bi-gear"></i> <span>Cài Đặt</span>
 		</a>

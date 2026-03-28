@@ -28,6 +28,8 @@
         activePage = "timeline";
     } else if (fullPath.contains("/refunds")) {
         activePage = "refunds";
+    } else if (fullPath.contains("/setting")) {
+        activePage = "setting";
     }
     request.setAttribute("_activePage", activePage);
 %>
@@ -109,6 +111,12 @@
             <i class="bi bi-bag-check"></i>
             <span>Danh Sách Đồ Thuê</span>
         </a>
+        
+        <%-- Settings --%>
+		<a href="${pageContext.request.contextPath}/staff/setting/"
+			class="nav-link ${_activePage == 'setting' ? 'active' : ''}">
+			<i class="bi bi-gear"></i> <span>Cài Đặt</span>
+		</a>
 
         <%-- Divider + Logout --%>
         <div class="mt-auto pt-4">

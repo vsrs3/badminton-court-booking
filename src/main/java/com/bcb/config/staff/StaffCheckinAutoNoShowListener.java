@@ -24,6 +24,7 @@ public class StaffCheckinAutoNoShowListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        // Run every minute to mark overdue PENDING sessions as NO_SHOW.
         LOG.info("Starting staff auto no-show cron (every 1 minute)...");
         StaffCheckinAutoNoShowService service = new StaffCheckinAutoNoShowServiceImpl();
 

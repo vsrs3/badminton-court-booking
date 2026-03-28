@@ -19,6 +19,7 @@ public class CheckinAutoCheckoutSchedulerListener implements ServletContextListe
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
+        // Run every 15 minutes to check out overdue CHECKED_IN sessions.
         LOG.info("Starting auto-checkout scheduler (every 15 minutes)...");
         StaffCheckinServiceImpl service = new StaffCheckinServiceImpl();
 

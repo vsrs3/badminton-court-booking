@@ -97,6 +97,9 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
         return slots;
     }
 
+    /**
+     * Fetches booked cells for a given facility and date to render in the daily timeline.
+     */
     @Override
     public List<StaffTimelineBookedCellDTO> findBookedCells(int facilityId, LocalDate bookingDate) throws Exception {
         String sql = """
@@ -136,6 +139,9 @@ public class StaffTimelineRepositoryImpl implements StaffTimelineRepository {
         return cells;
     }
 
+    /**
+     * Fetches blocked/exception cells that should appear as DISABLED in the daily timeline.
+     */
     @Override
     public List<StaffTimelineDisabledCellDTO> findDisabledCells(int facilityId, LocalDate bookingDate,
                                                                 String openTime, String closeTime) throws Exception {

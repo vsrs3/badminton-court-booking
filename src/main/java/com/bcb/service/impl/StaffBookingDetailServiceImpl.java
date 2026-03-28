@@ -21,6 +21,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
 
     private final StaffBookingDetailRepository repository = new StaffBookingDetailRepositoryImpl();
 
+    /**
+     * Builds booking detail with sessions, invoice, rental rows, totals, and etag.
+     */
     @Override
     public StaffBookingDetailDataDTO getBookingDetail(int bookingId, int staffFacilityId) throws Exception {
         try (Connection conn = DBContext.getConnection()) {
@@ -45,6 +48,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             data.setCustomerType(header.getCustomerType());
             data.setSlots(allSlots);
 
+            // Invoice totals include court + rental totals.
             // Invoice
             StaffBookingDetailInvoiceDTO invoice = repository.findInvoice(conn, bookingId);
             data.setInvoice(invoice);
@@ -57,8 +61,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             data.setSessions(sessions);
 
             // Rental rows
-            List<StaffBookingDetailRentalRowDTO> rawRentalRows = repository.findBookingRentalRows(conn, bookingId);
-            List<StaffBookingDetailRentalRowDTO> rentalRows = buildRentalRows(rawRentalRows);
+            List<StaffBookingDetailRentalRowDTO> rentalRows = repository.findBookingRentalRows(conn, bookingId);
             data.setRentalRows(rentalRows);
 
             BigDecimal courtTotal = calculateCourtTotal(allSlots);
@@ -73,6 +76,13 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             }
             data.setGrandTotal(grandTotal);
 
+            BigDecimal originalCourtTotal = calculateCourtTotalIncludingCancelled(allSlots);
+            data.setOriginalCourtTotal(originalCourtTotal);
+
+            BigDecimal originalGrandTotal = originalCourtTotal.add(rentalTotal);
+            data.setOriginalGrandTotal(originalGrandTotal);
+
+            // Etag computed from booking snapshot for optimistic updates.
             // Snapshot / Etag
             StaffBookingSnapshotTokenUtil.Snapshot snapshot =
                     StaffBookingSnapshotTokenUtil.loadSnapshot(conn, bookingId, staffFacilityId);
@@ -103,6 +113,13 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             }
         }
 
+        BigDecimal originalTotalPrice = BigDecimal.ZERO;
+        for (StaffBookingDetailSlotDTO slot : session) {
+            if (slot.getPrice() != null) {
+                originalTotalPrice = originalTotalPrice.add(slot.getPrice());
+            }
+        }
+
         int displaySlotCount = activeSlots.isEmpty() ? session.size() : activeSlots.size();
 
         StaffBookingDetailSessionDTO dto = new StaffBookingDetailSessionDTO();
@@ -114,6 +131,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         dto.setEndTime(last.getEndTime());
         dto.setSlotCount(displaySlotCount);
         dto.setTotalPrice(totalPrice);
+        dto.setOriginalTotalPrice(originalTotalPrice);
         dto.setSessionStatus(sessionStatus);
         dto.setCheckinTime(first.getCheckinTime());
         dto.setCheckoutTime(last.getCheckoutTime());
@@ -129,7 +147,7 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
     }
 
     /**
-     * Tính tổng tiền thuê đồ từ danh sách rental rows đã gộp.
+     * Calculates total rental amount from aggregated rental rows.
      */
     private BigDecimal calculateRentalTotal(List<StaffBookingDetailRentalRowDTO> rentalRows) {
         BigDecimal total = BigDecimal.ZERO;
@@ -162,68 +180,25 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
         return total;
     }
 
-    /**
-     * Gộp các dòng thuê đồ theo rule:
-     * - cùng sân
-     * - slot liền kề
-     * - danh sách đồ thuê giống nhau
-     * thì gộp thành 1 dòng
-     *
-     * rawRows đầu vào nên được repository trả về theo thứ tự:
-     * court_name ASC, start_time ASC
-     */
-    private List<StaffBookingDetailRentalRowDTO> buildRentalRows(List<StaffBookingDetailRentalRowDTO> rawRows) {
-        List<StaffBookingDetailRentalRowDTO> result = new ArrayList<>();
-        if (rawRows == null || rawRows.isEmpty()) {
-            return result;
+    private BigDecimal calculateCourtTotalIncludingCancelled(List<StaffBookingDetailSlotDTO> slots) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (slots == null) {
+            return total;
         }
 
-        StaffBookingDetailRentalRowDTO current = cloneRentalRow(rawRows.get(0));
-
-        for (int i = 1; i < rawRows.size(); i++) {
-            StaffBookingDetailRentalRowDTO next = rawRows.get(i);
-
-            boolean sameCourt = safeEquals(current.getCourtName(), next.getCourtName());
-            boolean consecutive = safeEquals(current.getEndTime(), next.getStartTime());
-            boolean sameItems = safeEquals(current.getRentalItemsText(), next.getRentalItemsText());
-
-            if (sameCourt && consecutive && sameItems) {
-                current.setEndTime(next.getEndTime());
-
-                BigDecimal currTotal = current.getRentalTotal() != null
-                        ? current.getRentalTotal()
-                        : BigDecimal.ZERO;
-                BigDecimal nextTotal = next.getRentalTotal() != null
-                        ? next.getRentalTotal()
-                        : BigDecimal.ZERO;
-
-                current.setRentalTotal(currTotal.add(nextTotal));
-            } else {
-                result.add(current);
-                current = cloneRentalRow(next);
+        for (StaffBookingDetailSlotDTO slot : slots) {
+            if (slot == null) continue;
+            if (slot.getPrice() != null) {
+                total = total.add(slot.getPrice());
             }
         }
 
-        result.add(current);
-        return result;
+        return total;
     }
 
-    private StaffBookingDetailRentalRowDTO cloneRentalRow(StaffBookingDetailRentalRowDTO src) {
-        StaffBookingDetailRentalRowDTO dto = new StaffBookingDetailRentalRowDTO();
-        dto.setCourtName(src.getCourtName());
-        dto.setStartTime(src.getStartTime());
-        dto.setEndTime(src.getEndTime());
-        dto.setRentalItemsText(src.getRentalItemsText());
-        dto.setRentalTotal(src.getRentalTotal());
-        return dto;
-    }
-
-    private boolean safeEquals(String a, String b) {
-        if (a == null && b == null) return true;
-        if (a == null || b == null) return false;
-        return a.equals(b);
-    }
-
+    /**
+     * Groups slots into sessions by court, date, consecutive time, and status boundaries.
+     */
     private List<List<StaffBookingDetailSlotDTO>> groupIntoSessions(List<StaffBookingDetailSlotDTO> slots) {
         List<List<StaffBookingDetailSlotDTO>> sessions = new ArrayList<>();
         if (slots.isEmpty()) return sessions;
@@ -238,8 +213,9 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
             boolean sameCourt = prev.getCourtId() == curr.getCourtId();
             boolean consecutive = prev.getEndTime().equals(curr.getStartTime());
             boolean sameDate = safeDate(prev.getBookingDate()).equals(safeDate(curr.getBookingDate()));
+            boolean splitByStatus = shouldSplitByStatus(prev.getSlotStatus(), curr.getSlotStatus());
 
-            if (sameCourt && consecutive && sameDate) {
+            if (sameCourt && consecutive && sameDate && !splitByStatus) {
                 current.add(curr);
             } else {
                 sessions.add(current);
@@ -261,6 +237,18 @@ public class StaffBookingDetailServiceImpl implements StaffBookingDetailService 
 
     private String safeDate(String date) {
         return date == null ? "" : date;
+    }
+
+    private boolean shouldSplitByStatus(String prevStatus, String currStatus) {
+        boolean prevFinished = isFinishedStatus(prevStatus);
+        boolean currFinished = isFinishedStatus(currStatus);
+        boolean prevPending = "PENDING".equals(prevStatus);
+        boolean currPending = "PENDING".equals(currStatus);
+        return (prevFinished && currPending) || (prevPending && currFinished);
+    }
+
+    private boolean isFinishedStatus(String status) {
+        return "CHECK_OUT".equals(status) || "NO_SHOW".equals(status);
     }
 
     private String deriveSessionStatus(List<StaffBookingDetailSlotDTO> session) {

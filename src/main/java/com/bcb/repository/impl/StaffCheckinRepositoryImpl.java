@@ -14,6 +14,9 @@ import java.util.List;
 
 public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
 
+    /**
+     * Loads booking header for session validation (status/date/facility).
+     */
     @Override
     public StaffCheckinBookingDTO findBooking(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT booking_status, booking_date, facility_id FROM Booking WHERE booking_id = ?";
@@ -32,6 +35,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Loads invoice payment status for check-in/out eligibility.
+     */
     @Override
     public String findInvoicePaymentStatus(Connection conn, int bookingId) throws Exception {
         String sql = "SELECT payment_status FROM Invoice WHERE booking_id = ?";
@@ -44,6 +50,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Loads slot rows for session grouping and status checks.
+     */
     @Override
     public List<StaffCheckinSessionSlotRowDTO> findSessionSlotRows(Connection conn, int bookingId) throws Exception {
         String sql = """
@@ -51,7 +60,8 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
                        bs.court_id,
                        COALESCE(bs.booking_date, b.booking_date) AS session_date,
                        ts.start_time,
-                       ts.end_time
+                       ts.end_time,
+                       bs.slot_status
                 FROM BookingSlot bs
                 JOIN Booking b ON b.booking_id = bs.booking_id
                 JOIN TimeSlot ts ON bs.slot_id = ts.slot_id
@@ -71,6 +81,7 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
                     row.setSessionDate(sessionDate != null ? sessionDate.toLocalDate() : null);
                     row.setStartTime(rs.getTime("start_time").toLocalTime());
                     row.setEndTime(rs.getTime("end_time").toLocalTime());
+                    row.setSlotStatus(rs.getString("slot_status"));
                     rows.add(row);
                 }
             }
@@ -108,6 +119,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         return statuses;
     }
 
+    /**
+     * Updates slots to CHECKED_IN with a shared timestamp.
+     */
     @Override
     public void updateSlotsCheckedIn(Connection conn, List<Integer> slotIds, Timestamp checkinTime) throws Exception {
         for (int slotId : slotIds) {
@@ -120,6 +134,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Updates slots to CHECK_OUT with a shared timestamp.
+     */
     @Override
     public void updateSlotsCheckedOut(Connection conn, List<Integer> slotIds, Timestamp checkoutTime) throws Exception {
         for (int slotId : slotIds) {
@@ -132,6 +149,9 @@ public class StaffCheckinRepositoryImpl implements StaffCheckinRepository {
         }
     }
 
+    /**
+     * Marks slots as NO_SHOW.
+     */
     @Override
     public void updateSlotsNoShow(Connection conn, List<Integer> slotIds) throws Exception {
         for (int slotId : slotIds) {

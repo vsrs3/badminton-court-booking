@@ -25,6 +25,9 @@ public class StaffBookingEditApiServlet extends BaseStaffApiServlet {
 
     private final StaffBookingEditService staffBookingEditService = new StaffBookingEditServiceImpl();
 
+    /**
+     * Routes booking edit actions including NO_SHOW slot release with snapshot-token validation.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -44,6 +47,7 @@ public class StaffBookingEditApiServlet extends BaseStaffApiServlet {
         String path = request.getServletPath();
 
         try {
+            // Dispatch to the edit/release handlers; each validates etag and booking state.
             StaffBookingEditOutcomeDTO result = staffBookingEditService.process(path, auth.facilityId, staffId, body);
             writeJson(response, result.getStatus(), result.getJson());
         } catch (Exception e) {

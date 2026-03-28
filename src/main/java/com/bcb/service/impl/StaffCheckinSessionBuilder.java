@@ -36,8 +36,9 @@ final class StaffCheckinSessionBuilder {
             boolean sameDate = (prev.getSessionDate() != null && prev.getSessionDate().equals(curr.getSessionDate()));
             boolean sameCourt = prev.getCourtId() == curr.getCourtId();
             boolean contiguous = prev.getEndTime().equals(curr.getStartTime());
+            boolean splitByStatus = shouldSplitByStatus(prev.getSlotStatus(), curr.getSlotStatus());
 
-            if (sameDate && sameCourt && contiguous) {
+            if (sameDate && sameCourt && contiguous && !splitByStatus) {
                 current.getSlotIds().add(curr.getBookingSlotId());
                 current.setEndTime(curr.getEndTime());
             } else {
@@ -62,5 +63,22 @@ final class StaffCheckinSessionBuilder {
             return a.getStartTime().compareTo(b.getStartTime());
         });
         return sessions;
+    }
+
+    private static boolean shouldSplitByStatus(String prevStatus, String currStatus) {
+        boolean prevFinished = isFinished(prevStatus);
+        boolean currFinished = isFinished(currStatus);
+        boolean prevPending = isPending(prevStatus);
+        boolean currPending = isPending(currStatus);
+
+        return (prevFinished && currPending) || (prevPending && currFinished);
+    }
+
+    private static boolean isFinished(String status) {
+        return "CHECK_OUT".equals(status) || "NO_SHOW".equals(status);
+    }
+
+    private static boolean isPending(String status) {
+        return "PENDING".equals(status);
     }
 }
