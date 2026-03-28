@@ -641,7 +641,6 @@ VALUES (@bk8, 100000, 100000, 100, 'PAID');
 -- ============================================================
 INSERT INTO Guest (guest_name, phone)
 VALUES (N'Đỗ Văn Khách Vãng Lai', '0911111111');
-
 DECLARE @guest1Id INT = SCOPE_IDENTITY();
 
 INSERT INTO Booking (facility_id, booking_date, guest_id, staff_id, booking_status, created_at)

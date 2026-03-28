@@ -9,10 +9,11 @@
 <div class="card shadow-sm border-0 rounded-4"><div class="card-body p-4">
 <c:if test="${not empty sessionScope.successMessage}"><div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">${sessionScope.successMessage}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button></div><c:remove var="successMessage" scope="session"/></c:if>
 <c:if test="${not empty sessionScope.errorMessage}"><div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">${sessionScope.errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button></div><c:remove var="errorMessage" scope="session"/></c:if>
-
+<%--Mục đồ gán sân--%>
 <div class ="mb-5">
 <div class ="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold text-dark mb-1">Đồ gán sân</h5><p class="text-muted mb-0">Danh sách sản phẩm đã được gán cho sân hiện tại.</p></div></div>
-<form method ="get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
+
+    <form method ="get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
 <div class ="col-lg-5 col-md-7 inventory-search-input">
 <div class ="search-suggestion-wrap">
 <input type ="text" id="assignedKeywordInput" name="assignedKeyword" value="${assignedKeyword}" class="form-control rounded-3" placeholder="Tìm theo tên sản phẩm đã gán" aria-label="Tìm theo tên sản phẩm đã gán" autocomplete="off">
@@ -30,11 +31,20 @@
 <button type="button" id="toggleBulkQuantityBtn" class="btn btn-success rounded-3">Thêm hàng loạt</button>
 </div>
 </form>
+
 <div id="bulkQuantityPanel" class="card border-0 bg-light rounded-4 mb-4 d-none"><div class="card-body">
 <form method="post" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-end">
-<input type="hidden" name="action" value="bulkUpdateQuantity"/><input type="hidden" name="facilityId" value="${facilityId}"/><input type="hidden" name="assignedKeyword" value="${assignedKeyword}"/><input type="hidden" name="inventoryKeyword" value="${inventoryKeyword}"/><input type="hidden" name="assignedPage" value="${assignedCurrentPage}"/><input type="hidden" name="inventoryPage" value="${inventoryCurrentPage}"/>
-<div class="col-lg-4 col-md-6"><label for="bulkQuantity" class="form-label fw-semibold">Số lượng áp dụng</label><input type="number" id="bulkQuantity" name="bulkQuantity" min="0" step="1" class="form-control rounded-3" data-non-negative="true" data-quantity-label="Số lượng áp dụng" required></div>
-<div class="col-12 d-flex flex-wrap gap-2"><button type="submit" class="btn btn-success rounded-3">Lưu</button><button type="button" id="cancelBulkQuantityBtn" class="btn btn-outline-secondary rounded-3">Hủy</button></div>
+<input type="hidden" name="action" value="bulkUpdateQuantity"/>
+<input type="hidden" name="facilityId" value="${facilityId}"/>
+<input type="hidden" name="assignedKeyword" value="${assignedKeyword}"/>
+<input type="hidden" name="inventoryKeyword" value="${inventoryKeyword}"/>
+    <input type="hidden" name="assignedPage" value="${assignedCurrentPage}"/>
+    <input type="hidden" name="inventoryPage" value="${inventoryCurrentPage}"/>
+<div class="col-lg-4 col-md-6"><label for="bulkQuantity" class="form-label fw-semibold">Số lượng áp dụng</label>
+    <input type="number" id="bulkQuantity" name="bulkQuantity" min="0" step="1" class="form-control rounded-3" data-non-negative="true" data-quantity-label="Số lượng áp dụng" required></div>
+<div class="col-12 d-flex flex-wrap gap-2">
+    <button type="submit" class="btn btn-success rounded-3">Lưu</button>
+    <button type="button" id="cancelBulkQuantityBtn" class="btn btn-outline-secondary rounded-3">Hủy</button></div>
 </form>
 </div></div>
 <div class="table-responsive"><table class="table table-hover align-middle">
@@ -66,19 +76,29 @@
 </ul></nav></c:if>
 </div>
 
+
+
+<%--Mục đồ kho tổng--%>
 <div>
 <div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold text-dark mb-1">Kho đồ tổng</h5><p class="text-muted mb-0">Danh sách sản phẩm đang hoạt động và chưa gán cho sân hiện tại.</p></div></div>
-<form method="get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
-<div class="col-lg-5 col-md-7 inventory-search-input">
+<form method = "get" action="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" class="row g-3 align-items-center mb-4 inventory-search-form">
+
+
+    <div class="col-lg-5 col-md-7 inventory-search-input">
 <div class="search-suggestion-wrap">
 <input type="text" id="inventoryKeywordInput" name="inventoryKeyword" value="${inventoryKeyword}" class="form-control rounded-3" placeholder="Tìm trong kho đồ tổng" aria-label="Tìm trong kho đồ tổng" autocomplete="off">
 <div id="inventorySuggestionMenu" class="search-suggestion-menu"></div>
 </div>
+
 <div class="form-text">Gợi ý lấy trong ${suggestionLimit} dữ liệu đầu tiên. Bấm tìm kiếm để tra toàn bộ dữ liệu.</div>
 </div>
 <input type="hidden" name="facilityId" value="${facilityId}"/><input type="hidden" name="assignedKeyword" value="${assignedKeyword}"/><input type="hidden" name="assignedPage" value="${assignedCurrentPage}"/><input type="hidden" name="inventoryPage" id="inventoryPageField" value="${inventoryCurrentPage}"/>
-<div class="col-auto d-flex flex-wrap gap-2"><button type="submit" id="inventorySearchBtn" class="btn btn-outline-success rounded-3">Tìm kiếm</button><button type="submit" formmethod="post" formaction="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" name="action" value="assignAll" class="btn btn-success rounded-3">Gán tất cả</button></div>
+<div class="col-auto d-flex flex-wrap gap-2">
+    <button type="submit" id="inventorySearchBtn" class="btn btn-outline-success rounded-3">Tìm kiếm</button>
+    <button type="submit" formmethod="post" formaction="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}" name="action" value="assignAll" class="btn btn-success rounded-3">Gán tất cả</button></div>
 </form>
+
+
 <div class="table-responsive"><table class="table table-hover align-middle">
 <thead class="table-light"><tr><th>STT</th><th>Tên</th><th>Thương hiệu</th><th>Mô tả</th><th>Giá thuê</th><th>Trạng thái</th><th class="text-center">Thao tác</th></tr></thead>
 <tbody>
@@ -102,6 +122,9 @@
 <li class="page-item ${inventoryCurrentPage == inventoryTotalPages ? 'disabled' : ''}"><c:choose><c:when test="${inventoryCurrentPage == inventoryTotalPages}"><span class="page-link-static" aria-label="Trang sau"><i class="bi bi-chevron-right"></i></span></c:when><c:otherwise><a class="page-link" aria-label="Trang sau" href="${pageContext.request.contextPath}/owner/facility/inventory/${facilityId}?inventoryPage=${inventoryCurrentPage + 1}&inventoryKeyword=${inventoryKeyword}&assignedKeyword=${assignedKeyword}&assignedPage=${assignedCurrentPage}"><i class="bi bi-chevron-right"></i></a></c:otherwise></c:choose></li>
 </ul></nav></c:if>
 </div>
+
+
+
 
 <div id="assignedSuggestionDataset" class="d-none"><c:forEach items="${assignedSuggestionItems}" var="item"><div class="suggestion-source-item"><span class="suggestion-source-name"><c:out value="${item.inventoryName}"/></span><span class="suggestion-source-label"><c:out value="${item.inventoryName}"/></span></div></c:forEach></div>
 <div id="inventorySuggestionDataset" class="d-none"><c:forEach items="${inventorySuggestionItems}" var="item"><div class="suggestion-source-item"><span class="suggestion-source-name"><c:out value="${item.name}"/></span><span class="suggestion-source-label"><c:out value="${item.name}"/></span><span class="suggestion-source-meta"><c:out value="${item.brand}"/></span></div></c:forEach></div>

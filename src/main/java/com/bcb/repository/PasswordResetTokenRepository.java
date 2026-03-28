@@ -15,4 +15,5 @@ public interface PasswordResetTokenRepository {
     void deleteByEmail(String email);
 
     void deleteExpiredTokens();
+
 }

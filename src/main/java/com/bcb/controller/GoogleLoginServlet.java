@@ -30,7 +30,6 @@ public class GoogleLoginServlet extends HttpServlet {
                         + "&response_type=code"
                         + "&scope=openid%20email%20profile"
                         + "&prompt=select_account";  // 🔥 luôn cho chọn tài khoản
-
         response.sendRedirect(googleUrl);
     }
 }

@@ -43,11 +43,12 @@ public class ForgotPasswordController extends HttpServlet {
         String action = request.getParameter("action");
 
         try {
+            //sau khi click xác nhận
             if ("checkEmail".equals(action)) {
                 handleEmailConfirmationRequest(request, response);
                 return;
             }
-
+            //sau khi ấn lưu mật khẩu
             if ("reset".equals(action)) {
                 handlePasswordReset(request, response);
                 return;

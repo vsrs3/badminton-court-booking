@@ -13,7 +13,6 @@
 
 <div class="main-content" id="ownerDashboardRoot" data-context-path="${pageContext.request.contextPath}">
     <%@ include file="layout/header.jsp"%>
-
     <div class="dov-wrap">
         <c:if test="${not empty requestScope.error}">
             <div class="alert alert-danger d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">

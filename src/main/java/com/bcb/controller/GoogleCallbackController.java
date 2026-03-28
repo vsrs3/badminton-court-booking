@@ -36,11 +36,12 @@ public class GoogleCallbackController extends HttpServlet {
         }
 
         try {
+            //Xử lý đăng ký
             if (state != null && state.startsWith(REGISTER_STATE_PREFIX)) {
                 handleRegisterLinking(request, response, code, state.substring(REGISTER_STATE_PREFIX.length()));
                 return;
             }
-
+            //Xử lý đăng nhập bằng gg
             Account account = googleAuthService.handleGoogleLogin(code);
             if (account == null) {
                 request.setAttribute("error", "Tài khoản Google này không tồn tại trong hệ thống.");

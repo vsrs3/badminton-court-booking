@@ -22,7 +22,6 @@
         .form-input-wrapper {
             position: relative;
         }
-
         .password-toggle {
             position: absolute;
             right: 12px;
@@ -34,15 +33,10 @@
             padding: 0;
             z-index: 5;
         }
-
-        .password-toggle i {
+.password-toggle i{
             font-size: 1.1rem;
-            color: #666;
-        }
-
-        .form-input {
-            padding-right: 45px;
-        }
+            color: #666;}
+        .form-input {padding-right: 45px;}
     </style>
 </head>
 <body>
@@ -64,7 +58,6 @@
             </h1>
             <p class="auth-tagline">Khôi phục mật khẩu tài khoản</p>
         </div>
-
         <div class="auth-body">
             <h2 class="auth-title">Quên mật khẩu</h2>
             <p class="auth-subtitle">Lấy lại quyền truy cập của bạn</p>
@@ -89,13 +82,13 @@
             </div>
             <% } %>
 
+            <%--form xác nhận gửi email--%>
             <% if (!isResetStep) { %>
             <form method="post"
                   action="${pageContext.request.contextPath}/forgot-password"
                   class="auth-form mt-4">
 
                 <input type="hidden" name="action" value="checkEmail"/>
-
                 <div class="form-group">
                     <label class="form-label">Email <span class="required">*</span></label>
                     <div class="form-input-wrapper">
@@ -109,11 +102,14 @@
                     </div>
                 </div>
 
-                <button type="submit" class="auth-submit-btn mt-3">
-                    <i class="bi bi-send-fill"></i>
-                    <span>Xác nhận</span>
+                <button type = "submit" class = "auth-submit-btn mt-3" >
+                    <i class = "bi bi-send-fill" ></i>
+                    <span> Xác nhận </span>
                 </button>
             </form>
+
+
+            <%--form nhập lại mật khẩu--%>
             <% } else { %>
             <form method="post"
                   action="${pageContext.request.contextPath}/forgot-password"
@@ -201,20 +197,15 @@
         if (!forgotPasswordSyncPoll) {
             return;
         }
-
         clearInterval(forgotPasswordSyncPoll);
         forgotPasswordSyncPoll = null;
     }
 
     function handleForgotPasswordVerification(payload) {
         if (!waitingForEmailConfirmation || !payload || !payload.redirectUrl) {
-            return false;
-        }
-
+            return false;}
         if (pendingEmail && payload.email && pendingEmail.toLowerCase() !== payload.email.toLowerCase()) {
-            return false;
-        }
-
+            return false;}
         stopForgotPasswordSyncPoll();
         localStorage.removeItem(FORGOT_PASSWORD_SYNC_KEY);
         window.location.href = payload.redirectUrl;

@@ -115,7 +115,7 @@ GO
 
 INSERT INTO CourtType (type_code, description)
 VALUES
-    ('NORMAL', N'Sân tiêu chuẩn'),
+    ('NORMAL',N'Sân tiêu chuẩn'),
     ('VIP',    N'Sân VIP chất lượng cao');
 GO
 

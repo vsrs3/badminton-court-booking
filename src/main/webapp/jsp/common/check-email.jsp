@@ -90,7 +90,6 @@
 
     async function cleanupAndRedirect() {
         clearWaitingTimers();
-
         if (currentToken) {
             try {
                 await fetch("${pageContext.request.contextPath}/cleanup-email", {
@@ -104,7 +103,6 @@
                 console.log("Cleanup lỗi:", error);
             }
         }
-
         window.location.href = "${pageContext.request.contextPath}/jsp/auth/register.jsp";
     }
 
@@ -112,7 +110,6 @@
         if (!payload || payload.token !== currentToken || !payload.redirectUrl) {
             return false;
         }
-
         clearWaitingTimers();
         localStorage.removeItem(REGISTER_SYNC_KEY);
         window.location.href = payload.redirectUrl;

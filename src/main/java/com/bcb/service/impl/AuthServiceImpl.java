@@ -138,24 +138,25 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void forgotPassword(String email, String resetLinkBase) throws BusinessException {
         String normalizedEmail = trimToEmpty(email);
+        //Kiểm tra email có tồn tại không
         if (normalizedEmail.isEmpty()) {
             throw new BusinessException("Vui lòng nhập email.");
         }
-
         if (!accountRepository.existsByEmail(normalizedEmail)) {
             throw new BusinessException("Email không tồn tại.");
         }
-
+        //tạo token lấy thời gian hiện tại
         String token = UUID.randomUUID().toString();
         Timestamp expireAt = new Timestamp(System.currentTimeMillis() + PASSWORD_RESET_TOKEN_TTL_MS);
-
+        //Xóa token,email đã hết hạn trc đó bảng PasswordResetToken rồi lưu token mới
         passwordResetTokenRepository.deleteExpiredTokens();
         passwordResetTokenRepository.deleteByEmail(normalizedEmail);
         passwordResetTokenRepository.save(normalizedEmail, token, expireAt);
-
+        //Tạo link chuyển hướng khi ấn trong email
         String delimiter = resetLinkBase.contains("?") ? "&" : "?";
         String resetLink = resetLinkBase + delimiter + "token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         try {
+
             MailUtil.sendPasswordResetEmail(normalizedEmail, resetLink);
         } catch (RuntimeException e) {
             passwordResetTokenRepository.deleteByToken(token);

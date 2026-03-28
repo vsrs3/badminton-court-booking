@@ -295,7 +295,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         suggestionMenu.innerHTML = "";
-
         if (!items.length) {
             const emptyState = document.createElement("div");
             emptyState.className = "search-suggestion-empty";
@@ -304,7 +303,6 @@ document.addEventListener("DOMContentLoaded", function () {
             suggestionMenu.classList.add("is-visible");
             return;
         }
-
         items.forEach(function (item) {
             const button = document.createElement("button");
             const title = document.createElement("span");
@@ -353,18 +351,15 @@ document.addEventListener("DOMContentLoaded", function () {
             const matchedItems = dataset.filter(function (item) {
                 return normalizeText(item.name).includes(keyword);
             });
-
             renderSuggestionMenu(matchedItems);
         }
 
         keywordInput.addEventListener("input", refreshSuggestions);
         keywordInput.addEventListener("focus", refreshSuggestions);
-
         document.addEventListener("click", function (event) {
             if (event.target === keywordInput || suggestionMenu.contains(event.target)) {
                 return;
             }
-
             hideSuggestionMenu();
         });
     }
@@ -374,7 +369,6 @@ document.addEventListener("DOMContentLoaded", function () {
             pageField.value = "1";
         });
     }
-
     setupSuggestionAutocomplete();
 });
 </script>
