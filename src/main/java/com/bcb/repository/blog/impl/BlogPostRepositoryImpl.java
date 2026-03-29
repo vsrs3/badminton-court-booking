@@ -16,10 +16,10 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
-            "FROM BlogPost p " +
-            "JOIN Account a ON a.account_id = p.author_account_id " +
-            "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
+                "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+                        "FROM BlogPost p " +
+                        "JOIN Account a ON a.account_id = p.author_account_id " +
+                        "WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
         );
 
         List<Object> params = new ArrayList<>();
@@ -35,7 +35,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public int countPublicPosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
+                "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0 AND p.status = 'PUBLISHED'"
         );
         List<Object> params = new ArrayList<>();
         applyKeyword(sql, params, filter);
@@ -51,10 +51,10 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public List<BlogPostListItemDTO> findManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
-            "FROM BlogPost p " +
-            "JOIN Account a ON a.account_id = p.author_account_id " +
-            "WHERE p.is_deleted = 0"
+                "SELECT p.post_id, p.title, p.summary, p.status, p.published_at, p.created_at, a.full_name AS author_name " +
+                        "FROM BlogPost p " +
+                        "JOIN Account a ON a.account_id = p.author_account_id " +
+                        "WHERE p.is_deleted = 0"
         );
 
         List<Object> params = new ArrayList<>();
@@ -76,7 +76,7 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     @Override
     public int countManagePosts(BlogPostFilterDTO filter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0"
+                "SELECT COUNT(*) FROM BlogPost p WHERE p.is_deleted = 0"
         );
         List<Object> params = new ArrayList<>();
         applyKeyword(sql, params, filter);
@@ -211,8 +211,8 @@ public class BlogPostRepositoryImpl implements BlogPostRepository {
     private void applySorting(StringBuilder sql, BlogPostFilterDTO filter, boolean isPublic) {
         Set<String> allowed = new HashSet<>(Arrays.asList("title", "created_at", "published_at"));
         String sortBy = (filter.getSortBy() != null && allowed.contains(filter.getSortBy()))
-            ? filter.getSortBy()
-            : (isPublic ? "published_at" : "created_at");
+                ? filter.getSortBy()
+                : (isPublic ? "published_at" : "created_at");
 
         String dir = "ASC".equalsIgnoreCase(filter.getSortDir()) ? "ASC" : "DESC";
         sql.append(" ORDER BY p.").append(sortBy).append(" ").append(dir);

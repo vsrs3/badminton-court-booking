@@ -154,7 +154,7 @@
             </c:forEach>
 
             <c:if test="${not isLoggedIn}">
-                <div class="ms-2" style="color:#94A3B8; font-weight: 600; font-size: .85rem;">Đăng nhập để thả cảm xúc</div>
+                <div class="ms-2" style="color:#94A3B8; font-weight: 600; font-size: .85rem;display :none">Đăng nhập để thả cảm xúc</div>
             </c:if>
         </div>
     </div>
@@ -176,8 +176,11 @@
         </c:if>
 
         <c:if test="${not isLoggedIn}">
-            <div class="alert alert-secondary" role="alert" style="font-weight: 600; border-radius: .75rem; font-size: .9rem;">
-                <i class="bi bi-info-circle me-1"></i> Đăng nhập để bình luận.
+            <div class="alert alert-secondary" role="alert" style="font-weight: 700; border-radius: .75rem; font-size: .9rem;">
+                <i class="bi bi-info-circle me-1"></i>
+                <a href="${pageContext.request.contextPath}/auth/login" style="font-weight: 700; color: inherit; text-decoration: none;">
+                    Đăng nhập
+                </a> để bình luận.
             </div>
         </c:if>
 
@@ -195,14 +198,22 @@
                             <span class="comment-author"><i class="bi bi-person-circle me-1"></i><c:out value="${cmt.authorName}" /></span>
                             <span class="comment-date ms-2"><c:out value="${cmt.createdAtFormatted}" /></span>
                         </div>
-                        <span class="badge bg-secondary bg-opacity-25 text-secondary" style="font-weight: 600; font-size: .75rem;"><c:out value="${cmt.status}" /></span>
+                        <c:if test="${cmt.status ne 'APPROVED'}">
+                              <span class="badge bg-secondary bg-opacity-25 text-secondary"
+                                     style="font-weight: 600; font-size: .75rem;">
+                                <c:out value="${cmt.status}" />
+                              </span>
+                    </c:if>
                     </div>
 
                     <div class="comment-body">
                         <c:out value="${cmt.content}" />
                     </div>
 
-                    <c:if test="${isLoggedIn and currentRole eq 'CUSTOMER' and currentUser.accountId eq cmt.authorAccountId}">
+                    <c:if test="${isLoggedIn
+                         and  currentRole eq 'CUSTOMER'
+                         and currentUser.accountId eq cmt.authorAccountId
+                         and cmt.status eq 'PENDING'}">
                         <div class="comment-actions">
                             <form method="POST" action="${pageContext.request.contextPath}/blogs/interact" class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 0;">
                                 <input type="hidden" name="action" value="comment_edit" />
@@ -210,6 +221,14 @@
                                 <input type="hidden" name="commentId" value="${cmt.commentId}" />
                                 <input class="form-control form-control-sm flex-grow-1" name="content" value="${fn:escapeXml(cmt.content)}" maxlength="1000" style="border-radius: .5rem; min-width: 150px;" />
                                 <button type="submit" class="btn btn-sm btn-outline-success" style="font-weight: 700; white-space: nowrap;">Sửa</button>
+                                <!-- Hiển thị thông báo popup nếu có flashMessage -->
+                                <c:if test="${not empty sessionScope.flashMessage}">
+                                    <script>
+                                        alert("${fn:escapeXml(sessionScope.flashMessage)}");
+                                    </script>
+                                    <c:remove var="flashMessage" scope="session"/>
+                                </c:if>
+
                             </form>
                             <form method="POST" action="${pageContext.request.contextPath}/blogs/interact" class="m-0">
                                 <input type="hidden" name="action" value="comment_delete" />
@@ -253,6 +272,7 @@
                     <div class="mt-1">Chưa có bình luận.</div>
                 </div>
             </c:if>
+
         </div>
     </div>
 

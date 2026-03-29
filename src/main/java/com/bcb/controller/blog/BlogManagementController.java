@@ -103,7 +103,7 @@ public class BlogManagementController extends HttpServlet {
         Account current = (Account) req.getSession(false).getAttribute("account");
         post.setAuthorAccountId(current.getAccountId());
         int id = service.createPost(post);
-        resp.sendRedirect(req.getContextPath() + "/blogs/manage/edit?id=" + id + "&success=created");
+        resp.sendRedirect(req.getContextPath() + "/blogs/manage/list?success=created");
     }
 
     private void handleUpdate(HttpServletRequest req, HttpServletResponse resp) throws IOException, BusinessException {

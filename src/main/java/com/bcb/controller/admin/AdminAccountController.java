@@ -255,7 +255,7 @@ public class AdminAccountController extends HttpServlet {
     }
 
     /**
-     * Delete account permanently
+     * Delete account
      */
     private void deleteAccount(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -271,6 +271,7 @@ public class AdminAccountController extends HttpServlet {
         try {
             int accountId = Integer.parseInt(pathParts[2]);
             boolean success = accountService.deleteAccount(accountId);
+
 
             if (success) {
                 response.sendRedirect(request.getContextPath() + "/admin/accounts/list?deleted=1");

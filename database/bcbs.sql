@@ -30,6 +30,7 @@ CREATE TABLE Account (
     role VARCHAR(10)
         CHECK (role IN ('ADMIN','OWNER','STAFF','CUSTOMER')) NOT NULL,
     is_active BIT DEFAULT 1,
+    is_deleted BIT DEFAULT 0,
     created_at DATETIME DEFAULT GETDATE()
 );
 GO

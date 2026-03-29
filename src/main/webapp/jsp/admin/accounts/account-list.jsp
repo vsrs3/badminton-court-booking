@@ -190,8 +190,8 @@
 												</a>
 												<a href="${pageContext.request.contextPath}/admin/accounts/delete/${acc.accountId}"
 													class="btn btn-sm btn-outline-danger rounded-2"
-													title="Xóa vĩnh viễn" style="padding:0.25rem 0.5rem;"
-													onclick="return confirm('CẢNH BÁO: Bạn có chắc muốn XÓA VĨNH VIỄN tài khoản này? Hành động không thể hoàn tác!');">
+													title="Xóa mềm" style="padding:0.25rem 0.5rem;"
+													onclick="return confirm('Bạn có chắc muốn xóa mềm tài khoản này? Tài khoản sẽ bị ẩn khỏi danh sách quản lý.');">
 													<i class="bi bi-trash"></i>
 												</a>
 											</div>

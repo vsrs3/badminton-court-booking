@@ -22,6 +22,7 @@ public class Account {
     private String role; // ADMIN, OWNER, STAFF, USER
     private Boolean isActive;
     private LocalDateTime createdAt;
+    private Boolean isDeleted;
 
     // ============================================
     // CONSTRUCTORS
@@ -138,6 +139,14 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
     @Override

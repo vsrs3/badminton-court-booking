@@ -39,7 +39,7 @@
             <form class="row g-2 align-items-end mb-3" method="GET" action="${pageContext.request.contextPath}/blogs/manage/list">
                 <div class="col-12 col-md-5">
                     <label class="form-label" style="font-weight: 800;">Tìm kiếm</label>
-                    <input class="form-control" name="q" value="${fn:escapeXml(param.q)}" placeholder="Tìm theo tiêu đề/tóm tắt" />
+                    <input class="form-control" name="q" value="${fn:escapeXml(param.q)}" placeholder="Tìm theo tiêu đề"/>
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label" style="font-weight: 800;">Trạng thái</label>

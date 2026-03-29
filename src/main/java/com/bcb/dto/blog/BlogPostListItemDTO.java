@@ -37,13 +37,6 @@ public class BlogPostListItemDTO {
         this.summary = summary;
     }
 
-    public String getThumbnailPath() {
-        return thumbnailPath;
-    }
-
-    public void setThumbnailPath(String thumbnailPath) {
-        this.thumbnailPath = thumbnailPath;
-    }
 
     public String getStatus() {
         return status;

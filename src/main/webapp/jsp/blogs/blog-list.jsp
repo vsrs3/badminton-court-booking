@@ -140,6 +140,12 @@
         </form>
     </div>
 
+    <c:if test="${not empty error}">
+        <div class="alert alert-danger" role="alert">
+            <c:out value="${error}" />
+        </div>
+    </c:if>
+
     <c:choose>
         <c:when test="${empty posts}">
             <div class="text-center py-5">

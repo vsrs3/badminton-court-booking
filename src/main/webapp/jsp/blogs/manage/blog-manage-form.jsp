@@ -71,8 +71,18 @@
 
                     <div class="col-12 d-flex gap-2">
                         <button type="submit" class="btn btn-success" style="font-weight: 900; text-transform: uppercase;">Lưu</button>
+                        <c:if test="${param.success eq 'updated'}">
+                            <script>
+                                alert("Bài viết đã được sửa thành công!");
+                            </script>
+                        </c:if>
                         <c:if test="${mode eq 'edit'}">
-                            <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/blogs/manage/delete?id=${post.postId}" onclick="return confirm('Xóa bài viết?');" style="font-weight: 900; text-transform: uppercase;">Xóa</a>
+                            <a class="btn btn-outline-danger"
+                               href="${pageContext.request.contextPath}/blogs/manage/edit?id=${post.postId}"
+                               onclick="return confirm('Bạn có chắc muốn hủy chỉnh sửa?');"
+                               style="font-weight: 900; text-transform: uppercase;">
+                                Hủy
+                            </a>
                         </c:if>
                     </div>
                 </div>
