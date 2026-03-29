@@ -236,7 +236,7 @@ IF NOT EXISTS (SELECT 1 FROM Account WHERE email = 'customer5@test.com')
 BEGIN
 INSERT INTO Account (email, password_hash, full_name, phone, role, is_active, created_at)
 VALUES (
-           'customer5@test.com',
+           'trannamanh.nat2004@gmail.com',
            '$2a$10$l9VhV2BupVyxxagpB243S.AuynE7hf7bSEVjFwaRl9KEO/IPQYFrO',
            N'Hoàng Thị Khách Năm',
            '0909234567',
