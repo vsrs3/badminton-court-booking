@@ -93,28 +93,25 @@ public class OwnerVoucherController extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
         String path = req.getPathInfo();
 
-        try {
-            if ("/create".equals(path)) {
-                handleCreate(req, resp);
-            } else if ("/update".equals(path)) {
-                handleUpdate(req, resp);
-            } else {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
-        } catch (BusinessException e) {
-            req.setAttribute("formError", e.getMessage());
-            // Re-load form with error
+        if ("/create".equals(path)) {
             try {
-                if ("/create".equals(path)) {
-                    showCreateForm(req, resp);
-                } else {
-                    showEditForm(req, resp);
-                }
-            } catch (BusinessException be) {
-                req.setAttribute("error", be.getMessage());
-                req.getRequestDispatcher("/jsp/owner/voucher/owner-voucher-list.jsp").forward(req, resp);
+                handleCreate(req, resp);
+            } catch (BusinessException e) {
+                renderCreateFormWithSubmittedData(req, resp, e.getMessage());
             }
+            return;
         }
+
+        if ("/update".equals(path)) {
+            try {
+                handleUpdate(req, resp);
+            } catch (BusinessException e) {
+                renderEditFormWithSubmittedData(req, resp, e.getMessage());
+            }
+            return;
+        }
+
+        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     // =====================================================================
@@ -155,6 +152,7 @@ public class OwnerVoucherController extends HttpServlet {
         List<Facility> facilities = voucherService.getAllFacilities();
         req.setAttribute("facilities", facilities);
         req.setAttribute("mode", "create");
+        req.setAttribute("facilityScope", "all");
 
         BreadcrumbUtils.builder(req)
             .dashboard()
@@ -178,6 +176,7 @@ public class OwnerVoucherController extends HttpServlet {
         req.setAttribute("linkedFacilityIds", linkedFacilityIds);
         req.setAttribute("facilities", facilities);
         req.setAttribute("mode", "edit");
+        req.setAttribute("facilityScope", linkedFacilityIds.isEmpty() ? "all" : "specific");
 
         BreadcrumbUtils.builder(req)
             .dashboard()
@@ -222,11 +221,58 @@ public class OwnerVoucherController extends HttpServlet {
     private void handleUpdate(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException, BusinessException {
         Voucher voucher = bindVoucherFromRequest(req);
-        String idStr = req.getParameter("voucherId");
-        voucher.setVoucherId(Integer.parseInt(idStr));
+        voucher.setVoucherId(parseId(req.getParameter("voucherId")));
         List<Integer> facilityIds = parseFacilityIds(req);
         voucherService.updateVoucher(voucher, facilityIds);
         resp.sendRedirect(req.getContextPath() + "/owner/vouchers/detail?id=" + voucher.getVoucherId() + "&success=updated");
+    }
+
+    private void renderCreateFormWithSubmittedData(HttpServletRequest req, HttpServletResponse resp, String errorMessage)
+            throws ServletException, IOException {
+        req.setAttribute("formError", errorMessage);
+        req.setAttribute("voucher", bindVoucherFromRequest(req));
+        req.setAttribute("linkedFacilityIds", parseFacilityIds(req));
+        req.setAttribute("facilities", voucherService.getAllFacilities());
+        req.setAttribute("mode", "create");
+        req.setAttribute("facilityScope", resolveFacilityScope(req));
+
+        BreadcrumbUtils.builder(req)
+            .dashboard()
+            .add("Quản Lý Voucher", req.getContextPath() + "/owner/vouchers/dashboard")
+            .add("Danh Sách Voucher", req.getContextPath() + "/owner/vouchers/list")
+            .active("Tạo Voucher")
+            .build();
+        req.getRequestDispatcher("/jsp/owner/voucher/owner-voucher-form.jsp")
+            .forward(req, resp);
+    }
+
+    private void renderEditFormWithSubmittedData(HttpServletRequest req, HttpServletResponse resp, String errorMessage)
+            throws ServletException, IOException {
+        Voucher submittedVoucher = bindVoucherFromRequest(req);
+        String rawVoucherId = req.getParameter("voucherId");
+        if (rawVoucherId != null && !rawVoucherId.isBlank()) {
+            try {
+                submittedVoucher.setVoucherId(Integer.parseInt(rawVoucherId));
+            } catch (NumberFormatException ignored) {
+                // Keep original BusinessException message from service-level validation.
+            }
+        }
+
+        req.setAttribute("formError", errorMessage);
+        req.setAttribute("voucher", submittedVoucher);
+        req.setAttribute("linkedFacilityIds", parseFacilityIds(req));
+        req.setAttribute("facilities", voucherService.getAllFacilities());
+        req.setAttribute("mode", "edit");
+        req.setAttribute("facilityScope", resolveFacilityScope(req));
+
+        BreadcrumbUtils.builder(req)
+            .dashboard()
+            .add("Quản Lý Voucher", req.getContextPath() + "/owner/vouchers/dashboard")
+            .add("Danh Sách Voucher", req.getContextPath() + "/owner/vouchers/list")
+            .active("Sửa Voucher")
+            .build();
+        req.getRequestDispatcher("/jsp/owner/voucher/owner-voucher-form.jsp")
+            .forward(req, resp);
     }
 
     /** Handle GET /owner/vouchers/delete?id=... */
@@ -309,6 +355,11 @@ public class OwnerVoucherController extends HttpServlet {
             }
         }
         return new ArrayList<>();
+    }
+
+    private String resolveFacilityScope(HttpServletRequest req) {
+        String facilityScope = req.getParameter("facilityScope");
+        return "specific".equals(facilityScope) ? "specific" : "all";
     }
 
     private LocalDateTime parseDateTime(String value) {

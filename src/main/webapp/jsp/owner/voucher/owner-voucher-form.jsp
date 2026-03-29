@@ -24,6 +24,7 @@
 
         <c:set var="isEdit" value="${mode eq 'edit'}" />
         <c:set var="actionUrl" value="${pageContext.request.contextPath}/owner/vouchers/${isEdit ? 'update' : 'create'}" />
+        <c:set var="selectedFacilityScope" value="${not empty facilityScope ? facilityScope : (empty linkedFacilityIds ? 'all' : 'specific')}" />
 
         <form method="POST" action="${actionUrl}" id="voucherForm" novalidate>
             <c:if test="${isEdit}">
@@ -208,7 +209,7 @@
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="radio" name="facilityScope" id="scopeAll"
                                            value="all" onchange="toggleFacilitySelect()"
-                                           ${empty linkedFacilityIds ? 'checked' : ''}>
+                                           ${selectedFacilityScope eq 'all' ? 'checked' : ''}>
                                     <label class="form-check-label fw-semibold" for="scopeAll">
                                         <i class="bi bi-globe me-1"></i> Tất cả sân
                                     </label>
@@ -216,14 +217,21 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="facilityScope" id="scopeSpecific"
                                            value="specific" onchange="toggleFacilitySelect()"
-                                           ${not empty linkedFacilityIds ? 'checked' : ''}>
+                                           ${selectedFacilityScope eq 'specific' ? 'checked' : ''}>
                                     <label class="form-check-label fw-semibold" for="scopeSpecific">
                                         <i class="bi bi-pin-map me-1"></i> Chọn sân cụ thể
                                     </label>
                                 </div>
                             </div>
 
-                            <div id="facilitySelectWrapper" style="display:${not empty linkedFacilityIds ? 'block' : 'none'};">
+                            <div id="specificScopeHint"
+                                 class="small text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-3 px-3 py-2 mb-3"
+                                 style="display:${selectedFacilityScope eq 'specific' ? 'block' : 'none'};">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Nếu bạn chọn "Chọn sân cụ thể" nhưng không chọn sân nào, voucher sẽ mặc định áp dụng cho tất cả sân.
+                            </div>
+
+                            <div id="facilitySelectWrapper" style="display:${selectedFacilityScope eq 'specific' ? 'block' : 'none'};">
                                 <select id="facilitySelect" name="facilityIds" multiple>
                                     <c:forEach var="f" items="${facilities}">
                                         <option value="${f.facilityId}"
@@ -293,7 +301,11 @@
         window.toggleFacilitySelect = function() {
             var specific = document.getElementById('scopeSpecific').checked;
             var wrapper  = document.getElementById('facilitySelectWrapper');
+            var hint     = document.getElementById('specificScopeHint');
             wrapper.style.display = specific ? 'block' : 'none';
+            if (hint) {
+                hint.style.display = specific ? 'block' : 'none';
+            }
             if (specific) initMultiSelect();
         };
 
