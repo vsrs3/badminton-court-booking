@@ -359,7 +359,6 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         if (!currentEtag.equals(requestEtag)) {
             throw ApiException.conflict(currentEtag);
         }
-
         if (!"CONFIRMED".equals(snapshot.bookingStatus)) {
             throw new ApiException(400, "Chỉ cho phép sửa booking ở trạng thái CONFIRMED");
         }
@@ -532,7 +531,7 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
                                               Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
         // Compute total = active slot prices + rentals.
         BigDecimal totalAmount = repository.sumActiveAmount(conn, bookingId)
-                .add(repository.sumRentalAmount(conn, bookingId));
+                                           .add(repository.sumRentalAmount(conn, bookingId));
         BigDecimal paidAmount = repository.findPaidAmount(conn, bookingId);
         String previousPaymentStatus = repository.findPaymentStatus(conn, bookingId);
 
@@ -545,34 +544,46 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         String refundStatus = "NONE";
         String refundNote = null;
 
-        if (overpaid.compareTo(BigDecimal.ZERO) > 0) {
-            // Refund eligibility: within 24 hours and no played/no-show slots.
-            boolean eligible = true;
+        BigDecimal previousRefundDue = BigDecimal.ZERO;
+        if (before != null && before.invoice != null) {
+            previousRefundDue = parseMoney(before.invoice.refundDue);
+        }
 
-            java.time.LocalDateTime createdAt = repository.findBookingCreatedAt(conn, bookingId);
-            if (createdAt == null || java.time.LocalDateTime.now().isAfter(createdAt.plusHours(24))) {
-                eligible = false;
-            }
+        // Refund eligibility for NEW refunds: within 24 hours and no played/no-show slots.
+        boolean eligibleForNewRefund = true;
+        java.time.LocalDateTime createdAt = repository.findBookingCreatedAt(conn, bookingId);
+        if (createdAt == null || java.time.LocalDateTime.now().isAfter(createdAt.plusHours(24))) {
+            eligibleForNewRefund = false;
+        }
+        if (eligibleForNewRefund && hasIneligiblePlayStatus(before)) {
+            eligibleForNewRefund = false;
+        }
 
-            if (eligible && hasIneligiblePlayStatus(before)) {
-                eligible = false;
+        BigDecimal refundDelta = BigDecimal.ZERO;
+        if (overpaid.compareTo(BigDecimal.ZERO) > 0 || previousRefundDue.compareTo(BigDecimal.ZERO) > 0) {
+            refundDelta = computeRefundDeltaAmount(conn, before, afterSlots, removedRentalBySlotId);
+            if (!eligibleForNewRefund && refundDelta.compareTo(BigDecimal.ZERO) > 0) {
+                // Disallow new refund accrual, but still allow negative adjustments.
+                refundDelta = BigDecimal.ZERO;
             }
+        }
 
-            if (eligible) {
-                // RefundDue = min(overpaid, eligible diff from removed slots + rentals).
-                BigDecimal eligibleDiff = computeEligibleDiffAmount(conn, before, afterSlots, removedRentalBySlotId);
-                refundDue = overpaid.min(eligibleDiff);
-                if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
-                    refundStatus = "PENDING_MANUAL";
-                    refundNote = buildRefundNote("Manual refund pending", reason);
-                } else {
-                    refundStatus = "NONE";
-                    refundNote = buildRefundNote("Refund not eligible", reason);
-                }
-            } else {
-                refundStatus = "NONE";
-                refundNote = buildRefundNote("Refund not eligible", reason);
-            }
+        refundDue = previousRefundDue.add(refundDelta);
+        if (refundDue.compareTo(BigDecimal.ZERO) < 0) {
+            refundDue = BigDecimal.ZERO;
+        }
+        if (overpaid.compareTo(BigDecimal.ZERO) <= 0) {
+            refundDue = BigDecimal.ZERO;
+        } else if (refundDue.compareTo(overpaid) > 0) {
+            refundDue = overpaid;
+        }
+
+        if (refundDue.compareTo(BigDecimal.ZERO) > 0) {
+            refundStatus = "PENDING_MANUAL";
+            refundNote = buildRefundNote("Manual refund pending", reason);
+        } else {
+            refundStatus = "NONE";
+            refundNote = buildRefundNote("Refund not eligible", reason);
         }
 
         // Update paymentStatus based on total vs paid.
@@ -622,17 +633,18 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
      * - Compare before vs after slot amounts (plus removed rentals).
      * - Only include sessions starting > 24h from now.
      */
-    private BigDecimal computeEligibleDiffAmount(Connection conn,
-                                                 StaffBookingSnapshotTokenUtil.Snapshot before,
-                                                 StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
-                                                 Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
+    private BigDecimal computeRefundDeltaAmount(Connection conn,
+                                                StaffBookingSnapshotTokenUtil.Snapshot before,
+                                                StaffBookingSnapshotTokenUtil.Snapshot afterSlots,
+                                                Map<Integer, BigDecimal> removedRentalBySlotId) throws Exception {
         if (before == null || afterSlots == null) return BigDecimal.ZERO;
 
-        java.time.LocalDate bookingDate;
+        java.time.LocalDate bookingDate = null;
         try {
-            bookingDate = java.time.LocalDate.parse(before.bookingDate);
-        } catch (Exception e) {
-            return BigDecimal.ZERO;
+            if (before.bookingDate != null && !before.bookingDate.isEmpty()) {
+                bookingDate = java.time.LocalDate.parse(before.bookingDate);
+            }
+        } catch (Exception ignored) {
         }
 
         Map<Integer, String> beforeStatus = new HashMap<>();
@@ -653,38 +665,41 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         java.time.LocalDateTime nowPlus24 = now.plusHours(24);
 
-        BigDecimal eligibleDiff = BigDecimal.ZERO;
+        BigDecimal refundDelta = BigDecimal.ZERO;
         for (StaffBookingSnapshotTokenUtil.SlotSnapshot slot : before.slots) {
             String status = slot.slotStatus;
-            if ("CANCELLED".equals(status)) continue;
+            boolean beforeActive = !"CANCELLED".equals(status);
 
-            BigDecimal beforeAmt = beforePrice.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO);
             StaffBookingSnapshotTokenUtil.SlotSnapshot after = afterMap.get(slot.bookingSlotId);
-            BigDecimal afterAmt = BigDecimal.ZERO;
-            if (after != null && !"CANCELLED".equals(after.slotStatus)) {
-                afterAmt = parseMoney(after.price);
-            }
+            boolean afterActive = after != null && !"CANCELLED".equals(after.slotStatus);
+
+            BigDecimal beforeAmt = beforeActive ? beforePrice.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO) : BigDecimal.ZERO;
+            BigDecimal afterAmt = afterActive ? parseMoney(after.price) : BigDecimal.ZERO;
 
             BigDecimal rentalDelta = BigDecimal.ZERO;
-            if (removedRentalBySlotId != null && (after == null || "CANCELLED".equals(after.slotStatus))) {
+            if (beforeActive && !afterActive && removedRentalBySlotId != null) {
                 rentalDelta = removedRentalBySlotId.getOrDefault(slot.bookingSlotId, BigDecimal.ZERO);
             }
 
             BigDecimal delta = beforeAmt.subtract(afterAmt).add(rentalDelta);
-            if (delta.compareTo(BigDecimal.ZERO) <= 0) continue;
+            if (delta.compareTo(BigDecimal.ZERO) == 0) continue;
 
-            java.time.LocalTime sessionStart = sessionStartBySlotId.get(slot.bookingSlotId);
-            if (sessionStart == null) continue;
-
-            java.time.LocalDateTime sessionStartAt = java.time.LocalDateTime.of(bookingDate, sessionStart);
-            if (!sessionStartAt.isAfter(nowPlus24)) {
-                continue;
+            if (delta.compareTo(BigDecimal.ZERO) > 0) {
+                // Only allow new refund accrual for sessions starting > 24h from now.
+                java.time.LocalTime sessionStart = sessionStartBySlotId.get(slot.bookingSlotId);
+                if (sessionStart == null || bookingDate == null) {
+                    continue;
+                }
+                java.time.LocalDateTime sessionStartAt = java.time.LocalDateTime.of(bookingDate, sessionStart);
+                if (!sessionStartAt.isAfter(nowPlus24)) {
+                    continue;
+                }
             }
 
-            eligibleDiff = eligibleDiff.add(delta);
+            refundDelta = refundDelta.add(delta);
         }
 
-        return eligibleDiff;
+        return refundDelta;
     }
 
     private Map<Integer, java.time.LocalTime> buildSessionStartBySlotId(List<StaffBookingEditSessionCellDTO> cells,
@@ -806,24 +821,24 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
             StaffBookingSnapshotTokenUtil.SlotSnapshot slot = s.slots.get(i);
             if (i > 0) json.append(',');
             json.append('{')
-                    .append("\"bookingSlotId\":").append(slot.bookingSlotId)
-                    .append(",\"courtId\":").append(slot.courtId)
-                    .append(",\"slotId\":").append(slot.slotId)
-                    .append(",\"slotStatus\":\"").append(slot.slotStatus).append("\"")
-                    .append(",\"price\":").append(slot.price)
-                    .append(",\"released\":").append(slot.released)
-                    .append('}');
+                .append("\"bookingSlotId\":").append(slot.bookingSlotId)
+                .append(",\"courtId\":").append(slot.courtId)
+                .append(",\"slotId\":").append(slot.slotId)
+                .append(",\"slotStatus\":\"").append(slot.slotStatus).append("\"")
+                .append(",\"price\":").append(slot.price)
+                .append(",\"released\":").append(slot.released)
+                .append('}');
         }
         json.append(']');
 
         if (s.invoice != null) {
             json.append(",\"invoice\":{")
-                    .append("\"totalAmount\":").append(s.invoice.totalAmount)
-                    .append(",\"paidAmount\":").append(s.invoice.paidAmount)
-                    .append(",\"paymentStatus\":\"").append(s.invoice.paymentStatus).append("\"")
-                    .append(",\"refundDue\":").append(s.invoice.refundDue)
-                    .append(",\"refundStatus\":\"").append(s.invoice.refundStatus).append("\"")
-                    .append('}');
+                .append("\"totalAmount\":").append(s.invoice.totalAmount)
+                .append(",\"paidAmount\":").append(s.invoice.paidAmount)
+                .append(",\"paymentStatus\":\"").append(s.invoice.paymentStatus).append("\"")
+                .append(",\"refundDue\":").append(s.invoice.refundDue)
+                .append(",\"refundStatus\":\"").append(s.invoice.refundStatus).append("\"")
+                .append('}');
         } else {
             json.append(",\"invoice\":null");
         }
@@ -982,11 +997,11 @@ public class StaffBookingEditServiceImpl implements StaffBookingEditService {
         String toJson() {
             StringBuilder json = new StringBuilder(160);
             json.append("{\"success\":false,\"message\":")
-                    .append(StaffAuthUtil.escapeJson(message));
+                .append(StaffAuthUtil.escapeJson(message));
             if (currentEtag != null) {
                 json.append(",\"data\":{\"currentEtag\":")
-                        .append(StaffAuthUtil.escapeJson(currentEtag))
-                        .append("}");
+                    .append(StaffAuthUtil.escapeJson(currentEtag))
+                    .append("}");
             }
             json.append("}");
             return json.toString();
